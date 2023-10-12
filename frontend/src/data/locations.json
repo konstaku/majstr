@@ -1,0 +1,67 @@
+[
+  {
+    "id": "turin",
+    "city": { "en": "Turin", "ua": "Турин" },
+    "province": { "en": "Piedmont", "ua": "П'ємонт" }
+  },
+  {
+    "id": "milan",
+    "city": { "en": "Milan", "ua": "Мілан" },
+    "province": { "en": "Lombardy", "ua": "Ломбардія" }
+  },
+  {
+    "id": "rome",
+    "city": { "en": "Rome", "ua": "Рим" },
+    "province": { "en": "Lazio", "ua": "Лазіо" }
+  },
+  {
+    "id": "naples",
+    "city": { "en": "Naples", "ua": "Неаполь" },
+    "province": { "en": "Campania", "ua": "Кампанія" }
+  },
+  {
+    "id": "bologna",
+    "city": { "en": "Bologna", "ua": "Болонья" },
+    "province": { "en": "Emilia-Romagna", "ua": "Емілія-Романья" }
+  },
+  {
+    "id": "florence",
+    "city": { "en": "Florence", "ua": "Флоренція" },
+    "province": { "en": "Tuscany", "ua": "Тоскана" }
+  },
+  {
+    "id": "bari",
+    "city": { "en": "Bari", "ua": "Барі" },
+    "province": { "en": "Apulia", "ua": "Апулія" }
+  },
+  {
+    "id": "catania",
+    "city": { "en": "Catania", "ua": "Катанія" },
+    "province": { "en": "Sicily", "ua": "Сицилія" }
+  },
+  {
+    "id": "genoa",
+    "city": { "en": "Genoa", "ua": "Генуя" },
+    "province": { "en": "Liguria", "ua": "Лігурія" }
+  },
+  {
+    "id": "venice",
+    "city": { "en": "Venice", "ua": "Венеція" },
+    "province": { "en": "Veneto", "ua": "Венето" }
+  },
+  {
+    "id": "messina",
+    "city": { "en": "Messina", "ua": "Мессіна" },
+    "province": { "en": "Sicily", "ua": "Сицилія" }
+  },
+  {
+    "id": "verona",
+    "city": { "en": "Verona", "ua": "Верона" },
+    "province": { "en": "Veneto", "ua": "Венето" }
+  },
+  {
+    "id": "padua",
+    "city": { "en": "Padua", "ua": "Падуя" },
+    "province": { "en": "Veneto", "ua": "Венето" }
+  }
+]
