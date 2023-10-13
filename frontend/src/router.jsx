@@ -11,4 +11,8 @@ export const router = createBrowserRouter([
     path: '/add',
     element: <AddNewRecord />,
   },
+  {
+    path: '/login',
+    action: () => alert('LOGIN'),
+  },
 ]);

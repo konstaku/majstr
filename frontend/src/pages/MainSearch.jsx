@@ -4,6 +4,7 @@ import { ACTIONS } from '../reducer';
 import locations from '../data/locations.json';
 import professions from '../data/professions.json';
 import SearchResults from '../components/SearchResults';
+import { Link } from 'react-router-dom';
 
 export default function MainSearch() {
   const [city, setCity] = useState('turin');
@@ -15,15 +16,15 @@ export default function MainSearch() {
   const availableMasters = masters.filter((piglet) => {
     return piglet.locationID === city;
   });
-  console.log('piglets', availableMasters);
 
   const availableProfessions = [
     ...new Set(availableMasters.map((piglet) => piglet.professionID)),
   ];
-  console.log('uniq', availableProfessions);
 
   return (
     <>
+      <a href="http://t.me/chupakabra_dev_bot">Login</a>
+      {/* <Link to={'/add'}>Додати запис</Link> */}
       <h2>
         Я мешкаю в <SearchLocation />, мені потрібен <SearchProffession />
         <button
@@ -66,7 +67,7 @@ export default function MainSearch() {
           Оберіть майстра
         </option>
         {availableProfessions.map((availableProfession) => (
-          <option key={crypto.randomUUID()} value={availableProfession}>
+          <option key={availableProfession} value={availableProfession}>
             {professions.find((p) => p.id === availableProfession).name.ua}
           </option>
         ))}

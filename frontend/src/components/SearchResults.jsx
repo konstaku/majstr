@@ -5,8 +5,6 @@ import MasterCard from './MasterCard';
 export default function SearchResults({ city, profession }) {
   const { state } = useContext(MasterContext);
   const { masters } = state;
-  console.log('---masters', masters);
-  console.log(city, profession);
   const filteredMasters = masters.filter(
     (master) =>
       master.locationID === city && master.professionID.includes(profession)

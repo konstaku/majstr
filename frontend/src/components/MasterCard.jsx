@@ -6,7 +6,7 @@ export default function MasterCard({ master }) {
 
   return (
     <div style={{ minWidth: '250px' }}>
-      <div
+      {/* <div
         style={{
           width: '75px',
           height: '75px',
@@ -14,7 +14,7 @@ export default function MasterCard({ master }) {
           backgroundImage: `url("/src/data/userpics/${id}.jpeg")`,
           backgroundSize: 'cover',
         }}
-      ></div>
+      ></div> */}
       <h3>{name}</h3>
       <h4>
         {professions.find((p) => p.id === professionID).name.ua},{' '}
@@ -23,7 +23,9 @@ export default function MasterCard({ master }) {
       <h5>
         Contacts:{' '}
         {contacts.map((contact) => (
-          <div>{`${contact.type}: ${contact.value}`}</div>
+          <div
+            key={Math.random().toString()}
+          >{`${contact.type}: ${contact.value}`}</div>
         ))}
       </h5>
       <p>{about}</p>
