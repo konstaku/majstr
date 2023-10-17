@@ -1,44 +1,44 @@
 const express = require('express');
 const https = require('https');
 const fs = require('fs');
-const TelegramBot = require('node-telegram-bot-api');
-const { kMaxLength } = require('buffer');
+const cors = require('cors');
+const masters = require('./data/masters.json');
 
-const TOKEN = '6670255598:AAHEvdTHxZZ58lIZymZm8lIe4I66imY9tH8';
-const PORT_NUMBER = 8443;
-const CERTIFICATE = '/etc/letsencrypt/live/konstaku.com/fullchain.pem';
-const KEYFILE = '/etc/letsencrypt/live/konstaku.com/privkey.pem';
-
-const app = express();
-
+const PORT_NUMBER = 5000;
+const CERTIFICATE = '/etc/letsencrypt/live/api.konstaku.com/fullchain.pem';
+const KEYFILE = '/etc/letsencrypt/live/api.konstaku.com/privkey.pem';
 const httpsOptions = {
   key: fs.readFileSync(KEYFILE),
   cert: fs.readFileSync(CERTIFICATE),
 };
 
-const httpsServer = https.createServer(httpsOptions, app);
+const app = express();
 
 function main() {
-  const bot = new TelegramBot(TOKEN);
-
   app.use(express.json());
-  bot.setWebHook(`https://konstaku.com:${PORT_NUMBER}/webhook`);
+  app.use(cors());
 
-  app.post('/webhook', (req, res) => {
-    console.log('Webhook triggered!');
-    const message = req.body.message;
+  app.get('/', (req, res) => {
+    console.log('=== api request to HTTP server ===');
 
-    if (message.text === '/start') {
-      bot.sendMessage(message.chat.id, 'AAA!');
+    switch (req.query.q) {
+      case 'masters':
+        res.status(200).send(masters);
+        break;
+      default:
+        res.status(404).send('No such file!');
     }
-
-    console.log('message recieved!', message);
-    res.status(200).send('OK');
   });
 
-  httpsServer.listen(PORT_NUMBER, () =>
-    console.log(`Server started on port ${PORT_NUMBER}`)
-  );
+  const httpsServer = https.createServer(httpsOptions, app);
+
+  httpsServer
+    .listen(PORT_NUMBER, () =>
+      console.log(`Server started on port ${PORT_NUMBER}`)
+    )
+    .on('error', (err) => {
+      console.log('Error starting server:', err);
+    });
 }
 
 main();

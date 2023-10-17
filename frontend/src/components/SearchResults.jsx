@@ -2,9 +2,7 @@ import { useContext } from 'react';
 import { MasterContext } from '../context';
 import MasterCard from './MasterCard';
 
-export default function SearchResults({ city, profession }) {
-  const { state } = useContext(MasterContext);
-  const { masters } = state;
+export default function SearchResults({ masters, city, profession }) {
   const filteredMasters = masters.filter(
     (master) =>
       master.locationID === city && master.professionID.includes(profession)

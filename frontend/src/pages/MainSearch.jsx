@@ -5,73 +5,101 @@ import locations from '../data/locations.json';
 import professions from '../data/professions.json';
 import SearchResults from '../components/SearchResults';
 import { Link } from 'react-router-dom';
+import Select from 'react-select';
 
 export default function MainSearch() {
+  const [masters, setMasters] = useState([]);
   const [city, setCity] = useState('turin');
-  const [profession, setProffession] = useState('');
+  const [profession, setProfession] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  const { state, dispatch } = useContext(MasterContext);
-  const { masters } = state;
+  useEffect(() => {
+    setIsLoading(true);
+    setIsError(false);
 
-  const availableMasters = masters.filter((piglet) => {
-    return piglet.locationID === city;
+    const controller = new AbortController();
+
+    const fetchMasters = async () => {
+      fetch('https://api.konstaku.com:5000/?q=masters', {
+        signal: controller.signal,
+      })
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          } else {
+            return Promise.reject(response);
+          }
+        })
+        .then(setMasters)
+        .catch((error) => {
+          if (error.name === 'AbortError') return;
+          console.error(error);
+          setIsError(true);
+        })
+        .finally(() => setIsLoading(false));
+    };
+
+    fetchMasters();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  const availableMasters = masters.filter((master) => {
+    return master.locationID === city;
   });
 
+  const availableLocations = [
+    ...new Set(masters.map((master) => master.locationID)),
+  ].map((location) => ({
+    value: location,
+    label: locations.find((l) => l.id === location).city.ua_alt,
+  }));
+
   const availableProfessions = [
-    ...new Set(availableMasters.map((piglet) => piglet.professionID)),
-  ];
+    ...new Set(availableMasters.map((master) => master.professionID)),
+  ].map((professionID) => ({
+    value: professionID,
+    label: professions.find((p) => p.id === professionID).name.ua,
+  }));
 
   return (
     <>
-      <a href="http://t.me/chupakabra_dev_bot">Login</a>
+      <a href="https://t.me/chupakabra_dev_bot">Login</a>
       {/* <Link to={'/add'}>Додати запис</Link> */}
       <h2>
         Я мешкаю в <SearchLocation />, мені потрібен <SearchProffession />
-        <button
-          type="submit"
-          onClick={() => dispatch({ type: ACTIONS.FILTER, payload: {} })}
-        >
-          Знайти
-        </button>
         <br />
       </h2>
-      <SearchResults city={city} profession={profession} />
+      {isLoading ? (
+        <h2>Loading...</h2>
+      ) : (
+        <SearchResults masters={masters} city={city} profession={profession} />
+      )}
     </>
   );
 
   function SearchLocation() {
-    const options = locations.map((location) => (
-      <option key={location.id} value={location.id}>
-        {location.city.ua}
-      </option>
-    ));
     return (
-      <select
-        name="search-locations"
-        defaultValue={city}
-        onChange={(e) => setCity(e.target.value)}
-      >
-        {options}
-      </select>
+      <Select
+        defaultValue={availableLocations.find((l) => l.value === city)}
+        options={availableLocations}
+        onChange={(e) => {
+          setCity(e.value);
+        }}
+      />
     );
   }
 
   function SearchProffession() {
     return (
-      <select
-        name="search-profession"
-        onChange={(e) => setProffession(e.target.value)}
-        defaultValue=""
-      >
-        <option value="" disabled>
-          Оберіть майстра
-        </option>
-        {availableProfessions.map((availableProfession) => (
-          <option key={availableProfession} value={availableProfession}>
-            {professions.find((p) => p.id === availableProfession).name.ua}
-          </option>
-        ))}
-      </select>
+      <Select
+        defaultValue={availableProfessions.find((p) => p.value === profession)}
+        options={availableProfessions}
+        onChange={(e) => setProfession(e.value)}
+      />
     );
   }
 }
