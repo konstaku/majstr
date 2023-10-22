@@ -23,7 +23,6 @@ export default function SearchResults({ masters, city, profession }) {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-          // gridAutoFlow: 'dense',
           gap: '1rem',
         }}
       >

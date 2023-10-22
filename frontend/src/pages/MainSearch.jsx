@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { lazy, useEffect, useState } from 'react';
 import locations from '../data/locations.json';
 import professions from '../data/professions.json';
-//import SearchResults from '../components/SearchResults';
 import Select from 'react-select';
+import './../styles.css';
 
-const SearchResults = React.lazy(() => import('../components/SearchResults'));
+const SearchResults = lazy(() => import('../components/SearchResults'));
 
 export default function MainSearch() {
-  const [masters, setMasters] = useState([]);
   const [city, setCity] = useState('');
+  const [masters, setMasters] = useState([]);
   const [selectedProfession, setSelectedProfession] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -46,34 +46,26 @@ export default function MainSearch() {
     };
   }, []);
 
-  const availableMasters = masters.filter((master) => {
-    return master.locationID.includes(city);
-  });
-
-  const availableLocations = [
-    ...new Set(masters.map((master) => master.locationID)),
-  ].map((location) => ({
-    value: location,
-    label: locations.find((l) => l.id === location).city.ua_alt,
-  }));
-
-  const availableProfessions = [
-    ...new Set(availableMasters.map((master) => master.professionID)),
-  ].map((professionID) => ({
-    value: professionID,
-    label: professions.find((p) => p.id === professionID).name.ua,
-  }));
+  const availableMasters = getAvailableMastersForCity(masters, city);
+  const availableLocations = getAvailableLocations(masters);
+  const availableProfessions = getAvailableProffessions(
+    availableMasters,
+    professions
+  );
 
   return (
     <>
-      <a href="https://t.me/chupakabra_dev_bot">Login</a>
-      {/* <Link to={'/add'}>Додати запис</Link> */}
-      <h2>
-        Я мешкаю в <SearchLocation />, мені потрібен <SearchProffession />
-        <br />
-      </h2>
+      <div className="headline-container">
+        <h2>
+          Я мешкаю в <SearchLocation />, мені потрібен <SearchProffession />
+          <br />
+        </h2>
+      </div>
+
       {isLoading ? (
         <h2>Loading...</h2>
+      ) : isError ? (
+        <h2>Error!</h2>
       ) : (
         <SearchResults
           masters={masters}
@@ -95,6 +87,7 @@ export default function MainSearch() {
         onChange={(e) => {
           setCity(e.value);
         }}
+        className="select-container"
       />
     );
   }
@@ -108,9 +101,32 @@ export default function MainSearch() {
             : selectedProfession
         }
         options={availableProfessions}
-        placeholder="Оберіть"
+        placeholder="Оберіть майстра"
         onChange={(e) => setSelectedProfession(e.value)}
+        className="select-container"
       />
     );
   }
+}
+
+function getAvailableMastersForCity(masterList, city) {
+  return masterList.filter((master) => master.locationID.includes(city));
+}
+
+function getAvailableLocations(masters) {
+  return [...new Set(masters.map((master) => master.locationID))].map(
+    (location) => ({
+      value: location,
+      label: locations.find((l) => l.id === location).city.ua_alt,
+    })
+  );
+}
+
+function getAvailableProffessions(availableMasters, professions) {
+  return [
+    ...new Set(availableMasters.map((master) => master.professionID)),
+  ].map((professionID) => ({
+    value: professionID,
+    label: professions.find((p) => p.id === professionID).name.ua,
+  }));
 }

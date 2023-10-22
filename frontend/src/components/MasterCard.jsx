@@ -8,8 +8,11 @@ import {
   WarningOutlined,
   EnvironmentOutlined,
 } from '@ant-design/icons';
+import { useState } from 'react';
 
 export default function MasterCard({ master }) {
+  const [contactsCollapsed, setContactsCollapsed] = useState(true);
+
   const { id, name, professionID, locationID, contacts, about } = master;
 
   return (
@@ -37,7 +40,7 @@ export default function MasterCard({ master }) {
           ghost
           items={[
             {
-              label: 'Контакти',
+              label: `${contactsCollapsed ? `Показати` : `Сховати`} контакти`,
               children: contacts.map((contact, index) => (
                 <div key={index}>
                   <Text type="secondary">{contact.type}: </Text>
@@ -46,6 +49,7 @@ export default function MasterCard({ master }) {
               )),
             },
           ]}
+          onChange={() => setContactsCollapsed(!contactsCollapsed)}
         ></Collapse>
       </div>
     </Card>

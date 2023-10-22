@@ -1,17 +1,5 @@
 [
   {
-    "id": "1", 
-    "name": "Volodymyr",
-    "professionID": "massage",
-    "locationID": "turin",
-    "contacts": [
-      { "type": "phone", "value": "+393273350988" },
-      { "type": "instagram", "value": "massaggio_torino_77" }
-    ],
-    "about": "Доброго дня! Моє ім'я Володимир,я масажист із України. Роблю всі види масажу тіла. В центрі Турина в салоні. Салон знаходиться в 5 хвилинах від PORTA NUOVA пішки.",
-    "photo": null
-  },
-  {
     "id": "2",
     "name": "Anastasiia",
     "professionID": "doctor", 
