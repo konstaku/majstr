@@ -1,16 +1,15 @@
-import { useContext, useEffect, useRef, useState } from 'react';
-import { MasterContext } from '../context';
-import { ACTIONS } from '../reducer';
+import React, { useEffect, useState } from 'react';
 import locations from '../data/locations.json';
 import professions from '../data/professions.json';
-import SearchResults from '../components/SearchResults';
-import { Link } from 'react-router-dom';
+//import SearchResults from '../components/SearchResults';
 import Select from 'react-select';
+
+const SearchResults = React.lazy(() => import('../components/SearchResults'));
 
 export default function MainSearch() {
   const [masters, setMasters] = useState([]);
-  const [city, setCity] = useState('turin');
-  const [profession, setProfession] = useState('');
+  const [city, setCity] = useState('');
+  const [selectedProfession, setSelectedProfession] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
@@ -48,7 +47,7 @@ export default function MainSearch() {
   }, []);
 
   const availableMasters = masters.filter((master) => {
-    return master.locationID === city;
+    return master.locationID.includes(city);
   });
 
   const availableLocations = [
@@ -76,7 +75,11 @@ export default function MainSearch() {
       {isLoading ? (
         <h2>Loading...</h2>
       ) : (
-        <SearchResults masters={masters} city={city} profession={profession} />
+        <SearchResults
+          masters={masters}
+          city={city}
+          profession={selectedProfession}
+        />
       )}
     </>
   );
@@ -84,7 +87,10 @@ export default function MainSearch() {
   function SearchLocation() {
     return (
       <Select
-        defaultValue={availableLocations.find((l) => l.value === city)}
+        defaultValue={
+          city ? availableLocations.find((l) => l.value === city) : city
+        }
+        placeholder="Оберіть місто"
         options={availableLocations}
         onChange={(e) => {
           setCity(e.value);
@@ -96,9 +102,14 @@ export default function MainSearch() {
   function SearchProffession() {
     return (
       <Select
-        defaultValue={availableProfessions.find((p) => p.value === profession)}
+        defaultValue={
+          selectedProfession
+            ? availableProfessions.find((p) => p.value === selectedProfession)
+            : selectedProfession
+        }
         options={availableProfessions}
-        onChange={(e) => setProfession(e.value)}
+        placeholder="Оберіть"
+        onChange={(e) => setSelectedProfession(e.value)}
       />
     );
   }

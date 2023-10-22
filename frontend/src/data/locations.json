@@ -26,6 +26,19 @@
     }
   },
   {
+    "id": "brescia",
+    "city": {
+      "en": "Brescia",
+      "ua": "Брешія",
+      "ua_alt": "Брешії"
+    },
+    "province": {
+      "en": "Lombardy",
+      "ua": "Ломбардія",
+      "ua_alt": "Ломбардії"
+    }
+  },
+  {
     "id": "rome",
     "city": {
       "en": "Rome",
@@ -166,6 +179,19 @@
       "en": "Veneto",
       "ua": "Венето",
       "ua_alt": "Венето"
+    }
+  },
+  {
+    "id": "lecce",
+    "city": {
+      "en": "Lecce",
+      "ua": "Лечче",
+      "ua_alt": "Лечче"
+    },
+    "province": {
+      "en": "Apulia",
+      "ua": "Апулія",
+      "ua_alt": "Апулії"
     }
   }
 ]

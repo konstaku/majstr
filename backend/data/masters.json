@@ -100,7 +100,9 @@
     "name": "Александра",
     "professionID": "manicurist",
     "locationID": "turin",
-    "contacts": [],
+    "contacts": [
+      { "type": "instagram", "value": "aleksanails" }
+    ],
     "about": "Квалифицированный мастер ногтевой эстетики. Маникюр, педикюр, наращивание ногтей, покрытие гель-лаком. Стаж работы более 10 лет.",
     "photo": null
   },
@@ -304,5 +306,201 @@
   ],
   "about": null,
   "photo": null
-}
+}, 
+
+{
+  "id": "27",
+  "name": "Аліна Володимирівна",
+  "professionID": "dentist",
+  "locationID": "rome", 
+  "contacts": [
+    {"type": "telegram", "value": "@alin_lu"},
+    {"type": "whatsapp", "value": "+380633221152"},
+    {"type": "instagram", "value": "dr.alina_lu"}
+  ],
+  "about": "Стоматолог - ортодонт. Приймаю в м.Рим (municipio ХV). Чим я можу допомогти: - ортодонтичне лікування дорослих та дітей (брекети, елайнери, апарати) - лікування карієсу - професійна гігієна - відбілювання. Знижки для українців.",
+  "photo": null
+},
+
+{
+  "id": "28",
+  "name": "Inna Mahlona (Nagornyak)",
+  "professionID": "dentist",
+  "locationID": "rome",
+  "contacts": [{"type": "phone", "value": "3311318464"}],
+  "about": "Дитячий лікар-стоматолог. Маю 10-річний досвід роботи. Лікую маленьких пацієнтів з любовʼю і з закисом азоту при потребі.",
+  "photo": null
+},
+
+{
+  "id": "29",
+  "name": "Ірина",
+  "professionID": "massage",
+  "locationID": "milan",
+  "contacts": [{"type": "facebook", "value": "https://www.facebook.com/profile.php?id=100094488504400"}],
+  "about": "Масаж майстер з 8-ми річним досвідом роботи. Роблю загальнооздоровчий масаж, антицелюлітний масаж, медовий масаж і масаж обличчя. А також по зонам. Стопи та ноги. Спина. Шийно комірцева зона. Руки. Голова. ПРАЦЮЮ ТІЛЬКИ З ЖІНКАМИ. Година масажу 30€",
+  "photo": null
+},
+
+{
+  "id": "30",
+  "name": "Alex Kozaryuk",
+  "professionID": "mechanic",
+  "locationID": "brescia",
+  "contacts": [
+    {"type": "phone", "value": "333, 641, 5423"},
+    {"type": "email", "value": "x.boy748@gmail.com"},
+    {"type": "website", "value": "http://Facebook.com/AlexGarageBs"}
+  ],
+  "about": "Автосервіс на виїзд, так же можливість справити авто а авторизованій майстерскій Autocrew (Bosch)",
+  "photo": null
+},
+  
+{
+  "id": "31",
+  "name": "Vozniuk Maksym",
+  "professionID": "mechanic",
+  "locationID": "bologna",
+  "contacts": [
+    {"type": "phone", "value": "+393518130411"},
+    {"type": "email", "value": "maksukr123@ukr.net"}
+  ],
+  "about": "Власний автовоз під 2 авто. Виконую перевезення авто по Італії. Організовую доставку авто в Україну. Ремонт авто будь якої складності",
+  "photo": null
+},
+
+{
+  "id": "32",
+  "name": "Аліна Зозуля",
+  "professionID": "tattoo_artist",
+  "locationID": "milan",
+  "contacts": [
+    {"type": "phone", "value": "+393451591876"},
+    {"type": "email", "value": "lana_06@libero.it"},
+    {"type": "instagram", "value": "zozulia_alina_artist"} 
+  ],
+  "about": "Майстер перманентного макіяжу/тату майстер",
+  "photo": null
+},
+
+{
+  "id": "33",
+  "name": "Оля Зеленюк",
+  "professionID": "manicurist",
+  "locationID": "rome",
+  "contacts": [
+    {"type": "phone", "value": "+380502130357"},
+    {"type": "email", "value": "olazelenuk8@gmail.com"}, 
+    {"type": "instagram", "value": "nata.007"}
+  ],
+  "about": "Майсер манікюру і педикюру, робочий стаж в цій сфері 5-6 років. окрім цього за вказаною адресою можна зробити такі послуги як: масаж, епіляція, перманентний макіяж, нарощування вій.",
+  "photo": null
+},
+
+{
+  "id": "34",
+  "name": "Lesia Kulchytska",
+  "professionID": "hairdresser",
+  "locationID": "rome",
+  "contacts": [
+    {"type": "viber", "value": "+380935979406"},
+    {"type": "whatsapp", "value": "+380935979406"},
+    {"type": "telegram", "value": "+393290104174"}
+  ],
+  "about": "Перукарські послуги: фарбування, стрижки, підбір форми зачіски. Процедури відновлення, реконструкції та зволоження волосся. Підбір косметичних засобів для вашого волосся та шкіри голови!",
+  "photo": null
+},
+
+{
+  "id": "35",
+  "name": "Мар'яна Паращук",
+  "professionID": "hairdresser",
+  "locationID": "naples",
+  "contacts": [
+    {"type": "phone", "value": "3270081949"},
+    {"type": "email", "value": "mariana.parashchuk@gmail.com"},
+    {"type": "website", "value": "https://www.facebook.com/NewSTYLEMariana/"}
+  ],
+  "about": "Всі види перукарських послуг та манікюру, естетичний педикюр, корекція і фарбування брів...",
+  "photo": null
+},
+
+{
+  "id": "36",
+  "name": "Кавецька Ірина",
+  "professionID": "beautician",
+  "locationID": "naples",
+  "contacts": [
+    {"type": "phone", "value": "3802822776"},
+    {"type": "email", "value": "irinkamarco2009@gmail.com"}
+  ],
+  "about": "Естетист/косметолог. Манікюр, педикюр, масаж, перманентний макіяж, чистка обличчя, лазерна епіляція, видалення татуажу лазером, видалення пігментних пятен лазером, видалення папілом, лікування акне, лікування куперозу, лікування грибка.",
+  "photo": null
+},
+
+{
+  "id": "37",
+  "name": "Наталія Руденко",
+  "professionID": "beautician",
+  "locationID": "naples",
+  "contacts": [
+    {"type": "phone", "value": "+393276246194"}, 
+    {"type": "email", "value": "nuovopersonalgng@gmail.com"}
+  ],
+  "about": "Надаю послуги -цукрова та воскова депіляція -манікюр та педікюр - подологічний педікюр -фарбування брів та вій. Працію вдома, або у клієнта, бажано за попереднім записом",
+  "photo": null
+},
+
+{
+  "id": "38",
+  "name": "Марія Назарчук",
+  "professionID": "beautician",
+  "locationID": "lecce",
+  "contacts": [
+    {"type": "phone", "value": "+380687413631"},
+    {"type": "email", "value": "nazarchukmaria17@gmail.com"}
+  ],
+  "about": "Косметологія: чистка обличчя, пілінги, ботурінотерапія, біоревіталізація, мезотерапія, збільшення губ",
+  "photo": null
+},
+
+{
+  "id": "39",
+  "name": "Марія Кончак",
+  "professionID": "dermatologist",
+  "locationID": "bologna",
+  "contacts": [
+    {"type": "phone", "value": "+393534404016"},
+    {"type": "email", "value": "mary.berrya@gmail.com"},
+    {"type": "instagram", "value": "https://www.instagram.com/beautydoctor_8/"}
+  ],
+  "about": "Приватний медичний кабінет, де лікують проблеми випадіння волосся, дерматологічні та естетичні проблеми шкіри. Естетична медицина включає: контурну пластику губ, біоревіталізацію, мезотерапію, Ботокс, апаратне очищення шкіри, підбір домашнього догляду.",
+  "photo": null
+},
+
+{
+    "id": "40",
+    "name": "Елена",
+    "professionID": "gynecologist",
+    "locationID": "rome",
+    "contacts": [
+        { "type": "phone", "value": "+393271734944" },
+        { "type": "whatsapp", "value": "+393271734944" }
+    ],
+    "about": "Dott.ssa Agafonova Elena",
+    "photo": null
+},
+
+{
+    "id": "41",
+    "name": "Віталій",
+    "professionID": "electrician",
+    "locationID": "rome",
+    "contacts": [
+      {"type": "phone", "value": "+393485737446"}
+    ],
+    "about": null,
+    "photo": null
+  }
+
 ]

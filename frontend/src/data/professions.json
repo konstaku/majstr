@@ -301,6 +301,13 @@
     }
   },
   {
+    "id": "dermatologist",
+    "name": {
+      "en": "Dermatologist",
+      "ua": "Дерматолог"
+    }
+  },
+  {
     "id": "bartender",
     "name": {
       "en": "Bartender",
