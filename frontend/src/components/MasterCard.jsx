@@ -1,6 +1,6 @@
 import professions from './../data/professions.json';
 import locations from './../data/locations.json';
-import { Card, Collapse, Tag, Typography } from 'antd';
+import { Card, Collapse, Tag, Typography, Badge } from 'antd';
 const { Text } = Typography;
 import {
   CommentOutlined,
@@ -13,11 +13,19 @@ import { useState } from 'react';
 export default function MasterCard({ master }) {
   const [contactsCollapsed, setContactsCollapsed] = useState(true);
 
-  const { id, name, professionID, locationID, contacts, about } = master;
+  const { name, professionID, locationID, contacts, about, likes } = master;
 
   return (
     <Card
-      actions={[<HeartOutlined />, <CommentOutlined />, <WarningOutlined />]}
+      actions={[
+        <Badge size="small" count={likes}>
+          <HeartOutlined />
+        </Badge>,
+        <Badge dot color="#2db7f5">
+          <CommentOutlined />
+        </Badge>,
+        <WarningOutlined />,
+      ]}
       title={name}
       style={{ alignSelf: 'start' }}
     >
@@ -43,7 +51,7 @@ export default function MasterCard({ master }) {
               label: `${contactsCollapsed ? `Показати` : `Сховати`} контакти`,
               children: contacts.map((contact, index) => (
                 <div key={index}>
-                  <Text type="secondary">{contact.type}: </Text>
+                  <Text type="secondary">{contact.contactType}: </Text>
                   <Text type="primary">{contact.value}</Text>
                 </div>
               )),

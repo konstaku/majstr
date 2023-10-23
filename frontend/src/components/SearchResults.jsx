@@ -27,7 +27,7 @@ export default function SearchResults({ masters, city, profession }) {
         }}
       >
         {filteredMasters.map((master) => (
-          <MasterCard key={master.id} master={master} />
+          <MasterCard key={master._id} master={master} />
         ))}
       </div>
     </ConfigProvider>
