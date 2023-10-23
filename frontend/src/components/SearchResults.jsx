@@ -19,13 +19,7 @@ export default function SearchResults({ masters, city, profession }) {
 
   return (
     <ConfigProvider theme={searchConfigTheme}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-          gap: '1rem',
-        }}
-      >
+      <div className="search-results-container">
         {filteredMasters.map((master) => (
           <MasterCard key={master._id} master={master} />
         ))}

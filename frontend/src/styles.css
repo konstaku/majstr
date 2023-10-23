@@ -14,3 +14,20 @@ body * {
   width: max-content;
   display: inline-block;
 }
+
+.search-results-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.master-card {
+  align-self: flex-start;
+}
+.card-content {
+  margin-top: 1rem;
+}
+
+.card-city {
+  margin-left: 0.5rem;
+}

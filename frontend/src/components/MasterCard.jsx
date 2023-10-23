@@ -27,23 +27,23 @@ export default function MasterCard({ master }) {
         <WarningOutlined />,
       ]}
       title={name}
-      style={{ alignSelf: 'start' }}
+      className="master-card"
     >
       <div>
         <Tag>{professions.find((p) => p.id === professionID).name.ua}</Tag>
       </div>
       <div>
         <Text type="secondary">
-          <EnvironmentOutlined
-            style={{ marginRight: '.5rem', marginTop: '1rem' }}
-          />
-          {locations.find((l) => l.id === locationID).city.ua}
+          <EnvironmentOutlined className="card-content" />
+          <span className="card-city">
+            {locations.find((l) => l.id === locationID).city.ua}
+          </span>
         </Text>
       </div>
-      <div style={{ marginTop: '1rem' }}>
+      <div className="card-content">
         <Text>{about}</Text>
       </div>
-      <div style={{ marginTop: '1rem' }}>
+      <div className="card-content">
         <Collapse
           ghost
           items={[
