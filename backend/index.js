@@ -2,7 +2,6 @@ const express = require('express');
 const https = require('https');
 const fs = require('fs');
 const cors = require('cors');
-// const masters = require('./data/masters.json');
 const mongoose = require('mongoose');
 const Master = require('./Master');
 
@@ -13,8 +12,11 @@ const httpsOptions = {
   key: fs.readFileSync(KEYFILE),
   cert: fs.readFileSync(CERTIFICATE),
 };
-const uri =
-  'mongodb+srv://0864380:lyHt7dp3eHzEv1GM@piglets.vfyjg2w.mongodb.net/';
+
+require('dotenv').config();
+
+const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
+const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
 
 async function main() {
   const app = express();
@@ -22,11 +24,12 @@ async function main() {
   app.use(cors());
 
   await mongoose.connect(uri);
+  console.log('Database connected');
 
   app.get('/', async (req, res) => {
     console.log('=== api request to HTTP server ===');
     const masters = await Master.find();
-    console.log('masters:', masters);
+
     switch (req.query.q) {
       case 'masters':
         res.status(200).send(masters);
