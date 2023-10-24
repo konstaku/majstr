@@ -1,6 +1,6 @@
 import professions from './../data/professions.json';
 import locations from './../data/locations.json';
-import { Card, Collapse, Tag, Typography, Badge } from 'antd';
+import { Card, Collapse, Tag, Typography, Badge, Avatar } from 'antd';
 const { Text } = Typography;
 import {
   CommentOutlined,
@@ -8,10 +8,35 @@ import {
   WarningOutlined,
   EnvironmentOutlined,
 } from '@ant-design/icons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+
+const colorPalette = [
+  '#F94C66', // coral
+  '#F37D5D', // pumpkin
+  '#FBB13C', // yellow
+  '#FCD34D', // dandelion
+  '#BCE784', // green
+  '#63B2AF', // teal
+  '#5E9FE0', // sky
+  '#DF73FF', // magenta
+  '#B671F6', // purple
+  '#F49AC1', // pink
+  '#EF5B5B', // red
+  '#FF842D', // orange
+  '#E9777D', // rose
+  '#FFCF48', // sunflower
+  '#F3AB47', // gold
+  '#A0E4CB', // turquoise
+  '#9DF1DF', // mint
+  '#D599FF', // lilac
+  '#B5B2FF', // periwinkle
+];
 
 export default function MasterCard({ master }) {
   const [contactsCollapsed, setContactsCollapsed] = useState(true);
+  const randomBackgroundColor = useMemo(
+    () => colorPalette[Math.floor(Math.random() * colorPalette.length)]
+  );
 
   const { name, professionID, locationID, contacts, about, likes } = master;
 
@@ -26,7 +51,17 @@ export default function MasterCard({ master }) {
         </Badge>,
         <WarningOutlined />,
       ]}
-      title={name}
+      title={
+        <div>
+          <Avatar
+            style={{ backgroundColor: randomBackgroundColor }}
+            className="card-avatar"
+          >
+            {name[0]}
+          </Avatar>
+          <span className="card-header-name">{name}</span>
+        </div>
+      }
       className="master-card"
     >
       <div>
@@ -49,12 +84,24 @@ export default function MasterCard({ master }) {
           items={[
             {
               label: `${contactsCollapsed ? `Показати` : `Сховати`} контакти`,
-              children: contacts.map((contact, index) => (
-                <div key={index}>
-                  <Text type="secondary">{contact.contactType}: </Text>
-                  <Text type="primary">{contact.value}</Text>
-                </div>
-              )),
+              children: contacts.map((contact, index) => {
+                let contactValue;
+                switch (contact.contactType) {
+                  case 'instagram':
+                    const link = `https://www.instagram.com/${contact.value}/`;
+                    contactValue = <a href={link}>{contact.value}</a>;
+                    break;
+                  default:
+                    contactValue = contact.value;
+                }
+
+                return (
+                  <div key={index}>
+                    <Text type="secondary">{contact.contactType}: </Text>
+                    <Text type="primary">{contactValue}</Text>
+                  </div>
+                );
+              }),
             },
           ]}
           onChange={() => setContactsCollapsed(!contactsCollapsed)}

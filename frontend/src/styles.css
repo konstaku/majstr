@@ -24,6 +24,15 @@ body * {
 .master-card {
   align-self: flex-start;
 }
+
+.card-avatar {
+  font-weight: normal;
+}
+
+.card-header-name {
+  margin-left: 1rem;
+}
+
 .card-content {
   margin-top: 1rem;
 }
