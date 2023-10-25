@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const https = require('https');
 const fs = require('fs');
@@ -6,14 +8,14 @@ const mongoose = require('mongoose');
 const Master = require('./Master');
 
 const PORT_NUMBER = 5000;
-const CERTIFICATE = '/etc/letsencrypt/live/api.konstaku.com/fullchain.pem';
-const KEYFILE = '/etc/letsencrypt/live/api.konstaku.com/privkey.pem';
+const CERTIFICATE = process.env.CERTIFICATE;
+const KEYFILE = process.env.KEYFILE;
 const httpsOptions = {
   key: fs.readFileSync(KEYFILE),
   cert: fs.readFileSync(CERTIFICATE),
 };
 
-require('dotenv').config();
+const bot = require('./bot');
 
 const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
 const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
@@ -23,6 +25,7 @@ async function main() {
   app.use(express.json());
   app.use(cors());
 
+  bot.runBot();
   await mongoose.connect(uri);
   console.log('Database connected');
 

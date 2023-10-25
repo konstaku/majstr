@@ -8,23 +8,7 @@ const COOKIE = process.env.INSTAGRAM_COOKIE;
 const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 
-const masterSchema = new mongoose.Schema({
-  name: String,
-  professionID: String,
-  countryID: String,
-  locationID: String,
-  contacts: [
-    {
-      contactType: String,
-      value: String,
-    },
-  ],
-  about: String,
-  photo: String,
-  likes: { type: Number, default: 0 },
-});
-
-const Master = mongoose.model('Master', masterSchema);
+const Master = require('./Master');
 
 const s3 = new AWS.S3({
   accessKeyId: AWS_ACCESS_KEY,
