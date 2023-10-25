@@ -8,7 +8,7 @@ import {
   WarningOutlined,
   EnvironmentOutlined,
 } from '@ant-design/icons';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 const colorPalette = [
   '#F94C66', // coral
@@ -34,11 +34,39 @@ const colorPalette = [
 
 export default function MasterCard({ master }) {
   const [contactsCollapsed, setContactsCollapsed] = useState(true);
+  const photoRef = useRef(master.photo);
   const randomBackgroundColor = useMemo(
     () => colorPalette[Math.floor(Math.random() * colorPalette.length)],
     []
   );
-  const photoRef = useRef(master.photo);
+  const generateContactLayout = useCallback(({ contactType, value }, index) => {
+    let contactValue;
+    let link;
+
+    switch (contactType) {
+      case 'instagram':
+        link = `https://www.instagram.com/${value}/`;
+        contactValue = <a href={link}>{value}</a>;
+        break;
+      case 'telegram':
+        const handle = value.replace(/@/g, '');
+        link = `https://t.me/${handle}`;
+        contactValue = <a href={link}>{value}</a>;
+        break;
+      case 'phone':
+        contactValue = <a href={`tel:${value}`}>{value}</a>;
+        break;
+      default:
+        contactValue = value;
+    }
+
+    return (
+      <div key={index}>
+        <Text type="secondary">{contactType}: </Text>
+        <Text type="primary">{contactValue}</Text>
+      </div>
+    );
+  }, []);
 
   const { name, professionID, locationID, contacts, about, likes } = master;
 
@@ -89,24 +117,7 @@ export default function MasterCard({ master }) {
           items={[
             {
               label: `${contactsCollapsed ? `Показати` : `Сховати`} контакти`,
-              children: contacts.map((contact, index) => {
-                let contactValue;
-                switch (contact.contactType) {
-                  case 'instagram':
-                    const link = `https://www.instagram.com/${contact.value}/`;
-                    contactValue = <a href={link}>{contact.value}</a>;
-                    break;
-                  default:
-                    contactValue = contact.value;
-                }
-
-                return (
-                  <div key={index}>
-                    <Text type="secondary">{contact.contactType}: </Text>
-                    <Text type="primary">{contactValue}</Text>
-                  </div>
-                );
-              }),
+              children: contacts.map(generateContactLayout),
             },
           ]}
           onChange={() => setContactsCollapsed(!contactsCollapsed)}
