@@ -8,7 +8,7 @@ import {
   WarningOutlined,
   EnvironmentOutlined,
 } from '@ant-design/icons';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 const colorPalette = [
   '#F94C66', // coral
@@ -35,8 +35,10 @@ const colorPalette = [
 export default function MasterCard({ master }) {
   const [contactsCollapsed, setContactsCollapsed] = useState(true);
   const randomBackgroundColor = useMemo(
-    () => colorPalette[Math.floor(Math.random() * colorPalette.length)]
+    () => colorPalette[Math.floor(Math.random() * colorPalette.length)],
+    []
   );
+  const photoRef = useRef(master.photo);
 
   const { name, professionID, locationID, contacts, about, likes } = master;
 
@@ -54,7 +56,10 @@ export default function MasterCard({ master }) {
       title={
         <div>
           <Avatar
-            style={{ backgroundColor: randomBackgroundColor }}
+            src={photoRef.current && photoRef.current}
+            style={
+              !photoRef.current && { backgroundColor: randomBackgroundColor }
+            }
             className="card-avatar"
           >
             {name[0]}
