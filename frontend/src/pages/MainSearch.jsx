@@ -53,14 +53,50 @@ export default function MainSearch() {
     professions
   );
 
+  const headlineSelectStyles = {
+    singleValue: (base) => ({ ...base, color: 'white' }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: '#171923',
+      borderRadius: '20px',
+      padding: '1rem',
+    }),
+    valueContainer: (base) => ({
+      ...base,
+      background: '#171923',
+      color: 'white',
+      width: '100%',
+      margin: '1rem',
+    }),
+  };
+
   return (
     <>
-      <div className="headline-container">
+      <div className="header">
+        <div className="logo">
+          <img src="/img/logo/logo-dark.svg" alt="logo" width="150px" />
+        </div>
+        <div className="menu">
+          <ul>
+            <li>Пошук</li>
+            <li className="inactive">Особистий кабінет</li>
+            <li className="inactive">FAQ</li>
+          </ul>
+        </div>
+        <div className="select-country">
+          <span>🇮🇹</span>
+          <span>Італія</span>
+        </div>
+      </div>
+      <div className="search-field">
+        Я мешкаю в <SearchLocation /> та шукаю <SearchProffession />
+      </div>
+      {/* <div className="headline-container">
         <h2>
           Я мешкаю в <SearchLocation />, мені потрібен <SearchProffession />
           <br />
         </h2>
-      </div>
+      </div> */}
 
       {isLoading ? (
         <h2>Loading...</h2>
@@ -79,15 +115,17 @@ export default function MainSearch() {
   function SearchLocation() {
     return (
       <Select
+        className="headline-select"
+        unstyled
         defaultValue={
           city ? availableLocations.find((l) => l.value === city) : city
         }
-        placeholder="Оберіть місто"
+        placeholder="Вся Італія"
         options={availableLocations}
+        styles={headlineSelectStyles}
         onChange={(e) => {
           setCity(e.value);
         }}
-        className="select-container"
       />
     );
   }
@@ -95,15 +133,17 @@ export default function MainSearch() {
   function SearchProffession() {
     return (
       <Select
+        className="headline-select"
         defaultValue={
           selectedProfession
             ? availableProfessions.find((p) => p.value === selectedProfession)
             : selectedProfession
         }
+        unstyled
         options={availableProfessions}
-        placeholder="Оберіть майстра"
+        styles={headlineSelectStyles}
+        placeholder="Всі майстри"
         onChange={(e) => setSelectedProfession(e.value)}
-        className="select-container"
       />
     );
   }

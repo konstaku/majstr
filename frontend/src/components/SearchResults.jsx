@@ -1,14 +1,4 @@
 import MasterCard from './MasterCard';
-import { ConfigProvider } from 'antd';
-
-const searchConfigTheme = {
-  components: {
-    Collapse: {
-      contentPadding: '0px',
-      padding: '0px',
-    },
-  },
-};
 
 export default function SearchResults({ masters, city, profession }) {
   const filteredMasters = masters.filter(
@@ -18,12 +8,14 @@ export default function SearchResults({ masters, city, profession }) {
   );
 
   return (
-    <ConfigProvider theme={searchConfigTheme}>
-      <div className="search-results-container">
-        {filteredMasters.map((master) => (
-          <MasterCard key={master._id} master={master} />
-        ))}
+    <div className="search-results-container">
+      <div className="search-results-header">
+        <h2>Знайдено майстрів:</h2>
+        <span className="found-amount">{filteredMasters.length}</span>
       </div>
-    </ConfigProvider>
+      {filteredMasters.map((master) => (
+        <MasterCard key={master._id} master={master} />
+      ))}
+    </div>
   );
 }
