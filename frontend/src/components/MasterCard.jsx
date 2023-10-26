@@ -1,14 +1,8 @@
-import professions from './../data/professions.json';
-import locations from './../data/locations.json';
-import { Card, Collapse, Tag, Typography, Badge, Avatar } from 'antd';
+import { Avatar, Collapse, Typography } from 'antd';
+import professions from '../data/professions.json';
+import locations from '../data/locations.json';
+import { useCallback, useMemo, useRef } from 'react';
 const { Text } = Typography;
-import {
-  CommentOutlined,
-  HeartOutlined,
-  WarningOutlined,
-  EnvironmentOutlined,
-} from '@ant-design/icons';
-import { useCallback, useMemo, useRef, useState } from 'react';
 
 const colorPalette = [
   '#F94C66', // coral
@@ -32,13 +26,15 @@ const colorPalette = [
   '#B5B2FF', // periwinkle
 ];
 
-export default function MasterCard({ master }) {
-  const [contactsCollapsed, setContactsCollapsed] = useState(true);
+export default function MasterCardNew({ master }) {
+  const { name, professionID, locationID, contacts, about, likes, tags } =
+    master;
   const photoRef = useRef(master.photo);
   const randomBackgroundColor = useMemo(
     () => colorPalette[Math.floor(Math.random() * colorPalette.length)],
     []
   );
+
   const generateContactLayout = useCallback(({ contactType, value }, index) => {
     let contactValue;
     let link;
@@ -68,61 +64,49 @@ export default function MasterCard({ master }) {
     );
   }, []);
 
-  const { name, professionID, locationID, contacts, about, likes } = master;
-
   return (
-    <Card
-      actions={[
-        <Badge size="small" count={likes}>
-          <HeartOutlined />
-        </Badge>,
-        <Badge dot color="#2db7f5">
-          <CommentOutlined />
-        </Badge>,
-        <WarningOutlined />,
-      ]}
-      title={
+    <div className="master-card">
+      <div
+        className="master-card-body"
+        style={{ backgroundColor: randomBackgroundColor + '35' }}
+      >
         <div>
-          <Avatar
-            src={photoRef.current && photoRef.current}
-            style={
-              !photoRef.current && { backgroundColor: randomBackgroundColor }
-            }
-            className="card-avatar"
-          >
-            {name[0]}
-          </Avatar>
-          <span className="card-header-name">{name}</span>
-        </div>
-      }
-      className="master-card"
-    >
-      <div>
-        <Tag>{professions.find((p) => p.id === professionID).name.ua}</Tag>
-      </div>
-      <div>
-        <Text type="secondary">
-          <EnvironmentOutlined className="card-content" />
-          <span className="card-city">
+          <div className="master-card-header">
+            <Avatar
+              src={photoRef.current && photoRef.current}
+              style={
+                !photoRef.current && { backgroundColor: randomBackgroundColor }
+              }
+              className="card-avatar"
+            >
+              {name[0]}
+            </Avatar>
+            <div className="bookmark-container">
+              <img src="/img/icons/bookmark-passive.svg" alt="" />
+            </div>
+          </div>
+          <div className="master-card-name">{name}</div>
+          <div className="master-card-profession">
+            {professions.find((p) => p.id === professionID).name.ua}
+          </div>
+          <div className="mastercard-location">
+            <img src="/img/icons/geopin.svg" alt="" />
             {locations.find((l) => l.id === locationID).city.ua}
-          </span>
-        </Text>
+          </div>
+        </div>
+        <div className="mastercard-tag-container">
+          {tags.ua
+            .sort((a, b) => a.length - b.length)
+            .map((tag, index) => (
+              <div key={index} className="mastercard-tag">
+                {tag}
+              </div>
+            ))}
+        </div>
       </div>
-      <div className="card-content">
-        <Text>{about}</Text>
+      <div className="master-card-footer">
+        <button className="details">Детальніше</button>
       </div>
-      <div className="card-content">
-        <Collapse
-          ghost
-          items={[
-            {
-              label: `${contactsCollapsed ? `Показати` : `Сховати`} контакти`,
-              children: contacts.map(generateContactLayout),
-            },
-          ]}
-          onChange={() => setContactsCollapsed(!contactsCollapsed)}
-        ></Collapse>
-      </div>
-    </Card>
+    </div>
   );
 }

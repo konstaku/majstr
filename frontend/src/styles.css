@@ -1,5 +1,10 @@
 body * {
-  font-family: Montserrat;
+  font-family: 'Unbounded', sans-serif;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f7fafc;
 }
 
 .headline-container {
@@ -17,30 +22,139 @@ body * {
 
 .search-results-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 15rem));
+  justify-content: center;
   gap: 1rem;
-}
-
-.master-card {
-  align-self: flex-start;
-}
-
-.card-avatar {
-  font-weight: normal;
-}
-
-.card-header-name {
-  margin-left: 1rem;
-}
-
-.card-content {
-  margin-top: 1rem;
-}
-
-.card-city {
-  margin-left: 0.5rem;
 }
 
 .input-field {
   margin-top: 1rem;
+}
+
+.master-card {
+  min-width: 15rem;
+  height: 21rem;
+  flex-shrink: 0;
+  border-radius: 1.25rem;
+  border: 1px solid #d9d9d9;
+  background: #f7fafc;
+}
+
+.master-card:hover {
+  transition: transform 0.1s ease-out;
+  transform: translate(-5px, -5px);
+  box-shadow: 5px 5px #171923;
+}
+
+.master-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 10px;
+  padding: 15px 10px;
+  min-width: 14rem;
+  height: 16.60906rem;
+  flex-shrink: 0;
+  border-radius: 0.625rem;
+  /* opacity: 0.15; */
+  /* background: #fbbc0535; */
+}
+
+.master-card-header {
+  display: flex;
+  height: 2rem;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 1;
+}
+
+.bookmark-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 30px;
+  width: 30px;
+  background-color: #f7fafc;
+  border-radius: 1000px;
+}
+
+.master-card-name {
+  color: #171923;
+  margin-top: 0.75rem;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.master-card-profession {
+  margin-top: 0.25rem;
+  color: #171923;
+  font-size: 16px;
+  font-weight: normal;
+}
+
+.master-card-collapse {
+  margin-top: 0.5rem;
+  font-size: 12px;
+}
+
+.mastercard-location {
+  margin-top: 0.5rem;
+  margin-left: -3px;
+  display: flex;
+  align-items: center;
+  color: #655f5f;
+  font-weight: 300;
+  font-size: 12px;
+  gap: 0.5rem;
+}
+
+.mastercard-content {
+  margin-top: 0.5rem;
+  color: #655f5f;
+  font-weight: 300;
+  font-size: 10px;
+}
+
+.mastercard-tag-container {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mastercard-tag {
+  display: flex;
+  flex-direction: row;
+  color: #655f5f;
+  border: 1px solid #655f5f;
+  max-width: fit-content;
+  font-size: 10px;
+  padding: 10px;
+  border-radius: 50px;
+}
+
+.master-card-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.master-card-footer .details {
+  border: none;
+  outline: none;
+  margin: auto 10px;
+  width: 100%;
+  background-color: #171923;
+  color: #ffffff;
+  border-radius: 1000px;
+  padding: 10px 15px;
+}
+
+.details:hover {
+  transition: 0.1s ease-out;
+  background-color: #4fd1c5;
+  color: #171923;
+  cursor: pointer;
 }
