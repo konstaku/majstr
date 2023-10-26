@@ -89,19 +89,27 @@ export default function MainSearch() {
         </div>
       </div>
       <div className="search-field">
-        Я мешкаю в <SearchLocation /> та шукаю <SearchProffession />
+        <span className="search-left">
+          Я мешкаю в
+          <SearchLocation />
+        </span>
+        <span className="search-right">
+          та шукаю <SearchProffession />
+        </span>
       </div>
-      {/* <div className="headline-container">
-        <h2>
-          Я мешкаю в <SearchLocation />, мені потрібен <SearchProffession />
-          <br />
-        </h2>
-      </div> */}
 
       {isLoading ? (
-        <h2>Loading...</h2>
+        <div className="search-results-container">
+          <div className="search-results-header">
+            <h2>Шукаємо...</h2>
+          </div>
+        </div>
       ) : isError ? (
-        <h2>Error!</h2>
+        <div className="search-results-container">
+          <div className="search-results-header">
+            <h2>Неможливо виконати запит</h2>
+          </div>
+        </div>
       ) : (
         <SearchResults
           masters={masters}
@@ -109,6 +117,21 @@ export default function MainSearch() {
           profession={selectedProfession}
         />
       )}
+
+      <div className="footer">
+        <div className="terms">
+          <ul>
+            <li>Умови використання</li>
+            <li>Питання та відповіді</li>
+            <li>Політика модерації</li>
+            <li>Зворотній звʼязок</li>
+          </ul>
+        </div>
+        <div className="love">
+          <span>❤️</span>
+          <span>🇺🇦</span>
+        </div>
+      </div>
     </>
   );
 
