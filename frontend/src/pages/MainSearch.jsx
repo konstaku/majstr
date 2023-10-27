@@ -7,6 +7,7 @@ import './../styles.css';
 const SearchResults = lazy(() => import('../components/SearchResults'));
 
 export default function MainSearch() {
+  const [cardIsFlipped, setCardIsFlipped] = useState({ id: null });
   const [city, setCity] = useState('');
   const [masters, setMasters] = useState([]);
   const [selectedProfession, setSelectedProfession] = useState('');
@@ -72,31 +73,33 @@ export default function MainSearch() {
 
   return (
     <>
-      <div className="header">
-        <div className="logo">
-          <img src="/img/logo/logo-dark.svg" alt="logo" width="150px" />
+      <header>
+        <div className="header">
+          <div className="logo">
+            <img src="/img/logo/logo-dark.svg" alt="logo" width="150px" />
+          </div>
+          <div className="menu">
+            <ul>
+              <li>Пошук</li>
+              <li className="inactive">Особистий кабінет</li>
+              <li className="inactive">FAQ</li>
+            </ul>
+          </div>
+          <div className="select-country">
+            <span>🇮🇹</span>
+            <span>Італія</span>
+          </div>
         </div>
-        <div className="menu">
-          <ul>
-            <li>Пошук</li>
-            <li className="inactive">Особистий кабінет</li>
-            <li className="inactive">FAQ</li>
-          </ul>
+        <div className="search-field">
+          <span className="search-left">
+            Я мешкаю в
+            <SearchLocation />
+          </span>
+          <span className="search-right">
+            та шукаю <SearchProffession />
+          </span>
         </div>
-        <div className="select-country">
-          <span>🇮🇹</span>
-          <span>Італія</span>
-        </div>
-      </div>
-      <div className="search-field">
-        <span className="search-left">
-          Я мешкаю в
-          <SearchLocation />
-        </span>
-        <span className="search-right">
-          та шукаю <SearchProffession />
-        </span>
-      </div>
+      </header>
 
       {isLoading ? (
         <div className="search-results-container">
@@ -115,6 +118,8 @@ export default function MainSearch() {
           masters={masters}
           city={city}
           profession={selectedProfession}
+          cardIsFlipped={cardIsFlipped}
+          setCardIsFlipped={setCardIsFlipped}
         />
       )}
 

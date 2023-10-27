@@ -1,7 +1,7 @@
 import { Avatar, Collapse, Typography } from 'antd';
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 const { Text } = Typography;
 
 const colorPalette = [
@@ -26,15 +26,19 @@ const colorPalette = [
   '#B5B2FF', // periwinkle
 ];
 
-export default function MasterCardNew({ master }) {
-  const { name, professionID, locationID, contacts, about, likes, tags } =
+export default function MasterCard({
+  master,
+  cardIsFlipped,
+  setCardIsFlipped,
+}) {
+  const { _id, name, professionID, locationID, contacts, about, likes, tags } =
     master;
   const photoRef = useRef(master.photo);
+  const masterCardRef = useRef();
   const randomBackgroundColor = useMemo(
     () => colorPalette[Math.floor(Math.random() * colorPalette.length)],
     []
   );
-
   const generateContactLayout = useCallback(({ contactType, value }, index) => {
     let contactValue;
     let link;
@@ -65,7 +69,7 @@ export default function MasterCardNew({ master }) {
   }, []);
 
   return (
-    <div className="master-card">
+    <div className="master-card" id={_id} ref={masterCardRef}>
       <div
         className="master-card-body"
         style={{ backgroundColor: randomBackgroundColor + '35' }}
@@ -105,8 +109,27 @@ export default function MasterCardNew({ master }) {
         </div>
       </div>
       <div className="master-card-footer">
-        <button className="details">Детальніше</button>
+        <button
+          className="details"
+          onClick={(event) => toggleFlip(event.target, masterCardRef)}
+        >
+          Детальніше
+        </button>
       </div>
     </div>
   );
+
+  function toggleFlip(target, ref) {
+    console.log(ref.current.id, 'toggled');
+    ref.current.className =
+      cardIsFlipped.id === null ? 'master-card flipped' : 'master-card';
+
+    if (cardIsFlipped.id === null) {
+      setCardIsFlipped({ id: _id });
+      console.log(_id, 'card is flipped');
+    } else {
+      setCardIsFlipped({ id: null });
+      console.log(_id, 'card is flipped back');
+    }
+  }
 }

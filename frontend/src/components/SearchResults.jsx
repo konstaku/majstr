@@ -1,6 +1,12 @@
 import MasterCard from './MasterCard';
 
-export default function SearchResults({ masters, city, profession }) {
+export default function SearchResults({
+  masters,
+  city,
+  profession,
+  cardIsFlipped,
+  setCardIsFlipped,
+}) {
   const filteredMasters = masters.filter(
     (master) =>
       master.locationID.includes(city) &&
@@ -14,7 +20,12 @@ export default function SearchResults({ masters, city, profession }) {
         <span className="found-amount">{filteredMasters.length}</span>
       </div>
       {filteredMasters.map((master) => (
-        <MasterCard key={master._id} master={master} />
+        <MasterCard
+          key={master._id}
+          master={master}
+          cardIsFlipped={cardIsFlipped}
+          setCardIsFlipped={setCardIsFlipped}
+        />
       ))}
     </div>
   );

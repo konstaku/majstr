@@ -11,7 +11,15 @@ body * {
 body {
   background-color: #f7fafc;
   color: #171923;
+
   margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .header,
@@ -134,6 +142,7 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(250px, 15rem));
   justify-content: center;
   gap: 1rem;
+  perspective: 10000px;
 }
 
 .search-results-header {
@@ -157,19 +166,43 @@ body {
   margin-top: 1rem;
 }
 
+/* 
+
+
+======== Card styles ======== 
+
+
+*/
+
 .master-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   min-width: 15rem;
-  height: 21rem;
   flex-shrink: 0;
   border-radius: 1.25rem;
   border: 1px solid #d9d9d9;
   background: #f7fafc;
+
+  transform-style: preserve-3d;
+  transition: transform 0.5s;
+  z-index: 10;
 }
 
 .master-card:hover {
-  transition: transform 0.1s ease-out;
-  transform: translate(-5px, -5px);
-  box-shadow: 5px 5px #171923;
+  transition: transform 0.1s ease-in-out;
+  transform: scale(102%);
+  box-shadow: 3px 3px #171923;
+}
+
+.master-card.flipped {
+  animation: masterCardFlip 0.5s;
+  animation-fill-mode: forwards;
+  box-shadow: 0px 0px black;
+}
+
+.master-card.flipped:hover {
+  box-shadow: 0px 0px black;
 }
 
 .master-card-body {
@@ -179,11 +212,9 @@ body {
   margin: 10px;
   padding: 15px 10px;
   min-width: 14rem;
-  height: 16.60906rem;
+  height: 16rem;
   flex-shrink: 0;
   border-radius: 0.625rem;
-  /* opacity: 0.15; */
-  /* background: #fbbc0535; */
 }
 
 .master-card-header {
@@ -231,11 +262,6 @@ body {
   font-weight: normal;
 }
 
-/* .master-card-collapse {
-  margin-top: 0.5rem;
-  font-size: calc(var(--base-font-size) * 0.75 * var(--scaling-factor));
-} */
-
 .mastercard-location {
   margin-top: 0.5rem;
   margin-left: -3px;
@@ -282,7 +308,7 @@ body {
 .master-card-footer .details {
   border: none;
   outline: none;
-  margin: auto 10px;
+  margin: 0 10px 10px 10px;
   width: 100%;
   background-color: #171923;
   color: #ffffff;
@@ -431,11 +457,23 @@ body {
     margin: 10px;
     padding: 15px 10px;
     min-width: 14rem;
+    min-height: 18rem;
+    flex-grow: 3;
     height: fit-content;
     border-radius: 0.625rem;
   }
 
   .master-card-footer .details {
     margin-bottom: 10px;
+  }
+}
+
+@keyframes masterCardFlip {
+  /* from {
+    transform: rotateY(0deg);
+  } */
+  to {
+    transform: rotateY(180deg) scale(130%);
+    z-index: 1000;
   }
 }
