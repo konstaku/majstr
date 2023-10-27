@@ -412,11 +412,31 @@ body {
     font-size: 18px;
   }
 
+  .header {
+    height: 4rem;
+  }
+
+  .search-left {
+    position: relative;
+    top: 5px;
+  }
+
+  .search-right {
+    position: relative;
+    top: -5px;
+  }
+
+  .search-left,
+  .search-right {
+    height: 3rem;
+  }
+
   .logo {
     margin-left: 1rem;
     padding-right: 1rem;
     height: 100%;
     border-right: 1px solid #edf2f714;
+    width: 100%;
   }
 
   .logo img {
