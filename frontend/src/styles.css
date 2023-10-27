@@ -184,7 +184,6 @@ body {
   border: 1px solid #d9d9d9;
   background: #f7fafc;
 
-  transform-style: preserve-3d;
   transition: transform 0.5s;
   z-index: 10;
 }
@@ -271,6 +270,14 @@ body {
   font-weight: 300;
   font-size: calc(var(--base-font-size) * 0.75 * var(--scaling-factor));
   gap: 0.5rem;
+}
+
+.mastercard-contacts {
+  display: none;
+}
+
+.mastercard-contacts.flipped {
+  display: block;
 }
 
 /* .mastercard-content {
@@ -489,11 +496,8 @@ body {
 }
 
 @keyframes masterCardFlip {
-  /* from {
-    transform: rotateY(0deg);
-  } */
   to {
-    transform: rotateY(180deg) scale(130%);
+    transform: scale(110%);
     z-index: 1000;
   }
 }

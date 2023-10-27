@@ -1,7 +1,7 @@
-import { Avatar, Collapse, Typography } from 'antd';
+import { Avatar, Typography } from 'antd';
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 const { Text } = Typography;
 
 const colorPalette = [
@@ -35,6 +35,7 @@ export default function MasterCard({
     master;
   const photoRef = useRef(master.photo);
   const masterCardRef = useRef();
+  const contactRef = useRef();
   const randomBackgroundColor = useMemo(
     () => colorPalette[Math.floor(Math.random() * colorPalette.length)],
     []
@@ -67,6 +68,11 @@ export default function MasterCard({
       </div>
     );
   }, []);
+  useEffect(() => {
+    if (cardIsFlipped !== _id) {
+      masterCardRef.current.className = 'master-card';
+    }
+  }, [cardIsFlipped]);
 
   return (
     <div className="master-card" id={_id} ref={masterCardRef}>
@@ -97,6 +103,9 @@ export default function MasterCard({
             <img src="/img/icons/geopin.svg" alt="" />
             {locations.find((l) => l.id === locationID).city.ua}
           </div>
+          {/* <div className="mastercard-contacts" ref={contactRef}>
+            {contacts.map(generateContactLayout)}
+          </div> */}
         </div>
         <div className="mastercard-tag-container">
           {tags.ua
@@ -111,7 +120,7 @@ export default function MasterCard({
       <div className="master-card-footer">
         <button
           className="details"
-          onClick={(event) => toggleFlip(event.target, masterCardRef)}
+          onClick={() => toggleFlip(masterCardRef, _id)}
         >
           Детальніше
         </button>
@@ -119,17 +128,15 @@ export default function MasterCard({
     </div>
   );
 
-  function toggleFlip(target, ref) {
-    console.log(ref.current.id, 'toggled');
-    ref.current.className =
-      cardIsFlipped.id === null ? 'master-card flipped' : 'master-card';
-
-    if (cardIsFlipped.id === null) {
-      setCardIsFlipped({ id: _id });
-      console.log(_id, 'card is flipped');
+  function toggleFlip(ref, id) {
+    if (cardIsFlipped === id) {
+      setCardIsFlipped(null);
+      ref.current.className = 'master-card';
+      // contactRef.current.className = 'mastercard-contacts';
     } else {
-      setCardIsFlipped({ id: null });
-      console.log(_id, 'card is flipped back');
+      setCardIsFlipped(_id);
+      ref.current.className = 'master-card flipped';
+      // contactRef.current.className = 'mastercard-contacts flipped';
     }
   }
 }

@@ -7,7 +7,7 @@ import './../styles.css';
 const SearchResults = lazy(() => import('../components/SearchResults'));
 
 export default function MainSearch() {
-  const [cardIsFlipped, setCardIsFlipped] = useState({ id: null });
+  const [cardIsFlipped, setCardIsFlipped] = useState(null);
   const [city, setCity] = useState('');
   const [masters, setMasters] = useState([]);
   const [selectedProfession, setSelectedProfession] = useState('');
@@ -46,6 +46,18 @@ export default function MainSearch() {
       controller.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (cardIsFlipped) {
+      document.addEventListener('click', trackClickOutsideCard);
+      document.addEventListener('keyup', trackEscWhileFlipped);
+    }
+
+    return () => {
+      document.removeEventListener('click', trackClickOutsideCard);
+      document.removeEventListener('keyup', trackEscWhileFlipped);
+    };
+  }, [cardIsFlipped]);
 
   const availableMasters = getAvailableMastersForCity(masters, city);
   const availableLocations = getAvailableLocations(masters);
@@ -174,6 +186,20 @@ export default function MainSearch() {
         onChange={(e) => setSelectedProfession(e.value)}
       />
     );
+  }
+
+  function trackClickOutsideCard(event) {
+    const flippedCard = document.getElementById(cardIsFlipped);
+    if (flippedCard.contains(event.target)) {
+    } else {
+      setCardIsFlipped(null);
+    }
+  }
+
+  function trackEscWhileFlipped(event) {
+    if (event.key === 'Escape') {
+      setCardIsFlipped(null);
+    }
   }
 }
 
