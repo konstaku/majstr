@@ -3,6 +3,7 @@ const express = require('express');
 const https = require('https');
 const fs = require('fs');
 const TelegramBot = require('node-telegram-bot-api');
+const jwt = require('jsonwebtoken');
 
 const CERTIFICATE = process.env.CERTIFICATE;
 const KEYFILE = process.env.KEYFILE;
@@ -24,10 +25,10 @@ module.exports.runBot = async function () {
 
   httpsServer
     .listen(PORT_NUMBER, () =>
-      console.log(`Server started on port ${PORT_NUMBER}`)
+      console.log(`Telegram bot started on port ${PORT_NUMBER}`)
     )
     .on('error', (err) => {
-      console.log('Error starting server:', err);
+      console.log('Error starting telegram bot server:', err);
     });
 
   app.post('/webhook', (req, res) => {
@@ -37,6 +38,13 @@ module.exports.runBot = async function () {
     if (!message) return;
 
     if (message.text === '/start') {
+      const token = jwt.sign({ userID: message.chat.id }, 'secretKey', {
+        expiresIn: '100d',
+      });
+
+      console.log('=== Token generated ===\n', JSON.stringify(token));
+      const encodedToken = encodeURIComponent(JSON.stringify(token));
+
       bot.sendMessage(message.chat.id, 'Confirm', {
         reply_markup: {
           inline_keyboard: [
@@ -45,7 +53,7 @@ module.exports.runBot = async function () {
                 text: 'Confirm',
                 // url: ?id=userID&token=18236182736 -> backend
                 // -> db.users.save(id, token)
-                url: 'https://konstaku.com/login?token=12345',
+                url: `https://konstaku.com/login?token=${encodedToken}`,
               },
             ],
           ],

@@ -1,11 +1,10 @@
 require('dotenv').config();
 
 const express = require('express');
-const https = require('https');
 const fs = require('fs');
+const https = require('https');
 const cors = require('cors');
-const mongoose = require('mongoose');
-const Master = require('./Master');
+const Master = require('./database/schema/Master');
 
 const PORT_NUMBER = 5000;
 const CERTIFICATE = process.env.CERTIFICATE;
@@ -15,22 +14,19 @@ const httpsOptions = {
   cert: fs.readFileSync(CERTIFICATE),
 };
 
+const db = require('./database/db');
 const bot = require('./bot');
-
-const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
-const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
 
 async function main() {
   const app = express();
   app.use(express.json());
   app.use(cors());
 
-  bot.runBot();
-  await mongoose.connect(uri);
-  console.log('Database connected');
+  await db.runDB();
+  await bot.runBot();
 
   app.get('/', async (req, res) => {
-    console.log('=== api request to HTTP server ===');
+    console.log(`=== API request to HTTP server at ${new Date()} ===`);
     const masters = await Master.find();
 
     switch (req.query.q) {
@@ -46,10 +42,10 @@ async function main() {
 
   httpsServer
     .listen(PORT_NUMBER, () =>
-      console.log(`Server started on port ${PORT_NUMBER}`)
+      console.log(`Backend server started on port ${PORT_NUMBER}`)
     )
     .on('error', (err) => {
-      console.log('Error starting server:', err);
+      console.log('Error starting backend server:', err);
     });
 }
 
