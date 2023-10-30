@@ -2,6 +2,7 @@ import { Avatar, Typography } from 'antd';
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Modal from './Modal';
 const { Text } = Typography;
 
 const colorPalette = [
@@ -26,20 +27,22 @@ const colorPalette = [
   '#B5B2FF', // periwinkle
 ];
 
-export default function MasterCard({
-  master,
-  cardIsFlipped,
-  setCardIsFlipped,
-}) {
+export default function MasterCard({ master, showModal, setShowModal }) {
   const { _id, name, professionID, locationID, contacts, about, likes, tags } =
     master;
+
+  // Null if no photo. Used for conditional rendering of avatar or first lettar of the name
   const photoRef = useRef(master.photo);
+  // Storing a ref to a card so I can change its class name when flipped
   const masterCardRef = useRef();
+  // Ref to contacts block so I can hide / show it using class names
   const contactRef = useRef();
+
   const randomBackgroundColor = useMemo(
     () => colorPalette[Math.floor(Math.random() * colorPalette.length)],
     []
   );
+
   const generateContactLayout = useCallback(({ contactType, value }, index) => {
     let contactValue;
     let link;
@@ -68,75 +71,82 @@ export default function MasterCard({
       </div>
     );
   }, []);
-  useEffect(() => {
-    if (cardIsFlipped !== _id) {
-      masterCardRef.current.className = 'master-card';
-    }
-  }, [cardIsFlipped]);
+
+  // If one card flips, unflip others
+  // useEffect(() => {
+  //   if (flippedCard !== _id) {
+  //     masterCardRef.current.className = 'master-card';
+  //   }
+  // }, [flippedCard]);
 
   return (
-    <div className="master-card" id={_id} ref={masterCardRef}>
-      <div
-        className="master-card-body"
-        style={{ backgroundColor: randomBackgroundColor + '35' }}
-      >
-        <div>
-          <div className="master-card-header">
-            <Avatar
-              src={photoRef.current && photoRef.current}
-              style={
-                !photoRef.current && { backgroundColor: randomBackgroundColor }
-              }
-              className="card-avatar"
-            >
-              {name[0]}
-            </Avatar>
-            <div className="bookmark-container">
-              <img src="/img/icons/bookmark-passive.svg" alt="" />
+    <>
+      <div className="master-card" id={_id} ref={masterCardRef}>
+        <div
+          className="master-card-body"
+          style={{ backgroundColor: randomBackgroundColor + '35' }}
+        >
+          <div>
+            <div className="master-card-header">
+              <Avatar
+                src={photoRef.current && photoRef.current}
+                style={
+                  !photoRef.current && {
+                    backgroundColor: randomBackgroundColor,
+                  }
+                }
+                className="card-avatar"
+              >
+                {name[0]}
+              </Avatar>
+              <div className="bookmark-container">
+                <img src="/img/icons/bookmark-passive.svg" alt="" />
+              </div>
             </div>
-          </div>
-          <div className="master-card-name">{name}</div>
-          <div className="master-card-profession">
-            {professions.find((p) => p.id === professionID).name.ua}
-          </div>
-          <div className="mastercard-location">
-            <img src="/img/icons/geopin.svg" alt="" />
-            {locations.find((l) => l.id === locationID).city.ua}
-          </div>
-          {/* <div className="mastercard-contacts" ref={contactRef}>
+            <div className="master-card-name">{name}</div>
+            <div className="master-card-profession">
+              {professions.find((p) => p.id === professionID).name.ua}
+            </div>
+            <div className="mastercard-location">
+              <img src="/img/icons/geopin.svg" alt="" />
+              {locations.find((l) => l.id === locationID).city.ua}
+            </div>
+            {/* <div className="mastercard-contacts" ref={contactRef}>
             {contacts.map(generateContactLayout)}
           </div> */}
+          </div>
+          <div className="mastercard-tag-container">
+            {tags.ua
+              .sort((a, b) => a.length - b.length)
+              .map((tag, index) => (
+                <div key={index} className="mastercard-tag">
+                  {tag}
+                </div>
+              ))}
+          </div>
         </div>
-        <div className="mastercard-tag-container">
-          {tags.ua
-            .sort((a, b) => a.length - b.length)
-            .map((tag, index) => (
-              <div key={index} className="mastercard-tag">
-                {tag}
-              </div>
-            ))}
+        <div className="master-card-footer">
+          <button
+            className="details"
+            // onClick={() => toggleFlip(masterCardRef, _id)}
+            onClick={() => setShowModal(_id)}
+          >
+            Детальніше
+          </button>
         </div>
       </div>
-      <div className="master-card-footer">
-        <button
-          className="details"
-          onClick={() => toggleFlip(masterCardRef, _id)}
-        >
-          Детальніше
-        </button>
-      </div>
-    </div>
+    </>
   );
 
-  function toggleFlip(ref, id) {
-    if (cardIsFlipped === id) {
-      setCardIsFlipped(null);
-      ref.current.className = 'master-card';
-      // contactRef.current.className = 'mastercard-contacts';
-    } else {
-      setCardIsFlipped(_id);
-      ref.current.className = 'master-card flipped';
-      // contactRef.current.className = 'mastercard-contacts flipped';
-    }
-  }
+  // function toggleFlip(ref, id) {
+  //   if (flippedCard === id) {
+  //     setFlippedCard(null);
+  //     ref.current.className = 'master-card';
+  //     // contactRef.current.className = 'mastercard-contacts';
+  //   } else {
+  //     setFlippedCard(_id);
+  //     ref.current.className = 'master-card flipped';
+  //     // contactRef.current.className = 'mastercard-contacts flipped';
+  //   }
+  // }
 }

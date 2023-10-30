@@ -4,8 +4,10 @@ export default function SearchResults({
   masters,
   city,
   profession,
-  cardIsFlipped,
-  setCardIsFlipped,
+  showModal,
+  setShowModal,
+  // flippedCard,
+  // setFlippedCard,
 }) {
   const filteredMasters = masters.filter(
     (master) =>
@@ -23,8 +25,10 @@ export default function SearchResults({
         <MasterCard
           key={master._id}
           master={master}
-          cardIsFlipped={cardIsFlipped}
-          setCardIsFlipped={setCardIsFlipped}
+          showModal={showModal}
+          setShowModal={setShowModal}
+          // flippedCard={flippedCard}
+          // setFlippedCard={setFlippedCard}
         />
       ))}
     </div>

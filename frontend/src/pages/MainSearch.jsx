@@ -3,17 +3,20 @@ import locations from '../data/locations.json';
 import professions from '../data/professions.json';
 import Select from 'react-select';
 import './../styles.css';
+import Modal from '../components/Modal';
 
 const SearchResults = lazy(() => import('../components/SearchResults'));
 
 export default function MainSearch() {
-  const [cardIsFlipped, setCardIsFlipped] = useState(null);
-  const [city, setCity] = useState('');
   const [masters, setMasters] = useState([]);
+  const [selectedCity, setSelectedCity] = useState('');
   const [selectedProfession, setSelectedProfession] = useState('');
+  const [showModal, setShowModal] = useState(null);
+  // const [flippedCard, setFlippedCard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
+  // Fetch masters from backend on page load
   useEffect(() => {
     setIsLoading(true);
     setIsError(false);
@@ -47,25 +50,26 @@ export default function MainSearch() {
     };
   }, []);
 
+  // Track document clicks whenever modal pops
   useEffect(() => {
-    if (cardIsFlipped) {
+    if (showModal) {
       document.addEventListener('click', trackClickOutsideCard);
       document.addEventListener('keyup', trackEscWhileFlipped);
     }
-
     return () => {
       document.removeEventListener('click', trackClickOutsideCard);
       document.removeEventListener('keyup', trackEscWhileFlipped);
     };
-  }, [cardIsFlipped]);
+  }, [showModal]);
 
-  const availableMasters = getAvailableMastersForCity(masters, city);
+  const availableMasters = getAvailableMastersForCity(masters, selectedCity);
   const availableLocations = getAvailableLocations(masters);
   const availableProfessions = getAvailableProffessions(
     availableMasters,
     professions
   );
 
+  // Setting styles for select elements
   const headlineSelectStyles = {
     singleValue: (base) => ({ ...base, color: 'white' }),
     menu: (base) => ({
@@ -88,7 +92,12 @@ export default function MainSearch() {
       <header>
         <div className="header">
           <div className="logo">
-            <img src="/img/logo/logo-dark.svg" alt="logo" width="150px" />
+            <img
+              src="/img/logo/logo-dark.svg"
+              alt="logo"
+              width="150px"
+              onClick={resetSearch}
+            />
           </div>
           <div className="menu">
             <ul>
@@ -126,13 +135,21 @@ export default function MainSearch() {
           </div>
         </div>
       ) : (
-        <SearchResults
-          masters={masters}
-          city={city}
-          profession={selectedProfession}
-          cardIsFlipped={cardIsFlipped}
-          setCardIsFlipped={setCardIsFlipped}
-        />
+        <>
+          <SearchResults
+            masters={masters}
+            city={selectedCity}
+            profession={selectedProfession}
+            showModal={showModal}
+            setShowModal={setShowModal}
+            // flippedCard={flippedCard}
+            // setFlippedCard={setFlippedCard}
+          />
+          <Modal
+            id={showModal}
+            master={masters.find((master) => master._id === showModal)}
+          ></Modal>
+        </>
       )}
 
       <div className="footer">
@@ -158,13 +175,15 @@ export default function MainSearch() {
         className="headline-select"
         unstyled
         defaultValue={
-          city ? availableLocations.find((l) => l.value === city) : city
+          selectedCity
+            ? availableLocations.find((l) => l.value === selectedCity)
+            : selectedCity
         }
         placeholder="Вся Італія"
         options={availableLocations}
         styles={headlineSelectStyles}
         onChange={(e) => {
-          setCity(e.value);
+          setSelectedCity(e.value);
         }}
       />
     );
@@ -189,17 +208,28 @@ export default function MainSearch() {
   }
 
   function trackClickOutsideCard(event) {
-    const flippedCard = document.getElementById(cardIsFlipped);
-    if (flippedCard.contains(event.target)) {
-    } else {
-      setCardIsFlipped(null);
+    const modalCard = document.getElementById('details-modal');
+    const target = event.target;
+
+    if (target === modalCard) return;
+
+    console.log('target:', target, '\nmodalCard:', modalCard);
+
+    if (target.contains(modalCard)) {
+      console.log('target.contains(modalCard)');
+      setShowModal(null);
     }
   }
 
   function trackEscWhileFlipped(event) {
     if (event.key === 'Escape') {
-      setCardIsFlipped(null);
+      setShowModal(null);
     }
+  }
+
+  function resetSearch() {
+    setSelectedCity('');
+    setSelectedProfession('');
   }
 }
 
