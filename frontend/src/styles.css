@@ -207,6 +207,10 @@ body {
   border-radius: 0.625rem;
 }
 
+.master-card-body.modal {
+  height: fit-content;
+}
+
 .master-card.flipped {
   animation: masterCardFlip 0.5s;
   animation-fill-mode: forwards;
@@ -274,11 +278,19 @@ body {
 }
 
 .mastercard-contacts {
-  display: none;
+  /* display: none; */
+  margin-top: 0.5rem;
 }
 
 .mastercard-contacts.flipped {
   display: block;
+}
+
+.mastercard-about {
+  margin-top: 0.5rem;
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 150%;
 }
 
 /* .mastercard-content {
@@ -358,6 +370,17 @@ body {
   top: 50vh;
   left: 50vw;
   transform: translate(-50%, -50%);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 16rem;
+  max-width: 20rem;
+  min-height: fit-content;
+  flex-shrink: 0;
+  border-radius: 1.25rem;
+  border: 1px solid #d9d9d9;
+  background: #f7fafc;
 }
 
 .footer {
@@ -517,6 +540,10 @@ body {
     flex-grow: 3;
     height: fit-content;
     border-radius: 0.625rem;
+  }
+
+  .modal-content {
+    min-width: 80%;
   }
 
   .master-card-footer .details {

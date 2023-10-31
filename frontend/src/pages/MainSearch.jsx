@@ -3,8 +3,8 @@ import locations from '../data/locations.json';
 import professions from '../data/professions.json';
 import Select from 'react-select';
 import './../styles.css';
-import Modal from '../components/Modal';
 
+const Modal = lazy(() => import('../components/Modal'));
 const SearchResults = lazy(() => import('../components/SearchResults'));
 
 export default function MainSearch() {
@@ -12,7 +12,6 @@ export default function MainSearch() {
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedProfession, setSelectedProfession] = useState('');
   const [showModal, setShowModal] = useState(null);
-  // const [flippedCard, setFlippedCard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 

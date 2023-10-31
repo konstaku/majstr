@@ -1,9 +1,7 @@
-import { Avatar, Typography } from 'antd';
+import { Avatar } from 'antd';
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Modal from './Modal';
-const { Text } = Typography;
+import { useMemo, useRef } from 'react';
 
 const colorPalette = [
   '#F94C66', // coral
@@ -42,35 +40,6 @@ export default function MasterCard({ master, showModal, setShowModal }) {
     () => colorPalette[Math.floor(Math.random() * colorPalette.length)],
     []
   );
-
-  const generateContactLayout = useCallback(({ contactType, value }, index) => {
-    let contactValue;
-    let link;
-
-    switch (contactType) {
-      case 'instagram':
-        link = `https://www.instagram.com/${value}/`;
-        contactValue = <a href={link}>{value}</a>;
-        break;
-      case 'telegram':
-        const handle = value.replace(/@/g, '');
-        link = `https://t.me/${handle}`;
-        contactValue = <a href={link}>{value}</a>;
-        break;
-      case 'phone':
-        contactValue = <a href={`tel:${value}`}>{value}</a>;
-        break;
-      default:
-        contactValue = value;
-    }
-
-    return (
-      <div key={index}>
-        <Text type="secondary">{contactType}: </Text>
-        <Text type="primary">{contactValue}</Text>
-      </div>
-    );
-  }, []);
 
   // If one card flips, unflip others
   // useEffect(() => {
