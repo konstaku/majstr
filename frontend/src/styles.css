@@ -180,6 +180,7 @@ body {
   flex-direction: column;
   justify-content: space-between;
   min-width: 15rem;
+  min-height: 22rem;
   flex-shrink: 0;
   border-radius: 1.25rem;
   border: 1px solid #d9d9d9;
@@ -202,23 +203,14 @@ body {
   margin: 10px;
   padding: 15px 10px;
   min-width: 14rem;
-  height: 16rem;
+  min-height: 16rem;
   flex-shrink: 0;
+  flex-grow: 2;
   border-radius: 0.625rem;
 }
 
 .master-card-body.modal {
   height: fit-content;
-}
-
-.master-card.flipped {
-  animation: masterCardFlip 0.5s;
-  animation-fill-mode: forwards;
-  box-shadow: 0px 0px black;
-}
-
-.master-card.flipped:hover {
-  box-shadow: 0px 0px black;
 }
 
 .master-card-header {
@@ -233,13 +225,13 @@ body {
 .card-avatar {
   height: calc(var(--base-font-size) * 2 * var(--scaling-factor));
   width: calc(var(--base-font-size) * 2 * var(--scaling-factor));
-}
-
-.card-avatar {
   font-size: calc(var(--base-font-size) * var(--scaling-factor));
+  border-radius: 10000px;
   display: flex;
   justify-content: center;
   align-items: center;
+  background-size: cover;
+  color: white;
 }
 
 .bookmark-container,
@@ -282,6 +274,16 @@ body {
 .mastercard-contacts {
   /* display: none; */
   margin-top: 0.5rem;
+}
+
+.contact-name,
+.contact-value {
+  font-size: 12px;
+}
+
+.contact-value {
+  margin-left: 0.5rem;
+  text-decoration: none;
 }
 
 .mastercard-contacts.flipped {

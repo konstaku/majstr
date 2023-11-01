@@ -7,7 +7,14 @@ import { useForm } from 'react-hook-form';
 
 export default function AddNewRecord() {
   const { register, handleSubmit, watch } = useForm();
-  const onSubmit = (data) => console.log(data);
+  const onSubmit = (data) => {
+    console.log(data);
+    fetch('https://api.konstaku.com:5000/addmaster', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  };
 
   return (
     <>

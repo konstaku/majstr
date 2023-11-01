@@ -1,11 +1,11 @@
-import { lazy, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import locations from '../data/locations.json';
 import professions from '../data/professions.json';
 import Select from 'react-select';
 import './../styles.css';
-
-const Modal = lazy(() => import('../components/Modal'));
-const SearchResults = lazy(() => import('../components/SearchResults'));
+import { Link } from 'react-router-dom';
+import SearchResults from '../components/SearchResults';
+import Modal from '../components/Modal';
 
 export default function MainSearch() {
   const [masters, setMasters] = useState([]);
@@ -101,6 +101,9 @@ export default function MainSearch() {
           <div className="menu">
             <ul>
               <li>Пошук</li>
+              <li>
+                <Link to="/add">Додати майстра</Link>
+              </li>
               <li className="inactive">Особистий кабінет</li>
               <li className="inactive">FAQ</li>
             </ul>

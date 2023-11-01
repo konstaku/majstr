@@ -1,15 +1,14 @@
-import { Avatar, Typography } from 'antd';
-const { Text } = Typography;
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
 import { useCallback, useMemo } from 'react';
 import { colorPalette } from './MasterCard';
+import Avatar from './Avatar';
 
 export default function Modal({ id, master, setShowModal }) {
   if (!id) return null;
 
   const randomAvatarColor = useMemo(() => {
-    // I am using las two digits of an ID to derive a pseudorandom color for a card
+    // I am using last two digits of an ID to derive a pseudorandom color for a card
     const seed = parseInt(id.slice(-2), 16) % colorPalette.length;
     return colorPalette[seed];
   }, [id]);
@@ -37,8 +36,8 @@ export default function Modal({ id, master, setShowModal }) {
 
     return (
       <div key={index}>
-        <Text type="secondary">{contactType}: </Text>
-        <Text type="primary">{contactValue}</Text>
+        <span className="contact-name">{contactType}:</span>
+        <span className="contact-value">{contactValue}</span>
       </div>
     );
   }, []);
@@ -53,16 +52,10 @@ export default function Modal({ id, master, setShowModal }) {
           >
             <div className="master-card-header">
               <Avatar
-                src={master.photo && master.photo}
-                style={
-                  !master.photo && {
-                    backgroundColor: '#A0E4CB',
-                  }
-                }
-                className="card-avatar"
-              >
-                {master.name[0]}
-              </Avatar>
+                img={master.photo}
+                color={randomAvatarColor}
+                name={master.name}
+              />
               <div
                 className="close-container"
                 onClick={() => setShowModal(null)}

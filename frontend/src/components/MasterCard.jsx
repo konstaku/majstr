@@ -1,7 +1,7 @@
-import { Avatar } from 'antd';
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
 import { useMemo, useRef } from 'react';
+import Avatar from './Avatar';
 
 export const colorPalette = [
   '#F94C66', // coral
@@ -37,7 +37,7 @@ export default function MasterCard({ master, showModal, setShowModal }) {
   const contactRef = useRef();
 
   const randomAvatarColor = useMemo(() => {
-    // I am using las two digits of an ID to derive a pseudorandom color for a card
+    // I am using last two digits of an ID to derive a pseudorandom color for a card
     const seed = parseInt(_id.slice(-2), 16) % colorPalette.length;
     return colorPalette[seed];
   }, [_id]);
@@ -52,16 +52,10 @@ export default function MasterCard({ master, showModal, setShowModal }) {
           <div>
             <div className="master-card-header">
               <Avatar
-                src={photoRef.current && photoRef.current}
-                style={
-                  !photoRef.current && {
-                    backgroundColor: randomAvatarColor,
-                  }
-                }
-                className="card-avatar"
-              >
-                {name[0]}
-              </Avatar>
+                img={photoRef.current}
+                color={randomAvatarColor}
+                name={name}
+              />
               <div className="bookmark-container">
                 <img src="/img/icons/bookmark-passive.svg" alt="" />
               </div>
