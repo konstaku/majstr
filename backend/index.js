@@ -27,10 +27,10 @@ async function main() {
 
   app.get('/', async (req, res) => {
     console.log(`=== API request to HTTP server at ${new Date()} ===`);
-    const masters = await Master.find();
 
     switch (req.query.q) {
       case 'masters':
+        const masters = await Master.find();
         res.status(200).send(masters);
         break;
       default:
