@@ -5,7 +5,7 @@ import { colorPalette } from './MasterCard';
 import Avatar from './Avatar';
 
 export default function Modal({ id, master, setShowModal }) {
-  if (!id) return null;
+  if (!id) return;
 
   const randomAvatarColor = useMemo(() => {
     // I am using last two digits of an ID to derive a pseudorandom color for a card
@@ -30,6 +30,9 @@ export default function Modal({ id, master, setShowModal }) {
       case 'phone':
         contactValue = <a href={`tel:${value}`}>{value}</a>;
         break;
+      case 'facebook':
+        contactValue = <a href={value}>link</a>;
+        break;
       default:
         contactValue = value;
     }
@@ -50,33 +53,38 @@ export default function Modal({ id, master, setShowModal }) {
             className="master-card-body modal"
             style={{ backgroundColor: randomAvatarColor + '35' }}
           >
-            <div className="master-card-header">
-              <Avatar
-                img={master.photo}
-                color={randomAvatarColor}
-                name={master.name}
-              />
-              <div
-                className="close-container"
-                onClick={() => setShowModal(null)}
-              >
-                <img
-                  src="/img/icons/close.svg"
-                  alt="close"
-                  style={{ width: '12px', height: '12px' }}
+            <div>
+              <div className="master-card-header">
+                <Avatar
+                  img={master.photo}
+                  color={randomAvatarColor}
+                  name={master.name}
                 />
+                <div
+                  className="close-container"
+                  onClick={() => setShowModal(null)}
+                >
+                  <img
+                    src="/img/icons/close.svg"
+                    alt="close"
+                    style={{ width: '12px', height: '12px' }}
+                  />
+                </div>
+              </div>
+              <div className="master-card-name">{master.name}</div>
+              <div className="master-card-profession">
+                {professions.find((p) => p.id === master.professionID).name.ua}
+              </div>
+              <div className="mastercard-location">
+                <img src="/img/icons/geopin.svg" alt="" />
+                {locations.find((l) => l.id === master.locationID).city.ua}
+              </div>
+              <div className="mastercard-about">
+                {master.about
+                  ? master.about
+                  : `Нажаль, майстер немає детального опису 🤷‍♂️`}
               </div>
             </div>
-            <div className="master-card-name">{master.name}</div>
-            <div className="master-card-profession">
-              {professions.find((p) => p.id === master.professionID).name.ua}
-            </div>
-            <div className="mastercard-location">
-              <img src="/img/icons/geopin.svg" alt="" />
-              {locations.find((l) => l.id === master.locationID).city.ua}
-            </div>
-
-            <div className="mastercard-about">{master.about}</div>
 
             <div className="mastercard-contacts">
               {master.contacts.map(generateContactLayout)}

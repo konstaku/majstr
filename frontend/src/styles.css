@@ -1,6 +1,11 @@
 :root {
+  --base-card-width: 15rem;
+  --base-card-height: 22rem;
+  --modal-card-width: 18rem;
+  --modal-card-height: 25rem;
   --base-font-size: 16px;
   --scaling-factor: 1;
+  --modal-scaling-factor: 1;
 }
 
 body * {
@@ -179,8 +184,8 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-width: 15rem;
-  min-height: 22rem;
+  min-width: calc(var(--base-card-width) * var(--scaling-factor));
+  min-height: calc(var(--base-card-height) * var(--scaling-factor));
   flex-shrink: 0;
   border-radius: 1.25rem;
   border: 1px solid #d9d9d9;
@@ -291,10 +296,13 @@ body {
 }
 
 .mastercard-about {
-  margin-top: 0.5rem;
+  margin-top: 1rem;
   font-size: 12px;
   font-weight: 300;
   line-height: 150%;
+  background-color: #f7fafc;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
 }
 
 /* .mastercard-content {
@@ -378,9 +386,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-width: 16rem;
-  max-width: 20rem;
-  min-height: fit-content;
+  width: calc(var(--modal-card-width) * var(--modal-scaling-factor));
+  min-height: calc(var(--modal-card-height) * var(--modal-scaling-factor));
+
   flex-shrink: 0;
   border-radius: 1.25rem;
   border: 1px solid #d9d9d9;
@@ -469,6 +477,7 @@ body {
 @media (max-width: 480px) {
   :root {
     --scaling-factor: 1.25;
+    --modal-scaling-factor: 1.1;
   }
 
   .search-field {
@@ -544,10 +553,6 @@ body {
     flex-grow: 3;
     height: fit-content;
     border-radius: 0.625rem;
-  }
-
-  .modal-content {
-    min-width: 80%;
   }
 
   .master-card-footer .details {
