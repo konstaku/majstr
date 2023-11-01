@@ -6,8 +6,6 @@ export default function SearchResults({
   profession,
   showModal,
   setShowModal,
-  // flippedCard,
-  // setFlippedCard,
 }) {
   const filteredMasters = masters.filter(
     (master) =>
@@ -27,8 +25,6 @@ export default function SearchResults({
           master={master}
           showModal={showModal}
           setShowModal={setShowModal}
-          // flippedCard={flippedCard}
-          // setFlippedCard={setFlippedCard}
         />
       ))}
     </div>

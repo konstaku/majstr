@@ -2,12 +2,17 @@ import { Avatar, Typography } from 'antd';
 const { Text } = Typography;
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { colorPalette } from './MasterCard';
 
-export default function Modal({ id, master }) {
+export default function Modal({ id, master, setShowModal }) {
   if (!id) return null;
 
-  console.log(id);
+  const randomAvatarColor = useMemo(() => {
+    // I am using las two digits of an ID to derive a pseudorandom color for a card
+    const seed = parseInt(id.slice(-2), 16) % colorPalette.length;
+    return colorPalette[seed];
+  }, [id]);
 
   const generateContactLayout = useCallback(({ contactType, value }, index) => {
     let contactValue;
@@ -44,7 +49,7 @@ export default function Modal({ id, master }) {
         <div className="modal-content" id="details-modal">
           <div
             className="master-card-body modal"
-            style={{ backgroundColor: '#A0E4CB35' }}
+            style={{ backgroundColor: randomAvatarColor + '35' }}
           >
             <div className="master-card-header">
               <Avatar
@@ -58,11 +63,14 @@ export default function Modal({ id, master }) {
               >
                 {master.name[0]}
               </Avatar>
-              <div className="bookmark-container">
+              <div
+                className="close-container"
+                onClick={() => setShowModal(null)}
+              >
                 <img
                   src="/img/icons/close.svg"
-                  alt=""
-                  style={{ width: '12px', height: '12px', opacity: '0.7' }}
+                  alt="close"
+                  style={{ width: '12px', height: '12px' }}
                 />
               </div>
             </div>

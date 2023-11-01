@@ -242,7 +242,8 @@ body {
   align-items: center;
 }
 
-.bookmark-container {
+.bookmark-container,
+.close-container {
   height: calc(var(--base-font-size) * 1.875 * var(--scaling-factor));
   width: calc(var(--base-font-size) * 1.875 * var(--scaling-factor));
   display: flex;
@@ -250,6 +251,7 @@ body {
   align-items: center;
   background-color: #f7fafc;
   border-radius: 1000px;
+  cursor: pointer;
 }
 
 .master-card-name {

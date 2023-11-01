@@ -141,12 +141,11 @@ export default function MainSearch() {
             profession={selectedProfession}
             showModal={showModal}
             setShowModal={setShowModal}
-            // flippedCard={flippedCard}
-            // setFlippedCard={setFlippedCard}
           />
           <Modal
             id={showModal}
             master={masters.find((master) => master._id === showModal)}
+            setShowModal={setShowModal}
           ></Modal>
         </>
       )}
@@ -209,10 +208,6 @@ export default function MainSearch() {
   function trackClickOutsideCard(event) {
     const modalCard = document.getElementById('details-modal');
     const target = event.target;
-
-    if (target === modalCard) return;
-
-    console.log('target:', target, '\nmodalCard:', modalCard);
 
     if (target.contains(modalCard)) {
       console.log('target.contains(modalCard)');
