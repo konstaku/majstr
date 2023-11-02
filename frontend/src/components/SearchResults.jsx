@@ -14,7 +14,7 @@ export default function SearchResults({
   );
 
   return (
-    <div className="search-results-container">
+    <>
       <div className="search-results-header">
         <h2>Знайдено майстрів:</h2>
         <span className="found-amount">{filteredMasters.length}</span>
@@ -27,6 +27,6 @@ export default function SearchResults({
           setShowModal={setShowModal}
         />
       ))}
-    </div>
+    </>
   );
 }

@@ -97,6 +97,13 @@ body {
   margin-left: 1rem;
 }
 
+.main {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 .search-field {
   display: flex;
   font-size: calc(var(--base-font-size) * 2);
@@ -144,11 +151,11 @@ body {
 }
 
 .search-results-container {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 15rem));
   justify-content: center;
   gap: 1rem;
-  perspective: 10000px;
 }
 
 .search-results-header {
@@ -190,9 +197,6 @@ body {
   border-radius: 1.25rem;
   border: 1px solid #d9d9d9;
   background: #f7fafc;
-
-  transition: transform 0.5s;
-  z-index: 10;
 }
 
 .master-card:hover {

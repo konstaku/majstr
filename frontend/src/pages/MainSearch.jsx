@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import './../styles.css';
 import locations from '../data/locations.json';
 import professions from '../data/professions.json';
+
+import { useEffect, useState } from 'react';
 import Select from 'react-select';
-import './../styles.css';
-import { Link } from 'react-router-dom';
 import SearchResults from '../components/SearchResults';
 import Modal from '../components/Modal';
 
@@ -88,84 +88,41 @@ export default function MainSearch() {
 
   return (
     <>
-      <header>
-        <div className="header">
-          <div className="logo">
-            <img
-              src="/img/logo/logo-dark.svg"
-              alt="logo"
-              width="150px"
-              onClick={resetSearch}
-            />
-          </div>
-          <div className="menu">
-            <ul>
-              <li>Пошук</li>
-              <li>
-                <Link to="/add">Додати майстра</Link>
-              </li>
-              <li className="inactive">Особистий кабінет</li>
-              <li className="inactive">FAQ</li>
-            </ul>
-          </div>
-          <div className="select-country">
-            <span>🇮🇹</span>
-            <span>Італія</span>
-          </div>
-        </div>
-        <div className="search-field">
-          <span className="search-left">
-            Я мешкаю в
-            <SearchLocation />
-          </span>
-          <span className="search-right">
-            та шукаю <SearchProffession />
-          </span>
-        </div>
-      </header>
+      <div className="search-field">
+        <span className="search-left">
+          Я мешкаю в
+          <SearchLocation />
+        </span>
+        <span className="search-right">
+          та шукаю <SearchProffession />
+        </span>
+      </div>
 
-      {isLoading ? (
-        <div className="search-results-container">
+      <div className="search-results-container">
+        {isLoading ? (
           <div className="search-results-header">
             <h2>Шукаємо...</h2>
           </div>
-        </div>
-      ) : isError ? (
-        <div className="search-results-container">
+        ) : isError ? (
           <div className="search-results-header">
             <h2>Неможливо виконати запит</h2>
           </div>
-        </div>
-      ) : (
-        <>
-          <SearchResults
-            masters={masters}
-            city={selectedCity}
-            profession={selectedProfession}
-            showModal={showModal}
-            setShowModal={setShowModal}
-          />
-          <Modal
-            id={showModal}
-            master={masters.find((master) => master._id === showModal)}
-            setShowModal={setShowModal}
-          ></Modal>
-        </>
-      )}
-
-      <div className="footer">
-        <div className="terms">
-          <ul>
-            <li>Умови використання</li>
-            <li>Питання та відповіді</li>
-            <li>Політика модерації</li>
-            <li>Зворотній звʼязок</li>
-          </ul>
-        </div>
-        <div className="love">
-          <span>❤️</span>
-          <span>🇺🇦</span>
-        </div>
+        ) : (
+          <>
+            <SearchResults
+              masters={masters}
+              city={selectedCity}
+              profession={selectedProfession}
+              showModal={showModal}
+              setShowModal={setShowModal}
+            />
+            <Modal
+              id={showModal}
+              master={masters.find((master) => master._id === showModal)}
+              setShowModal={setShowModal}
+            ></Modal>
+          </>
+        )}
       </div>
     </>
   );
