@@ -5,6 +5,7 @@ const fs = require('fs');
 const https = require('https');
 const cors = require('cors');
 const Master = require('./database/schema/Master');
+const User = require('./database/schema/User');
 
 const PORT_NUMBER = 5000;
 const CERTIFICATE = process.env.CERTIFICATE;
@@ -47,6 +48,19 @@ async function main() {
       default:
         res.status(404).send('No such file!');
     }
+  });
+
+  app.get('/auth', async (req, res) => {
+    console.log(`=== Login request ===`);
+    const token = req.headers.authorization;
+    if (!token) return res.status(400).send('No token');
+
+    console.log(`Login request with token ${token}`);
+    const user = await User.findOne({ token: token.toString() });
+
+    return user
+      ? res.status(200).send(JSON.stringify(user))
+      : res.status(404).send('User not found');
   });
 
   app.post('/addmaster', async (req, res) => {

@@ -4,10 +4,12 @@ const https = require('https');
 const fs = require('fs');
 const TelegramBot = require('node-telegram-bot-api');
 const jwt = require('jsonwebtoken');
+const User = require('./database/schema/User');
 
 const CERTIFICATE = process.env.CERTIFICATE;
 const KEYFILE = process.env.KEYFILE;
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const JWT_ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_TOKEN_SECRET;
 const PORT_NUMBER = 8443;
 
 const httpsOptions = {
@@ -31,18 +33,52 @@ module.exports.runBot = async function () {
       console.log('Error starting telegram bot server:', err);
     });
 
-  app.post('/webhook', (req, res) => {
+  app.post('/webhook', async (req, res) => {
     console.log('Webhook triggered!');
     const message = req.body.message;
 
     if (!message) return;
+    if (message.text !== '/start') {
+      return bot.sendMessage(
+        message.chat.id,
+        'Unknown command, use /start to sign in.'
+      );
+    }
 
-    if (message.text === '/start') {
-      const token = jwt.sign({ userID: message.chat.id }, 'secretKey', {
-        expiresIn: '100d',
-      });
+    console.log('Looking for a user with an ID of:', message.chat.id);
+
+    const registeredUserID = await User.exists({
+      telegramID: message.chat.id,
+    });
+
+    if (registeredUserID) {
+      console.log('User already registered! ID:', registeredUserID);
+    } else {
+      console.log('Welcome new user!, ID:', registeredUserID);
+
+      const token = jwt.sign(
+        {
+          userID: message.chat.id,
+          firstName: message.chat.first_name,
+          username: message.chat.username,
+        },
+        JWT_ACCESS_TOKEN_SECRET
+      );
 
       console.log('=== Token generated ===\n', JSON.stringify(token));
+
+      await User.create({
+        telegramID: message.chat.id,
+        firstName: message.chat.first_name || null,
+        lastName: message.chat.last_name || null,
+        username: message.chat.username || null,
+        token: token,
+      });
+
+      console.log(
+        `User ${message.chat.first_name} ${message.chat.last_name} successfully added to database`
+      );
+
       const encodedToken = encodeURIComponent(JSON.stringify(token));
 
       bot.sendMessage(message.chat.id, 'Confirm', {
@@ -53,7 +89,7 @@ module.exports.runBot = async function () {
                 text: 'Confirm',
                 // url: ?id=userID&token=18236182736 -> backend
                 // -> db.users.save(id, token)
-                url: `https://konstaku.com/login?token=${encodedToken}`,
+                url: `https://majstr.com/login?token=${encodedToken}`,
               },
             ],
           ],
@@ -61,9 +97,9 @@ module.exports.runBot = async function () {
       });
     }
 
-    console.log('message recieved, request:', req.body.message);
+    // console.log('message recieved, request:', req.body.message);
     res.status(200).send('OK');
   });
 
-  bot.on('webhook_error', console.log);
+  bot.on('webhook_error', console.error);
 };

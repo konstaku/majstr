@@ -1,7 +1,7 @@
 const { default: mongoose } = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  id: Number,
+  telegramID: Number,
   token: String,
   firstName: String,
   lastName: String,
