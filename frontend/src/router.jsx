@@ -1,7 +1,8 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { Outlet, createBrowserRouter } from 'react-router-dom';
 import MainSearch from './pages/MainSearch';
 import AddNewRecord from './pages/AddNewRecord';
 import Root from './components/Root';
+import Login from './pages/Login';
 
 export const router = createBrowserRouter([
   {
@@ -16,11 +17,10 @@ export const router = createBrowserRouter([
         path: '/add',
         element: <AddNewRecord />,
       },
+      {
+        path: '/login',
+        element: <Login />,
+      },
     ],
-  },
-
-  {
-    path: '/login',
-    action: () => alert('LOGIN'),
   },
 ]);

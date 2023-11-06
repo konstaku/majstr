@@ -1,6 +1,11 @@
+import { useContext } from 'react';
 import { Link, Outlet } from 'react-router-dom';
+import { MasterContext } from '../context';
 
 export default function Root({ resetSearch }) {
+  const { state } = useContext(MasterContext);
+  console.log('state:', state);
+
   return (
     <>
       <header className="header">

@@ -14,6 +14,37 @@ export default function MainSearch() {
   const [showModal, setShowModal] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  // Check if a user is authenticated on load
+  useEffect(() => {
+    setLoggedIn(false);
+
+    // It is important to JSON parse token in order to get rid of double quotes
+    const token = JSON.parse(localStorage.getItem('token'));
+
+    if (token) {
+      const authenticateUser = async () => {
+        fetch('https://api.konstaku.com:5000/auth', {
+          headers: { Authorization: token },
+        })
+          .then((response) => {
+            if (response.ok) {
+              return response.json();
+            } else {
+              return Promise.reject(response);
+            }
+          })
+          .then((result) => {
+            setLoggedIn(true);
+            console.log(`User ${result.firstName} logged in!`);
+          })
+          .catch(console.error);
+      };
+
+      authenticateUser();
+    }
+  }, []);
 
   // Fetch masters from backend on page load
   useEffect(() => {

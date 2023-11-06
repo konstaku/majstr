@@ -3,9 +3,9 @@ import { reducer } from './reducer';
 
 export const MasterContext = createContext();
 
-const INITIAL_STATE = {};
+const INITIAL_STATE = { user: {} };
 
-export function PigletsContextProvider({ children }) {
+export function MasterContextProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   return (
