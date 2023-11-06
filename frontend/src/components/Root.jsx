@@ -1,9 +1,12 @@
 import { useContext } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { MasterContext } from '../context';
+import { ACTIONS } from '../reducer';
 
-export default function Root({ resetSearch }) {
-  const { state } = useContext(MasterContext);
+export default function Root() {
+  const { state, dispatch } = useContext(MasterContext);
+  const { user } = state;
+  const { isLoggedIn } = user;
   console.log('state:', state);
 
   return (
@@ -14,7 +17,7 @@ export default function Root({ resetSearch }) {
             src="/img/logo/logo-dark.svg"
             alt="logo"
             width="150px"
-            // onClick={resetSearch}
+            onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}
           />
         </div>
         <div className="menu">
@@ -25,7 +28,13 @@ export default function Root({ resetSearch }) {
             <li>
               <Link to="/add">Додати майстра</Link>
             </li>
-            <li className="inactive">Особистий кабінет</li>
+            {isLoggedIn ? (
+              <li className="inactive">Особистий кабінет</li>
+            ) : (
+              <li>
+                <a href="https://t.me/chupakabra_dev_bot">Логін</a>
+              </li>
+            )}
             <li className="inactive">FAQ</li>
           </ul>
         </div>

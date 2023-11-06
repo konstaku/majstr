@@ -1,6 +1,7 @@
-import { Outlet, createBrowserRouter } from 'react-router-dom';
-import MainSearch from './pages/MainSearch';
+import { createBrowserRouter } from 'react-router-dom';
 import AddNewRecord from './pages/AddNewRecord';
+
+import Main from './pages/Main';
 import Root from './components/Root';
 import Login from './pages/Login';
 
@@ -11,7 +12,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <MainSearch />,
+        element: <Main />,
       },
       {
         path: '/add',

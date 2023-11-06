@@ -2,23 +2,28 @@ import './../styles.css';
 import locations from '../data/locations.json';
 import professions from '../data/professions.json';
 
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';
 import SearchResults from '../components/SearchResults';
 import Modal from '../components/Modal';
+import { MasterContext } from '../context';
+import { ACTIONS } from '../reducer';
 
-export default function MainSearch() {
-  const [masters, setMasters] = useState([]);
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedProfession, setSelectedProfession] = useState('');
+export default function Main() {
+  const { state, dispatch } = useContext(MasterContext);
+
+  // const [selectedProfession, setSelectedProfession] = useState('');
   const [showModal, setShowModal] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
+  // const [loggedIn, setLoggedIn] = useState(false);
+
+  const { masters, searchParams } = state;
+  const { selectedCity, selectedProfession } = searchParams;
 
   // Check if a user is authenticated on load
   useEffect(() => {
-    setLoggedIn(false);
+    dispatch({ type: ACTIONS.LOGOUT });
 
     // It is important to JSON parse token in order to get rid of double quotes
     const token = JSON.parse(localStorage.getItem('token'));
@@ -36,7 +41,7 @@ export default function MainSearch() {
             }
           })
           .then((result) => {
-            setLoggedIn(true);
+            dispatch({ type: ACTIONS.LOGIN });
             console.log(`User ${result.firstName} logged in!`);
           })
           .catch(console.error);
@@ -64,7 +69,9 @@ export default function MainSearch() {
             return Promise.reject(response);
           }
         })
-        .then(setMasters)
+        .then((result) =>
+          dispatch({ type: ACTIONS.POPULATE, payload: { masters: result } })
+        )
         .catch((error) => {
           if (error.name === 'AbortError') return;
           console.error(error);
@@ -172,7 +179,10 @@ export default function MainSearch() {
         options={availableLocations}
         styles={headlineSelectStyles}
         onChange={(e) => {
-          setSelectedCity(e.value);
+          dispatch({
+            type: ACTIONS.SET_CITY,
+            payload: { selectedCity: e.value },
+          });
         }}
       />
     );
@@ -191,7 +201,12 @@ export default function MainSearch() {
         options={availableProfessions}
         styles={headlineSelectStyles}
         placeholder="Всі майстри"
-        onChange={(e) => setSelectedProfession(e.value)}
+        onChange={(e) =>
+          dispatch({
+            type: ACTIONS.SET_PROFESSION,
+            payload: { selectedProfession: e.value },
+          })
+        }
       />
     );
   }
@@ -210,11 +225,6 @@ export default function MainSearch() {
     if (event.key === 'Escape') {
       setShowModal(null);
     }
-  }
-
-  function resetSearch() {
-    setSelectedCity('');
-    setSelectedProfession('');
   }
 }
 

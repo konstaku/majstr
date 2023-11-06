@@ -3,7 +3,14 @@ import { reducer } from './reducer';
 
 export const MasterContext = createContext();
 
-const INITIAL_STATE = { user: {} };
+const INITIAL_STATE = {
+  masters: [],
+  searchParams: {
+    selectedCity: '',
+    selectedProfession: '',
+  },
+  user: { isLoggedIn: false },
+};
 
 export function MasterContextProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
