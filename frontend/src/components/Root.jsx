@@ -29,7 +29,9 @@ export default function Root() {
               <Link to="/add">Додати майстра</Link>
             </li>
             {isLoggedIn ? (
-              <li className="inactive">Особистий кабінет</li>
+              <li>
+                <Link to="/profile">Профіль</Link>
+              </li>
             ) : (
               <li>
                 <a href="https://t.me/chupakabra_dev_bot">Логін</a>

@@ -41,7 +41,7 @@ export default function Main() {
             }
           })
           .then((result) => {
-            dispatch({ type: ACTIONS.LOGIN });
+            dispatch({ type: ACTIONS.LOGIN, payload: { user: result } });
             console.log(`User ${result.firstName} logged in!`);
           })
           .catch(console.error);

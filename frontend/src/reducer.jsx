@@ -53,10 +53,11 @@ export function reducer(state, { type, payload }) {
     }
 
     case ACTIONS.LOGIN: {
+      console.log('payload:', payload);
       return {
         ...state,
         user: {
-          ...state.user,
+          ...payload.user,
           isLoggedIn: true,
         },
       };
