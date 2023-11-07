@@ -3,10 +3,15 @@ import 'react-phone-input-2/lib/style.css';
 import PhoneInput from 'react-phone-input-2';
 import locations from './../data/locations.json';
 import professions from './../data/professions.json';
+import { useContext } from 'react';
+import { MasterContext } from '../context';
 import { useForm } from 'react-hook-form';
 
 export default function AddNewRecord() {
+  const { state, dispatch } = useContext(MasterContext);
+  const { user } = state;
   const { register, handleSubmit, watch } = useForm();
+
   const onSubmit = (data) => {
     console.log(data);
     fetch('https://api.konstaku.com:5000/addmaster', {
@@ -22,7 +27,11 @@ export default function AddNewRecord() {
         <div className="input-field">
           <label>
             Ваше імʼя:
-            <input {...register('name')} placeholder="sd" />
+            <input
+              {...register('name')}
+              placeholder="Ваше імʼя"
+              defaultValue={user.firstName && user.firstName}
+            />
           </label>
         </div>
 
@@ -79,6 +88,16 @@ export default function AddNewRecord() {
           <label>
             Instagram:
             <input {...register('instagram')} />
+          </label>
+        </div>
+
+        <div className="input-field">
+          <label>
+            Telegram:
+            <input
+              {...register('telegram')}
+              defaultValue={user.username && user.username}
+            />
           </label>
         </div>
 

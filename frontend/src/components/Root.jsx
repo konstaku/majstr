@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { MasterContext } from '../context';
 import { ACTIONS } from '../reducer';
@@ -8,6 +8,36 @@ export default function Root() {
   const { user } = state;
   const { isLoggedIn } = user;
   console.log('state:', state);
+
+  // Check if a user is authenticated on load
+  useEffect(() => {
+    dispatch({ type: ACTIONS.LOGOUT });
+
+    // It is important to JSON parse token in order to get rid of double quotes
+    const token = JSON.parse(localStorage.getItem('token'));
+
+    if (token) {
+      const authenticateUser = async () => {
+        fetch('https://api.konstaku.com:5000/auth', {
+          headers: { Authorization: token },
+        })
+          .then((response) => {
+            if (response.ok) {
+              return response.json();
+            } else {
+              return Promise.reject(response);
+            }
+          })
+          .then((result) => {
+            dispatch({ type: ACTIONS.LOGIN, payload: { user: result } });
+            console.log(`User ${result.firstName} logged in!`);
+          })
+          .catch(console.error);
+      };
+
+      authenticateUser();
+    }
+  }, []);
 
   return (
     <>

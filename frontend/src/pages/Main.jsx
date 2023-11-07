@@ -21,36 +21,6 @@ export default function Main() {
   const { masters, searchParams } = state;
   const { selectedCity, selectedProfession } = searchParams;
 
-  // Check if a user is authenticated on load
-  useEffect(() => {
-    dispatch({ type: ACTIONS.LOGOUT });
-
-    // It is important to JSON parse token in order to get rid of double quotes
-    const token = JSON.parse(localStorage.getItem('token'));
-
-    if (token) {
-      const authenticateUser = async () => {
-        fetch('https://api.konstaku.com:5000/auth', {
-          headers: { Authorization: token },
-        })
-          .then((response) => {
-            if (response.ok) {
-              return response.json();
-            } else {
-              return Promise.reject(response);
-            }
-          })
-          .then((result) => {
-            dispatch({ type: ACTIONS.LOGIN, payload: { user: result } });
-            console.log(`User ${result.firstName} logged in!`);
-          })
-          .catch(console.error);
-      };
-
-      authenticateUser();
-    }
-  }, []);
-
   // Fetch masters from backend on page load
   useEffect(() => {
     setIsLoading(true);
