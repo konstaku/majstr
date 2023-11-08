@@ -3,7 +3,10 @@ const { default: mongoose } = require('mongoose');
 const masterSchema = new mongoose.Schema({
   name: String,
   professionID: String,
-  countryID: String,
+  countryID: {
+    type: String,
+    default: 'IT',
+  },
   locationID: String,
   contacts: [
     {
@@ -17,6 +20,10 @@ const masterSchema = new mongoose.Schema({
   tags: {
     ua: [String],
     en: [String],
+  },
+  approved: {
+    type: Boolean,
+    default: false,
   },
 });
 

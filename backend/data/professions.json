@@ -108,7 +108,7 @@
     "id": "manicurist",
     "name": {
       "en": "Manicurist",
-      "ua": "Манікюрниця"
+      "ua": "Майстер манікюру"
     }
   },
   {
@@ -298,6 +298,13 @@
     "name": {
       "en": "Brow master",
       "ua": "Майстер бровей"
+    }
+  },
+  {
+    "id": "dermatologist",
+    "name": {
+      "en": "Dermatologist",
+      "ua": "Дерматолог"
     }
   },
   {

@@ -6,6 +6,8 @@ const https = require('https');
 const cors = require('cors');
 const Master = require('./database/schema/Master');
 const User = require('./database/schema/User');
+const professions = require('./data/professions.json');
+const locations = require('./data/locations.json');
 
 const PORT_NUMBER = 5000;
 const CERTIFICATE = process.env.CERTIFICATE;
@@ -42,8 +44,14 @@ async function main() {
 
     switch (req.query.q) {
       case 'masters':
-        const masters = await Master.find();
+        const masters = await Master.find({ approved: true });
         res.status(200).send(masters);
+        break;
+      case 'professions':
+        res.status(200).send(professions);
+        break;
+      case 'locations':
+        res.status(200).send(locations);
         break;
       default:
         res.status(404).send('No such file!');
@@ -69,6 +77,13 @@ async function main() {
     for (const key in req.body) {
       console.log(`${key}: ${req.body[key]}`);
     }
+
+    // Validate data
+
+    // Update database
+
+    // if user is not an admin, add master profile to the their user record
+
     res.status(200).json({ success: true });
   });
 
