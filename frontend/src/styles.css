@@ -1,7 +1,7 @@
 :root {
   --base-card-width: 15rem;
   --base-card-height: 22rem;
-  --modal-card-width: 18rem;
+  --modal-card-width: 20rem;
   --modal-card-height: 25rem;
   --base-font-size: 16px;
   --scaling-factor: 1;
@@ -177,6 +177,7 @@ body {
 
 .input-field {
   margin-top: 1rem;
+  width: 400px;
 }
 
 /* 
@@ -197,6 +198,10 @@ body {
   border-radius: 1.25rem;
   border: 1px solid #d9d9d9;
   background: #f7fafc;
+}
+
+.master-card.preview {
+  max-width: 16rem;
 }
 
 .master-card:hover {
@@ -439,6 +444,52 @@ body {
 .love span {
   margin-left: 0.5rem;
 }
+
+.create-user-container {
+  width: 80%;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/*
+
+
+
+
+
+
+
+====================== CREATE USER FORM ====================== 
+
+
+
+
+
+
+*/
+
+.input-label {
+  font-size: 12px;
+  font-weight: 300;
+  color: #655f5f;
+}
+
+/* 
+
+
+
+                 _ _           ____                 _           
+  /\/\   ___  __| (_) __ _    /___ \_   _  ___ _ __(_) ___  ___ 
+ /    \ / _ \/ _` | |/ _` |  //  / / | | |/ _ \ '__| |/ _ \/ __|
+/ /\/\ \  __/ (_| | | (_| | / \_/ /| |_| |  __/ |  | |  __/\__ \
+\/    \/\___|\__,_|_|\__,_| \___,_\ \__,_|\___|_|  |_|\___||___/
+                                                               
+
+
+
+*/
 
 @media (max-width: 1024px) {
   .search-field {

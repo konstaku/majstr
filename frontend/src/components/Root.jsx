@@ -42,14 +42,16 @@ export default function Root() {
   return (
     <>
       <header className="header">
-        <div className="logo">
-          <img
-            src="/img/logo/logo-dark.svg"
-            alt="logo"
-            width="150px"
-            onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}
-          />
-        </div>
+        <Link to="/">
+          <div className="logo">
+            <img
+              src="/img/logo/logo-dark.svg"
+              alt="logo"
+              width="150px"
+              onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}
+            />
+          </div>
+        </Link>
         <div className="menu">
           <ul>
             <li>

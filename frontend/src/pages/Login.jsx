@@ -13,7 +13,7 @@ export default function Login() {
       localStorage.setItem('token', token);
       setLoginElement(<Navigate to="/" />);
     } else {
-      setLoginElement(<h2>Login error</h2>);
+      setLoginElement(<h2>Login error: no token</h2>);
     }
   }, [location.search]);
 

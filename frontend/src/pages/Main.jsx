@@ -11,14 +11,12 @@ import { ACTIONS } from '../reducer';
 
 export default function Main() {
   const { state, dispatch } = useContext(MasterContext);
+  const { masters, searchParams } = state;
 
-  // const [selectedProfession, setSelectedProfession] = useState('');
   const [showModal, setShowModal] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  // const [loggedIn, setLoggedIn] = useState(false);
 
-  const { masters, searchParams } = state;
   const { selectedCity, selectedProfession } = searchParams;
 
   // Fetch masters from backend on page load
@@ -69,12 +67,74 @@ export default function Main() {
     };
   }, [showModal]);
 
-  const availableMasters = getAvailableMastersForCity(masters, selectedCity);
-  const availableLocations = getAvailableLocations(masters);
-  const availableProfessions = getAvailableProffessions(
-    availableMasters,
-    professions
+  const availableMasters = masters.filter((master) => {
+    if (selectedCity && selectedProfession) {
+      return (
+        master.locationID === selectedCity &&
+        master.professionID === selectedProfession
+      );
+    }
+
+    if (selectedCity) {
+      return master.locationID === selectedCity;
+    }
+
+    if (selectedProfession) {
+      return master.professionID === selectedProfession;
+    }
+
+    return true;
+  });
+
+  // The first value is always an empty string, so the user can always return to "all" as an option
+  // Then, I always display every location with at least one master in it
+  const availableLocations = [
+    {
+      value: '',
+      label: 'Вся Італія',
+    },
+  ].concat(
+    [...new Set(masters.map((master) => master.locationID))].map(
+      (masterLocationId) => ({
+        value: masterLocationId,
+        label: locations.find((location) => location.id === masterLocationId)
+          .city.ua,
+      })
+    )
   );
+
+  // Here I filter out unique proffessions for the selected city
+  const availableProfessions = [
+    {
+      value: '',
+      label: 'Всі майстри',
+    },
+  ].concat(
+    [
+      ...new Set(
+        masters
+          .filter((master) => {
+            if (selectedCity) {
+              return master.locationID === selectedCity;
+            }
+            return true;
+          })
+          .map((master) => master.professionID)
+      ),
+    ].map((masterProffessionId) => ({
+      value: masterProffessionId,
+      label: professions.find(
+        (profession) => profession.id === masterProffessionId
+      ).name.ua,
+    }))
+  );
+
+  // const availableMasters = getAvailableMastersForCity(masters, selectedCity);
+  // const availableLocations = getAvailableLocations(masters);
+  // const availableProfessions = getAvailableProffessions(
+  //   availableMasters,
+  //   professions
+  // );
 
   // Setting styles for select elements
   const headlineSelectStyles = {
@@ -143,9 +203,8 @@ export default function Main() {
         defaultValue={
           selectedCity
             ? availableLocations.find((l) => l.value === selectedCity)
-            : selectedCity
+            : availableLocations[0]
         }
-        placeholder="Вся Італія"
         options={availableLocations}
         styles={headlineSelectStyles}
         onChange={(e) => {
