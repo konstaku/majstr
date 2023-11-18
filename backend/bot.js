@@ -82,7 +82,12 @@ module.exports.runBot = async function () {
     console.log('=== Token generated ===\n', JSON.stringify(token));
 
     // Fetch user photo from Telegram API
+
+    // The URLs for fetching photo ID and path
     const fetchPhotoIdUrl = `https://api.telegram.org/bot${BOT_TOKEN}/getUserProfilePhotos`;
+    const fetchPhotoPathUrl = `https://api.telegram.org/bot${BOT_TOKEN}/getFile`;
+
+    // The options needed by telegram API to process a fetch photo ID request
     const fetchPhotoIdOptions = {
       method: 'POST',
       headers: {
@@ -105,21 +110,22 @@ module.exports.runBot = async function () {
       .catch(console.error);
     console.log('Photo ID obtained:', photoID);
 
-    // Get user telegram photo path
-    const fetchPhotoPathUrl = `https://api.telegram.org/bot${BOT_TOKEN}/getFile`;
+    // Now when we have a photo ID, we can create the options to process a photo path request
     const fetchPhotoPathOptions = {
       ...fetchPhotoIdOptions,
       body: JSON.stringify({
         file_id: photoID,
       }),
     };
+
+    // Get user telegram photo path
     const photoPath = await fetch(fetchPhotoPathUrl, fetchPhotoPathOptions)
       .then((response) => response.json())
       .then((data) => data.result.file_path)
       .catch(console.error);
     console.log('Photo path obtained:', photoPath);
 
-    // Download the user photo
+    // Now we can construct the final photo URL and download the user photo
     const telegramPhotoUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${photoPath}`;
     const photo = await fetch(telegramPhotoUrl)
       .then((response) => response.blob())
@@ -128,6 +134,7 @@ module.exports.runBot = async function () {
       .catch(console.error);
 
     // Add new user to database
+    // NB: I am using mongo _id as a name for a photo, so database record is created prior to photo upload in s3
     const user = await User.create({
       telegramID: message.chat.id,
       firstName: message.chat.first_name || null,
@@ -136,12 +143,14 @@ module.exports.runBot = async function () {
       token: token,
     }).catch(console.error);
 
-    // Save photo to S3
+    // Create parameters to upload photo
     const s3uploadParams = {
       Bucket: 'chupakabra-test',
       Key: `userpics/${user._id}.jpg`,
       Body: photo,
     };
+
+    // Save photo to S3
     s3.upload(s3uploadParams, async (err, data) => {
       if (err) return console.error(err);
       // Update user record in the database
@@ -149,10 +158,12 @@ module.exports.runBot = async function () {
       await user.save();
     });
 
+    // If we are here, that means that everything is completed successfully
     console.log(
       `User ${message.chat.first_name} ${message.chat.last_name} successfully added to database`
     );
 
+    // Sending a link with a token in URl params and directing to a login page which is handled by a frontend
     sendLoginLink(res, bot, message.chat.id, token);
   });
 
@@ -161,6 +172,7 @@ module.exports.runBot = async function () {
 
 function sendLoginLink(res, bot, id, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
+
   bot.sendMessage(id, 'Confirm', {
     reply_markup: {
       inline_keyboard: [
