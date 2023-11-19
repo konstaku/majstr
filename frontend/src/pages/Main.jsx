@@ -67,25 +67,6 @@ export default function Main() {
     };
   }, [showModal]);
 
-  const availableMasters = masters.filter((master) => {
-    if (selectedCity && selectedProfession) {
-      return (
-        master.locationID === selectedCity &&
-        master.professionID === selectedProfession
-      );
-    }
-
-    if (selectedCity) {
-      return master.locationID === selectedCity;
-    }
-
-    if (selectedProfession) {
-      return master.professionID === selectedProfession;
-    }
-
-    return true;
-  });
-
   // The first value is always an empty string, so the user can always return to "all" as an option
   // Then, I always display every location with at least one master in it
   const availableLocations = [
@@ -94,6 +75,7 @@ export default function Main() {
       label: 'Вся Італія',
     },
   ].concat(
+    // Array of unique locations only
     [...new Set(masters.map((master) => master.locationID))].map(
       (masterLocationId) => ({
         value: masterLocationId,
@@ -106,17 +88,21 @@ export default function Main() {
   // Here I filter out unique proffessions for the selected city
   const availableProfessions = [
     {
+      // The first element is "Everyone", which is an empty string
       value: '',
       label: 'Всі майстри',
     },
   ].concat(
+    // Array of unique proffessions
     [
       ...new Set(
         masters
           .filter((master) => {
             if (selectedCity) {
+              // If a city is selected, display unique proffessions for that city
               return master.locationID === selectedCity;
             }
+            // Otherwise display unique proffessions from all cities
             return true;
           })
           .map((master) => master.professionID)
@@ -128,13 +114,6 @@ export default function Main() {
       ).name.ua,
     }))
   );
-
-  // const availableMasters = getAvailableMastersForCity(masters, selectedCity);
-  // const availableLocations = getAvailableLocations(masters);
-  // const availableProfessions = getAvailableProffessions(
-  //   availableMasters,
-  //   professions
-  // );
 
   // Setting styles for select elements
   const headlineSelectStyles = {
@@ -255,26 +234,4 @@ export default function Main() {
       setShowModal(null);
     }
   }
-}
-
-function getAvailableMastersForCity(masterList, city) {
-  return masterList.filter((master) => master.locationID.includes(city));
-}
-
-function getAvailableLocations(masters) {
-  return [...new Set(masters.map((master) => master.locationID))].map(
-    (location) => ({
-      value: location,
-      label: locations.find((l) => l.id === location).city.ua_alt,
-    })
-  );
-}
-
-function getAvailableProffessions(availableMasters, professions) {
-  return [
-    ...new Set(availableMasters.map((master) => master.professionID)),
-  ].map((professionID) => ({
-    value: professionID,
-    label: professions.find((p) => p.id === professionID).name.ua,
-  }));
 }
