@@ -1,9 +1,6 @@
-import { useContext, useEffect, useState } from 'react';
-import { ACTIONS } from '../reducer';
-import { MasterContext } from '../context';
+import { useEffect, useState } from 'react';
 
 export default function useAuthenticateUser() {
-  // const { state, dispatch } = useContext(MasterContext);
   const [user, setUser] = useState({});
 
   useEffect(() => {
