@@ -9,7 +9,7 @@ const INITIAL_STATE = {
     selectedCity: '',
     selectedProfession: '',
   },
-  user: { isLoggedIn: false },
+  user: {},
 };
 
 export function MasterContextProvider({ children }) {

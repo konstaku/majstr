@@ -6,7 +6,7 @@ export default function Avatar({ img, color, name }) {
         img ? { backgroundImage: `url(${img})` } : { backgroundColor: color }
       }
     >
-      {!img && name[0]}
+      {!img && name && name[0]}
     </div>
   );
 }

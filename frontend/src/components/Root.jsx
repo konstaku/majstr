@@ -11,32 +11,16 @@ export default function Root() {
 
   // Check if a user is authenticated on load
   useEffect(() => {
-    dispatch({ type: ACTIONS.LOGOUT });
-
     // It is important to JSON parse token in order to get rid of double quotes
     const token = JSON.parse(localStorage.getItem('token'));
 
-    if (token) {
-      const authenticateUser = async () => {
-        fetch('https://api.konstaku.com:5000/auth', {
-          headers: { Authorization: token },
-        })
-          .then((response) => {
-            if (response.ok) {
-              return response.json();
-            } else {
-              return Promise.reject(response);
-            }
-          })
-          .then((result) => {
-            dispatch({ type: ACTIONS.LOGIN, payload: { user: result } });
-            console.log(`User ${result.firstName} logged in!`);
-          })
-          .catch(console.error);
-      };
-
-      authenticateUser();
+    if (!token) {
+      return dispatch({ type: ACTIONS.LOGOUT });
     }
+
+    // On page load, read the user info from token and add to state
+    const user = JSON.parse(atob(token.split('.')[1]));
+    dispatch({ type: ACTIONS.LOGIN, payload: { user } });
   }, []);
 
   return (

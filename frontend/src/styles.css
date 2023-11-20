@@ -168,6 +168,11 @@ body {
   grid-column: 1 / -1;
 }
 
+.create-record-header {
+  font-size: calc(var(--base-font-size) * 1.5);
+  margin-top: 2rem;
+}
+
 .found-amount {
   font-size: calc(var(--base-font-size) * 1.125);
   border: 1px solid #a0aec0;
@@ -177,7 +182,13 @@ body {
 
 .input-field {
   margin-top: 1rem;
-  width: 400px;
+  width: 100%;
+}
+
+.input {
+  font-size: 16px;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
 }
 
 /* 
@@ -201,6 +212,10 @@ body {
 }
 
 .master-card.preview {
+  position: sticky;
+  flex-grow: 2;
+  margin-right: 2rem;
+  top: 30%;
   max-width: 16rem;
 }
 
@@ -445,14 +460,6 @@ body {
   margin-left: 0.5rem;
 }
 
-.create-user-container {
-  width: 80%;
-  margin: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 /*
 
 
@@ -470,10 +477,71 @@ body {
 
 */
 
-.input-label {
-  font-size: 12px;
+.create-user-container {
+  width: 80%;
+  max-width: 900px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.create-user-form {
+  display: flex;
+  width: 55%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.create-user-form form {
+  width: 100%;
+}
+
+.create-user-form label {
+  font-size: 14px;
   font-weight: 300;
-  color: #655f5f;
+}
+
+.create-user-form .create-user-photo {
+  height: 100px;
+  width: 100px;
+  border: 1px solid #d9d9d9;
+  border-radius: 100000px;
+  background-size: cover;
+  margin: 1rem 0;
+}
+
+.create-user-form .create-user-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 0.25rem;
+  background-color: #ffffff;
+  font-size: 14px;
+}
+
+.create-user-form .create-user-input:focus {
+  outline: 1px solid #4fd1c5;
+}
+
+.create-user-form button[type='submit'] {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 1rem;
+  background-color: #171923;
+  color: #ffffff;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.contact-type-container {
+  display: flex;
+  gap: 1rem;
 }
 
 /* 
@@ -572,10 +640,6 @@ body {
 
   .menu {
     display: none;
-  }
-
-  .search-results-header {
-    margin: 0 2rem;
   }
 
   .search-results-container {
