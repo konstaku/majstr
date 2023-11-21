@@ -22,11 +22,15 @@ export default function MasterCardPreview({ master }) {
             </div>
             <div className="master-card-name">{name}</div>
             <div className="master-card-profession">
-              {professions.find((p) => p.id === professionID).name.ua}
+              {professionID
+                ? professions.find((p) => p.id === professionID).name.ua
+                : 'Професія невідома'}
             </div>
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
-              {locations.find((l) => l.id === locationID).city.ua}
+              {locationID
+                ? locations.find((l) => l.id === locationID).city.ua
+                : 'Локація невідома'}
             </div>
           </div>
           <div className="mastercard-tag-container">

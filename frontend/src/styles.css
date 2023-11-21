@@ -320,9 +320,9 @@ body {
 }
 
 .mastercard-about {
+  font-weight: 300;
   margin-top: 1rem;
   font-size: 12px;
-  font-weight: 300;
   line-height: 150%;
   background-color: #f7fafc;
   border-radius: 0.5rem;

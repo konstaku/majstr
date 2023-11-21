@@ -19,10 +19,12 @@ export default function AddNewRecord() {
 
   // Fetch photo dynamically
   const { photo } = useAuthenticateUser();
+
   // const [name, setName] = useState(user.firstName || '');
   const [useThisPhoto, setUseThisPhoto] = useState(true);
-  const [locationID, setLocationID] = useState(locations[0].id);
-  const [professionID, setProfessionID] = useState(professions[0].id);
+  const [name, setName] = useState(firstName);
+  const [locationID, setLocationID] = useState();
+  const [professionID, setProfessionID] = useState();
   const [tags, setTags] = useState([]);
   const [phone, setPhone] = useState('');
   const [messengers, setMessengers] = useState({
@@ -39,9 +41,9 @@ export default function AddNewRecord() {
   }, [username, firstName]);
 
   const masterPreview = {
-    _id: '12312ad979797987987989',
+    _id: '71982703891729',
     photo: useThisPhoto ? photo : null,
-    name: firstName,
+    name: name || firstName,
     professionID,
     locationID,
     tags,
@@ -62,7 +64,14 @@ export default function AddNewRecord() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    });
+    })
+      .then((response) => {
+        if (response.ok) {
+          return console.log('Data submitted successfully');
+        }
+        return Promise.reject(response);
+      })
+      .catch(console.error);
   };
 
   return (
@@ -79,20 +88,25 @@ export default function AddNewRecord() {
               useThisPhoto={useThisPhoto}
               setUseThisPhoto={setUseThisPhoto}
             />
-            <NameInput register={register} />
-
+            <NameInput register={register} setName={setName} />
+            <ProfessionInput
+              control={control}
+              professions={professions}
+              setProfessionID={setProfessionID}
+            />
             <LocationInput
               control={control}
               locations={locations}
               setLocationID={setLocationID}
             />
-
-            <ProfessionInput
-              professions={professions}
-              setProfessionID={setProfessionID}
+            <TagsInput control={control} tags={tags} setTags={setTags} />
+            <TelephoneInput
+              register={register}
+              control={control}
+              setPhone={setPhone}
+              messengers={messengers}
+              setMessengers={setMessengers}
             />
-            <TagsInput setTags={setTags} />
-            <TelephoneInput />
             <InstagramInput register={register} />
             <TelegramInput register={register} />
             <AboutInput register={register} />
@@ -132,7 +146,7 @@ function PhotoInput({ photo, setUseThisPhoto, useThisPhoto }) {
   );
 }
 
-function NameInput({ register }) {
+function NameInput({ register, setName }) {
   return (
     <div className="input-field">
       <label>
@@ -142,6 +156,7 @@ function NameInput({ register }) {
           placeholder="Ваше імʼя"
           {...register('name', {
             required: true,
+            onChange: (e) => setName(e.target.value),
           })}
         />
       </label>
@@ -160,6 +175,7 @@ function LocationInput({ control, locations, setLocationID }) {
           render={({ field: { onChange } }) => (
             <Select
               onChange={(e) => {
+                // Important to call the original onChange provided by Controller
                 onChange(e.value);
                 setLocationID(e.value);
               }}
@@ -175,28 +191,34 @@ function LocationInput({ control, locations, setLocationID }) {
   );
 }
 
-function ProfessionInput({ professions, setProfessionID }) {
+function ProfessionInput({ control, professions, setProfessionID }) {
   return (
     <div className="input-field">
       <label>
         <div className="input-label">Оберіть професію зі списку</div>
-        <Select
-          onChange={(e) => setProfessionID(e.value)}
-          options={professions.map((profession) => ({
-            value: profession.id,
-            label: profession.name.ua,
-          }))}
-          defaultValue={{
-            value: professions[0].id,
-            label: professions[0].name.ua,
-          }}
-        ></Select>
+        <Controller
+          control={control}
+          name="profession"
+          render={({ field: { onChange } }) => (
+            <Select
+              onChange={(e) => {
+                // Important to call the original onChange provided by Controller
+                onChange(e.value);
+                setProfessionID(e.value);
+              }}
+              options={professions.map((profession) => ({
+                value: profession.id,
+                label: profession.name.ua,
+              }))}
+            />
+          )}
+        />
       </label>
     </div>
   );
 }
 
-function TagsInput({ setTags }) {
+function TagsInput({ control, tags, setTags }) {
   return (
     <div className="input-field">
       <label>
@@ -204,39 +226,85 @@ function TagsInput({ setTags }) {
           Вкажіть до 3х тегів (наприклад "Ламінування", "Корекція брів",
           "Кератин")
         </div>
-        <CreatableSelect
-          onChange={(e) => {
-            console.log(e.map((el) => el.value));
-            setTags(e.map((el) => el.value));
-          }}
-          isMulti
+        <Controller
+          control={control}
+          name="tags"
+          render={({ field: { onChange } }) => (
+            <CreatableSelect
+              isValidNewOption={() => tags.length < 3}
+              onChange={(data) => {
+                onChange(data);
+                setTags(data.map((el) => el.value));
+              }}
+              isMulti
+            />
+          )}
         />
       </label>
     </div>
   );
 }
 
-function TelephoneInput() {
+function TelephoneInput({
+  register,
+  control,
+  setPhone,
+  messengers,
+  setMessengers,
+}) {
   return (
     <div className="input-field">
       <label>
         <div className="input-label">Ваш номер телефону</div>
-        <PhoneInput
-          country={'it'}
-          countryCodeEditable
-          enableSearch
-        ></PhoneInput>
+
+        <Controller
+          control={control}
+          name="telephone"
+          render={({ field: { onChange } }) => (
+            <PhoneInput
+              country={'it'}
+              countryCodeEditable
+              enableSearch
+              onChange={(data) => {
+                onChange(data);
+                setPhone(data);
+              }}
+            ></PhoneInput>
+          )}
+        />
         <div className="contact-type-container">
           <label>
-            <input type="checkbox" defaultChecked />
+            <input
+              type="checkbox"
+              {...register('isTelephone')}
+              defaultChecked
+              onChange={(e) =>
+                setMessengers({
+                  ...messengers,
+                  phone: e.target.checked,
+                })
+              }
+            />
             Телефон
           </label>
           <label>
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              {...register('isWhatsapp')}
+              onChange={(e) =>
+                setMessengers({ ...messengers, whatsapp: e.target.checked })
+              }
+            />
             Whatsapp
           </label>
           <label>
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              {...register('isViber')}
+              onChange={(e) =>
+                setMessengers({ ...messengers, viber: e.target.checked })
+              }
+            />
             Viber
           </label>
         </div>
