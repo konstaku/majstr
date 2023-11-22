@@ -3,7 +3,7 @@ import 'react-phone-input-2/lib/style.css';
 import PhoneInput from 'react-phone-input-2';
 import locations from './../data/locations.json';
 import professions from './../data/professions.json';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect } from 'react';
 import { MasterContext } from '../context';
 import { Controller, useForm } from 'react-hook-form';
 import Select from 'react-select';
@@ -15,7 +15,16 @@ export default function AddNewRecord() {
   const { state, dispatch } = useContext(MasterContext);
   const { user } = state;
   const { firstName, username } = user;
-  const { register, handleSubmit, setValue, control, watch } = useForm({});
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm({});
+
+  console.log('errors:', errors);
 
   // Fetch photo dynamically
   const { photo } = useAuthenticateUser();
@@ -111,39 +120,16 @@ function NameInput({ register }) {
   return (
     <div className="input-field">
       <label>
-        <div className="input-label">Ваше імʼя:</div>
+        <div className="input-label">
+          Ваше імʼя: <span className="required">*</span>
+        </div>
         <input
           className="create-user-input"
           placeholder="Ваше імʼя"
           {...register('name', {
-            required: true,
+            required: { value: true, message: 'Це обовʼязкове поле' },
+            maxLength: { value: 25, message: 'Максимум 25 символів' },
           })}
-        />
-      </label>
-    </div>
-  );
-}
-
-function LocationInput({ control, locations }) {
-  return (
-    <div className="input-field">
-      <label>
-        <div className="input-label">Оберіть найближче велике місто.</div>
-        <Controller
-          control={control}
-          name="location"
-          render={({ field: { onChange } }) => (
-            <Select
-              onChange={(e) => {
-                // Important to call the original onChange provided by Controller
-                onChange(e.value);
-              }}
-              options={locations.map((location) => ({
-                value: location.id,
-                label: location.city.ua,
-              }))}
-            />
-          )}
         />
       </label>
     </div>
@@ -154,10 +140,18 @@ function ProfessionInput({ control, professions }) {
   return (
     <div className="input-field">
       <label>
-        <div className="input-label">Оберіть професію зі списку</div>
+        <div className="input-label">
+          Оберіть професійну категорію<span className="required">*</span>
+        </div>
         <Controller
           control={control}
           name="profession"
+          rules={{
+            required: {
+              value: true,
+              message: 'Обовʼязково вкажіть професійну категорію',
+            },
+          }}
           render={({ field: { onChange } }) => (
             <Select
               onChange={(e) => {
@@ -176,17 +170,54 @@ function ProfessionInput({ control, professions }) {
   );
 }
 
+function LocationInput({ control, locations }) {
+  return (
+    <div className="input-field">
+      <label>
+        <div className="input-label">
+          Оберіть найближче велике місто.<span className="required">*</span>
+        </div>
+        <Controller
+          control={control}
+          name="location"
+          rules={{
+            required: { value: true, message: 'Обовʼязково вкажіть місто' },
+          }}
+          render={({ field: { onChange } }) => (
+            <Select
+              onChange={(e) => {
+                // Important to call the original onChange provided by Controller
+                onChange(e.value);
+              }}
+              options={locations.map((location) => ({
+                value: location.id,
+                label: location.city.ua,
+              }))}
+            />
+          )}
+        />
+      </label>
+    </div>
+  );
+}
+
 function TagsInput({ control, tags = [] }) {
   return (
     <div className="input-field">
       <label>
         <div className="input-label">
-          Вкажіть до 3х тегів (наприклад "Ламінування", "Корекція брів",
-          "Кератин")
+          Вкажіть до 3х послуг (наприклад "Заміна мастила", "Техогляд", "Сервіс
+          BMW")<span className="required">*</span>
         </div>
         <Controller
           control={control}
           name="tags"
+          rules={{
+            required: {
+              value: true,
+              message: 'Вкажіть хоча б одну послугу',
+            },
+          }}
           render={({ field: { onChange } }) => (
             <CreatableSelect
               isValidNewOption={() => tags.length < 3}
@@ -214,6 +245,7 @@ function TelephoneInput({ register, control }) {
               country={'it'}
               countryCodeEditable
               enableSearch
+              inputStyle={{ fontWeight: 300 }}
               onChange={onChange}
             ></PhoneInput>
           )}
@@ -246,7 +278,11 @@ function InstagramInput({ register }) {
     <div className="input-field">
       <label>
         <div className="input-label">Instagram: </div>
-        <input className="create-user-input" {...register('instagram')} />
+        <input
+          className="create-user-input"
+          {...register('instagram')}
+          placeholder="Імʼя користувача без @"
+        />
       </label>
     </div>
   );
@@ -271,6 +307,7 @@ function AboutInput({ register }) {
         <textarea
           {...register('about')}
           className="create-user-input"
+          placeholder={`Майстер автосервісу. Знаходжуся в Турині, район Аврора. Спеціалізуюся на німецьких авто. Допоможу зробити техогляд, замінити мастила та фільтри, зробити електронну діагностіку, замовити запчастини та полагодити авто. Для українців є знижки, звертайтеся за телефоном.`}
           cols="30"
           rows="6"
         ></textarea>
