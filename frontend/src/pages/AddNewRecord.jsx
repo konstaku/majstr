@@ -5,7 +5,7 @@ import locations from './../data/locations.json';
 import professions from './../data/professions.json';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { MasterContext } from '../context';
-import { Controller, useController, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import MasterCardPreview from '../components/MasterCardPreview';
@@ -15,24 +15,13 @@ export default function AddNewRecord() {
   const { state, dispatch } = useContext(MasterContext);
   const { user } = state;
   const { firstName, username } = user;
-  const { register, handleSubmit, setValue, control } = useForm({});
+  const { register, handleSubmit, setValue, control, watch } = useForm({});
 
   // Fetch photo dynamically
   const { photo } = useAuthenticateUser();
 
-  // const [name, setName] = useState(user.firstName || '');
-  const [useThisPhoto, setUseThisPhoto] = useState(true);
-  const [name, setName] = useState(firstName);
-  const [locationID, setLocationID] = useState();
-  const [professionID, setProfessionID] = useState();
-  const [tags, setTags] = useState([]);
-  const [phone, setPhone] = useState('');
-  const [messengers, setMessengers] = useState({
-    phone: true,
-    whatsapp: false,
-    viber: false,
-  });
-  const [about, setAbout] = useState('');
+  // Get live updates from all fields
+  const watcher = watch();
 
   // As user name is updated in state, update form default value as state changes
   useEffect(() => {
@@ -40,19 +29,13 @@ export default function AddNewRecord() {
     setValue('name', firstName);
   }, [username, firstName]);
 
+  // Card preview, with up-to-date data via watcher
   const masterPreview = {
-    _id: '71982703891729',
-    photo: useThisPhoto ? photo : null,
-    name: name || firstName,
-    professionID,
-    locationID,
-    tags,
-    contacts: {
-      phone,
-    },
-    about,
+    photo,
+    watcher,
   };
 
+  // Post form on submit
   const onSubmit = (data) => {
     console.log(data);
     if (user.isAdmin) {
@@ -83,30 +66,12 @@ export default function AddNewRecord() {
             <h2>Створити запис:</h2>
           </div>
           <form id="add-new-piggy" onSubmit={handleSubmit(onSubmit)}>
-            <PhotoInput
-              photo={photo}
-              useThisPhoto={useThisPhoto}
-              setUseThisPhoto={setUseThisPhoto}
-            />
-            <NameInput register={register} setName={setName} />
-            <ProfessionInput
-              control={control}
-              professions={professions}
-              setProfessionID={setProfessionID}
-            />
-            <LocationInput
-              control={control}
-              locations={locations}
-              setLocationID={setLocationID}
-            />
-            <TagsInput control={control} tags={tags} setTags={setTags} />
-            <TelephoneInput
-              register={register}
-              control={control}
-              setPhone={setPhone}
-              messengers={messengers}
-              setMessengers={setMessengers}
-            />
+            <PhotoInput photo={photo} register={register} />
+            <NameInput register={register} />
+            <ProfessionInput control={control} professions={professions} />
+            <LocationInput control={control} locations={locations} />
+            <TagsInput control={control} tags={watcher.tags} />
+            <TelephoneInput register={register} control={control} />
             <InstagramInput register={register} />
             <TelegramInput register={register} />
             <AboutInput register={register} />
@@ -123,7 +88,7 @@ export default function AddNewRecord() {
   );
 }
 
-function PhotoInput({ photo, setUseThisPhoto, useThisPhoto }) {
+function PhotoInput({ photo, register }) {
   return (
     photo && (
       <>
@@ -133,20 +98,16 @@ function PhotoInput({ photo, setUseThisPhoto, useThisPhoto }) {
             backgroundImage: `url(${photo})`,
           }}
         ></div>
-        <input
-          id="use-photo"
-          name="use-photo"
-          type="checkbox"
-          defaultChecked={useThisPhoto}
-          onChange={() => setUseThisPhoto(!useThisPhoto)}
-        />
-        <label htmlFor="use-photo">Використати це фото</label>
+        <label>
+          <input {...register('useThisPhoto')} type="checkbox" defaultChecked />
+          Використати це фото
+        </label>
       </>
     )
   );
 }
 
-function NameInput({ register, setName }) {
+function NameInput({ register }) {
   return (
     <div className="input-field">
       <label>
@@ -156,7 +117,6 @@ function NameInput({ register, setName }) {
           placeholder="Ваше імʼя"
           {...register('name', {
             required: true,
-            onChange: (e) => setName(e.target.value),
           })}
         />
       </label>
@@ -164,7 +124,7 @@ function NameInput({ register, setName }) {
   );
 }
 
-function LocationInput({ control, locations, setLocationID }) {
+function LocationInput({ control, locations }) {
   return (
     <div className="input-field">
       <label>
@@ -177,7 +137,6 @@ function LocationInput({ control, locations, setLocationID }) {
               onChange={(e) => {
                 // Important to call the original onChange provided by Controller
                 onChange(e.value);
-                setLocationID(e.value);
               }}
               options={locations.map((location) => ({
                 value: location.id,
@@ -191,7 +150,7 @@ function LocationInput({ control, locations, setLocationID }) {
   );
 }
 
-function ProfessionInput({ control, professions, setProfessionID }) {
+function ProfessionInput({ control, professions }) {
   return (
     <div className="input-field">
       <label>
@@ -204,7 +163,6 @@ function ProfessionInput({ control, professions, setProfessionID }) {
               onChange={(e) => {
                 // Important to call the original onChange provided by Controller
                 onChange(e.value);
-                setProfessionID(e.value);
               }}
               options={professions.map((profession) => ({
                 value: profession.id,
@@ -218,7 +176,7 @@ function ProfessionInput({ control, professions, setProfessionID }) {
   );
 }
 
-function TagsInput({ control, tags, setTags }) {
+function TagsInput({ control, tags = [] }) {
   return (
     <div className="input-field">
       <label>
@@ -232,10 +190,7 @@ function TagsInput({ control, tags, setTags }) {
           render={({ field: { onChange } }) => (
             <CreatableSelect
               isValidNewOption={() => tags.length < 3}
-              onChange={(data) => {
-                onChange(data);
-                setTags(data.map((el) => el.value));
-              }}
+              onChange={onChange}
               isMulti
             />
           )}
@@ -245,13 +200,7 @@ function TagsInput({ control, tags, setTags }) {
   );
 }
 
-function TelephoneInput({
-  register,
-  control,
-  setPhone,
-  messengers,
-  setMessengers,
-}) {
+function TelephoneInput({ register, control }) {
   return (
     <div className="input-field">
       <label>
@@ -265,10 +214,7 @@ function TelephoneInput({
               country={'it'}
               countryCodeEditable
               enableSearch
-              onChange={(data) => {
-                onChange(data);
-                setPhone(data);
-              }}
+              onChange={onChange}
             ></PhoneInput>
           )}
         />
@@ -278,33 +224,15 @@ function TelephoneInput({
               type="checkbox"
               {...register('isTelephone')}
               defaultChecked
-              onChange={(e) =>
-                setMessengers({
-                  ...messengers,
-                  phone: e.target.checked,
-                })
-              }
             />
             Телефон
           </label>
           <label>
-            <input
-              type="checkbox"
-              {...register('isWhatsapp')}
-              onChange={(e) =>
-                setMessengers({ ...messengers, whatsapp: e.target.checked })
-              }
-            />
+            <input type="checkbox" {...register('isWhatsapp')} />
             Whatsapp
           </label>
           <label>
-            <input
-              type="checkbox"
-              {...register('isViber')}
-              onChange={(e) =>
-                setMessengers({ ...messengers, viber: e.target.checked })
-              }
-            />
+            <input type="checkbox" {...register('isViber')} />
             Viber
           </label>
         </div>

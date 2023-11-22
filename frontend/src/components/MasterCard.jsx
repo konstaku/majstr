@@ -31,10 +31,6 @@ export default function MasterCard({ master, showModal, setShowModal }) {
 
   // Null if no photo. Used for conditional rendering of avatar or first lettar of the name
   const photoRef = useRef(master.photo);
-  // Storing a ref to a card so I can change its class name when flipped
-  const masterCardRef = useRef();
-  // Ref to contacts block so I can hide / show it using class names
-  const contactRef = useRef();
 
   const randomAvatarColor = useMemo(() => {
     // I am using last two digits of an ID to derive a pseudorandom color for a card
@@ -44,7 +40,7 @@ export default function MasterCard({ master, showModal, setShowModal }) {
 
   return (
     <>
-      <div className="master-card" id={_id} ref={masterCardRef}>
+      <div className="master-card" id={_id}>
         <div
           className="master-card-body"
           style={{ backgroundColor: randomAvatarColor + '35' }}
