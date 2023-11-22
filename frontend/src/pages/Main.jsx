@@ -5,9 +5,9 @@ import professions from '../data/professions.json';
 import { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';
 import SearchResults from '../components/SearchResults';
-import Modal from '../components/Modal';
 import { MasterContext } from '../context';
 import { ACTIONS } from '../reducer';
+import Modal from '../components/Modal';
 
 export default function Main() {
   const { state, dispatch } = useContext(MasterContext);
@@ -53,6 +53,16 @@ export default function Main() {
     return () => {
       controller.abort();
     };
+  }, []);
+
+  // Check for an open mastercard in search params on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modalCard = params.get('card');
+
+    if (modalCard) {
+      setShowModal(modalCard);
+    }
   }, []);
 
   // Track document clicks whenever modal pops
@@ -163,11 +173,14 @@ export default function Main() {
               showModal={showModal}
               setShowModal={setShowModal}
             />
-            <Modal
-              id={showModal}
-              master={masters.find((master) => master._id === showModal)}
-              setShowModal={setShowModal}
-            ></Modal>
+            {/* The modal is shown conditionally, when there is someone to show */}
+            {showModal && isModalMaster(showModal) && (
+              <Modal
+                id={showModal}
+                master={isModalMaster(showModal)}
+                setShowModal={setShowModal}
+              ></Modal>
+            )}
           </>
         )}
       </div>
@@ -233,5 +246,9 @@ export default function Main() {
     if (event.key === 'Escape') {
       setShowModal(null);
     }
+  }
+
+  function isModalMaster(id) {
+    return masters.find((master) => master._id === id);
   }
 }

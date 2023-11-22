@@ -1,17 +1,30 @@
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { colorPalette } from './MasterCard';
 import Avatar from './Avatar';
 
 export default function Modal({ id, master, setShowModal }) {
-  if (!id) return;
-
+  // I am using last two digits of an ID to derive a pseudorandom color for a card
   const randomAvatarColor = useMemo(() => {
-    // I am using last two digits of an ID to derive a pseudorandom color for a card
     const seed = parseInt(id.slice(-2), 16) % colorPalette.length;
     return colorPalette[seed];
   }, [id]);
+
+  console.log('Trying to show modal of master:', master);
+
+  // Add card ID to address string, remove at unmount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('card', id);
+    window.history.pushState({}, '', `${window.location.pathname}?${params}`);
+
+    return () => {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('card');
+      window.history.pushState({}, '', `${window.location.pathname}`);
+    };
+  }, []);
 
   const generateContactLayout = useCallback(({ contactType, value }, index) => {
     let contactValue;
