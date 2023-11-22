@@ -23,6 +23,11 @@ export default function Root() {
     dispatch({ type: ACTIONS.LOGIN, payload: { user } });
   }, []);
 
+  const linkStyle = {
+    color: '#fff',
+    textDecoration: 'none',
+  };
+
   return (
     <>
       <header className="header">
@@ -39,14 +44,20 @@ export default function Root() {
         <div className="menu">
           <ul>
             <li>
-              <Link to="/">Пошук</Link>
+              <Link to="/" style={linkStyle}>
+                Пошук
+              </Link>
             </li>
             <li>
-              <Link to="/add">Додати майстра</Link>
+              <Link to="/add" style={linkStyle}>
+                Додати майстра
+              </Link>
             </li>
             {isLoggedIn ? (
               <li>
-                <Link to="/profile">Профіль</Link>
+                <Link to="/profile" style={linkStyle}>
+                  Профіль
+                </Link>
               </li>
             ) : (
               <li>

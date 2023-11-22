@@ -477,6 +477,10 @@ body {
 
 */
 
+.required {
+  color: rgb(255, 77, 77);
+}
+
 .create-user-container {
   width: 80%;
   max-width: 900px;
@@ -521,6 +525,7 @@ body {
   border-radius: 0.25rem;
   background-color: #ffffff;
   font-size: 14px;
+  font-weight: 300;
 }
 
 .create-user-form .create-user-input:focus {
