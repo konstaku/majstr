@@ -1,9 +1,25 @@
+const mongoose = require('mongoose');
+const AWS = require('aws-sdk');
+require('dotenv').config();
+const Master = require('./../database/schema/Master');
+
+const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
+const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
+const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+
 const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const colorPalette = require('./../data/colors.json');
 
 // const masters = require('./../data/masters.json');
 const professions = require('./../data/professions.json');
+
+// New S3 connection
+const s3 = new AWS.S3({
+  accessKeyId: AWS_ACCESS_KEY,
+  secretAccessKey: AWS_SECRET_ACCESS_KEY,
+});
 
 function createOGimageForMaster(master) {
   // Filter out websites and facebook addresses
@@ -101,8 +117,30 @@ function createOGimageForMaster(master) {
       context.drawImage(image, x, y, w, h);
       // Save image
       const buffer = canvas.toBuffer('image/png');
-      fs.writeFileSync(`./og/${master._id}.png`, buffer);
-      console.log(`Image for master #${master._id} saved!`);
+      // fs.writeFileSync(`./og/${master._id}.png`, buffer);
+
+      const uploadParams = {
+        Bucket: 'chupakabra-test',
+        Key: `user-og/${master._id}.jpg`,
+        Body: buffer,
+      };
+
+      s3.upload(uploadParams, (err, data) => {
+        if (err) {
+          console.log(err);
+          return;
+        }
+
+        console.log('Upload to s3 successful', data.Location);
+
+        Master.findByIdAndUpdate(master._id, {
+          OGimage: data.Location,
+        })
+          .then(() =>
+            console.log(`User ${master._id} OG image updated successfully`)
+          )
+          .catch(console.error);
+      });
     })
     .catch(console.error);
 }
@@ -192,7 +230,6 @@ fetch('https://api.konstaku.com:5000/?q=masters')
   })
   .then((masters) => {
     for (const master of masters) {
-      console.dir(master.contacts);
       createOGimageForMaster(master);
     }
   })

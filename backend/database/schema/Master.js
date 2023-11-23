@@ -16,6 +16,7 @@ const masterSchema = new mongoose.Schema({
   ],
   about: String,
   photo: String,
+  OGimage: String,
   likes: { type: Number, default: 0 },
   tags: {
     ua: [String],

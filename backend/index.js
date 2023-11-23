@@ -19,6 +19,7 @@ const httpsOptions = {
 
 const db = require('./database/db');
 const bot = require('./bot');
+const OGMW = require('./open-graph-middleware');
 
 const corsMiddleware = (req, res, next) => {
   // CORS headers temporary set to allow all origins - will change on production
@@ -36,6 +37,7 @@ async function main() {
 
   await db.runDB();
   await bot.runBot();
+  await OGMW();
 
   // This is where all my data fetch requests go
   app.get('/', async (req, res) => {
