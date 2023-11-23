@@ -1,12 +1,13 @@
 import 'react-phone-input-2/lib/style.css';
 
-import PhoneInput from 'react-phone-input-2';
-import locations from './../data/locations.json';
-import professions from './../data/professions.json';
+import Select from 'react-select';
 import { useContext, useEffect } from 'react';
 import { MasterContext } from '../context';
 import { Controller, useForm } from 'react-hook-form';
-import Select from 'react-select';
+import PhoneInput from 'react-phone-input-2';
+
+import locations from './../data/locations.json';
+import professions from './../data/professions.json';
 import CreatableSelect from 'react-select/creatable';
 import MasterCardPreview from '../components/MasterCardPreview';
 import useAuthenticateUser from '../custom-hooks/useAuthenticateUser';
@@ -24,6 +25,12 @@ export default function AddNewRecord() {
     formState: { errors },
   } = useForm({});
 
+  // As user name is updated in state, update form default value as state changes
+  useEffect(() => {
+    setValue('telegram', username);
+    setValue('name', firstName);
+  }, [username, firstName]);
+
   console.log('errors:', errors);
 
   // Fetch photo dynamically
@@ -31,12 +38,6 @@ export default function AddNewRecord() {
 
   // Get live updates from all fields
   const watcher = watch();
-
-  // As user name is updated in state, update form default value as state changes
-  useEffect(() => {
-    setValue('telegram', username);
-    setValue('name', firstName);
-  }, [username, firstName]);
 
   // Card preview, with up-to-date data via watcher
   const masterPreview = {
@@ -47,12 +48,7 @@ export default function AddNewRecord() {
   // Post form on submit
   const onSubmit = (data) => {
     console.log(data);
-    if (user.isAdmin) {
-      console.log('✨ You are admin! ✨');
-    } else {
-      console.log('You are not admin (((');
-    }
-    fetch('https://api.konstaku.com:5000/addmaster', {
+    fetch('https://api.majstr.com/addmaster', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),

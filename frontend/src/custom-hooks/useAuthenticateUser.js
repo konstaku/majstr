@@ -9,7 +9,7 @@ export default function useAuthenticateUser() {
 
       if (!token) return {};
 
-      await fetch('https://api.konstaku.com:5000/auth', {
+      await fetch('https://api.majstr.com/auth', {
         headers: { Authorization: token },
       })
         .then((response) => {

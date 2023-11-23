@@ -27,7 +27,7 @@ export default function Main() {
     const controller = new AbortController();
 
     const fetchMasters = async () => {
-      fetch('https://api.konstaku.com:5000/?q=masters', {
+      fetch('https://api.majstr.com/?q=masters', {
         signal: controller.signal,
       })
         .then((response) => {
@@ -74,6 +74,7 @@ export default function Main() {
     return () => {
       document.removeEventListener('click', trackClickOutsideCard);
       document.removeEventListener('keyup', trackEscWhileFlipped);
+      document.title = 'Majstr : Знаходь українських майстрів';
     };
   }, [showModal]);
 
