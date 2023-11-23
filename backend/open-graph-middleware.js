@@ -32,6 +32,14 @@ const OGMW = async () => {
     <link rel="apple-touch-icon" href="/img/icons/apple-app-icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta property="og:image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg">
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="627" />
+    <meta itemProp="image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg" />
+    <meta content="noarchive, max-image-preview:large" name="robots" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600&display=swap" rel="stylesheet">
