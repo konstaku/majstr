@@ -89,7 +89,7 @@ export default function Main() {
       document.removeEventListener('keyup', trackEscWhileFlipped);
       document.title = 'Majstr : Знаходь українських майстрів';
     };
-  }, [showModal]);
+  }, [showModal, masters]);
 
   // The first value is always an empty string, so the user can always return to "all" as an option
   // Then, I always display every location with at least one master in it
