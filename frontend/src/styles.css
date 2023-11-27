@@ -45,6 +45,7 @@ body {
 .logo {
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-left: 4rem;
   padding-right: 4rem;
   height: 100%;
@@ -160,6 +161,7 @@ body {
 
 .search-results-header {
   display: flex;
+  max-width: 90%;
   align-items: center;
   gap: 1rem;
   font-size: calc(var(--base-font-size) * 1.5);
@@ -593,6 +595,10 @@ body {
     height: 4rem;
   }
 
+  .search-results-header {
+    max-width: min-content;
+  }
+
   .logo {
     margin-left: 2rem;
     padding-right: 2rem;
@@ -667,6 +673,10 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+  }
+
+  .search-results-header {
+    margin: 2rem;
   }
 
   .master-card {

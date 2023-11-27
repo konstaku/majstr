@@ -31,16 +31,16 @@ export default function Root() {
   return (
     <>
       <header className="header">
-        <Link to="/">
-          <div className="logo">
+        <div className="logo">
+          <Link to="/">
             <img
               src="/img/logo/logo-dark.svg"
               alt="logo"
               width="150px"
               onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}
             />
-          </div>
-        </Link>
+          </Link>
+        </div>
         <div className="menu">
           <ul>
             <li>
