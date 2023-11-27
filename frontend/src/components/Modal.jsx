@@ -1,18 +1,18 @@
 import professions from '../data/professions.json';
 import locations from '../data/locations.json';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { colorPalette } from './MasterCard';
 import Avatar from './Avatar';
-import { Helmet, HelmetProvider } from 'react-helmet-async';
 
-export default function Modal({ id, master, setShowModal }) {
+export default function Modal({ master, setShowModal }) {
+  const { _id: id } = master;
+  const [clipboardURL, setClipboardURL] = useState(null);
+
   // I am using last two digits of an ID to derive a pseudorandom color for a card
   const randomAvatarColor = useMemo(() => {
     const seed = parseInt(id.slice(-2), 16) % colorPalette.length;
     return colorPalette[seed];
   }, [id]);
-
-  console.log('Trying to show modal of master:', master);
 
   // Add card ID to address string, remove at unmount
   useEffect(() => {
@@ -26,6 +26,18 @@ export default function Modal({ id, master, setShowModal }) {
       window.history.pushState({}, '', `${window.location.pathname}`);
     };
   }, []);
+
+  // Set URL to clipboard for sharing
+  useEffect(() => {
+    (async function () {
+      const url = `https://majstr.com/?card=${id}`;
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch (err) {
+        console.error('Failed to copy text to clipboard', err);
+      }
+    })();
+  }, [clipboardURL]);
 
   const generateContactLayout = useCallback(({ contactType, value }, index) => {
     let contactValue;
@@ -59,83 +71,59 @@ export default function Modal({ id, master, setShowModal }) {
     );
   }, []);
 
-  // Link to user's OG image
-  const masterOGlink = `https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${id}.jpg`;
-  console.log('masterOGlink', masterOGlink);
-
   return (
-    <>
-      <HelmetProvider>
-        <Helmet>
-          <title>{`${master.name} | ${
-            professions.find((p) => p.id === master.professionID).name.ua
-          }`}</title>
-          <meta
-            property="og:title"
-            content={`${master.name}: ${
-              professions.find((p) => p.id === master.professionID).name.ua
-            } у ${
-              locations.find((l) => l.id === master.locationID).city.ua_alt
-            }`}
-          />
-          <meta
-            property="og:description"
-            content={'🇺🇦 Знаходь українських майстрів на majstr.com'}
-          />
-          <meta property="og:image" content={masterOGlink} />
-        </Helmet>
-
-        <div className="modal-overlay">
-          <div className="modal-overlay-inside">
-            <div className="modal-content" id="details-modal">
-              <div
-                className="master-card-body modal"
-                style={{ backgroundColor: randomAvatarColor + '35' }}
-              >
-                <div>
-                  <div className="master-card-header">
-                    <Avatar
-                      img={master.photo}
-                      color={randomAvatarColor}
-                      name={master.name}
+    <div className="modal-overlay">
+      <div className="modal-overlay-inside">
+        <div className="modal-content" id="details-modal">
+          <div
+            className="master-card-body modal"
+            style={{ backgroundColor: randomAvatarColor + '35' }}
+          >
+            <div>
+              <div className="master-card-header">
+                <Avatar
+                  img={master.photo}
+                  color={randomAvatarColor}
+                  name={master.name}
+                />
+                <div className="share-close-container">
+                  <div
+                    className={`share-container ${clipboardURL && 'confirm'}`}
+                    onClick={() => setClipboardURL(id)}
+                  >
+                    <img
+                      src={`/img/icons/${clipboardURL ? 'ok' : 'share'}.svg`}
+                      alt="share"
                     />
-                    <div
-                      className="close-container"
-                      onClick={() => setShowModal(null)}
-                    >
-                      <img
-                        src="/img/icons/close.svg"
-                        alt="close"
-                        style={{ width: '12px', height: '12px' }}
-                      />
-                    </div>
                   </div>
-                  <div className="master-card-name">{master.name}</div>
-                  <div className="master-card-profession">
-                    {
-                      professions.find((p) => p.id === master.professionID).name
-                        .ua
-                    }
+                  <div
+                    className="close-container"
+                    onClick={() => setShowModal(null)}
+                  >
+                    <img src="/img/icons/close.svg" alt="close" />
                   </div>
-                  <div className="mastercard-location">
-                    <img src="/img/icons/geopin.svg" alt="" />
-                    {locations.find((l) => l.id === master.locationID).city.ua}
-                  </div>
-                  <div className="mastercard-about">
-                    {master.about
-                      ? master.about
-                      : `Нажаль, майстер немає детального опису 🤷‍♂️`}
-                  </div>
-                </div>
-
-                <div className="mastercard-contacts">
-                  {master.contacts.map(generateContactLayout)}
                 </div>
               </div>
+              <div className="master-card-name">{master.name}</div>
+              <div className="master-card-profession">
+                {professions.find((p) => p.id === master.professionID).name.ua}
+              </div>
+              <div className="mastercard-location">
+                <img src="/img/icons/geopin.svg" alt="" />
+                {locations.find((l) => l.id === master.locationID).city.ua}
+              </div>
+              <div className="mastercard-about">
+                {master.about
+                  ? master.about
+                  : `Нажаль, майстер немає детального опису 🤷‍♂️`}
+              </div>
+            </div>
+            <div className="mastercard-contacts">
+              {master.contacts.map(generateContactLayout)}
             </div>
           </div>
         </div>
-      </HelmetProvider>
-    </>
+      </div>
+    </div>
   );
 }

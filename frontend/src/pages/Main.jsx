@@ -65,11 +65,24 @@ export default function Main() {
     }
   }, []);
 
-  // Track document clicks whenever modal pops
+  // Display master name in page title whenever modal pops
+  // Track document clicks outside modal
   useEffect(() => {
     if (showModal) {
       document.addEventListener('click', trackClickOutsideCard);
       document.addEventListener('keyup', trackEscWhileFlipped);
+
+      const currentMaster = masters.find((master) => master._id === showModal);
+      if (!currentMaster) return;
+
+      const professionName = professions.find(
+        (profession) => profession.id === currentMaster.professionID
+      ).name.ua;
+      const cityName = locations.find(
+        (location) => location.id === currentMaster.locationID
+      ).city.ua_alt;
+
+      document.title = `${currentMaster.name} | ${professionName} в ${cityName}`;
     }
     return () => {
       document.removeEventListener('click', trackClickOutsideCard);
@@ -177,7 +190,7 @@ export default function Main() {
             {/* The modal is shown conditionally, when there is someone to show */}
             {showModal && isModalMaster(showModal) && (
               <Modal
-                id={showModal}
+                // id={showModal}
                 master={isModalMaster(showModal)}
                 setShowModal={setShowModal}
               ></Modal>

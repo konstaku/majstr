@@ -263,8 +263,14 @@ body {
   color: white;
 }
 
+.share-close-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .bookmark-container,
-.close-container {
+.close-container,
+.share-container {
   height: calc(var(--base-font-size) * 1.875 * var(--scaling-factor));
   width: calc(var(--base-font-size) * 1.875 * var(--scaling-factor));
   display: flex;
@@ -273,6 +279,16 @@ body {
   background-color: #f7fafc;
   border-radius: 1000px;
   cursor: pointer;
+}
+
+.close-container > img,
+.share-container > img {
+  width: 12px;
+  height: 12px;
+}
+
+.share-container.confirm {
+  background-color: #4fd1c5;
 }
 
 .master-card-name {
