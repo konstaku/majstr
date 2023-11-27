@@ -1,10 +1,24 @@
 const express = require('express');
 const PORT_NUMBER = 5050;
 const db = require('./database/db');
+const fs = require('fs');
+const jsdom = require('jsdom');
 const Master = require('./database/schema/Master');
 
 const professions = require('./data/professions.json');
 const locations = require('./data/locations.json');
+
+/* 
+
+    This function is a middleware that does HTML rendering in case client comes from an 
+external link to a master card. The forwarding to middleware is done in nginx settings,
+for any traffic that has '?card=' in url search params.
+
+    The middleware is fetching master's custom OG image from database, and sets it inside the 
+OG tags. It will also update the page title for SEO purposes. It is done by DOM manipulation:
+title node is replaced and new tags are appended to meta section
+
+*/
 
 const OGMW = async () => {
   const app = express();
@@ -23,39 +37,43 @@ const OGMW = async () => {
 
     if (!master) return res.status(404).send(`Master with id ${id} not found`);
 
-    const html = `<!doctype html>
-  <html lang="en">
-  
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/img/icons/favicon.svg" />
-    <link rel="apple-touch-icon" href="/img/icons/apple-app-icon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta property="og:image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg">
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="627" />
-    <meta itemProp="image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg" />
+    // Generate a custom page title for a master
+    const newTitle = `${master.name}: ${
+      professions.find((p) => p.id === master.professionID).name.ua
+    } в ${locations.find((l) => l.id === master.locationID).city.ua_alt}`;
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg" />
-    <meta content="noarchive, max-image-preview:large" name="robots" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600&display=swap" rel="stylesheet">
-    <title>Majstr : Знаходь українських майстрів</title>
-    <script type="module" crossorigin src="/assets/index-53b5aec3.js"></script>
-    <link rel="stylesheet" href="/assets/index-0b5db0eb.css">
-  </head>
-  
-  <body>
-    <div id="root"></div>
-    
-  </body>
-  
-  </html>`;
+    // Meta tags for update
+    const metaTags = `
+  <meta property="og:image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg">
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="627" />
+  <meta itemProp="image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg" />
+  <meta content="noarchive, max-image-preview:large" name="robots" />`;
 
-    res.status(200).send(html);
+    // Get latest index HTML file from frontend directory
+    let indexHtml = fs.readFileSync('./../frontend/index.html', 'utf8');
+
+    // Parse HTML to DOM
+    const dom = new jsdom.JSDOM(indexHtml);
+    const doc = dom.window.document;
+
+    // Select head and title nodes
+    const head = doc.querySelector('head');
+    const title = doc.querySelector('title');
+
+    // Change title
+    title.textContent = newTitle;
+    // Update head
+    head.insertAdjacentHTML('beforeend', metaTags);
+
+    // Serialize back to html string
+    indexHtml = doc.documentElement.outerHTML;
+
+    // Send an updated file
+    res.status(200).send(indexHtml);
   });
 };
 
