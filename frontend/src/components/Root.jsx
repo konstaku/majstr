@@ -48,11 +48,13 @@ export default function Root() {
                 Пошук
               </Link>
             </li>
-            <li>
-              <Link to="/add" style={linkStyle}>
-                Додати майстра
-              </Link>
-            </li>
+            {isLoggedIn && (
+              <li>
+                <Link to="/add" style={linkStyle}>
+                  Додати майстра
+                </Link>
+              </li>
+            )}
             {isLoggedIn ? (
               <li>
                 <Link to="/profile" style={linkStyle}>

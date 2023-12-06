@@ -6,7 +6,7 @@ import Avatar from './Avatar';
 
 export default function Modal({ master, setShowModal }) {
   const { _id: id } = master;
-  const [clipboardURL, setClipboardURL] = useState(null);
+  const [copyUrl, setCopyUrl] = useState(null);
 
   // I am using last two digits of an ID to derive a pseudorandom color for a card
   const randomAvatarColor = useMemo(() => {
@@ -26,18 +26,6 @@ export default function Modal({ master, setShowModal }) {
       window.history.pushState({}, '', `${window.location.pathname}`);
     };
   }, []);
-
-  // Set URL to clipboard for sharing
-  useEffect(() => {
-    (async function () {
-      const url = `https://majstr.com/?card=${id}`;
-      try {
-        await navigator.clipboard.writeText(url);
-      } catch (err) {
-        console.error('Failed to copy text to clipboard', err);
-      }
-    })();
-  }, [clipboardURL]);
 
   const generateContactLayout = useCallback(({ contactType, value }, index) => {
     let contactValue;
@@ -71,6 +59,16 @@ export default function Modal({ master, setShowModal }) {
     );
   }, []);
 
+  async function copyUrlToClipboard(id) {
+    const url = `https://majstr.com/?card=${id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyUrl(url);
+    } catch (err) {
+      console.error('Failed to copy text to clipboard', err);
+    }
+  }
+
   return (
     <div className="modal-overlay">
       <div className="modal-overlay-inside">
@@ -88,11 +86,11 @@ export default function Modal({ master, setShowModal }) {
                 />
                 <div className="share-close-container">
                   <div
-                    className={`share-container ${clipboardURL && 'confirm'}`}
-                    onClick={() => setClipboardURL(id)}
+                    className={`share-container ${copyUrl && 'confirm'}`}
+                    onClick={() => copyUrlToClipboard(id)}
                   >
                     <img
-                      src={`/img/icons/${clipboardURL ? 'ok' : 'share'}.svg`}
+                      src={`/img/icons/${copyUrl ? 'ok' : 'share'}.svg`}
                       alt="share"
                     />
                   </div>

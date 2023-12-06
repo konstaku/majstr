@@ -1,7 +1,7 @@
 import 'react-phone-input-2/lib/style.css';
 
 import Select from 'react-select';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { MasterContext } from '../context';
 import { Controller, useForm } from 'react-hook-form';
 import PhoneInput from 'react-phone-input-2';
@@ -29,6 +29,7 @@ export default function AddNewRecord() {
   useEffect(() => {
     setValue('telegram', username);
     setValue('name', firstName);
+    setValue('useThisPhoto', true);
   }, [username, firstName]);
 
   console.log('errors:', errors);
@@ -72,14 +73,22 @@ export default function AddNewRecord() {
           </div>
           <form id="add-new-piggy" onSubmit={handleSubmit(onSubmit)}>
             <PhotoInput photo={photo} register={register} />
-            <NameInput register={register} />
-            <ProfessionInput control={control} professions={professions} />
-            <LocationInput control={control} locations={locations} />
-            <TagsInput control={control} tags={watcher.tags} />
+            <NameInput register={register} errors={errors} />
+            <ProfessionInput
+              control={control}
+              professions={professions}
+              errors={errors}
+            />
+            <LocationInput
+              control={control}
+              locations={locations}
+              errors={errors}
+            />
+            <TagsInput control={control} tags={watcher.tags} errors={errors} />
             <TelephoneInput register={register} control={control} />
             <InstagramInput register={register} />
             <TelegramInput register={register} />
-            <AboutInput register={register} />
+            <AboutInput register={register} errors={errors} />
             <button type="submit">Створити запис</button>
           </form>
         </div>
@@ -104,7 +113,7 @@ function PhotoInput({ photo, register }) {
           }}
         ></div>
         <label>
-          <input {...register('useThisPhoto')} type="checkbox" defaultChecked />
+          <input {...register('useThisPhoto')} type="checkbox" />
           Використати це фото
         </label>
       </>
@@ -112,15 +121,17 @@ function PhotoInput({ photo, register }) {
   );
 }
 
-function NameInput({ register }) {
+function NameInput({ register, errors }) {
   return (
     <div className="input-field">
       <label>
         <div className="input-label">
-          Ваше імʼя: <span className="required">*</span>
+          Ваше імʼя:<span className="required">*</span>
         </div>
         <input
-          className="create-user-input"
+          className={`create-user-input ${
+            errors?.name?.message ? 'error' : ''
+          }`}
           placeholder="Ваше імʼя"
           {...register('name', {
             required: { value: true, message: 'Це обовʼязкове поле' },
@@ -128,11 +139,14 @@ function NameInput({ register }) {
           })}
         />
       </label>
+      <div className="error-message" hidden={!errors?.name?.message}>
+        {errors?.name?.message}
+      </div>
     </div>
   );
 }
 
-function ProfessionInput({ control, professions }) {
+function ProfessionInput({ control, professions, errors }) {
   return (
     <div className="input-field">
       <label>
@@ -154,6 +168,15 @@ function ProfessionInput({ control, professions }) {
                 // Important to call the original onChange provided by Controller
                 onChange(e.value);
               }}
+              // Style is applied only if there are errors
+              styles={
+                errors?.profession?.message && {
+                  control: (baseStyles) => ({
+                    ...baseStyles,
+                    borderColor: 'rgb(255, 77, 77)',
+                  }),
+                }
+              }
               options={professions.map((profession) => ({
                 value: profession.id,
                 label: profession.name.ua,
@@ -162,11 +185,14 @@ function ProfessionInput({ control, professions }) {
           )}
         />
       </label>
+      <div className="error-message" hidden={!errors?.profession?.message}>
+        {errors?.profession?.message}
+      </div>
     </div>
   );
 }
 
-function LocationInput({ control, locations }) {
+function LocationInput({ control, locations, errors }) {
   return (
     <div className="input-field">
       <label>
@@ -185,6 +211,15 @@ function LocationInput({ control, locations }) {
                 // Important to call the original onChange provided by Controller
                 onChange(e.value);
               }}
+              // Style is applied only if there are errors
+              styles={
+                errors?.location?.message && {
+                  control: (baseStyles) => ({
+                    ...baseStyles,
+                    borderColor: 'rgb(255, 77, 77)',
+                  }),
+                }
+              }
               options={locations.map((location) => ({
                 value: location.id,
                 label: location.city.ua,
@@ -193,11 +228,14 @@ function LocationInput({ control, locations }) {
           )}
         />
       </label>
+      <div className="error-message" hidden={!errors?.location?.message}>
+        {errors?.location?.message}
+      </div>
     </div>
   );
 }
 
-function TagsInput({ control, tags = [] }) {
+function TagsInput({ control, tags = [], errors }) {
   return (
     <div className="input-field">
       <label>
@@ -216,13 +254,31 @@ function TagsInput({ control, tags = [] }) {
           }}
           render={({ field: { onChange } }) => (
             <CreatableSelect
-              isValidNewOption={() => tags.length < 3}
+              isValidNewOption={(value) => {
+                // If an option is >3 and <20 then it can be added
+                // Also if there are already 3 tags, it can't be added
+                return tags.length < 3 && value.length > 3 && value.length < 25;
+              }}
               onChange={onChange}
+              // Style is applied only if there are errors
+              styles={
+                errors?.tags?.message && {
+                  control: (baseStyles) => ({
+                    ...baseStyles,
+                    borderColor: 'rgb(255, 77, 77)',
+                  }),
+                }
+              }
+              noOptionsMessage={() => 'Введіть назву до 25 символів'}
+              formatCreateLabel={(value) => `Додати ${value}`}
               isMulti
             />
           )}
         />
       </label>
+      <div className="error-message" hidden={!errors?.tags?.message}>
+        {errors?.tags?.message}
+      </div>
     </div>
   );
 }
@@ -295,19 +351,28 @@ function TelegramInput({ register }) {
   );
 }
 
-function AboutInput({ register }) {
+function AboutInput({ register, errors }) {
   return (
     <div className="input-field">
       <label>
-        <div className="input-label">Інформація про вас</div>
+        <div className="input-label">
+          Інформація про вас<span className="required">*</span>
+        </div>
         <textarea
-          {...register('about')}
-          className="create-user-input"
-          placeholder={`Майстер автосервісу. Знаходжуся в Турині, район Аврора. Спеціалізуюся на німецьких авто. Допоможу зробити техогляд, замінити мастила та фільтри, зробити електронну діагностіку, замовити запчастини та полагодити авто. Для українців є знижки, звертайтеся за телефоном.`}
+          {...register('about', {
+            required: { value: true, message: 'Це обовʼязкове поле' },
+          })}
+          className={`create-user-input ${
+            errors?.about?.message ? 'error' : ''
+          }`}
+          placeholder={`Додаткова інформація про вас:\nЯкі самі послуги ви надаєте? В якоиу районі знаходитеся? Що треба знати перед тим, як звертутися до вас?`}
           cols="30"
           rows="6"
         ></textarea>
       </label>
+      <div className="error-message" hidden={!errors?.about?.message}>
+        {errors?.about?.message}
+      </div>
     </div>
   );
 }
