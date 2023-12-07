@@ -3,6 +3,7 @@ const { default: mongoose } = require('mongoose');
 const masterSchema = new mongoose.Schema({
   name: String,
   professionID: String,
+  telegramID: Number,
   countryID: {
     type: String,
     default: 'IT',

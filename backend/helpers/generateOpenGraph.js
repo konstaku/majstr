@@ -21,7 +21,9 @@ const s3 = new AWS.S3({
   secretAccessKey: AWS_SECRET_ACCESS_KEY,
 });
 
-function createOGimageForMaster(master) {
+async function createOGimageForMaster(master) {
+  console.log('Generating OG image for master:', JSON.stringify(master));
+
   // Filter out websites and facebook addresses
   const contactsToShow = master.contacts.filter(
     (contact) =>
@@ -111,14 +113,13 @@ function createOGimageForMaster(master) {
   context.fillText(contactsValues, contactsValuesMarginLeft, contactsMarginTop);
 
   // Render logo and save image
-  loadImage('./../data/img/logo/og-logo.png')
+  const imageUrl = await loadImage('./data/img/logo/og-logo.png')
     .then((image) => {
       const { w, h, x, y } = logoPosition;
       context.drawImage(image, x, y, w, h);
+
       // Save image
       const buffer = canvas.toBuffer('image/png');
-      // fs.writeFileSync(`./og/${master._id}.png`, buffer);
-
       const uploadParams = {
         Bucket: 'chupakabra-test',
         Key: `user-og/${master._id}.jpg`,
@@ -136,13 +137,16 @@ function createOGimageForMaster(master) {
         Master.findByIdAndUpdate(master._id, {
           OGimage: data.Location,
         })
-          .then(() =>
-            console.log(`User ${master._id} OG image updated successfully`)
-          )
+          .then(() => {
+            console.log(`User ${master._id} OG image updated successfully`);
+            return data.Location;
+          })
           .catch(console.error);
       });
     })
     .catch(console.error);
+
+  return imageUrl || null;
 }
 
 // Helper function to fill a rectangle with rounded corners
@@ -160,7 +164,7 @@ function FillRoundedRect(ctx, x, y, width, height, radius) {
 // Derives a color from palette based on an ID
 function getColorFromId(id) {
   if (!id) return '#ffffff';
-  const seed = parseInt(id.slice(-2), 16) % colorPalette.length;
+  const seed = parseInt(id.toString().slice(-2), 16) % colorPalette.length;
   return colorPalette[seed] + '35';
 }
 
@@ -220,23 +224,23 @@ function removeLastWordIfLong(str) {
 // }
 
 // Create images for all masters
-fetch('https://api.konstaku.com:5000/?q=masters')
-  .then((response) => {
-    if (response.ok) {
-      return response.json();
-    } else {
-      return Promise.reject(response);
-    }
-  })
-  .then((masters) => {
-    for (const master of masters) {
-      createOGimageForMaster(master);
-    }
-  })
-  .catch((error) => {
-    if (error.name === 'AbortError') return;
-    console.error(error);
-    setIsError(true);
-  });
+// fetch('https://api.konstaku.com:5000/?q=masters')
+//   .then((response) => {
+//     if (response.ok) {
+//       return response.json();
+//     } else {
+//       return Promise.reject(response);
+//     }
+//   })
+//   .then((masters) => {
+//     for (const master of masters) {
+//       createOGimageForMaster(master);
+//     }
+//   })
+//   .catch((error) => {
+//     if (error.name === 'AbortError') return;
+//     console.error(error);
+//     setIsError(true);
+//   });
 
 module.exports = createOGimageForMaster;

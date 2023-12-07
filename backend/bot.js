@@ -31,7 +31,7 @@ module.exports.runBot = async function () {
   const bot = new TelegramBot(BOT_TOKEN);
   const httpsServer = https.createServer(httpsOptions, app);
 
-  await bot.setWebHook(`https://konstaku.com:${PORT_NUMBER}/webhook`);
+  await bot.setWebHook(`https://majstr.com:${PORT_NUMBER}/webhook`);
 
   httpsServer
     .listen(PORT_NUMBER, () =>
@@ -48,6 +48,7 @@ module.exports.runBot = async function () {
 
 async function handleWebhook(req, res, bot) {
   console.log('Webhook triggered!');
+  console.log('request:', req);
   const message = req.body.message;
 
   // If webhook activated, but there is no message, do nothing

@@ -10,8 +10,8 @@ const professions = require('./data/professions.json');
 const locations = require('./data/locations.json');
 
 const PORT_NUMBER = 5000;
-const CERTIFICATE = process.env.CERTIFICATE;
-const KEYFILE = process.env.KEYFILE;
+const CERTIFICATE = process.env.CERTIFICATE_API;
+const KEYFILE = process.env.KEYFILE_API;
 const httpsOptions = {
   key: fs.readFileSync(KEYFILE),
   cert: fs.readFileSync(CERTIFICATE),
@@ -20,6 +20,7 @@ const httpsOptions = {
 const db = require('./database/db');
 const bot = require('./bot');
 const OGMW = require('./open-graph-middleware');
+const createOGimageForMaster = require('./helpers/generateOpenGraph');
 
 const corsMiddleware = (req, res, next) => {
   // CORS headers temporary set to allow all origins - will change on production
@@ -62,10 +63,13 @@ async function main() {
         break;
       default:
         console.log(`Unknown request, sending 404...`);
+        console.log('request url:', req.url);
         res.status(404).send('No such file!');
     }
   });
 
+  // This endpoint is checking if a user has token
+  // If yes, it returns user data from DB
   app.get('/auth', async (req, res) => {
     console.log(`=== Login request ===`);
     // Check for auth token in request headers
@@ -95,10 +99,53 @@ async function main() {
     }
 
     // 1. Validate data
+    /* 
+    
+    Request data:                                                  
+    name: Konstantyn                                               
+    professionID: physiotherapist                                  
+    locationID: brescia                                            
+    tags: [object Object]                                          
+    isTelephone: true                                              
+    isWhatsapp: false                                              
+    isViber: false                                                 
+    instagram: 123123123                                           
+    telegram: wondercooler123                                      
+    about: 123123123                                               
+    useThisPhoto: true                                             
+    telegramID: 5950535                                            
+    photo: https://chupakabra-test.s3.amazonaws.com/userpics/654a  
 
-    // 2. Update database
+    */
 
-    // 3. If user is not an admin, add master profile to the their user record
+    const master = new Master(req.body);
+
+    // Automatically approve and add records made by admin
+    if (req.body.telegramID === 5950535) {
+      master.approved = true;
+    }
+
+    const validationError = master.validateSync();
+    if (validationError) throw new Error(validationError);
+
+    // 2. Find user in database with matching userId
+    const user = await User.find({ telegramID: master.telegramID });
+    if (!user) throw new Error('User not found in users db');
+
+    // 3. Create new master record, set approved to true.
+    // Copy telegramId, photo (if there is photo and "usephoto" selected)
+    const savedMaster = await Master.create(master).catch(console.error);
+    console.log('Master entry created successfully!');
+
+    // 4. Generate OG image
+    const ogUrl = await createOGimageForMaster(savedMaster);
+    console.log('OG URL created successfully: ', ogUrl);
+    master.OGimage = ogUrl;
+
+    // 5. Update database record
+    await master.save();
+
+    // x. (optional) Add master profile to the their user record
 
     res.status(200).json({ success: true });
   });
