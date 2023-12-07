@@ -1,7 +1,7 @@
 import 'react-phone-input-2/lib/style.css';
 
 import Select from 'react-select';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect } from 'react';
 import { MasterContext } from '../context';
 import { Controller, useForm } from 'react-hook-form';
 import PhoneInput from 'react-phone-input-2';
@@ -15,11 +15,13 @@ import useAuthenticateUser from '../custom-hooks/useAuthenticateUser';
 export default function AddNewRecord() {
   const { state, dispatch } = useContext(MasterContext);
   const { user } = state;
+  console.log('************************ user', JSON.stringify(user));
   const { firstName, username } = user;
   const {
     register,
     handleSubmit,
     setValue,
+    getValues,
     control,
     watch,
     formState: { errors },
@@ -35,7 +37,7 @@ export default function AddNewRecord() {
   console.log('errors:', errors);
 
   // Fetch photo dynamically
-  const { photo } = useAuthenticateUser();
+  const { photo, telegramID } = useAuthenticateUser();
 
   // Get live updates from all fields
   const watcher = watch();
@@ -48,11 +50,52 @@ export default function AddNewRecord() {
 
   // Post form on submit
   const onSubmit = (data) => {
-    console.log(data);
+    console.log('--------> data:', data);
+    console.log('--------> values:', getValues());
+
+    /* 
+    contacts: [
+      {
+        contactType: String,
+        value: String,
+      },
+    ],
+    */
+
+    // Create contacts array to save in db
+    const contacts = [];
+    if (data.telephone) {
+      data.isTelephone &&
+        contacts.push({ contactType: 'phone', value: data.telephone });
+      data.isWhatsapp &&
+        contacts.push({ contactType: 'whatsapp', value: data.telephone });
+      data.isViber &&
+        contacts.push({ contactType: 'viber', value: data.telephone });
+      data.instagram &&
+        contacts.push({ contactType: 'instagram', value: data.instagram });
+      data.telegram &&
+        contacts.push({ contactType: 'telegram', value: data.telegram });
+    }
+
+    const tags = {};
+    tags.ua = [];
+    data.tags.forEach((tag) => tags.ua.push(tag.value));
+
+    console.log('-------------->  contacts to save:', contacts);
+
+    // Adding Telegram ID and photo url to user profile
+    const dataToSave = {
+      ...data,
+      telegramID: telegramID || null,
+      photo: photo || null,
+      contacts,
+      tags,
+    };
+
     fetch('https://api.majstr.com/addmaster', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(dataToSave),
     })
       .then((response) => {
         if (response.ok) {
@@ -155,7 +198,7 @@ function ProfessionInput({ control, professions, errors }) {
         </div>
         <Controller
           control={control}
-          name="profession"
+          name="professionID"
           rules={{
             required: {
               value: true,
@@ -201,7 +244,7 @@ function LocationInput({ control, locations, errors }) {
         </div>
         <Controller
           control={control}
-          name="location"
+          name="locationID"
           rules={{
             required: { value: true, message: 'Обовʼязково вкажіть місто' },
           }}
@@ -213,7 +256,7 @@ function LocationInput({ control, locations, errors }) {
               }}
               // Style is applied only if there are errors
               styles={
-                errors?.location?.message && {
+                errors?.locationID?.message && {
                   control: (baseStyles) => ({
                     ...baseStyles,
                     borderColor: 'rgb(255, 77, 77)',
@@ -228,8 +271,8 @@ function LocationInput({ control, locations, errors }) {
           )}
         />
       </label>
-      <div className="error-message" hidden={!errors?.location?.message}>
-        {errors?.location?.message}
+      <div className="error-message" hidden={!errors?.locationID?.message}>
+        {errors?.locationID?.message}
       </div>
     </div>
   );

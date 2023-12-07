@@ -4,7 +4,7 @@ import Avatar from './Avatar';
 
 export default function MasterCardPreview({ master }) {
   const { photo, watcher } = master;
-  const { name, location, profession, tags, useThisPhoto } = watcher;
+  const { name, locationID, professionID, tags, useThisPhoto } = watcher;
 
   return (
     <>
@@ -22,21 +22,21 @@ export default function MasterCardPreview({ master }) {
             </div>
             <div className="master-card-name">{name}</div>
             <div className="master-card-profession">
-              {profession
-                ? professions.find((p) => p.id === profession).name.ua
+              {professionID
+                ? professions.find((p) => p.id === professionID).name.ua
                 : 'Професія невідома'}
             </div>
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
-              {location
-                ? locations.find((l) => l.id === location).city.ua
+              {locationID
+                ? locations.find((l) => l.id === locationID).city.ua
                 : 'Локація невідома'}
             </div>
           </div>
           <div className="mastercard-tag-container">
             {!!tags?.length &&
               tags
-                .sort((a, b) => a.length - b.length)
+                .sort((a, b) => a.value.length - b.value.length)
                 .map((tag, index) => (
                   <div key={index} className="mastercard-tag">
                     {tag.value.toLowerCase()}
