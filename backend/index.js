@@ -71,21 +71,23 @@ async function main() {
   // This endpoint is checking if a user has token
   // If yes, it returns user data from DB
   app.get('/auth', async (req, res) => {
-    console.log(`=== Login request ===`);
-    // Check for auth token in request headers
     const token = req.headers.authorization;
-    // If token does not exist, send 400
-    if (!token) return res.status(400).send('No token');
+    if (!token) {
+      console.log('Auth request without a token, returning 400');
+      return res.status(400).send('No token');
+    }
 
-    // If token exists, find a user with a matching token
     console.log(`Login request with token ${token}`);
-    const user = await User.findOne({ token: token.toString() });
+    console.log(`Looking up database entry...`);
 
-    return user
-      ? // If user exists, send user data
-        res.status(200).send(JSON.stringify(user))
-      : // Otherwise send an error
-        res.status(404).send('User not found');
+    const user = await User.findOne({ token: token.toString() });
+    if (!user) {
+      console.log('User with this token not found');
+      return res.status(404).send('User not found');
+    }
+
+    console.log('Login successful, sending user...');
+    res.status(200).send(JSON.stringify(user));
   });
 
   // This is an endpoint for adding a new master.
@@ -98,26 +100,6 @@ async function main() {
       console.log(`${key}: ${req.body[key]}`);
     }
 
-    // 1. Validate data
-    /* 
-    
-    Request data:                                                  
-    name: Konstantyn                                               
-    professionID: physiotherapist                                  
-    locationID: brescia                                            
-    tags: [object Object]                                          
-    isTelephone: true                                              
-    isWhatsapp: false                                              
-    isViber: false                                                 
-    instagram: 123123123                                           
-    telegram: wondercooler123                                      
-    about: 123123123                                               
-    useThisPhoto: true                                             
-    telegramID: 5950535                                            
-    photo: https://chupakabra-test.s3.amazonaws.com/userpics/654a  
-
-    */
-
     const master = new Master(req.body);
 
     // Automatically approve and add records made by admin
@@ -125,25 +107,49 @@ async function main() {
       master.approved = true;
     }
 
+    // 1. Validate data
     const validationError = master.validateSync();
     if (validationError) throw new Error(validationError);
 
     // 2. Find user in database with matching userId
-    const user = await User.find({ telegramID: master.telegramID });
-    if (!user) throw new Error('User not found in users db');
+    try {
+      const user = await User.find({ telegramID: master.telegramID });
+      if (!user) throw new Error('User not found in users db');
+    } catch (err) {
+      console.error(err);
+      return res.status(404).send('Error finding user');
+    }
 
     // 3. Create new master record, set approved to true.
     // Copy telegramId, photo (if there is photo and "usephoto" selected)
-    const savedMaster = await Master.create(master).catch(console.error);
+    let savedMaster;
+    try {
+      savedMaster = await Master.create(master);
+    } catch (err) {
+      console.error(err);
+      return res.status(404).send('Error finding user');
+    }
     console.log('Master entry created successfully!');
 
     // 4. Generate OG image
-    const ogUrl = await createOGimageForMaster(savedMaster);
-    console.log('OG URL created successfully: ', ogUrl);
-    master.OGimage = ogUrl;
+    let ogUrl;
+    try {
+      ogUrl = await createOGimageForMaster(savedMaster);
+      console.log('Open Graph image created successfully: ', ogUrl);
+      master.OGimage = ogUrl;
+    } catch (err) {
+      console.error(err);
+      return res.status(500).send('Error creating open graph image');
+    }
 
     // 5. Update database record
-    await master.save();
+    try {
+      await master.save();
+      console.log('Master saved successfully!: ', ogUrl);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).send('Error saving master data');
+    }
 
     // x. (optional) Add master profile to the their user record
 

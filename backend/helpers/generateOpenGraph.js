@@ -113,40 +113,39 @@ async function createOGimageForMaster(master) {
   context.fillText(contactsValues, contactsValuesMarginLeft, contactsMarginTop);
 
   // Render logo and save image
-  const imageUrl = await loadImage('./data/img/logo/og-logo.png')
-    .then((image) => {
-      const { w, h, x, y } = logoPosition;
-      context.drawImage(image, x, y, w, h);
+  const logo = await loadImage('./data/img/logo/og-logo.png').catch((err) => {
+    console.log('Error loading logo');
+    throw err;
+  });
+  const { w, h, x, y } = logoPosition;
+  context.drawImage(logo, x, y, w, h);
 
-      // Save image
-      const buffer = canvas.toBuffer('image/png');
-      const uploadParams = {
-        Bucket: 'chupakabra-test',
-        Key: `user-og/${master._id}.jpg`,
-        Body: buffer,
-      };
+  // Upload image to s3
+  const buffer = canvas.toBuffer('image/png');
+  const uploadParams = {
+    Bucket: 'chupakabra-test',
+    Key: `user-og/${master._id}.jpg`,
+    Body: buffer,
+  };
+  const imageUrl = await new Promise((resolve, reject) => {
+    s3.upload(uploadParams, (err, data) => {
+      if (err) {
+        reject(err);
+        throw new Error(err);
+      }
+      console.log('Upload to s3 successful');
+      resolve(data.Location);
+    });
+  }).catch(console.error);
 
-      s3.upload(uploadParams, (err, data) => {
-        if (err) {
-          console.log(err);
-          return;
-        }
-
-        console.log('Upload to s3 successful', data.Location);
-
-        Master.findByIdAndUpdate(master._id, {
-          OGimage: data.Location,
-        })
-          .then(() => {
-            console.log(`User ${master._id} OG image updated successfully`);
-            return data.Location;
-          })
-          .catch(console.error);
-      });
-    })
+  // Update master profile
+  await Master.findByIdAndUpdate(master._id, {
+    OGimage: imageUrl,
+  })
+    .then(() => console.log(`User ${master._id} OG image updated successfully`))
     .catch(console.error);
 
-  return imageUrl || null;
+  return imageUrl;
 }
 
 // Helper function to fill a rectangle with rounded corners
