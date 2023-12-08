@@ -1,10 +1,8 @@
 const express = require('express');
 const PORT_NUMBER = 5050;
-const db = require('./database/db');
 const fs = require('fs');
 const jsdom = require('jsdom');
 const Master = require('./database/schema/Master');
-
 const professions = require('./data/professions.json');
 const locations = require('./data/locations.json');
 
@@ -22,22 +20,25 @@ title node is replaced and new tags are appended to meta section
 
 const OGMW = async () => {
   const app = express();
-  await db.runDB();
 
   app.listen(PORT_NUMBER, () => {
     console.log(`Middleware server running on port ${PORT_NUMBER}`);
   });
 
   app.get('/', async (req, res) => {
-    if (!req.query.card) return res.status(404).send('not found');
+    if (!req.query.card) {
+      return res.status(404).send('Card ID not found in URL');
+    }
 
     const id = req.query.card;
-    console.log('Generating OG for card #', id);
     const master = await Master.findById(id);
 
-    if (!master) return res.status(404).send(`Master with id ${id} not found`);
+    if (!master) {
+      return res.status(404).send(`Master with id ${id} not found`);
+    }
 
     // Generate a custom page title for a master
+    console.log('Incoming SSR request for card #', id);
     const newTitle = `${master.name}: ${
       professions.find((p) => p.id === master.professionID).name.ua
     } в ${locations.find((l) => l.id === master.locationID).city.ua_alt}`;
@@ -64,10 +65,9 @@ const OGMW = async () => {
     const head = doc.querySelector('head');
     const title = doc.querySelector('title');
 
-    // Change title
-    title.textContent = newTitle;
-    // Update head
+    // Update head, change title
     head.insertAdjacentHTML('beforeend', metaTags);
+    title.textContent = newTitle;
 
     // Serialize back to html string
     indexHtml = doc.documentElement.outerHTML;
