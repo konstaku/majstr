@@ -8,52 +8,17 @@ import SearchResults from '../components/SearchResults';
 import { MasterContext } from '../context';
 import { ACTIONS } from '../reducer';
 import Modal from '../components/Modal';
+import { useLoaderData, useNavigation } from 'react-router-dom';
 
-export default function Main() {
+function Main() {
+  const masters = useLoaderData();
   const { state, dispatch } = useContext(MasterContext);
-  const { masters, searchParams } = state;
-
-  const [showModal, setShowModal] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
-
+  const { searchParams } = state;
   const { selectedCity, selectedProfession } = searchParams;
-
-  // Fetch masters from backend on page load
-  useEffect(() => {
-    setIsLoading(true);
-    setIsError(false);
-
-    const controller = new AbortController();
-
-    const fetchMasters = async () => {
-      fetch('https://api.majstr.com/?q=masters', {
-        signal: controller.signal,
-      })
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          } else {
-            return Promise.reject(response);
-          }
-        })
-        .then((result) =>
-          dispatch({ type: ACTIONS.POPULATE, payload: { masters: result } })
-        )
-        .catch((error) => {
-          if (error.name === 'AbortError') return;
-          console.error(error);
-          setIsError(true);
-        })
-        .finally(() => setIsLoading(false));
-    };
-
-    fetchMasters();
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
+  const [showModal, setShowModal] = useState(null);
+  const { state: loadingState } = useNavigation();
+  const isLoading = loadingState === 'loading';
+  const isError = false;
 
   // Check for an open mastercard in search params on load
   useEffect(() => {
@@ -266,3 +231,16 @@ export default function Main() {
     return masters.find((master) => master._id === id);
   }
 }
+
+async function loader({ request: { signal } }) {
+  const response = await fetch('https://api.majstr.com/?q=masters', { signal });
+  if (response.status === 200) {
+    return await response.json();
+  }
+  throw new Response((`Error ${response.status}`, { status: response.status }));
+}
+
+export const mainRoute = {
+  loader,
+  element: <Main />,
+};
