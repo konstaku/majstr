@@ -18,7 +18,7 @@ title node is replaced and new tags are appended to meta section
 
 */
 
-const OGMW = async () => {
+async function runOpenGraphMiddleware() {
   const app = express();
 
   app.listen(PORT_NUMBER, () => {
@@ -75,6 +75,6 @@ const OGMW = async () => {
     // Send an updated file
     res.status(200).send(indexHtml);
   });
-};
+}
 
-module.exports = OGMW;
+module.exports = runOpenGraphMiddleware;

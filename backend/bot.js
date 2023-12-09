@@ -33,6 +33,9 @@ module.exports.runBot = async function () {
 
   await bot.setWebHook(`https://majstr.com:${PORT_NUMBER}/webhook`);
 
+  bot.on('webhook_error', console.error);
+  app.post('/webhook', async (req, res) => await handleWebhook(req, res, bot));
+
   httpsServer
     .listen(PORT_NUMBER, () =>
       console.log(`Telegram bot started on port ${PORT_NUMBER}`)
@@ -40,10 +43,6 @@ module.exports.runBot = async function () {
     .on('error', (err) => {
       console.log('Error starting telegram bot server:', err);
     });
-
-  app.post('/webhook', async (req, res) => await handleWebhook(req, res, bot));
-
-  bot.on('webhook_error', console.error);
 };
 
 async function handleWebhook(req, res, bot) {
@@ -52,8 +51,7 @@ async function handleWebhook(req, res, bot) {
 
   // If webhook activated, but there is no message, do nothing
   if (!message) {
-    console.log('Webhook activated, but no message detected');
-    return;
+    return console.log('Webhook activated, but no message detected');
   }
 
   // If the message is unknown command, return
@@ -71,8 +69,6 @@ async function handleWebhook(req, res, bot) {
     telegramID: message.chat.id,
   });
 
-  let token;
-
   // If user found, just send the link
   if (registeredUserID) {
     console.log('User already registered! ID:', registeredUserID);
@@ -80,10 +76,37 @@ async function handleWebhook(req, res, bot) {
     return sendLoginLink(res, bot, message.chat.id, registeredUser.token);
   }
 
+  // Otherwise create a new user
   console.log('Welcome new user!, ID:', registeredUserID);
+  const token = createTokenForUser(message);
+  const userPhoto = await fetchUserTelegramPhoto(message);
+  await addUserToDatabase(message, userPhoto, token);
 
-  // Create a new JWT token
-  token = jwt.sign(
+  // Sending a link with a token in URl params and directing to a login page which is handled by a frontend
+  sendLoginLink(res, bot, message.chat.id, token);
+}
+
+function sendLoginLink(res, bot, id, token) {
+  const encodedToken = encodeURIComponent(JSON.stringify(token));
+
+  bot.sendMessage(id, 'Confirm', {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: 'Confirm',
+            url: `https://majstr.com/login?token=${encodedToken}`,
+          },
+        ],
+      ],
+    },
+  });
+
+  res.status(200).send('OK');
+}
+
+function createTokenForUser(message) {
+  const token = jwt.sign(
     {
       userID: message.chat.id,
       firstName: message.chat.first_name,
@@ -91,11 +114,12 @@ async function handleWebhook(req, res, bot) {
     },
     JWT_ACCESS_TOKEN_SECRET
   );
-  console.log('=== Token generated ===\n', JSON.stringify(token));
 
-  // Fetch user photo from Telegram API:
-  //
-  // The URLs for fetching photo ID and path
+  console.log('=== Token generated ===\n', JSON.stringify(token));
+  return token;
+}
+
+async function fetchUserTelegramPhoto(message) {
   const fetchPhotoIdUrl = `https://api.telegram.org/bot${BOT_TOKEN}/getUserProfilePhotos`;
   const fetchPhotoPathUrl = `https://api.telegram.org/bot${BOT_TOKEN}/getFile`;
 
@@ -139,12 +163,14 @@ async function handleWebhook(req, res, bot) {
 
   // Now we can construct the final photo URL and download the user photo
   const telegramPhotoUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${photoPath}`;
-  const photo = await fetch(telegramPhotoUrl)
+  return fetch(telegramPhotoUrl)
     .then((response) => response.blob())
     .then((blob) => blob.arrayBuffer())
     .then(Buffer.from)
     .catch(console.error);
+}
 
+async function addUserToDatabase(message, photo, token) {
   // Add new user to database
   // NB: I am using mongo _id as a name for a photo, so database record is created prior to photo upload in s3
   const user = await User.create({
@@ -174,26 +200,4 @@ async function handleWebhook(req, res, bot) {
   console.log(
     `User ${message.chat.first_name} ${message.chat.last_name} successfully added to database`
   );
-
-  // Sending a link with a token in URl params and directing to a login page which is handled by a frontend
-  sendLoginLink(res, bot, message.chat.id, token);
-}
-
-function sendLoginLink(res, bot, id, token) {
-  const encodedToken = encodeURIComponent(JSON.stringify(token));
-
-  bot.sendMessage(id, 'Confirm', {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: 'Confirm',
-            url: `https://majstr.com/login?token=${encodedToken}`,
-          },
-        ],
-      ],
-    },
-  });
-
-  res.status(200).send('OK');
 }
