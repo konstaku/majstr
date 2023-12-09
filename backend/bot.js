@@ -48,7 +48,6 @@ module.exports.runBot = async function () {
 
 async function handleWebhook(req, res, bot) {
   console.log('Webhook triggered!');
-  console.log('request:', req);
   const message = req.body.message;
 
   // If webhook activated, but there is no message, do nothing
@@ -60,7 +59,6 @@ async function handleWebhook(req, res, bot) {
   // If the message is unknown command, return
   if (message.text !== '/start') {
     console.log('Webhook activated, but command unknown:', message.text);
-
     return bot.sendMessage(
       message.chat.id,
       'Unknown command, use /start to sign in.'

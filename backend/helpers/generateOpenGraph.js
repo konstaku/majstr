@@ -30,30 +30,11 @@ async function createOGimageForMaster(master) {
       contact.contactType !== 'facebook' && contact.contactType !== 'website'
   );
 
-  // Dimensions and margins
-  const width = 1200;
-  const height = 627;
-  const margin = 24;
-  const cornerRadius = 40;
-
-  // Font styles
-  const fontName = 'Unbounded';
-  const fontColor = '#171923';
-  const textMarginLeft = margin + 36;
-  // h1
-  const h1Size = 72;
-  const h1Weight = 600;
-  const h1MarginTop = 72 + h1Size;
-  // h2
-  const h2Size = 48;
-  const h2Weight = 400;
-  const h2MarginTop = h1MarginTop + margin + h2Size;
-  // contacts
-  const contactsSize = 32;
-  const contactsWeight = 400;
-  const contactsMarginTop =
-    height - margin - 36 - contactsToShow.length * contactsSize;
-  const contactsValuesMarginLeft = 240 + textMarginLeft;
+  // Get styles for image
+  const {
+    dimensions: { width, height, cornerRadius, margin },
+    fontStyles: { fontName, fontColor, textMarginLeft, h1, h2, contacts },
+  } = generateImageStyles(contactsToShow.length);
 
   // Logo style
   const logoPosition = {
@@ -83,24 +64,24 @@ async function createOGimageForMaster(master) {
   );
 
   // Put a name on a picture
-  context.font = `${h1Weight} ${h1Size}px ${fontName}`;
+  context.font = `${h1.weight} ${h1.size}px ${fontName}`;
   context.fillStyle = fontColor;
   const name = removeLastWordIfLong(master.name);
-  context.fillText(name, textMarginLeft, h1MarginTop);
+  context.fillText(name, textMarginLeft, h1.marginTop);
 
   // Put a profession on a picture
-  context.font = `${h2Weight} ${h2Size}px ${fontName}`;
+  context.font = `${h2.weight} ${h2.size}px ${fontName}`;
   const profession = professions.find(
     (profession) => profession.id === master.professionID
   ).name.ua;
-  context.fillText(profession, textMarginLeft, h2MarginTop);
+  context.fillText(profession, textMarginLeft, h2.marginTop);
 
   // Put contacts names on a picture
-  context.font = `${contactsWeight} ${contactsSize}px ${fontName}`;
+  context.font = `${contacts.weight} ${contacts.size}px ${fontName}`;
   const contactsNames = contactsToShow
     .map((contact) => contact.contactType + ':')
     .join('\n');
-  context.fillText(contactsNames, textMarginLeft, contactsMarginTop);
+  context.fillText(contactsNames, textMarginLeft, contacts.marginTop);
 
   // Put contacts values on a picture
   const contactsValues = contactsToShow
@@ -110,7 +91,11 @@ async function createOGimageForMaster(master) {
         : contact.value
     )
     .join('\n');
-  context.fillText(contactsValues, contactsValuesMarginLeft, contactsMarginTop);
+  context.fillText(
+    contactsValues,
+    contacts.valuesMarginLeft,
+    contacts.marginTop
+  );
 
   // Render logo and save image
   const logo = await loadImage('./data/img/logo/og-logo.png').catch((err) => {
@@ -121,22 +106,7 @@ async function createOGimageForMaster(master) {
   context.drawImage(logo, x, y, w, h);
 
   // Upload image to s3
-  const buffer = canvas.toBuffer('image/png');
-  const uploadParams = {
-    Bucket: 'chupakabra-test',
-    Key: `user-og/${master._id}.jpg`,
-    Body: buffer,
-  };
-  const imageUrl = await new Promise((resolve, reject) => {
-    s3.upload(uploadParams, (err, data) => {
-      if (err) {
-        reject(err);
-        throw new Error(err);
-      }
-      console.log('Upload to s3 successful');
-      resolve(data.Location);
-    });
-  }).catch(console.error);
+  const imageUrl = await uploadImageToS3(canvas, master);
 
   // Update master profile
   await Master.findByIdAndUpdate(master._id, {
@@ -216,6 +186,85 @@ function removeLastWordIfLong(str) {
 
   // Return the original string if it's not longer than 20 characters or has only one word
   return str;
+}
+
+// Calculate styles for a contact
+function generateImageStyles(numberOfContacts) {
+  // Dimensions and margins
+  const width = 1200;
+  const height = 627;
+  const margin = 24;
+  const cornerRadius = 40;
+
+  // Font styles
+  const fontName = 'Unbounded';
+  const fontColor = '#171923';
+  const textMarginLeft = margin + 36;
+  // h1
+  const h1Size = 72;
+  const h1Weight = 600;
+  const h1MarginTop = 72 + h1Size;
+  // h2
+  const h2Size = 48;
+  const h2Weight = 400;
+  const h2MarginTop = h1MarginTop + margin + h2Size;
+  // contacts
+  const contactsSize = 32;
+  const contactsWeight = 400;
+  const contactsMarginTop =
+    height - margin - 36 - numberOfContacts * contactsSize;
+  const contactsValuesMarginLeft = 240 + textMarginLeft;
+
+  return {
+    dimensions: {
+      width,
+      height,
+      margin,
+      cornerRadius,
+    },
+    fontStyles: {
+      fontName,
+      fontColor,
+      textMarginLeft,
+      h1: {
+        size: h1Size,
+        weight: h1Weight,
+        marginTop: h1MarginTop,
+      },
+      h2: {
+        size: h2Size,
+        weight: h2Weight,
+        marginTop: h2MarginTop,
+      },
+      contacts: {
+        size: contactsSize,
+        weight: contactsWeight,
+        marginTop: contactsMarginTop,
+        valuesMarginLeft: contactsValuesMarginLeft,
+      },
+    },
+  };
+}
+
+// Uploader function
+async function uploadImageToS3(canvas, master) {
+  const buffer = canvas.toBuffer('image/png');
+  const uploadParams = {
+    Bucket: 'chupakabra-test',
+    Key: `user-og/${master._id}.jpg`,
+    Body: buffer,
+  };
+
+  return new Promise((resolve, reject) => {
+    s3.upload(uploadParams, (err, data) => {
+      if (err) {
+        reject(err);
+        throw new Error(err);
+      }
+      console.log('Upload to s3 successful');
+      resolve(data.Location);
+    });
+  }).catch(console.error);
 }
 
 // for (const master of masters) {
