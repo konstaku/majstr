@@ -4,13 +4,15 @@ export default function useAuthenticateUser() {
   const [user, setUser] = useState({});
 
   useEffect(() => {
-    async function authenticateUser() {
-      const token = JSON.parse(localStorage.getItem('token'));
+    const controller = new AbortController();
 
+    (async function () {
+      const token = JSON.parse(localStorage.getItem('token'));
       if (!token) return {};
 
       await fetch('https://api.majstr.com/auth', {
         headers: { Authorization: token },
+        signal: controller.signal,
       })
         .then((response) => {
           if (response.ok) {
@@ -24,10 +26,15 @@ export default function useAuthenticateUser() {
           setUser(result);
           console.log(`User ${result.firstName} logged in!`);
         })
-        .catch(console.error);
-    }
+        .catch((err) => {
+          if (err.name === 'AbortError') {
+            return;
+          }
+          console.error(err);
+        });
+    })();
 
-    authenticateUser();
+    return () => controller.abort();
   }, []);
 
   return user;

@@ -59,7 +59,8 @@ body {
   margin-left: 4rem;
 }
 
-.menu ul {
+.menu ul,
+.menu-burger ul {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -78,15 +79,25 @@ body {
   text-underline-offset: 0.25rem;
 }
 
-.menu a {
+.menu a,
+.menu-burger a {
   color: #ffffff;
   text-decoration: none;
 }
 
-.menu ul .inactive {
+.menu ul .inactive,
+.menu-burger .inactive {
   color: #655f5f;
   cursor: not-allowed;
   text-decoration: none;
+}
+
+.burger-open {
+  display: none;
+}
+
+.menu-burger {
+  display: none;
 }
 
 .select-country {
@@ -641,6 +652,12 @@ body {
   }
 }
 
+/* 
+
+Mobile phone layout 
+
+*/
+
 @media (max-width: 480px) {
   :root {
     --scaling-factor: 1.25;
@@ -686,6 +703,34 @@ body {
     display: none;
   }
 
+  .menu-burger {
+    /* display: block; */
+    background-color: #171923;
+    border-bottom: 1px solid #edf2f714;
+    list-style: none;
+    font-weight: 300;
+  }
+  .menu-burger ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1rem;
+    align-items: center;
+    font-size: 1rem;
+  }
+
+  .select-country {
+    display: none;
+  }
+
+  .burger-open {
+    cursor: pointer;
+    display: block;
+    display: flex;
+    justify-content: center;
+    min-width: 4rem;
+  }
+
   .search-results-container {
     display: flex;
     flex-direction: column;
@@ -725,11 +770,23 @@ body {
   .master-card-footer .details {
     margin-bottom: 10px;
   }
-}
 
-@keyframes masterCardFlip {
-  to {
-    transform: rotateY(180deg) scale(110%);
-    z-index: 1000;
+  .create-user-container {
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .create-user-form {
+    width: 100%;
+  }
+
+  .create-record-header h2 {
+    margin: 0;
+  }
+
+  .master-card.preview {
+    display: none;
   }
 }

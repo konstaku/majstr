@@ -12,7 +12,7 @@ export default function ErrorPage() {
         поверніться на <Link to="/">головну сторінку</Link>
       </p>
       <p>
-        <i>{error.statusText || error.message}</i>
+        <pre>{error.statusText || error.message}</pre>
       </p>
     </div>
   );

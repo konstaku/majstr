@@ -11,17 +11,19 @@ import professions from './../data/professions.json';
 import CreatableSelect from 'react-select/creatable';
 import MasterCardPreview from '../components/MasterCardPreview';
 import useAuthenticateUser from '../custom-hooks/useAuthenticateUser';
+import {
+  formatContactsForSchema,
+  formatTagsForSchema,
+} from '../helpers/new-master-form';
 
 export default function AddNewRecord() {
   const { state, dispatch } = useContext(MasterContext);
   const { user } = state;
-  console.log('************************ user', JSON.stringify(user));
   const { firstName, username } = user;
   const {
     register,
     handleSubmit,
     setValue,
-    getValues,
     control,
     watch,
     formState: { errors },
@@ -33,8 +35,6 @@ export default function AddNewRecord() {
     setValue('name', firstName);
     setValue('useThisPhoto', true);
   }, [username, firstName]);
-
-  console.log('errors:', errors);
 
   // Fetch photo dynamically
   const { photo, telegramID } = useAuthenticateUser();
@@ -49,41 +49,11 @@ export default function AddNewRecord() {
   };
 
   // Post form on submit
-  const onSubmit = (data) => {
-    console.log('--------> data:', data);
-    console.log('--------> values:', getValues());
+  function onSubmit(data) {
+    const contacts = formatContactsForSchema(data);
+    const tags = formatTagsForSchema(data);
 
-    /* 
-    contacts: [
-      {
-        contactType: String,
-        value: String,
-      },
-    ],
-    */
-
-    // Create contacts array to save in db
-    const contacts = [];
-    if (data.telephone) {
-      data.isTelephone &&
-        contacts.push({ contactType: 'phone', value: data.telephone });
-      data.isWhatsapp &&
-        contacts.push({ contactType: 'whatsapp', value: data.telephone });
-      data.isViber &&
-        contacts.push({ contactType: 'viber', value: data.telephone });
-      data.instagram &&
-        contacts.push({ contactType: 'instagram', value: data.instagram });
-      data.telegram &&
-        contacts.push({ contactType: 'telegram', value: data.telegram });
-    }
-
-    const tags = {};
-    tags.ua = [];
-    data.tags.forEach((tag) => tags.ua.push(tag.value));
-
-    console.log('-------------->  contacts to save:', contacts);
-
-    // Adding Telegram ID and photo url to user profile
+    // Add Telegram ID and photo url to user profile
     const dataToSave = {
       ...data,
       telegramID: telegramID || null,
@@ -92,10 +62,13 @@ export default function AddNewRecord() {
       tags,
     };
 
+    // Send form data
+    const controller = new AbortController();
     fetch('https://api.majstr.com/addmaster', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dataToSave),
+      signal: controller.signal,
     })
       .then((response) => {
         if (response.ok) {
@@ -104,7 +77,7 @@ export default function AddNewRecord() {
         return Promise.reject(response);
       })
       .catch(console.error);
-  };
+  }
 
   return (
     <>
@@ -156,7 +129,11 @@ function PhotoInput({ photo, register }) {
           }}
         ></div>
         <label>
-          <input {...register('useThisPhoto')} type="checkbox" />
+          <input
+            {...register('useThisPhoto')}
+            type="checkbox"
+            id={'use-this-photo'}
+          />
           Використати це фото
         </label>
       </>
@@ -331,7 +308,6 @@ function TelephoneInput({ register, control }) {
     <div className="input-field">
       <label>
         <div className="input-label">Ваш номер телефону</div>
-
         <Controller
           control={control}
           name="telephone"
@@ -408,7 +384,7 @@ function AboutInput({ register, errors }) {
           className={`create-user-input ${
             errors?.about?.message ? 'error' : ''
           }`}
-          placeholder={`Додаткова інформація про вас:\nЯкі самі послуги ви надаєте? В якоиу районі знаходитеся? Що треба знати перед тим, як звертутися до вас?`}
+          placeholder={`Додаткова інформація про вас:\nЯкі самі послуги ви надаєте? В якому районі знаходитеся? Що треба знати перед тим, як звертутися до вас?`}
           cols="30"
           rows="6"
         ></textarea>
