@@ -57,10 +57,8 @@ async function handleWebhook(req, res, bot) {
   // If the message is unknown command, return
   if (message.text !== '/start') {
     console.log('Webhook activated, but command unknown:', message.text);
-    return bot.sendMessage(
-      message.chat.id,
-      'Unknown command, use /start to sign in.'
-    );
+    bot.sendMessage(message.chat.id, 'Unknown command, use /start to sign in.');
+    return res.status(200).send('unknown command bot ok');
   }
 
   console.log('Looking for a user with an ID of:', message.chat.id);
@@ -95,7 +93,9 @@ function sendLoginLink(res, bot, id, token) {
         [
           {
             text: 'Confirm',
-            url: `https://majstr.com/login?token=${encodedToken}`,
+            login_url: {
+              url: `https://majstr.com/login?token=${encodedToken}`,
+            },
           },
         ],
       ],
