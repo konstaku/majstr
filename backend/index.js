@@ -12,13 +12,14 @@ const locations = require('./data/locations.json');
 const PORT_NUMBER = 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
 const KEYFILE = process.env.KEYFILE_API;
+const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
 const httpsOptions = {
   key: fs.readFileSync(KEYFILE),
   cert: fs.readFileSync(CERTIFICATE),
 };
 
 const db = require('./database/db');
-const bot = require('./bot');
+const { bot, runBot } = require('./bot');
 const runOpenGraphMiddleware = require('./open-graph-middleware');
 const createOGimageForMaster = require('./helpers/generateOpenGraph');
 
@@ -37,7 +38,7 @@ async function main() {
   app.use(corsMiddleware);
 
   await db.runDB();
-  await bot.runBot();
+  await runBot();
   await runOpenGraphMiddleware();
 
   app.get('/', handleApiRequests);
@@ -139,23 +140,11 @@ async function addMaster(req, res) {
     return res.status(404).send('Error finding user');
   }
 
-  // 3. Create new master record, set approved to true.
-  // Copy telegramId, photo (if there is photo and "usephoto" selected)
-  let savedMaster;
-  try {
-    savedMaster = await Master.create(master);
-  } catch (err) {
-    console.error(err);
-    return res.status(404).send('Error finding user');
-  }
-  console.log('Master entry created successfully!');
-
   // 4. Generate OG image
-  let ogUrl;
   try {
-    ogUrl = await createOGimageForMaster(savedMaster);
+    const ogUrl = await createOGimageForMaster(master);
     console.log('Open Graph image created successfully: ', ogUrl);
-    master.OGimage = ogUrl;
+    master.OGimage = ogUrl.toString();
   } catch (err) {
     console.error(err);
     return res.status(500).send('Error creating open graph image');
@@ -164,13 +153,35 @@ async function addMaster(req, res) {
   // 5. Update database record
   try {
     await master.save();
-    console.log('Master saved successfully!: ', ogUrl);
+    console.log('Master saved successfully!: ', master.OGimage);
   } catch (err) {
     console.error(err);
     return res.status(500).send('Error saving master data');
   }
 
-  // x. (optional) Add master profile to the their user record
+  // 5.5 (optional) Add master profile to the their user record
+
+  // 6. Send an update to a moderator telegram
+  // sendModeratorUpdate(masterId)
+
+  bot.sendMessage(TELEGRAM_ADMIN_CHAT_ID, master.toString(), {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: '✅',
+            callback_data: 'accept',
+          },
+        ],
+        [
+          {
+            text: '❌',
+            callback_data: 'decline',
+          },
+        ],
+      ],
+    },
+  });
 
   res.status(200).json({ success: true });
 }

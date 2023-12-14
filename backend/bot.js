@@ -25,10 +25,11 @@ const s3 = new AWS.S3({
   secretAccessKey: AWS_SECRET_ACCESS_KEY,
 });
 
-module.exports.runBot = async function () {
+const bot = new TelegramBot(BOT_TOKEN);
+
+async function runBot() {
   const app = express();
   app.use(express.json());
-  const bot = new TelegramBot(BOT_TOKEN);
   const httpsServer = https.createServer(httpsOptions, app);
 
   await bot.setWebHook(`https://majstr.com:${PORT_NUMBER}/webhook`);
@@ -43,6 +44,11 @@ module.exports.runBot = async function () {
     .on('error', (err) => {
       console.log('Error starting telegram bot server:', err);
     });
+}
+
+module.exports = {
+  bot,
+  runBot,
 };
 
 async function handleWebhook(req, res, bot) {
