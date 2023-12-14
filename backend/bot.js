@@ -53,6 +53,12 @@ module.exports = {
 
 async function handleWebhook(req, res, bot) {
   console.log('Webhook triggered!');
+  console.log('request body:', req.body);
+
+  if (req.body.callback_query) {
+    await handleCallbackQuery(req, res, bot);
+  }
+
   const message = req.body.message;
 
   // If webhook activated, but there is no message, do nothing
@@ -206,4 +212,31 @@ async function addUserToDatabase(message, photo, token) {
   console.log(
     `User ${message.chat.first_name} ${message.chat.last_name} successfully added to database`
   );
+}
+
+async function handleCallbackQuery(req, res, bot) {
+  if (!req.body.callback_query.data) {
+    res.status(400).send('No callback data!');
+  }
+
+  const id = req.body.callback_query.id;
+
+  let success;
+
+  switch (req.body.callback_query.data) {
+    case 'accept':
+      success = await bot.answerCallbackQuery(id, { text: 'aaacept' });
+      break;
+    case 'decline':
+      success = await bot.answerCallbackQuery(id, { text: 'dddecline' });
+      break;
+    default:
+      console.log('Unknown callback data');
+  }
+
+  if (success) {
+    return res.status(200).send('ok');
+  }
+
+  return res.status(400).send('Unable to handle webhook!');
 }
