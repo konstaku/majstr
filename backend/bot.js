@@ -219,16 +219,24 @@ async function addUserToDatabase(message, photo, token) {
 async function handleCallbackQuery(req, res, bot) {
   try {
     if (!req.body.callback_query.data) {
-      res.status(400).send('No callback data!');
+      res.status(200).send('No callback data!');
     }
 
-    const queryId = req.body.callback_query.id;
     console.log('callback data:', req.body.callback_query.data);
+
+    const queryId = req.body.callback_query.id;
     const callbackData = JSON.parse(req.body.callback_query.data);
     const { masterId, value: callbackValue } = callbackData;
 
     const master = await Master.findById(masterId);
-    const telegramId = master.telegramID;
+    const telegramId = master?.telegramID;
+
+    if (master === null) {
+      await bot.answerCallbackQuery(queryId, {
+        text: '❌ The master does not exist or have been deleted',
+      });
+      return res.status(200).end();
+    }
 
     let success;
 
@@ -240,12 +248,17 @@ async function handleCallbackQuery(req, res, bot) {
           `Картку майстра додано на сайт: https://majstr.com/?card=${masterId}`
         );
         success = await bot.answerCallbackQuery(queryId, {
-          text: `Accept master ${masterId}`,
+          text: `Master ${masterId} accepted`,
         });
         break;
       case 'decline':
+        await declineMaster(masterId);
+        await bot.sendMessage(
+          telegramId,
+          `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
+        );
         success = await bot.answerCallbackQuery(queryId, {
-          text: `Decline master ${masterId}`,
+          text: `Master ${masterId} declined`,
         });
         break;
       default:
@@ -269,4 +282,11 @@ async function approveMaster(id) {
   const master = await Master.findById(id).catch(console.error);
   master.approved = true;
   await master.save().catch(console.error);
+}
+
+async function declineMaster(id) {
+  const deleted = await Master.findByIdAndDelete(id).catch(console.error);
+  if (!deleted) {
+    throw new Error('Can not delete master');
+  }
 }
