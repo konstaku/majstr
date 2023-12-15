@@ -76,7 +76,7 @@ export default function MasterCard({ master, showModal, setShowModal }) {
           </div>
         </div>
         <div className="master-card-footer">
-          <button className="details" onClick={() => setShowModal(_id)}>
+          <button className="btn" onClick={() => setShowModal(_id)}>
             Детальніше
           </button>
         </div>

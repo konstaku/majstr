@@ -395,11 +395,10 @@ body {
   justify-content: flex-end;
 }
 
-.master-card-footer .details {
+.btn {
+  width: 100%;
   border: none;
   outline: none;
-  margin: 0 10px 10px 10px;
-  width: 100%;
   background-color: #171923;
   color: #ffffff;
   border-radius: 1000px;
@@ -407,11 +406,15 @@ body {
   font-size: calc(var(--base-font-size) * var(--scaling-factor));
 }
 
-.details:hover {
+.btn:hover {
   transition: 0.1s ease-out;
   background-color: #4fd1c5;
   color: #171923;
   cursor: pointer;
+}
+
+.master-card-footer .btn {
+  margin: 0 10px 10px 10px;
 }
 
 .modal-overlay {
@@ -451,6 +454,11 @@ body {
   border-radius: 1.25rem;
   border: 1px solid #d9d9d9;
   background: #f7fafc;
+}
+
+.modal-content#success {
+  width: 400px;
+  min-height: 200px;
 }
 
 .footer {
@@ -568,16 +576,16 @@ body {
   outline: 1px solid #4fd1c5;
 }
 
-.create-user-form button[type='submit'] {
-  width: 100%;
+.create-user-form .btn {
   margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 1rem;
-  background-color: #171923;
-  color: #ffffff;
-  font-size: 16px;
-  cursor: pointer;
+}
+
+.create-user-form .btn.is-loading {
+  background-color: #655f5f;
+}
+
+.create-user-form .btn.is-loaded {
+  background-color: #4fd1c5;
 }
 
 .create-user-input.error {
@@ -767,7 +775,7 @@ Mobile phone layout
     border-radius: 0.625rem;
   }
 
-  .master-card-footer .details {
+  .master-card-footer .btn {
     margin-bottom: 10px;
   }
 

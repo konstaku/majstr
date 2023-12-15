@@ -9,6 +9,10 @@ import { MasterContext } from '../context';
 import { ACTIONS } from '../reducer';
 import Modal from '../components/Modal';
 import { useLoaderData, useNavigation } from 'react-router-dom';
+import {
+  trackClickOutsideCard,
+  trackEscWhenModalShown,
+} from '../helpers/modal';
 
 function Main() {
   const masters = useLoaderData();
@@ -34,8 +38,12 @@ function Main() {
   // Track document clicks outside modal
   useEffect(() => {
     if (showModal) {
-      document.addEventListener('click', trackClickOutsideCard);
-      document.addEventListener('keyup', trackEscWhileFlipped);
+      document.addEventListener('click', (e) =>
+        trackClickOutsideCard(e, 'details-modal', setShowModal)
+      );
+      document.addEventListener('keyup', (e) =>
+        trackEscWhenModalShown(e, setShowModal)
+      );
 
       const currentMaster = masters.find((master) => master._id === showModal);
       if (!currentMaster) return;
@@ -51,7 +59,7 @@ function Main() {
     }
     return () => {
       document.removeEventListener('click', trackClickOutsideCard);
-      document.removeEventListener('keyup', trackEscWhileFlipped);
+      document.removeEventListener('keyup', trackEscWhenModalShown);
       document.title = 'Majstr : Знаходь українських майстрів';
     };
   }, [showModal, masters]);
@@ -209,22 +217,6 @@ function Main() {
         }
       />
     );
-  }
-
-  function trackClickOutsideCard(event) {
-    const modalCard = document.getElementById('details-modal');
-    const target = event.target;
-
-    if (target.contains(modalCard)) {
-      console.log('target.contains(modalCard)');
-      setShowModal(null);
-    }
-  }
-
-  function trackEscWhileFlipped(event) {
-    if (event.key === 'Escape') {
-      setShowModal(null);
-    }
   }
 
   function isModalMaster(id) {

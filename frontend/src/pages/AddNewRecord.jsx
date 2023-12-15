@@ -1,7 +1,7 @@
 import 'react-phone-input-2/lib/style.css';
 
 import Select from 'react-select';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { MasterContext } from '../context';
 import { Controller, useForm } from 'react-hook-form';
 import PhoneInput from 'react-phone-input-2';
@@ -15,8 +15,13 @@ import {
   formatContactsForSchema,
   formatTagsForSchema,
 } from '../helpers/new-master-form';
+import {
+  trackClickOutsideCard,
+  trackEscWhenModalShown,
+} from '../helpers/modal';
 
 export default function AddNewRecord() {
+  const [successPopup, setSuccessPopup] = useState(false);
   const { state, dispatch } = useContext(MasterContext);
   const { user } = state;
   const { firstName, username } = user;
@@ -26,7 +31,7 @@ export default function AddNewRecord() {
     setValue,
     control,
     watch,
-    formState: { errors },
+    formState: { errors, isLoading, isSubmitting, isSubmitSuccessful },
   } = useForm({});
 
   // As user name is updated in state, update form default value as state changes
@@ -35,6 +40,29 @@ export default function AddNewRecord() {
     setValue('name', firstName);
     setValue('useThisPhoto', true);
   }, [username, firstName]);
+
+  // Close modal on click outside / esc
+  // TODO: abstract as a separate hook useCloseModal
+  useEffect(() => {
+    if (successPopup) {
+      document.addEventListener('click', (e) =>
+        trackClickOutsideCard(e, 'success', setSuccessPopup)
+      );
+      document.addEventListener('keyup', (e) =>
+        trackEscWhenModalShown(e, setSuccessPopup)
+      );
+    }
+    return () => {
+      document.removeEventListener('click', trackClickOutsideCard);
+      document.removeEventListener('keyup', trackEscWhenModalShown);
+    };
+  }, [successPopup]);
+
+  console.log(`---------------> formState:
+  isLoading: ${isLoading}
+  isSubmitting: ${isSubmitting}
+  isSubmitted: ${isSubmitSuccessful}
+  `);
 
   // Fetch photo dynamically
   const { photo, telegramID } = useAuthenticateUser();
@@ -72,6 +100,7 @@ export default function AddNewRecord() {
     })
       .then((response) => {
         if (response.ok) {
+          setSuccessPopup(true);
           return console.log('Data submitted successfully');
         }
         return Promise.reject(response);
@@ -105,7 +134,25 @@ export default function AddNewRecord() {
             <InstagramInput register={register} />
             <TelegramInput register={register} />
             <AboutInput register={register} errors={errors} />
-            <button type="submit">Створити запис</button>
+            <button
+              className={`btn ${
+                isLoading || isSubmitting
+                  ? 'is-loading'
+                  : isSubmitSuccessful
+                  ? 'is-loaded'
+                  : ''
+              } `}
+              type="submit"
+              disabled={isSubmitSuccessful}
+            >
+              {`${
+                isLoading || isSubmitting
+                  ? 'Додаємо запис...'
+                  : isSubmitSuccessful
+                  ? 'Запис додано!'
+                  : 'Створити запис'
+              } `}
+            </button>
           </form>
         </div>
         {/* Card preview */}
@@ -114,6 +161,7 @@ export default function AddNewRecord() {
           master={masterPreview}
         />
       </div>
+      {successPopup && <SuccessPopup setSuccessPopup={setSuccessPopup} />}
     </>
   );
 }
@@ -391,6 +439,32 @@ function AboutInput({ register, errors }) {
       </label>
       <div className="error-message" hidden={!errors?.about?.message}>
         {errors?.about?.message}
+      </div>
+    </div>
+  );
+}
+
+function SuccessPopup({ setSuccessPopup }) {
+  return (
+    <div className="modal-overlay">
+      <div className="modal-overlay-inside">
+        <div className="modal-content" id="success">
+          <div className="master-card-body success">
+            <div className="master-card-header">
+              <h1>☀️ Дякуємо!</h1>
+              <div
+                className="close-container"
+                onClick={() => setSuccessPopup(false)}
+              >
+                <img src="/img/icons/close.svg" alt="close" />
+              </div>
+            </div>
+            <p>
+              Ми отримали інформацію. Картка зʼявиться на сайті після перевірки
+              модератором. Ми повідомимо вам про це в телеграм.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
