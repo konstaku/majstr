@@ -121,9 +121,9 @@ async function addMaster(req, res) {
   const master = new Master(req.body);
 
   // Automatically approve and add records made by admin
-  if (req.body.telegramID === 5950535) {
-    master.approved = true;
-  }
+  // if (req.body.telegramID === 5950535) {
+  //   master.approved = true;
+  // }
 
   // 1. Validate data
   const validationError = master.validateSync();
@@ -170,13 +170,19 @@ async function addMaster(req, res) {
         [
           {
             text: '✅',
-            callback_data: 'accept',
+            callback_data: JSON.stringify({
+              value: 'accept',
+              masterId: master._id,
+            }),
           },
         ],
         [
           {
             text: '❌',
-            callback_data: 'decline',
+            callback_data: JSON.stringify({
+              value: 'decline',
+              masterId: master._id,
+            }),
           },
         ],
       ],

@@ -6,6 +6,7 @@ const AWS = require('aws-sdk');
 const TelegramBot = require('node-telegram-bot-api');
 const jwt = require('jsonwebtoken');
 const User = require('./database/schema/User');
+const Master = require('./database/schema/Master');
 
 const CERTIFICATE = process.env.CERTIFICATE;
 const KEYFILE = process.env.KEYFILE;
@@ -57,6 +58,7 @@ async function handleWebhook(req, res, bot) {
 
   if (req.body.callback_query) {
     await handleCallbackQuery(req, res, bot);
+    return;
   }
 
   const message = req.body.message;
@@ -215,28 +217,56 @@ async function addUserToDatabase(message, photo, token) {
 }
 
 async function handleCallbackQuery(req, res, bot) {
-  if (!req.body.callback_query.data) {
-    res.status(400).send('No callback data!');
+  try {
+    if (!req.body.callback_query.data) {
+      res.status(400).send('No callback data!');
+    }
+
+    const queryId = req.body.callback_query.id;
+    console.log('callback data:', req.body.callback_query.data);
+    const callbackData = JSON.parse(req.body.callback_query.data);
+    const { masterId, value: callbackValue } = callbackData;
+
+    const master = await Master.findById(masterId);
+    const telegramId = master.telegramID;
+
+    let success;
+
+    switch (callbackValue) {
+      case 'accept':
+        await approveMaster(masterId);
+        await bot.sendMessage(
+          telegramId,
+          `Картку майстра додано на сайт: https://majstr.com/?card=${masterId}`
+        );
+        success = await bot.answerCallbackQuery(queryId, {
+          text: `Accept master ${masterId}`,
+        });
+        break;
+      case 'decline':
+        success = await bot.answerCallbackQuery(queryId, {
+          text: `Decline master ${masterId}`,
+        });
+        break;
+      default:
+        await bot.answerCallbackQuery(queryId, {
+          text: 'Error: please try again later',
+        });
+        throw new Error('Unknown callback data!');
+    }
+
+    if (success) {
+      return res.status(200).send('OK');
+    }
+  } catch (err) {
+    console.error(err);
   }
 
-  const id = req.body.callback_query.id;
+  return res.status(200).end();
+}
 
-  let success;
-
-  switch (req.body.callback_query.data) {
-    case 'accept':
-      success = await bot.answerCallbackQuery(id, { text: 'aaacept' });
-      break;
-    case 'decline':
-      success = await bot.answerCallbackQuery(id, { text: 'dddecline' });
-      break;
-    default:
-      console.log('Unknown callback data');
-  }
-
-  if (success) {
-    return res.status(200).send('ok');
-  }
-
-  return res.status(400).send('Unable to handle webhook!');
+async function approveMaster(id) {
+  const master = await Master.findById(id).catch(console.error);
+  master.approved = true;
+  await master.save().catch(console.error);
 }
