@@ -16,11 +16,6 @@ const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const PORT_NUMBER = 8443;
 
-const httpsOptions = {
-  key: fs.readFileSync(KEYFILE),
-  cert: fs.readFileSync(CERTIFICATE),
-};
-
 const s3 = new AWS.S3({
   accessKeyId: AWS_ACCESS_KEY,
   secretAccessKey: AWS_SECRET_ACCESS_KEY,
@@ -31,11 +26,16 @@ const bot = new TelegramBot(BOT_TOKEN);
 async function runBot() {
   const app = express();
   app.use(express.json());
+
+  const httpsOptions = {
+    key: fs.readFileSync(KEYFILE),
+    cert: fs.readFileSync(CERTIFICATE),
+  };
   const httpsServer = https.createServer(httpsOptions, app);
 
   await bot.setWebHook(`https://majstr.com:${PORT_NUMBER}/webhook`);
-
   bot.on('webhook_error', console.error);
+
   app.post('/webhook', async (req, res) => await handleWebhook(req, res, bot));
 
   httpsServer
@@ -57,8 +57,7 @@ async function handleWebhook(req, res, bot) {
   console.log('request body:', req.body);
 
   if (req.body.callback_query) {
-    await handleCallbackQuery(req, res, bot);
-    return;
+    return await handleCallbackQuery(req, res, bot);
   }
 
   const message = req.body.message;
@@ -101,12 +100,12 @@ async function handleWebhook(req, res, bot) {
 function sendLoginLink(res, bot, id, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
 
-  bot.sendMessage(id, 'Confirm', {
+  bot.sendMessage(id, 'Увійти на majstr.com?', {
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: 'Confirm',
+            text: 'Увійти',
             login_url: {
               url: `https://majstr.com/login?token=${encodedToken}`,
             },
@@ -242,24 +241,32 @@ async function handleCallbackQuery(req, res, bot) {
 
     switch (callbackValue) {
       case 'accept':
-        await approveMaster(masterId);
-        await bot.sendMessage(
-          telegramId,
-          `Картку майстра додано на сайт: https://majstr.com/?card=${masterId}`
-        );
-        success = await bot.answerCallbackQuery(queryId, {
-          text: `Master ${masterId} accepted`,
-        });
+        try {
+          await approveMaster(masterId);
+          await bot.sendMessage(
+            telegramId,
+            `Картку майстра додано на сайт: https://majstr.com/?card=${masterId}`
+          );
+          success = await bot.answerCallbackQuery(queryId, {
+            text: `Master ${masterId} accepted`,
+          });
+        } catch (err) {
+          throw new Error(err?.message);
+        }
         break;
       case 'decline':
-        await declineMaster(masterId);
-        await bot.sendMessage(
-          telegramId,
-          `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
-        );
-        success = await bot.answerCallbackQuery(queryId, {
-          text: `Master ${masterId} declined`,
-        });
+        try {
+          await declineMaster(masterId);
+          await bot.sendMessage(
+            telegramId,
+            `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
+          );
+          success = await bot.answerCallbackQuery(queryId, {
+            text: `Master ${masterId} declined`,
+          });
+        } catch (err) {
+          throw new Error(err?.message);
+        }
         break;
       default:
         await bot.answerCallbackQuery(queryId, {
