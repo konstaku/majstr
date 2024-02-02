@@ -58,12 +58,6 @@ export default function AddNewRecord() {
     };
   }, [successPopup]);
 
-  console.log(`---------------> formState:
-  isLoading: ${isLoading}
-  isSubmitting: ${isSubmitting}
-  isSubmitted: ${isSubmitSuccessful}
-  `);
-
   // Fetch photo dynamically
   const { photo, telegramID } = useAuthenticateUser();
 

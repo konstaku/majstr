@@ -34,14 +34,18 @@ export default function Root() {
           Пошук
         </Link>
       </li>
-      {isLoggedIn && (
+      {isLoggedIn ? (
         <li>
           <Link to="/add" style={linkStyle}>
             Додати майстра
           </Link>
         </li>
+      ) : (
+        <li>
+          <a href="https://t.me/chupakabra_dev_bot">Додати майстра</a>
+        </li>
       )}
-      {isLoggedIn ? (
+      {/* {isLoggedIn ? (
         <li>
           <Link to="/profile" style={linkStyle}>
             Профіль
@@ -51,7 +55,7 @@ export default function Root() {
         <li>
           <a href="https://t.me/chupakabra_dev_bot">Логін</a>
         </li>
-      )}
+      )} */}
       <li className="inactive">FAQ</li>
     </>
   );

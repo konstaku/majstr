@@ -8,10 +8,11 @@ export default function Login() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const token = searchParams.get('token');
+    const path = searchParams.get('path') || '';
 
     if (token) {
       localStorage.setItem('token', token);
-      setLoginElement(<Navigate to="/" />);
+      setLoginElement(<Navigate to={`/${path}`} />);
     } else {
       setLoginElement(<h2>Login error: no token</h2>);
     }
