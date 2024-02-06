@@ -1,5 +1,5 @@
 export const ACTIONS = {
-  POPULATE: 'POPULATE',
+  // POPULATE: 'POPULATE',
   SET_CITY: 'SET_CITY',
   SET_PROFESSION: 'SET_PROFESSION',
   RESET_SEARCH: 'RESET_SEARCH',
@@ -14,12 +14,12 @@ export const ACTIONS = {
 
 export function reducer(state, { type, payload }) {
   switch (type) {
-    case ACTIONS.POPULATE: {
-      return {
-        ...state,
-        masters: payload.masters,
-      };
-    }
+    // case ACTIONS.POPULATE: {
+    //   return {
+    //     ...state,
+    //     masters: payload.masters,
+    //   };
+    // }
 
     case ACTIONS.SET_CITY: {
       return {

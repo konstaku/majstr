@@ -1,6 +1,6 @@
 import './../styles.css';
 import locations from '../data/locations.json';
-import professions from '../data/professions.json';
+// import professions from '../data/professions.json';
 
 import { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';
@@ -15,7 +15,7 @@ import {
 } from '../helpers/modal';
 
 function Main() {
-  const masters = useLoaderData();
+  const { masters, professions } = useLoaderData();
   const { state, dispatch } = useContext(MasterContext);
   const { searchParams } = state;
   const { selectedCity, selectedProfession } = searchParams;
@@ -104,11 +104,11 @@ function Main() {
           })
           .map((master) => master.professionID)
       ),
-    ].map((masterProffessionId) => ({
-      value: masterProffessionId,
+    ].map((masterProfessionId) => ({
+      value: masterProfessionId,
       label: professions.find(
-        (profession) => profession.id === masterProffessionId
-      ).name.ua,
+        (profession) => profession.id === masterProfessionId
+      )?.name.ua,
     }))
   );
 
@@ -225,11 +225,29 @@ function Main() {
 }
 
 async function loader({ request: { signal } }) {
-  const response = await fetch('https://api.majstr.com/?q=masters', { signal });
-  if (response.status === 200) {
-    return await response.json();
+  const mastersResponse = await fetch('https://api.majstr.com/?q=masters', {
+    signal,
+  });
+
+  const professionResponse = await fetch(
+    'https://api.majstr.com/?q=professions',
+    { signal }
+  );
+
+  if (mastersResponse.status === 200 && professionResponse.status === 200) {
+    return {
+      masters: await mastersResponse.json(),
+      professions: await professionResponse.json(),
+    };
   }
-  throw new Response((`Error ${response.status}`, { status: response.status }));
+
+  throw new Response(
+    (`Error: masters response status: ${mastersResponse.status}, profession response status: ${professionResponse.status}`,
+    {
+      masterStatus: response.status,
+      professionStatus: professionResponse.status,
+    })
+  );
 }
 
 export const mainRoute = {

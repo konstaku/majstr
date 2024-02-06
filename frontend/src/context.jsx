@@ -5,6 +5,7 @@ export const MasterContext = createContext();
 
 const INITIAL_STATE = {
   masters: [],
+  professions: [],
   searchParams: {
     selectedCity: '',
     selectedProfession: '',
