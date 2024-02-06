@@ -107,7 +107,7 @@ function sendLoginLink(res, bot, id, token) {
           {
             text: 'Увійти',
             login_url: {
-              url: `https://majstr.com/login?token=${encodedToken}`,
+              url: `https://majstr.com/login?token=${encodedToken}&path=add`, // This endpoint is handled by frontend app
             },
           },
         ],
@@ -216,6 +216,8 @@ async function addUserToDatabase(message, photo, token) {
 }
 
 async function handleCallbackQuery(req, res, bot) {
+  // I need to rewrite logic and check for new entries at will
+  // because now I have only 60 seconds to answer each callback query
   try {
     if (!req.body.callback_query.data) {
       res.status(200).send('No callback data!');

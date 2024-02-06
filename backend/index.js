@@ -6,7 +6,9 @@ const https = require('https');
 const cors = require('cors');
 const Master = require('./database/schema/Master');
 const User = require('./database/schema/User');
-const professions = require('./data/professions.json');
+const Profession = require('./database/schema/Profession');
+const ProfCategory = require('./database/schema/ProfCategory');
+// const professions = require('./data/professions.json');
 const locations = require('./data/locations.json');
 
 const PORT_NUMBER = 5000;
@@ -72,8 +74,14 @@ async function handleApiRequests(req, res) {
       res.status(200).send(masters);
       break;
     case 'professions':
+      const professions = await Profession.find();
       console.log(`Fetching professions...`);
       res.status(200).send(professions);
+      break;
+    case 'prof-categories':
+      const profCategories = await ProfCategory.find();
+      console.log(`Fetching professional categories...`);
+      res.status(200).send(profCategories);
       break;
     case 'locations':
       console.log(`Fetching locations...`);
