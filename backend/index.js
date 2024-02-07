@@ -8,8 +8,9 @@ const Master = require('./database/schema/Master');
 const User = require('./database/schema/User');
 const Profession = require('./database/schema/Profession');
 const ProfCategory = require('./database/schema/ProfCategory');
+const Location = require('./database/schema/Location');
 // const professions = require('./data/professions.json');
-const locations = require('./data/locations.json');
+// const locations = require('./data/locations.json');
 
 const PORT_NUMBER = 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
@@ -84,7 +85,9 @@ async function handleApiRequests(req, res) {
       res.status(200).send(profCategories);
       break;
     case 'locations':
-      console.log(`Fetching locations...`);
+      const countryID = req.query.country || null;
+      const locations = await Location.find({ countryID: countryID });
+      console.log(`Fetching locations... country id:`, countryID);
       res.status(200).send(locations);
       break;
     default:
