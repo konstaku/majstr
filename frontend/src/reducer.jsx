@@ -1,5 +1,5 @@
 export const ACTIONS = {
-  // POPULATE: 'POPULATE',
+  POPULATE: 'POPULATE',
   SET_CITY: 'SET_CITY',
   SET_PROFESSION: 'SET_PROFESSION',
   RESET_SEARCH: 'RESET_SEARCH',
@@ -14,12 +14,15 @@ export const ACTIONS = {
 
 export function reducer(state, { type, payload }) {
   switch (type) {
-    // case ACTIONS.POPULATE: {
-    //   return {
-    //     ...state,
-    //     masters: payload.masters,
-    //   };
-    // }
+    case ACTIONS.POPULATE: {
+      return {
+        ...state,
+        masters: payload.masters,
+        professions: payload.professions,
+        profCategories: payload.profCategories,
+        locations: payload.locations,
+      };
+    }
 
     case ACTIONS.SET_CITY: {
       return {
@@ -36,7 +39,7 @@ export function reducer(state, { type, payload }) {
         ...state,
         searchParams: {
           ...state.searchParams,
-          selectedProfession: payload.selectedProfession,
+          selectedProfessionCategory: payload.selectedProfessionCategory,
         },
       };
     }
@@ -47,7 +50,7 @@ export function reducer(state, { type, payload }) {
         searchParams: {
           ...state.searchParams,
           selectedCity: '',
-          selectedProfession: '',
+          selectedProfessionCategory: '',
         },
       };
     }

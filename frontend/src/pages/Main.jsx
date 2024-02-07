@@ -1,6 +1,5 @@
 import './../styles.css';
-import locations from '../data/locations.json';
-// import professions from '../data/professions.json';
+// import locations from '../data/locations.json';
 
 import { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';
@@ -8,17 +7,18 @@ import SearchResults from '../components/SearchResults';
 import { MasterContext } from '../context';
 import { ACTIONS } from '../reducer';
 import Modal from '../components/Modal';
-import { useLoaderData, useNavigation } from 'react-router-dom';
+import { useNavigation } from 'react-router-dom';
 import {
   trackClickOutsideCard,
   trackEscWhenModalShown,
 } from '../helpers/modal';
 
 function Main() {
-  const { masters, professions } = useLoaderData();
+  // const { masters, professions } = useLoaderData();
   const { state, dispatch } = useContext(MasterContext);
-  const { searchParams } = state;
-  const { selectedCity, selectedProfession } = searchParams;
+  const { masters, professions, locations, profCategories, searchParams } =
+    state;
+  const { selectedCity, selectedProfessionCategory } = searchParams;
   const [showModal, setShowModal] = useState(null);
   const { state: loadingState } = useNavigation();
   const isLoading = loadingState === 'loading';
@@ -32,6 +32,54 @@ function Main() {
     if (modalCard) {
       setShowModal(modalCard);
     }
+  }, []);
+
+  console.log('state:', state);
+
+  // Populate masters, professions and categories on app load
+  useEffect(() => {
+    const controller = new AbortController();
+
+    (async function () {
+      const promises = [
+        fetch('https://api.majstr.com/?q=masters', {
+          signal: controller.signal,
+        }).then((response) => response.json()),
+        fetch('https://api.majstr.com/?q=professions', {
+          signal: controller.signal,
+        }).then((response) => response.json()),
+        fetch('https://api.majstr.com/?q=prof-categories', {
+          signal: controller.signal,
+        }).then((response) => response.json()),
+        fetch(
+          `https://api.majstr.com/?q=locations&country=${state.countryID}`,
+          {
+            signal: controller.signal,
+          }
+        ).then((response) => response.json()),
+      ];
+
+      const data = await Promise.all(promises)
+        .then((data) =>
+          dispatch({
+            type: ACTIONS.POPULATE,
+            payload: {
+              masters: data[0],
+              professions: data[1],
+              profCategories: data[2],
+              locations: data[3],
+            },
+          })
+        )
+        .catch((err) => {
+          if (err.name === 'AbortError') {
+            return;
+          }
+          console.error(err);
+        });
+    })();
+
+    return () => controller.abort();
   }, []);
 
   // Display master name in page title whenever modal pops
@@ -53,7 +101,7 @@ function Main() {
       ).name.ua;
       const cityName = locations.find(
         (location) => location.id === currentMaster.locationID
-      ).city.ua_alt;
+      ).name.ua_alt;
 
       document.title = `${currentMaster.name} | ${professionName} в ${cityName}`;
     }
@@ -77,19 +125,13 @@ function Main() {
       (masterLocationId) => ({
         value: masterLocationId,
         label: locations.find((location) => location.id === masterLocationId)
-          .city.ua,
+          ?.name.ua,
       })
     )
   );
 
   // Here I filter out unique proffessions for the selected city
-  const availableProfessions = [
-    {
-      // The first element is "Everyone", which is an empty string
-      value: '',
-      label: 'Всі майстри',
-    },
-  ].concat(
+  const availableProfessions =
     // Array of unique proffessions
     [
       ...new Set(
@@ -104,13 +146,38 @@ function Main() {
           })
           .map((master) => master.professionID)
       ),
-    ].map((masterProfessionId) => ({
-      value: masterProfessionId,
-      label: professions.find(
-        (profession) => profession.id === masterProfessionId
-      )?.name.ua,
-    }))
-  );
+    ];
+
+  function generateProfessionsSelectOptions(professionList) {
+    const result = [];
+
+    result.push({
+      // The first element is "Everyone", which is an empty string
+      value: '',
+      label: 'Всі майстри',
+    });
+
+    const uniqueProfessionCategories = [
+      ...new Set(
+        professionList.map((p) => getProfessionCategoryById(professions, p))
+      ),
+    ];
+
+    const professionLabelList = uniqueProfessionCategories.map(
+      (professionCategoryID) => ({
+        value: professionCategoryID,
+        label: profCategories.find(
+          (profCategory) => profCategory.id === professionCategoryID
+        )?.name.ua,
+      })
+    );
+
+    result.push(...professionLabelList);
+    return result;
+  }
+
+  const professionSelectOptions =
+    generateProfessionsSelectOptions(availableProfessions);
 
   // Setting styles for select elements
   const headlineSelectStyles = {
@@ -156,7 +223,7 @@ function Main() {
             <SearchResults
               masters={masters}
               city={selectedCity}
-              profession={selectedProfession}
+              professionCategory={selectedProfessionCategory}
               showModal={showModal}
               setShowModal={setShowModal}
             />
@@ -201,18 +268,21 @@ function Main() {
       <Select
         className="headline-select"
         defaultValue={
-          selectedProfession
-            ? availableProfessions.find((p) => p.value === selectedProfession)
-            : selectedProfession
+          selectedProfessionCategory
+            ? professionSelectOptions.find(
+                (p) => p.value === selectedProfessionCategory
+              )
+            : selectedProfessionCategory
         }
         unstyled
-        options={availableProfessions}
+        // options={availableProfessions}
+        options={professionSelectOptions}
         styles={headlineSelectStyles}
         placeholder="Всі майстри"
         onChange={(e) =>
           dispatch({
             type: ACTIONS.SET_PROFESSION,
-            payload: { selectedProfession: e.value },
+            payload: { selectedProfessionCategory: e.value },
           })
         }
       />
@@ -224,33 +294,11 @@ function Main() {
   }
 }
 
-async function loader({ request: { signal } }) {
-  const mastersResponse = await fetch('https://api.majstr.com/?q=masters', {
-    signal,
-  });
-
-  const professionResponse = await fetch(
-    'https://api.majstr.com/?q=professions',
-    { signal }
-  );
-
-  if (mastersResponse.status === 200 && professionResponse.status === 200) {
-    return {
-      masters: await mastersResponse.json(),
-      professions: await professionResponse.json(),
-    };
-  }
-
-  throw new Response(
-    (`Error: masters response status: ${mastersResponse.status}, profession response status: ${professionResponse.status}`,
-    {
-      masterStatus: response.status,
-      professionStatus: professionResponse.status,
-    })
-  );
+function getProfessionCategoryById(professions, professionID) {
+  return professions.find((p) => p.id === professionID)?.categoryID;
 }
 
 export const mainRoute = {
-  loader,
+  // loader,
   element: <Main />,
 };

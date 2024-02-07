@@ -1,16 +1,34 @@
+import { useContext } from 'react';
+import { MasterContext } from '../context';
+
 import MasterCard from './MasterCard';
 
 export default function SearchResults({
   masters,
   city,
-  profession,
+  professionCategory,
   showModal,
   setShowModal,
 }) {
+  const {
+    state: { professions },
+  } = useContext(MasterContext);
+
+  const availableProfessionIDs = professions
+    .filter((p) =>
+      professionCategory === undefined
+        ? true
+        : p.categoryID === professionCategory
+    )
+    .map((p) => p.id);
+
+  console.log('availableProfessionIDs', availableProfessionIDs);
+  console.log('professionCategory', professionCategory);
+
   const filteredMasters = masters.filter(
     (master) =>
       master.locationID.includes(city) &&
-      master.professionID.includes(profession)
+      availableProfessionIDs.includes(master.professionID)
   );
 
   return (
