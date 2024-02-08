@@ -4,3 +4,5 @@
 /backend/node_modules/
 /backend-ts/
 **/.DS_Store
+-backup
+
