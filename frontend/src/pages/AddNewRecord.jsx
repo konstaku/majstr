@@ -6,8 +6,6 @@ import { MasterContext } from '../context';
 import { Controller, useForm } from 'react-hook-form';
 import PhoneInput from 'react-phone-input-2';
 
-import locations from './../data/locations.json';
-import professions from './../data/professions.json';
 import CreatableSelect from 'react-select/creatable';
 import MasterCardPreview from '../components/MasterCardPreview';
 import useAuthenticateUser from '../custom-hooks/useAuthenticateUser';
@@ -22,8 +20,8 @@ import {
 
 export default function AddNewRecord() {
   const [successPopup, setSuccessPopup] = useState(false);
-  const { state, dispatch } = useContext(MasterContext);
-  const { user } = state;
+  const { state } = useContext(MasterContext);
+  const { user, locations, professions } = state;
   const { firstName, username } = user;
   const {
     register,
@@ -33,6 +31,8 @@ export default function AddNewRecord() {
     watch,
     formState: { errors, isLoading, isSubmitting, isSubmitSuccessful },
   } = useForm({});
+
+  console.log('state:', state);
 
   // As user name is updated in state, update form default value as state changes
   useEffect(() => {
@@ -239,7 +239,7 @@ function ProfessionInput({ control, professions, errors }) {
                   }),
                 }
               }
-              options={professions.map((profession) => ({
+              options={professions?.map((profession) => ({
                 value: profession.id,
                 label: profession.name.ua,
               }))}
@@ -282,9 +282,9 @@ function LocationInput({ control, locations, errors }) {
                   }),
                 }
               }
-              options={locations.map((location) => ({
+              options={locations?.map((location) => ({
                 value: location.id,
-                label: location.city.ua,
+                label: location.name.ua,
               }))}
             />
           )}

@@ -1,10 +1,13 @@
-import professions from '../data/professions.json';
-import locations from '../data/locations.json';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { colorPalette } from './MasterCard';
 import Avatar from './Avatar';
+import { MasterContext } from '../context';
 
 export default function Modal({ master, setShowModal }) {
+  const {
+    state: { locations, professions },
+  } = useContext(MasterContext);
+
   const { _id: id } = master;
   const [copyUrl, setCopyUrl] = useState(null);
 
@@ -108,7 +111,7 @@ export default function Modal({ master, setShowModal }) {
               </div>
               <div className="mastercard-location">
                 <img src="/img/icons/geopin.svg" alt="" />
-                {locations.find((l) => l.id === master.locationID).city.ua}
+                {locations.find((l) => l.id === master.locationID).name.ua}
               </div>
               <div className="mastercard-about">
                 {master.about

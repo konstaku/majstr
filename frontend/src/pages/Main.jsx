@@ -1,5 +1,4 @@
 import './../styles.css';
-// import locations from '../data/locations.json';
 
 import { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';

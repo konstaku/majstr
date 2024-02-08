@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import AddNewRecord from './pages/AddNewRecord';
 
-// import Main from './pages/Main';
 import { mainRoute } from './pages/Main';
 import Root from './components/Root';
 import Login from './pages/Login';

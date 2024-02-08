@@ -1,7 +1,6 @@
-import professions from '../data/professions.json';
-import locations from '../data/locations.json';
-import { useMemo, useRef } from 'react';
+import { useContext, useMemo, useRef } from 'react';
 import Avatar from './Avatar';
+import { MasterContext } from '../context';
 
 export const colorPalette = [
   '#F94C66', // coral
@@ -26,6 +25,10 @@ export const colorPalette = [
 ];
 
 export default function MasterCard({ master, showModal, setShowModal }) {
+  const {
+    state: { locations, professions },
+  } = useContext(MasterContext);
+
   const { _id, name, professionID, locationID, contacts, about, likes, tags } =
     master;
 
@@ -62,7 +65,7 @@ export default function MasterCard({ master, showModal, setShowModal }) {
             </div>
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
-              {locations.find((l) => l.id === locationID).city.ua}
+              {locations.find((l) => l.id === locationID).name.ua}
             </div>
           </div>
           <div className="mastercard-tag-container">

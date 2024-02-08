@@ -1,10 +1,13 @@
-import professions from '../data/professions.json';
-import locations from '../data/locations.json';
 import Avatar from './Avatar';
+import { useContext } from 'react';
+import { MasterContext } from '../context';
 
 export default function MasterCardPreview({ master }) {
   const { photo, watcher } = master;
   const { name, locationID, professionID, tags, useThisPhoto } = watcher;
+  const {
+    state: { locations, professions },
+  } = useContext(MasterContext);
 
   return (
     <>
@@ -29,7 +32,7 @@ export default function MasterCardPreview({ master }) {
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
               {locationID
-                ? locations.find((l) => l.id === locationID).city.ua
+                ? locations.find((l) => l.id === locationID).name.ua
                 : 'Локація невідома'}
             </div>
           </div>

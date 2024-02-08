@@ -1,6 +1,5 @@
 import { useContext } from 'react';
 import { MasterContext } from '../context';
-
 import MasterCard from './MasterCard';
 
 export default function SearchResults({
@@ -16,9 +15,7 @@ export default function SearchResults({
 
   const availableProfessionIDs = professions
     .filter((p) =>
-      professionCategory === undefined
-        ? true
-        : p.categoryID === professionCategory
+      !professionCategory ? true : p.categoryID === professionCategory
     )
     .map((p) => p.id);
 
