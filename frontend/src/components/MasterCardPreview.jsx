@@ -48,7 +48,7 @@ export default function MasterCardPreview({ master }) {
           </div>
         </div>
         <div className="master-card-footer">
-          <button className="btn" onClick={() => setShowModal(_id)}>
+          <button className="btn" /* onClick={() => setShowModal(_id)} */>
             Детальніше
           </button>
         </div>

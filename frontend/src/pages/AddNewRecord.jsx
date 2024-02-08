@@ -21,7 +21,7 @@ import {
 export default function AddNewRecord() {
   const [successPopup, setSuccessPopup] = useState(false);
   const { state } = useContext(MasterContext);
-  const { user, locations, professions } = state;
+  const { user, locations, professions, profCategories } = state;
   const { firstName, username } = user;
   const {
     register,
@@ -113,10 +113,16 @@ export default function AddNewRecord() {
           <form id="add-new-piggy" onSubmit={handleSubmit(onSubmit)}>
             <PhotoInput photo={photo} register={register} />
             <NameInput register={register} errors={errors} />
+            <ProfCategoryInput
+              control={control}
+              profCategories={profCategories}
+              errors={errors}
+            />
             <ProfessionInput
               control={control}
               professions={professions}
               errors={errors}
+              watcher={watcher}
             />
             <LocationInput
               control={control}
@@ -208,7 +214,7 @@ function NameInput({ register, errors }) {
   );
 }
 
-function ProfessionInput({ control, professions, errors }) {
+function ProfCategoryInput({ control, profCategories, errors }) {
   return (
     <div className="input-field">
       <label>
@@ -217,7 +223,7 @@ function ProfessionInput({ control, professions, errors }) {
         </div>
         <Controller
           control={control}
-          name="professionID"
+          name="profCategoryID"
           rules={{
             required: {
               value: true,
@@ -232,23 +238,75 @@ function ProfessionInput({ control, professions, errors }) {
               }}
               // Style is applied only if there are errors
               styles={
-                errors?.profession?.message && {
+                errors?.profCategoryID?.message && {
                   control: (baseStyles) => ({
                     ...baseStyles,
                     borderColor: 'rgb(255, 77, 77)',
                   }),
                 }
               }
-              options={professions?.map((profession) => ({
-                value: profession.id,
-                label: profession.name.ua,
+              options={profCategories?.map((profCategory) => ({
+                value: profCategory.id,
+                label: profCategory.name.ua,
               }))}
             />
           )}
         />
       </label>
-      <div className="error-message" hidden={!errors?.profession?.message}>
-        {errors?.profession?.message}
+      <div className="error-message" hidden={!errors?.profCategoryID?.message}>
+        {errors?.profCategoryID?.message}
+      </div>
+    </div>
+  );
+}
+
+function ProfessionInput({ control, professions, errors, watcher }) {
+  const profCategoryID = watcher.profCategoryID || '';
+
+  return (
+    <div className="input-field">
+      <label>
+        <div className="input-label">
+          Оберіть професію<span className="required">*</span>
+        </div>
+        <Controller
+          control={control}
+          name="professionID"
+          rules={{
+            required: {
+              value: true,
+              message: 'Обовʼязково вкажіть професію',
+            },
+          }}
+          render={({ field: { onChange } }) => (
+            <Select
+              onChange={(e) => {
+                // Important to call the original onChange provided by Controller
+                onChange(e.value);
+              }}
+              // Style is applied only if there are errors
+              styles={
+                errors?.professionID?.message && {
+                  control: (baseStyles) => ({
+                    ...baseStyles,
+                    borderColor: 'rgb(255, 77, 77)',
+                  }),
+                }
+              }
+              options={professions
+                ?.filter(
+                  (profession) => profession.categoryID === profCategoryID
+                )
+                .map((profession) => ({
+                  value: profession.id,
+                  label: profession.name.ua,
+                }))}
+            />
+          )}
+        />
+      </label>
+      <div className="error-message" hidden={!errors?.professionID?.message}>
+        {errors?.professionID?.message}
       </div>
     </div>
   );
