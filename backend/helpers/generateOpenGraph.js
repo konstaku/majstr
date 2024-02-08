@@ -4,16 +4,14 @@ require('dotenv').config();
 const Master = require('./../database/schema/Master');
 
 const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
-const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
+// const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
 const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 
 const { createCanvas, loadImage } = require('canvas');
-const fs = require('fs');
+// const fs = require('fs');
 const colorPalette = require('./../data/colors.json');
-
-// const masters = require('./../data/masters.json');
-const professions = require('./../data/professions.json');
+const Profession = require('./../database/schema/Profession');
 
 // New S3 connection
 const s3 = new AWS.S3({
@@ -23,6 +21,7 @@ const s3 = new AWS.S3({
 
 async function createOGimageForMaster(master) {
   console.log('Generating OG image for master:', JSON.stringify(master));
+  const professions = await Profession.find();
 
   // Filter out websites and facebook addresses
   const contactsToShow = master.contacts.filter(

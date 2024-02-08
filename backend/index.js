@@ -4,13 +4,12 @@ const express = require('express');
 const fs = require('fs');
 const https = require('https');
 const cors = require('cors');
+
 const Master = require('./database/schema/Master');
 const User = require('./database/schema/User');
 const Profession = require('./database/schema/Profession');
 const ProfCategory = require('./database/schema/ProfCategory');
 const Location = require('./database/schema/Location');
-// const professions = require('./data/professions.json');
-// const locations = require('./data/locations.json');
 
 const PORT_NUMBER = 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;

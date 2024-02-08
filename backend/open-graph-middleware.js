@@ -3,8 +3,9 @@ const PORT_NUMBER = 5050;
 const fs = require('fs');
 const jsdom = require('jsdom');
 const Master = require('./database/schema/Master');
-const professions = require('./data/professions.json');
-const locations = require('./data/locations.json');
+
+const Profession = require('./database/schema/Profession');
+const Location = require('./database/schema/Location');
 
 /* 
 
@@ -32,6 +33,8 @@ async function runOpenGraphMiddleware() {
 
     const id = req.query.card;
     const master = await Master.findById(id);
+    const professions = await Profession.find();
+    const locations = await Location.find();
 
     if (!master) {
       return res.status(404).send(`Master with id ${id} not found`);
@@ -41,7 +44,7 @@ async function runOpenGraphMiddleware() {
     console.log('Incoming SSR request for card #', id);
     const newTitle = `${master.name}: ${
       professions.find((p) => p.id === master.professionID).name.ua
-    } в ${locations.find((l) => l.id === master.locationID).city.ua_alt}`;
+    } в ${locations.find((l) => l.id === master.locationID).name.ua_alt}`;
 
     // Meta tags for update
     const metaTags = `
