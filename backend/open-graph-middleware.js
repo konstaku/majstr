@@ -37,7 +37,8 @@ async function runOpenGraphMiddleware() {
     const locations = await Location.find();
 
     if (!master) {
-      return res.status(404).send(`Master with id ${id} not found`);
+      // return res.status(404).send(`Master with id ${id} not found`);
+      return res.redirect('/');
     }
 
     // Generate a custom page title for a master
