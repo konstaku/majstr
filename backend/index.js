@@ -38,6 +38,7 @@ async function main() {
   app.use(express.json());
   app.use(cors());
   app.use(corsMiddleware);
+  app.use('/img', express.static('data/img'));
 
   await db.runDB();
   await runBot();
@@ -67,32 +68,34 @@ async function handleApiRequests(req, res) {
   );
 
   // Whenever I need to fetch data, I am using URL params to define which data to send
-  switch (req.query.q) {
-    case 'masters':
-      const masters = await Master.find({ approved: true });
-      console.log(`Fetching masters...`);
-      res.status(200).send(masters);
-      break;
-    case 'professions':
-      const professions = await Profession.find();
-      console.log(`Fetching professions...`);
-      res.status(200).send(professions);
-      break;
-    case 'prof-categories':
-      const profCategories = await ProfCategory.find();
-      console.log(`Fetching professional categories...`);
-      res.status(200).send(profCategories);
-      break;
-    case 'locations':
-      const countryID = req.query.country || null;
-      const locations = await Location.find({ countryID: countryID });
-      console.log(`Fetching locations... country id:`, countryID);
-      res.status(200).send(locations);
-      break;
-    default:
-      console.log(`Unknown request, sending 404...`);
-      console.log('request url:', req.url);
-      res.status(404).send('No such file!');
+  if (req.query && req.query.q) {
+    switch (req.query.q) {
+      case 'masters':
+        const masters = await Master.find({ approved: true });
+        console.log(`Fetching masters...`);
+        res.status(200).send(masters);
+        break;
+      case 'professions':
+        const professions = await Profession.find();
+        console.log(`Fetching professions...`);
+        res.status(200).send(professions);
+        break;
+      case 'prof-categories':
+        const profCategories = await ProfCategory.find();
+        console.log(`Fetching professional categories...`);
+        res.status(200).send(profCategories);
+        break;
+      case 'locations':
+        const countryID = req.query.country || null;
+        const locations = await Location.find({ countryID: countryID });
+        console.log(`Fetching locations... country id:`, countryID);
+        res.status(200).send(locations);
+        break;
+      default:
+        console.log(`Unknown request, sending 404...`);
+        console.log('request url:', req.url);
+        res.status(404).send('No such file!');
+    }
   }
 }
 
