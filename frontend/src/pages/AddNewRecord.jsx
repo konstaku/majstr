@@ -70,6 +70,10 @@ export default function AddNewRecord() {
     watcher,
   };
 
+  const [profCategoryID, setProfCategoryID] = useState(
+    watcher.profCategoryID || ''
+  );
+
   // Post form on submit
   function onSubmit(data) {
     const contacts = formatContactsForSchema(data);
@@ -116,13 +120,14 @@ export default function AddNewRecord() {
             <ProfCategoryInput
               control={control}
               profCategories={profCategories}
+              setProfCategoryID={setProfCategoryID}
               errors={errors}
             />
             <ProfessionInput
               control={control}
               professions={professions}
+              profCategoryID={profCategoryID}
               errors={errors}
-              watcher={watcher}
             />
             <LocationInput
               control={control}
@@ -214,7 +219,12 @@ function NameInput({ register, errors }) {
   );
 }
 
-function ProfCategoryInput({ control, profCategories, errors }) {
+function ProfCategoryInput({
+  control,
+  profCategories,
+  setProfCategoryID,
+  errors,
+}) {
   return (
     <div className="input-field">
       <label>
@@ -235,6 +245,7 @@ function ProfCategoryInput({ control, profCategories, errors }) {
               onChange={(e) => {
                 // Important to call the original onChange provided by Controller
                 onChange(e.value);
+                setProfCategoryID(e.value);
               }}
               // Style is applied only if there are errors
               styles={
@@ -260,8 +271,21 @@ function ProfCategoryInput({ control, profCategories, errors }) {
   );
 }
 
-function ProfessionInput({ control, professions, errors, watcher }) {
-  const profCategoryID = watcher.profCategoryID || '';
+function ProfessionInput({ control, errors, professions, profCategoryID }) {
+  const [availableProfessionOptions, setAvailableProfessionOptions] = useState(
+    []
+  );
+
+  useEffect(() => {
+    setAvailableProfessionOptions(
+      professions
+        ?.filter((profession) => profession.categoryID === profCategoryID)
+        .map((profession) => ({
+          value: profession.id,
+          label: profession.name.ua,
+        }))
+    );
+  }, [profCategoryID]);
 
   return (
     <div className="input-field">
@@ -293,14 +317,7 @@ function ProfessionInput({ control, professions, errors, watcher }) {
                   }),
                 }
               }
-              options={professions
-                ?.filter(
-                  (profession) => profession.categoryID === profCategoryID
-                )
-                .map((profession) => ({
-                  value: profession.id,
-                  label: profession.name.ua,
-                }))}
+              options={availableProfessionOptions}
             />
           )}
         />

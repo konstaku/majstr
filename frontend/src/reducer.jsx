@@ -10,6 +10,7 @@ export const ACTIONS = {
   DELETE: 'DELETE',
   FILTER: 'FILTER',
   LOGIN: 'LOGIN',
+  ERROR: 'ERROR',
 };
 
 export function reducer(state, { type, payload }) {
@@ -72,6 +73,13 @@ export function reducer(state, { type, payload }) {
           ...state.user,
           isLoggedIn: false,
         },
+      };
+    }
+
+    case ACTIONS.ERROR: {
+      return {
+        ...state,
+        error: payload.error,
       };
     }
   }

@@ -15,71 +15,38 @@ import {
 function Main() {
   // const { masters, professions } = useLoaderData();
   const { state, dispatch } = useContext(MasterContext);
-  const { masters, professions, locations, profCategories, searchParams } =
-    state;
+  const {
+    masters,
+    professions,
+    locations,
+    profCategories,
+    searchParams,
+    error,
+  } = state;
   const { selectedCity, selectedProfessionCategory } = searchParams;
   const [showModal, setShowModal] = useState(null);
   const { state: loadingState } = useNavigation();
   const isLoading = loadingState === 'loading';
   const isError = false;
 
+  if (error) {
+    throw new Error(error);
+  }
+
   // Check for an open mastercard in search params on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const modalCard = params.get('card');
+    const masterIsValid = masters.find((master) => master.id === modalCard);
 
-    if (modalCard) {
+    console.log('modalCard:', modalCard, 'masterIsValid', masterIsValid);
+
+    if (modalCard && masterIsValid) {
       setShowModal(modalCard);
     }
   }, []);
 
   console.log('state:', state);
-
-  // Populate masters, professions and categories on app load
-  useEffect(() => {
-    const controller = new AbortController();
-
-    (async function () {
-      const promises = [
-        fetch('https://api.majstr.com/?q=masters', {
-          signal: controller.signal,
-        }).then((response) => response.json()),
-        fetch('https://api.majstr.com/?q=professions', {
-          signal: controller.signal,
-        }).then((response) => response.json()),
-        fetch('https://api.majstr.com/?q=prof-categories', {
-          signal: controller.signal,
-        }).then((response) => response.json()),
-        fetch(
-          `https://api.majstr.com/?q=locations&country=${state.countryID}`,
-          {
-            signal: controller.signal,
-          }
-        ).then((response) => response.json()),
-      ];
-
-      const data = await Promise.all(promises)
-        .then((data) =>
-          dispatch({
-            type: ACTIONS.POPULATE,
-            payload: {
-              masters: data[0],
-              professions: data[1],
-              profCategories: data[2],
-              locations: data[3],
-            },
-          })
-        )
-        .catch((err) => {
-          if (err.name === 'AbortError') {
-            return;
-          }
-          console.error(err);
-        });
-    })();
-
-    return () => controller.abort();
-  }, []);
 
   // Display master name in page title whenever modal pops
   // Track document clicks outside modal

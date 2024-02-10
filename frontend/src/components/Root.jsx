@@ -9,6 +9,55 @@ export default function Root() {
   const { isLoggedIn } = user;
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
 
+  // Populate masters, professions and categories on app load
+  useEffect(() => {
+    const controller = new AbortController();
+
+    (async function () {
+      try {
+        const promises = [
+          fetch('https://api.majstr.com/?q=masters', {
+            signal: controller.signal,
+          }).then((response) => response.json()),
+          fetch('https://api.majstr.com/?q=professions', {
+            signal: controller.signal,
+          }).then((response) => response.json()),
+          fetch('https://api.majstr.com/?q=prof-categories', {
+            signal: controller.signal,
+          }).then((response) => response.json()),
+          fetch(
+            `https://api.majstr.com/?q=locations&country=${state.countryID}`,
+            {
+              signal: controller.signal,
+            }
+          ).then((response) => response.json()),
+        ];
+
+        await Promise.all(promises).then((data) =>
+          dispatch({
+            type: ACTIONS.POPULATE,
+            payload: {
+              masters: data[0],
+              professions: data[1],
+              profCategories: data[2],
+              locations: data[3],
+            },
+          })
+        );
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          return;
+        }
+        dispatch({
+          type: ACTIONS.ERROR,
+          payload: { error: `Can't load data` },
+        });
+      }
+    })();
+
+    return () => controller.abort();
+  }, []);
+
   // Check if a user is authenticated on load
   useEffect(() => {
     // It is important to JSON parse token in order to get rid of double quotes

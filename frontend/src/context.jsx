@@ -13,6 +13,7 @@ const INITIAL_STATE = {
   },
   user: {},
   countryID: 'IT',
+  error: null,
 };
 
 export function MasterContextProvider({ children }) {
