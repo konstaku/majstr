@@ -86,9 +86,9 @@ async function handleApiRequests(req, res) {
         res.status(200).send(profCategories);
         break;
       case 'locations':
-        const countryID = req.query.country || null;
-        const locations = await Location.find({ countryID: countryID });
-        console.log(`Fetching locations... country id:`, countryID);
+        const query = req.query.country ? { countryID: req.query.country } : {};
+        const locations = await Location.find(query);
+        console.log(`Fetching locations... country id:`, req.query.country);
         res.status(200).send(locations);
         break;
       default:
