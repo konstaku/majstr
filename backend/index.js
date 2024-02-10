@@ -24,6 +24,7 @@ const db = require('./database/db');
 const { bot, runBot } = require('./bot');
 const runOpenGraphMiddleware = require('./open-graph-middleware');
 const createOGimageForMaster = require('./helpers/generateOpenGraph');
+const Country = require('./database/schema/Country');
 
 const corsMiddleware = (req, res, next) => {
   // CORS headers temporary set to allow all origins - will change on production
@@ -90,6 +91,11 @@ async function handleApiRequests(req, res) {
         const locations = await Location.find(query);
         console.log(`Fetching locations... country id:`, req.query.country);
         res.status(200).send(locations);
+        break;
+      case 'countries':
+        const countries = await Country.find();
+        console.log(`Fetching countries...`);
+        res.status(200).send(countries);
         break;
       default:
         console.log(`Unknown request, sending 404...`);
