@@ -2,14 +2,18 @@ import { useContext, useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { MasterContext } from '../context';
 import { ACTIONS } from '../reducer';
+import Select from 'react-select';
 
 export default function Root() {
   const { state, dispatch } = useContext(MasterContext);
-  const { user } = state;
+  const { user, countryID, countries } = state;
   const { isLoggedIn } = user;
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
 
-  // Populate masters, professions and categories on app load
+  // Add to .env
+  const defaultCountry = 'IT';
+
+  // Populate masters, professions, categories and country on app load
   useEffect(() => {
     const controller = new AbortController();
 
@@ -25,12 +29,21 @@ export default function Root() {
           fetch('https://api.majstr.com/?q=prof-categories', {
             signal: controller.signal,
           }).then((response) => response.json()),
-          fetch(
-            `https://api.majstr.com/?q=locations&country=${state.countryID}`,
-            {
-              signal: controller.signal,
-            }
-          ).then((response) => response.json()),
+          fetch(`https://api.majstr.com/?q=locations&country=${countryID}`, {
+            signal: controller.signal,
+          }).then((response) => response.json()),
+          fetch('https://api.majstr.com/?q=countries', {
+            signal: controller.signal,
+          }).then((response) => response.json()),
+          fetch('https://ipinfo.io/json', {
+            signal: controller.signal,
+          })
+            .then((response) => response.json())
+            .then((result) =>
+              countries.some((country) => country.id === result.country)
+                ? result.country
+                : defaultCountry
+            ),
         ];
 
         await Promise.all(promises).then((data) =>
@@ -41,6 +54,8 @@ export default function Root() {
               professions: data[1],
               profCategories: data[2],
               locations: data[3],
+              countries: data[4],
+              countryID: data[5],
             },
           })
         );
@@ -56,7 +71,7 @@ export default function Root() {
     })();
 
     return () => controller.abort();
-  }, []);
+  }, [countryID]);
 
   // Check if a user is authenticated on load
   useEffect(() => {
@@ -94,17 +109,6 @@ export default function Root() {
           <a href="https://t.me/chupakabra_dev_bot">Додати майстра</a>
         </li>
       )}
-      {/* {isLoggedIn ? (
-        <li>
-          <Link to="/profile" style={linkStyle}>
-            Профіль
-          </Link>
-        </li>
-      ) : (
-        <li>
-          <a href="https://t.me/chupakabra_dev_bot">Логін</a>
-        </li>
-      )} */}
       <li className="inactive">FAQ</li>
     </>
   );
@@ -117,6 +121,9 @@ export default function Root() {
         <CountrySelect
           showBurgerMenu={showBurgerMenu}
           setShowBurgerMenu={setShowBurgerMenu}
+          countries={countries}
+          countryID={countryID}
+          dispatch={dispatch}
         />
       </header>
       <BurgerMenu
@@ -168,13 +175,49 @@ function BurgerMenu({ menuItems, showBurgerMenu, setShowBurgerMenu }) {
   );
 }
 
-function CountrySelect({ showBurgerMenu, setShowBurgerMenu }) {
+function CountrySelect({
+  showBurgerMenu,
+  setShowBurgerMenu,
+  countries,
+  countryID,
+  dispatch,
+}) {
+  // const countrySelectOptions = [
+  //   {
+  //     label: countries.find((country) => country.id === countryID)?.name.ua,
+  //     value: countryID,
+  //   },
+  //   ...countries.map((country) => ({
+  //     label: `${country.flag}  ${country.name.ua}`,
+  //     value: country.id,
+  //   })),
+  // ];
+
   return (
     <>
-      <div className="select-country">
+      <div
+        className="select-country"
+        // onClick={() =>
+        //   dispatch({ type: ACTIONS.SET_COUNTRY, payload: { countryID: 'PT' } })
+        // }
+      >
         <span>🇮🇹</span>
         <span>Італія</span>
       </div>
+      {/* <Select
+        // className="select-country"
+        // defaultValue={countrySelectOptions[0]}
+        // unstyled
+        // options={countrySelectOptions}
+        // components={{ DropdownIndicator: () => null }}
+        // styles={headlineSelectStyles}
+        // onChange={(e) => {
+        //   dispatch({
+        //     type: ACTIONS.SET_CITY,
+        //     payload: { selectedCity: e.value },
+        //   });
+        // }}
+      /> */}
       <div
         className="burger-open"
         onClick={() => setShowBurgerMenu(!showBurgerMenu)}

@@ -13,12 +13,13 @@ import {
 } from '../helpers/modal';
 
 function Main() {
-  // const { masters, professions } = useLoaderData();
   const { state, dispatch } = useContext(MasterContext);
   const {
     masters,
     professions,
     locations,
+    countries,
+    countryID,
     profCategories,
     searchParams,
     error,
@@ -28,6 +29,8 @@ function Main() {
   const { state: loadingState } = useNavigation();
   const isLoading = loadingState === 'loading';
   const isError = false;
+
+  const currentCountry = countries.find((country) => country.id === countryID);
 
   if (error) {
     throw new Error(error);
@@ -83,17 +86,21 @@ function Main() {
   const availableLocations = [
     {
       value: '',
-      label: 'Вся Італія',
+      label: `Вся ${currentCountry?.name.ua}`,
     },
   ].concat(
     // Array of unique locations only
-    [...new Set(masters.map((master) => master.locationID))].map(
-      (masterLocationId) => ({
-        value: masterLocationId,
-        label: locations.find((location) => location.id === masterLocationId)
-          ?.name.ua,
-      })
-    )
+    [
+      ...new Set(
+        masters
+          .filter((master) => master.countryID === countryID)
+          .map((master) => master.locationID)
+      ),
+    ].map((masterLocationId) => ({
+      value: masterLocationId,
+      label: locations.find((location) => location.id === masterLocationId)
+        ?.name.ua,
+    }))
   );
 
   // Here I filter out unique proffessions for the selected city

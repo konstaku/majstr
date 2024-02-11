@@ -1,5 +1,6 @@
 export const ACTIONS = {
   POPULATE: 'POPULATE',
+  SET_COUNTRY: 'SET_COUNTRY',
   SET_CITY: 'SET_CITY',
   SET_PROFESSION: 'SET_PROFESSION',
   RESET_SEARCH: 'RESET_SEARCH',
@@ -22,6 +23,16 @@ export function reducer(state, { type, payload }) {
         professions: payload.professions,
         profCategories: payload.profCategories,
         locations: payload.locations,
+        countries: payload.countries,
+        // countryID: payload.countryID,
+        countryID: 'IT',
+      };
+    }
+
+    case ACTIONS.SET_COUNTRY: {
+      return {
+        ...state,
+        countryID: payload.countryID,
       };
     }
 

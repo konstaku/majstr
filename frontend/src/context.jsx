@@ -7,6 +7,7 @@ const INITIAL_STATE = {
   masters: [],
   professions: [],
   profCategories: [],
+  countries: [],
   searchParams: {
     selectedCity: '',
     selectedProfession: '',
