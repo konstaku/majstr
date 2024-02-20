@@ -72,8 +72,12 @@ async function handleApiRequests(req, res) {
   if (req.query && req.query.q) {
     switch (req.query.q) {
       case 'masters':
-        const masters = await Master.find({ approved: true });
-        console.log(`Fetching masters...`);
+        let mastersQuery = { approved: true };
+        if (req.query.country) {
+          mastersQuery = { ...mastersQuery, countryID: req.query.country };
+        }
+        const masters = await Master.find(mastersQuery);
+        console.log(`Fetching masters for location,`, req.query.country);
         res.status(200).send(masters);
         break;
       case 'professions':
@@ -87,8 +91,10 @@ async function handleApiRequests(req, res) {
         res.status(200).send(profCategories);
         break;
       case 'locations':
-        const query = req.query.country ? { countryID: req.query.country } : {};
-        const locations = await Location.find(query);
+        const locationsQuery = req.query.country
+          ? { countryID: req.query.country }
+          : {};
+        const locations = await Location.find(locationsQuery);
         console.log(`Fetching locations... country id:`, req.query.country);
         res.status(200).send(locations);
         break;
