@@ -19,9 +19,6 @@ export default function SearchResults({
     )
     .map((p) => p.id);
 
-  console.log('availableProfessionIDs', availableProfessionIDs);
-  console.log('professionCategory', professionCategory);
-
   const filteredMasters = masters.filter(
     (master) =>
       master.locationID.includes(city) &&

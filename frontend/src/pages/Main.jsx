@@ -12,6 +12,26 @@ import {
   trackEscWhenModalShown,
 } from '../helpers/modal';
 
+// Setting styles for select elements
+export const baseSelectStyles = {
+  singleValue: (base) => ({ ...base, color: 'white' }),
+  menu: (base) => ({
+    ...base,
+    backgroundColor: '#171923',
+    borderRadius: '20px',
+    padding: '1rem',
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    background: '#171923',
+    color: 'white',
+    width: '100%',
+    margin: '1rem',
+  }),
+  option: (styles) => ({ ...styles, cursor: 'pointer' }),
+  control: (styles) => ({ ...styles, cursor: 'pointer' }),
+};
+
 function Main() {
   const { state, dispatch } = useContext(MasterContext);
   const {
@@ -28,7 +48,7 @@ function Main() {
   const [showModal, setShowModal] = useState(null);
   const { state: loadingState } = useNavigation();
   const isLoading = loadingState === 'loading';
-  const isError = false;
+  const isError = false; // Need to add state
 
   const currentCountry = countries.find((country) => country.id === countryID);
 
@@ -42,8 +62,6 @@ function Main() {
     const modalCard = params.get('card');
     const masterIsValid = masters.find((master) => master.id === modalCard);
 
-    console.log('modalCard:', modalCard, 'masterIsValid', masterIsValid);
-
     if (modalCard && masterIsValid) {
       setShowModal(modalCard);
     }
@@ -54,16 +72,16 @@ function Main() {
   // Display master name in page title whenever modal pops
   // Track document clicks outside modal
   useEffect(() => {
-    if (showModal) {
-      document.addEventListener('click', (e) =>
-        trackClickOutsideCard(e, 'details-modal', setShowModal)
-      );
-      document.addEventListener('keyup', (e) =>
-        trackEscWhenModalShown(e, setShowModal)
-      );
+    const clickListener = (e) =>
+      trackClickOutsideCard(e, 'details-modal', setShowModal);
+    const keyUpListener = (e) => trackEscWhenModalShown(e, setShowModal);
 
+    if (showModal) {
       const currentMaster = masters.find((master) => master._id === showModal);
       if (!currentMaster) return;
+
+      document.addEventListener('click', clickListener);
+      document.addEventListener('keyup', keyUpListener);
 
       const professionName = professions.find(
         (profession) => profession.id === currentMaster.professionID
@@ -74,9 +92,12 @@ function Main() {
 
       document.title = `${currentMaster.name} | ${professionName} в ${cityName}`;
     }
+
     return () => {
-      document.removeEventListener('click', trackClickOutsideCard);
-      document.removeEventListener('keyup', trackEscWhenModalShown);
+      if (showModal) {
+        document.removeEventListener('click', clickListener);
+        document.removeEventListener('keyup', keyUpListener);
+      }
       document.title = 'Majstr : Знаходь українських майстрів';
     };
   }, [showModal, masters]);
@@ -152,24 +173,6 @@ function Main() {
   const professionSelectOptions =
     generateProfessionsSelectOptions(availableProfessions);
 
-  // Setting styles for select elements
-  const headlineSelectStyles = {
-    singleValue: (base) => ({ ...base, color: 'white' }),
-    menu: (base) => ({
-      ...base,
-      backgroundColor: '#171923',
-      borderRadius: '20px',
-      padding: '1rem',
-    }),
-    valueContainer: (base) => ({
-      ...base,
-      background: '#171923',
-      color: 'white',
-      width: '100%',
-      margin: '1rem',
-    }),
-  };
-
   return (
     <>
       <div className="search-field">
@@ -219,13 +222,14 @@ function Main() {
       <Select
         className="headline-select"
         unstyled
+        isSearchable={false}
         defaultValue={
           selectedCity
             ? availableLocations.find((l) => l.value === selectedCity)
             : availableLocations[0]
         }
         options={availableLocations}
-        styles={headlineSelectStyles}
+        styles={baseSelectStyles}
         onChange={(e) => {
           dispatch({
             type: ACTIONS.SET_CITY,
@@ -248,9 +252,10 @@ function Main() {
             : selectedProfessionCategory
         }
         unstyled
+        isSearchable={false}
         // options={availableProfessions}
         options={professionSelectOptions}
-        styles={headlineSelectStyles}
+        styles={baseSelectStyles}
         placeholder="Всі майстри"
         onChange={(e) =>
           dispatch({

@@ -13,7 +13,8 @@ const INITIAL_STATE = {
     selectedProfession: '',
   },
   user: {},
-  countryID: 'IT',
+  countryID: null,
+  countrySet: false,
   error: null,
 };
 

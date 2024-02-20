@@ -3,6 +3,7 @@ import { Link, Outlet } from 'react-router-dom';
 import { MasterContext } from '../context';
 import { ACTIONS } from '../reducer';
 import Select from 'react-select';
+import { baseSelectStyles } from '../pages/Main';
 
 export default function Root() {
   const { state, dispatch } = useContext(MasterContext);
@@ -13,14 +14,46 @@ export default function Root() {
   // Add to .env
   const defaultCountry = 'IT';
 
-  // Populate masters, professions, categories and country on app load
+  // Define and set countryID
   useEffect(() => {
+    const controller = new AbortController();
+
+    (async function () {
+      fetch('https://ipinfo.io/json', { signal: controller.signal })
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+          return Promise.reject(response.statusText);
+        })
+        .then((result) => {
+          const userCountry = result.country || defaultCountry;
+          dispatch({
+            type: ACTIONS.SET_COUNTRY,
+            payload: { countryID: userCountry },
+          });
+        })
+        .catch((error) => {
+          if (error.name === 'AbortError') {
+            return;
+          }
+          throw new Error(error);
+        });
+    })();
+  }, []);
+
+  // Populate masters, professions, categories and available countries when a base country is set
+  useEffect(() => {
+    if (!state.countrySet) {
+      return;
+    }
+
     const controller = new AbortController();
 
     (async function () {
       try {
         const promises = [
-          fetch('https://api.majstr.com/?q=masters', {
+          fetch(`https://api.majstr.com/?q=masters&country=${countryID}`, {
             signal: controller.signal,
           }).then((response) => response.json()),
           fetch('https://api.majstr.com/?q=professions', {
@@ -35,15 +68,6 @@ export default function Root() {
           fetch('https://api.majstr.com/?q=countries', {
             signal: controller.signal,
           }).then((response) => response.json()),
-          fetch('https://ipinfo.io/json', {
-            signal: controller.signal,
-          })
-            .then((response) => response.json())
-            .then((result) =>
-              countries.some((country) => country.id === result.country)
-                ? result.country
-                : defaultCountry
-            ),
         ];
 
         await Promise.all(promises).then((data) =>
@@ -55,7 +79,6 @@ export default function Root() {
               profCategories: data[2],
               locations: data[3],
               countries: data[4],
-              countryID: data[5],
             },
           })
         );
@@ -71,7 +94,7 @@ export default function Root() {
     })();
 
     return () => controller.abort();
-  }, [countryID]);
+  }, [state.countrySet, state.countryID]);
 
   // Check if a user is authenticated on load
   useEffect(() => {
@@ -182,42 +205,36 @@ function CountrySelect({
   countryID,
   dispatch,
 }) {
-  // const countrySelectOptions = [
-  //   {
-  //     label: countries.find((country) => country.id === countryID)?.name.ua,
-  //     value: countryID,
-  //   },
-  //   ...countries.map((country) => ({
-  //     label: `${country.flag}  ${country.name.ua}`,
-  //     value: country.id,
-  //   })),
-  // ];
+  const countrySelectOptions = [
+    ...countries.map((country) => ({
+      label: `${country.flag}  ${country.name.ua}`,
+      value: country.id,
+    })),
+  ];
 
   return (
     <>
-      <div
-        className="select-country"
-        // onClick={() =>
-        //   dispatch({ type: ACTIONS.SET_COUNTRY, payload: { countryID: 'PT' } })
-        // }
-      >
-        <span>🇮🇹</span>
-        <span>Італія</span>
+      <div className="select-country">
+        {countrySelectOptions.length ? (
+          <Select
+            className="country-select"
+            unstyled
+            isSearchable={false}
+            options={countrySelectOptions}
+            defaultValue={countrySelectOptions[0]}
+            components={{ DropdownIndicator: () => null }}
+            styles={baseSelectStyles}
+            onChange={(e) => {
+              dispatch({
+                type: ACTIONS.SET_COUNTRY,
+                payload: { countryID: e.value },
+              });
+            }}
+          />
+        ) : (
+          'Loading...'
+        )}
       </div>
-      {/* <Select
-        // className="select-country"
-        // defaultValue={countrySelectOptions[0]}
-        // unstyled
-        // options={countrySelectOptions}
-        // components={{ DropdownIndicator: () => null }}
-        // styles={headlineSelectStyles}
-        // onChange={(e) => {
-        //   dispatch({
-        //     type: ACTIONS.SET_CITY,
-        //     payload: { selectedCity: e.value },
-        //   });
-        // }}
-      /> */}
       <div
         className="burger-open"
         onClick={() => setShowBurgerMenu(!showBurgerMenu)}

@@ -32,8 +32,6 @@ export default function AddNewRecord() {
     formState: { errors, isLoading, isSubmitting, isSubmitSuccessful },
   } = useForm({});
 
-  console.log('state:', state);
-
   // As user name is updated in state, update form default value as state changes
   useEffect(() => {
     setValue('telegram', username);

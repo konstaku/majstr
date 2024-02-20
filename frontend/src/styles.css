@@ -152,7 +152,8 @@ body {
   align-items: center;
 }
 
-.headline-select {
+.headline-select,
+.country-select {
   font-size: inherit;
   font-weight: inherit;
   color: inherit;
@@ -160,6 +161,12 @@ body {
   min-width: fit-content;
   text-decoration: underline;
   text-underline-offset: 0.25rem;
+}
+
+.country-select {
+  cursor: pointer;
+  text-decoration: none;
+  min-width: max-content;
 }
 
 .select-container {

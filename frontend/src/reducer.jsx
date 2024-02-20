@@ -24,8 +24,6 @@ export function reducer(state, { type, payload }) {
         profCategories: payload.profCategories,
         locations: payload.locations,
         countries: payload.countries,
-        // countryID: payload.countryID,
-        countryID: 'IT',
       };
     }
 
@@ -33,6 +31,7 @@ export function reducer(state, { type, payload }) {
       return {
         ...state,
         countryID: payload.countryID,
+        countrySet: true,
       };
     }
 

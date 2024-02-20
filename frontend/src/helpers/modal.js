@@ -3,7 +3,6 @@ export function trackClickOutsideCard(event, id, setFunction) {
   const target = event.target;
 
   if (target.contains(modalCard)) {
-    console.log('target.contains(modalCard)');
     setFunction(null);
   }
 }
