@@ -399,7 +399,7 @@ body {
 
 .master-card-footer {
   display: flex;
-  justify-content: flex-end;
+  gap: 0;
 }
 
 .btn {

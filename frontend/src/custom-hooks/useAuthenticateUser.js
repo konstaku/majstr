@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 
 export default function useAuthenticateUser() {
   const [user, setUser] = useState({});
+  const [token] = useState(() => JSON.parse(localStorage.getItem('token')));
 
   useEffect(() => {
     const controller = new AbortController();
 
     (async function () {
-      const token = JSON.parse(localStorage.getItem('token'));
       if (!token) return {};
 
       await fetch('https://api.majstr.com/auth', {

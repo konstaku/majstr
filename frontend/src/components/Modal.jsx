@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { colorPalette } from './MasterCard';
 import Avatar from './Avatar';
 import { MasterContext } from '../context';
+import ContactsLayout from './ContactsLayout';
 
 export default function Modal({ master, setShowModal }) {
   const {
@@ -28,38 +29,6 @@ export default function Modal({ master, setShowModal }) {
       params.delete('card');
       window.history.pushState({}, '', `${window.location.pathname}`);
     };
-  }, []);
-
-  const generateContactLayout = useCallback(({ contactType, value }, index) => {
-    let contactValue;
-    let link;
-
-    switch (contactType) {
-      case 'instagram':
-        link = `https://www.instagram.com/${value}/`;
-        contactValue = <a href={link}>{value}</a>;
-        break;
-      case 'telegram':
-        const handle = value.replace(/@/g, '');
-        link = `https://t.me/${handle}`;
-        contactValue = <a href={link}>{value}</a>;
-        break;
-      case 'phone':
-        contactValue = <a href={`tel:${value}`}>{value}</a>;
-        break;
-      case 'facebook':
-        contactValue = <a href={value}>link</a>;
-        break;
-      default:
-        contactValue = value;
-    }
-
-    return (
-      <div key={index}>
-        <span className="contact-name">{contactType}:</span>
-        <span className="contact-value">{contactValue}</span>
-      </div>
-    );
   }, []);
 
   async function copyUrlToClipboard(id) {
@@ -119,9 +88,7 @@ export default function Modal({ master, setShowModal }) {
                   : `Нажаль, майстер немає детального опису 🤷‍♂️`}
               </div>
             </div>
-            <div className="mastercard-contacts">
-              {master.contacts.map(generateContactLayout)}
-            </div>
+            <ContactsLayout contacts={master.contacts} />
           </div>
         </div>
       </div>

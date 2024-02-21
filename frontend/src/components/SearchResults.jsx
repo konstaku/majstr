@@ -10,7 +10,7 @@ export default function SearchResults({
   setShowModal,
 }) {
   const {
-    state: { professions },
+    state: { professions, countryID },
   } = useContext(MasterContext);
 
   const availableProfessionIDs = professions
@@ -21,6 +21,7 @@ export default function SearchResults({
 
   const filteredMasters = masters.filter(
     (master) =>
+      master.countryID === countryID &&
       master.locationID.includes(city) &&
       availableProfessionIDs.includes(master.professionID)
   );

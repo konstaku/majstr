@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import AddNewRecord from './pages/AddNewRecord';
 
 import { mainRoute } from './pages/Main';
+import { adminRoute } from './pages/Admin';
 import Root from './components/Root';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
@@ -30,6 +31,10 @@ export const router = createBrowserRouter([
           {
             path: '/profile',
             element: <Profile />,
+          },
+          {
+            path: '/admin',
+            ...adminRoute,
           },
         ],
       },

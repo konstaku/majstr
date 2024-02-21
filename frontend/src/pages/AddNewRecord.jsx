@@ -21,7 +21,7 @@ import {
 export default function AddNewRecord() {
   const [successPopup, setSuccessPopup] = useState(false);
   const { state } = useContext(MasterContext);
-  const { user, locations, professions, profCategories } = state;
+  const { user, locations, professions, profCategories, countryID } = state;
   const { firstName, username } = user;
   const {
     register,
@@ -73,7 +73,7 @@ export default function AddNewRecord() {
   );
 
   // Post form on submit
-  function onSubmit(data) {
+  async function onSubmit(data) {
     const contacts = formatContactsForSchema(data);
     const tags = formatTagsForSchema(data);
 
@@ -82,13 +82,14 @@ export default function AddNewRecord() {
       ...data,
       telegramID: telegramID || null,
       photo: photo || null,
+      countryID,
       contacts,
       tags,
     };
 
     // Send form data
     const controller = new AbortController();
-    fetch('https://api.majstr.com/addmaster', {
+    await fetch('https://api.majstr.com/addmaster', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dataToSave),
@@ -133,7 +134,11 @@ export default function AddNewRecord() {
               errors={errors}
             />
             <TagsInput control={control} tags={watcher.tags} errors={errors} />
-            <TelephoneInput register={register} control={control} />
+            <TelephoneInput
+              register={register}
+              control={control}
+              countryID={countryID}
+            />
             <InstagramInput register={register} />
             <TelegramInput register={register} />
             <AboutInput register={register} errors={errors} />
@@ -418,7 +423,7 @@ function TagsInput({ control, tags = [], errors }) {
   );
 }
 
-function TelephoneInput({ register, control }) {
+function TelephoneInput({ register, control, countryID }) {
   return (
     <div className="input-field">
       <label>
@@ -428,7 +433,7 @@ function TelephoneInput({ register, control }) {
           name="telephone"
           render={({ field: { onChange } }) => (
             <PhoneInput
-              country={'it'}
+              country={countryID?.toLowerCase()}
               countryCodeEditable
               enableSearch
               inputStyle={{ fontWeight: 300 }}

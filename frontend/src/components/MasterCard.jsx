@@ -24,7 +24,7 @@ export const colorPalette = [
   '#B5B2FF', // periwinkle
 ];
 
-export default function MasterCard({ master, showModal, setShowModal }) {
+export default function MasterCard({ master, setShowModal }) {
   const {
     state: { locations, professions },
   } = useContext(MasterContext);
@@ -61,11 +61,11 @@ export default function MasterCard({ master, showModal, setShowModal }) {
             </div>
             <div className="master-card-name">{name}</div>
             <div className="master-card-profession">
-              {professions.find((p) => p.id === professionID).name.ua}
+              {professions.find((p) => p.id === professionID)?.name.ua}
             </div>
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
-              {locations.find((l) => l.id === locationID).name.ua}
+              {locations.find((l) => l.id === locationID)?.name.ua}
             </div>
           </div>
           <div className="mastercard-tag-container">

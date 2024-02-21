@@ -32,7 +32,7 @@ export default function MasterCardPreview({ master }) {
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
               {locationID
-                ? locations.find((l) => l.id === locationID).name.ua
+                ? locations.find((l) => l.id === locationID)?.name.ua
                 : 'Локація невідома'}
             </div>
           </div>
