@@ -48,6 +48,7 @@ async function main() {
   app.get('/', handleApiRequests);
   app.get('/auth', authenticateUser);
   app.post('/addmaster', addMaster);
+  app.post('/approve-master', handleApproveMaster);
 
   const httpsServer = https.createServer(httpsOptions, app);
 
@@ -77,8 +78,13 @@ async function handleApiRequests(req, res) {
           mastersQuery = { ...mastersQuery, countryID: req.query.country };
         }
         const masters = await Master.find(mastersQuery);
-        console.log(`Fetching masters for location,`, req.query.country);
+        console.log(`Fetching masters for location`, req.query.country);
         res.status(200).send(masters);
+        break;
+      case 'newmasters':
+        const newMasters = await Master.find({ approved: false });
+        console.log(`Fetching new masters...`);
+        res.status(200).send(newMasters);
         break;
       case 'professions':
         const professions = await Profession.find();
@@ -145,11 +151,6 @@ async function addMaster(req, res) {
 
   const master = new Master(req.body);
 
-  // Automatically approve and add records made by admin
-  // if (req.body.telegramID === 5950535) {
-  //   master.approved = true;
-  // }
-
   // 1. Validate data
   const validationError = master.validateSync();
   if (validationError) {
@@ -189,30 +190,107 @@ async function addMaster(req, res) {
   // 6. Send an update to a moderator telegram
   // sendModeratorUpdate(masterId)
 
-  bot.sendMessage(TELEGRAM_ADMIN_CHAT_ID, master.toString(), {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: '✅',
-            callback_data: JSON.stringify({
-              value: 'accept',
-              masterId: master._id,
-            }),
-          },
-        ],
-        [
-          {
-            text: '❌',
-            callback_data: JSON.stringify({
-              value: 'decline',
-              masterId: master._id,
-            }),
-          },
-        ],
-      ],
-    },
-  });
+  // bot.sendMessage(TELEGRAM_ADMIN_CHAT_ID, master.toString(), {
+  //   reply_markup: {
+  //     inline_keyboard: [
+  //       [
+  //         {
+  //           text: '✅',
+  //           callback_data: JSON.stringify({
+  //             value: 'accept',
+  //             masterId: master._id,
+  //           }),
+  //         },
+  //       ],
+  //       [
+  //         {
+  //           text: '❌',
+  //           callback_data: JSON.stringify({
+  //             value: 'decline',
+  //             masterId: master._id,
+  //           }),
+  //         },
+  //       ],
+  //     ],
+  //   },
+  // });
+
+  bot.sendMessage(
+    TELEGRAM_ADMIN_CHAT_ID,
+    `New master added, check it: https://majstr.com/admin\n${master.OGimage}`
+  );
 
   res.status(200).json({ success: true });
+}
+
+async function handleApproveMaster(req, res) {
+  console.log('new request', req.body);
+
+  const data = req.body;
+  const { action, masterID, token } = data;
+  const master = await Master.findById(masterID);
+  const telegramId = master?.telegramID;
+
+  const adminTokens = (await User.find({ isAdmin: true })).map(
+    (user) => user?.token
+  );
+
+  if (adminTokens.includes(token)) {
+    console.log('auth success');
+  }
+
+  if (master === null) {
+    return res.status(404).end();
+  }
+
+  let success = false;
+
+  switch (action) {
+    case 'approve':
+      try {
+        await approveMaster(masterID);
+        await bot.sendMessage(
+          telegramId,
+          `Картку майстра додано на сайт: https://majstr.com/?card=${masterID}`
+        );
+        success = true;
+      } catch (err) {
+        throw new Error(err?.message);
+      }
+      break;
+
+    case 'decline':
+      try {
+        await declineMaster(masterID);
+        await bot.sendMessage(
+          telegramId,
+          `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
+        );
+        success = true;
+      } catch (err) {
+        throw new Error(err?.message);
+      }
+      break;
+    default:
+      throw new Error('Cannot handle master approval!');
+  }
+
+  if (success) {
+    return res.status(200).send('ok');
+  }
+
+  res.status(400).send('cannot handle request');
+}
+
+async function approveMaster(id) {
+  const master = await Master.findById(id).catch(console.error);
+  master.approved = true;
+  await master.save().catch(console.error);
+}
+
+async function declineMaster(id) {
+  const deleted = await Master.findByIdAndDelete(id).catch(console.error);
+  if (!deleted) {
+    throw new Error('Can not delete master');
+  }
 }

@@ -57,7 +57,9 @@ async function handleWebhook(req, res, bot) {
   console.log('request body:', req.body);
 
   if (req.body.callback_query) {
-    return await handleCallbackQuery(req, res, bot);
+    console.log(`The request has a callback query, that can't be handled`);
+    return res.status(200).end();
+    // return await handleCallbackQuery(req, res, bot);
   }
 
   const message = req.body.message;
@@ -215,87 +217,74 @@ async function addUserToDatabase(message, photo, token) {
   );
 }
 
-async function handleCallbackQuery(req, res, bot) {
-  // I need to rewrite logic and check for new entries at will
-  // because now I have only 60 seconds to answer each callback query
-  try {
-    if (!req.body.callback_query.data) {
-      res.status(200).send('No callback data!');
-    }
+// async function handleCallbackQuery(req, res, bot) {
+//   // I need to rewrite logic and check for new entries at will
+//   // because now I have only 60 seconds to answer each callback query
+//   try {
+//     if (!req.body.callback_query.data) {
+//       res.status(200).send('No callback data!');
+//     }
 
-    console.log('callback data:', req.body.callback_query.data);
+//     console.log('callback data:', req.body.callback_query.data);
 
-    const queryId = req.body.callback_query.id;
-    const callbackData = JSON.parse(req.body.callback_query.data);
-    const { masterId, value: callbackValue } = callbackData;
+//     const queryId = req.body.callback_query.id;
+//     const callbackData = JSON.parse(req.body.callback_query.data);
+//     const { masterId, value: callbackValue } = callbackData;
 
-    const master = await Master.findById(masterId);
-    const telegramId = master?.telegramID;
+//     const master = await Master.findById(masterId);
+//     const telegramId = master?.telegramID;
 
-    if (master === null) {
-      await bot.answerCallbackQuery(queryId, {
-        text: '❌ The master does not exist or have been deleted',
-      });
-      return res.status(200).end();
-    }
+//     if (master === null) {
+//       await bot.answerCallbackQuery(queryId, {
+//         text: '❌ The master does not exist or have been deleted',
+//       });
+//       return res.status(200).end();
+//     }
 
-    let success;
+//     let success;
 
-    switch (callbackValue) {
-      case 'accept':
-        try {
-          await approveMaster(masterId);
-          await bot.sendMessage(
-            telegramId,
-            `Картку майстра додано на сайт: https://majstr.com/?card=${masterId}`
-          );
-          success = await bot.answerCallbackQuery(queryId, {
-            text: `Master ${masterId} accepted`,
-          });
-        } catch (err) {
-          throw new Error(err?.message);
-        }
-        break;
-      case 'decline':
-        try {
-          await declineMaster(masterId);
-          await bot.sendMessage(
-            telegramId,
-            `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
-          );
-          success = await bot.answerCallbackQuery(queryId, {
-            text: `Master ${masterId} declined`,
-          });
-        } catch (err) {
-          throw new Error(err?.message);
-        }
-        break;
-      default:
-        await bot.answerCallbackQuery(queryId, {
-          text: 'Error: please try again later',
-        });
-        throw new Error('Unknown callback data!');
-    }
+//     switch (callbackValue) {
+//       case 'accept':
+//         try {
+//           await approveMaster(masterId);
+//           await bot.sendMessage(
+//             telegramId,
+//             `Картку майстра додано на сайт: https://majstr.com/?card=${masterId}`
+//           );
+//           success = await bot.answerCallbackQuery(queryId, {
+//             text: `Master ${masterId} accepted`,
+//           });
+//         } catch (err) {
+//           throw new Error(err?.message);
+//         }
+//         break;
+//       case 'decline':
+//         try {
+//           await declineMaster(masterId);
+//           await bot.sendMessage(
+//             telegramId,
+//             `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
+//           );
+//           success = await bot.answerCallbackQuery(queryId, {
+//             text: `Master ${masterId} declined`,
+//           });
+//         } catch (err) {
+//           throw new Error(err?.message);
+//         }
+//         break;
+//       default:
+//         await bot.answerCallbackQuery(queryId, {
+//           text: 'Error: please try again later',
+//         });
+//         throw new Error('Unknown callback data!');
+//     }
 
-    if (success) {
-      return res.status(200).send('OK');
-    }
-  } catch (err) {
-    console.error(err);
-  }
+//     if (success) {
+//       return res.status(200).send('OK');
+//     }
+//   } catch (err) {
+//     console.error(err);
+//   }
 
-  return res.status(200).end();
-}
-
-async function approveMaster(id) {
-  const master = await Master.findById(id).catch(console.error);
-  master.approved = true;
-  await master.save().catch(console.error);
-}
-
-async function declineMaster(id) {
-  const deleted = await Master.findByIdAndDelete(id).catch(console.error);
-  if (!deleted) {
-    throw new Error('Can not delete master');
-  }
-}
+//   return res.status(200).end();
+// }
