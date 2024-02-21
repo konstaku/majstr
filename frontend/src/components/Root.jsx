@@ -12,6 +12,7 @@ export default function Root() {
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
 
   // Add to .env
+  const availableCountries = ['IT', 'PT'];
   const defaultCountry = 'IT';
 
   // Define and set countryID
@@ -27,7 +28,9 @@ export default function Root() {
           return Promise.reject(response.statusText);
         })
         .then((result) => {
-          const userCountry = result.country || defaultCountry;
+          const userCountry = availableCountries.includes(result.country)
+            ? result.country
+            : defaultCountry;
           dispatch({
             type: ACTIONS.SET_COUNTRY,
             payload: { countryID: userCountry },
@@ -223,8 +226,17 @@ function CountrySelect({
             options={countrySelectOptions}
             defaultValue={countrySelectOptions[0]}
             components={{ DropdownIndicator: () => null }}
-            styles={baseSelectStyles}
+            styles={{
+              ...baseSelectStyles,
+              menu: (styles) => ({
+                ...styles,
+                minWidth: 'max-content',
+                backgroundColor: '#171923',
+              }),
+            }}
             onChange={(e) => {
+              // Clear city and profession before country change
+              dispatch({ type: ACTIONS.RESET_SEARCH });
               dispatch({
                 type: ACTIONS.SET_COUNTRY,
                 payload: { countryID: e.value },

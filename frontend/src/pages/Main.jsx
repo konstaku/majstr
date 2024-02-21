@@ -18,8 +18,7 @@ export const baseSelectStyles = {
   menu: (base) => ({
     ...base,
     backgroundColor: '#171923',
-    borderRadius: '20px',
-    padding: '1rem',
+    borderRadius: '1rem',
   }),
   valueContainer: (base) => ({
     ...base,
@@ -28,8 +27,19 @@ export const baseSelectStyles = {
     width: '100%',
     margin: '1rem',
   }),
-  option: (styles) => ({ ...styles, cursor: 'pointer' }),
-  control: (styles) => ({ ...styles, cursor: 'pointer' }),
+  option: (base, state) => ({
+    ...base,
+    padding: '1rem',
+    cursor: 'pointer',
+    paddingTop: '0.5rem',
+    paddingBottom: '0.5rem',
+    borderRadius: '10px',
+    backgroundColor: state.isFocused ? '#4fd1c5' : '#171923',
+  }),
+  control: (base) => ({
+    ...base,
+    cursor: 'pointer',
+  }),
 };
 
 function Main() {
@@ -43,6 +53,7 @@ function Main() {
     profCategories,
     searchParams,
     error,
+    countrySet,
   } = state;
   const { selectedCity, selectedProfessionCategory } = searchParams;
   const [showModal, setShowModal] = useState(null);
@@ -104,12 +115,13 @@ function Main() {
 
   // The first value is always an empty string, so the user can always return to "all" as an option
   // Then, I always display every location with at least one master in it
-  const availableLocations = [
-    {
-      value: '',
-      label: `Вся ${currentCountry?.name.ua}`,
-    },
-  ].concat(
+  const locationPlaceholder = currentCountry
+    ? {
+        value: '',
+        label: `Вся ${currentCountry?.name.ua}`,
+      }
+    : { value: '', label: '🤔 🤔 🤔' };
+  const availableLocations = [locationPlaceholder].concat(
     // Array of unique locations only
     [
       ...new Set(
