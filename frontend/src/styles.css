@@ -341,6 +341,10 @@ body {
   gap: 0.5rem;
 }
 
+.about-pre {
+  white-space: pre-wrap;
+}
+
 .mastercard-contacts {
   /* display: none; */
   margin-top: 0.5rem;
@@ -367,7 +371,7 @@ body {
   line-height: 150%;
   background-color: #f7fafc;
   border-radius: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.25rem 0.5rem;
 }
 
 /* .mastercard-content {

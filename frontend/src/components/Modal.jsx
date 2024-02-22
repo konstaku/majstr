@@ -83,9 +83,11 @@ export default function Modal({ master, setShowModal }) {
                 {locations.find((l) => l.id === master.locationID).name.ua}
               </div>
               <div className="mastercard-about">
-                {master.about
-                  ? master.about
-                  : `Нажаль, майстер немає детального опису 🤷‍♂️`}
+                <pre className="about-pre">
+                  {master.about
+                    ? master.about
+                    : `Нажаль, майстер немає детального опису 🤷‍♂️`}
+                </pre>
               </div>
             </div>
             <ContactsLayout contacts={master.contacts} />
