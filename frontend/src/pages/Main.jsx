@@ -19,6 +19,7 @@ export const baseSelectStyles = {
     ...base,
     backgroundColor: '#171923',
     borderRadius: '1rem',
+    overflow: 'hidden',
   }),
   valueContainer: (base) => ({
     ...base,
