@@ -27,6 +27,7 @@ export const baseSelectStyles = {
     color: 'white',
     width: '100%',
     margin: '1rem',
+    maxWidth: '300px',
   }),
   option: (base, state) => ({
     ...base,
@@ -72,14 +73,13 @@ function Main() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const modalCard = params.get('card');
-    const masterIsValid = masters.find((master) => master.id === modalCard);
+    if (!modalCard) return;
 
+    const masterIsValid = masters.find((master) => master._id === modalCard);
     if (modalCard && masterIsValid) {
       setShowModal(modalCard);
     }
-  }, []);
-
-  console.log('state:', state);
+  }, [masters]);
 
   // Display master name in page title whenever modal pops
   // Track document clicks outside modal
@@ -133,7 +133,7 @@ function Main() {
     ].map((masterLocationId) => ({
       value: masterLocationId,
       label: locations.find((location) => location.id === masterLocationId)
-        ?.name.ua,
+        ?.name.ua_alt,
     }))
   );
 
@@ -242,7 +242,13 @@ function Main() {
             : availableLocations[0]
         }
         options={availableLocations}
-        styles={baseSelectStyles}
+        styles={{
+          ...baseSelectStyles,
+          valueContainer: (base) => ({
+            ...base,
+            minWidth: '150px',
+          }),
+        }}
         onChange={(e) => {
           dispatch({
             type: ACTIONS.SET_CITY,
