@@ -6,7 +6,10 @@ const userSchema = new mongoose.Schema({
   firstName: String,
   lastName: String,
   username: String,
-  photo: String,
+  photo: {
+    type: String,
+    default: null,
+  },
   isAdmin: {
     type: Boolean,
     default: false,

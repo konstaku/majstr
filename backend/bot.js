@@ -66,14 +66,15 @@ async function handleWebhook(req, res, bot) {
 
   // If webhook activated, but there is no message, do nothing
   if (!message) {
-    return console.log('Webhook activated, but no message detected');
+    console.log('Webhook activated, but no message detected');
+    return res.status(200).send('OK');
   }
 
   // If the message is unknown command, return
   if (message.text !== '/start') {
     console.log('Webhook activated, but command unknown:', message.text);
     bot.sendMessage(message.chat.id, 'Unknown command, use /start to sign in.');
-    return res.status(200).send('unknown command bot ok');
+    return res.status(200).send('unknown command but ok');
   }
 
   console.log('Looking for a user with an ID of:', message.chat.id);
@@ -157,9 +158,19 @@ async function fetchUserTelegramPhoto(message) {
   console.log(`Fetching photos for user ${message.chat.id}`);
   const photoID = await fetch(fetchPhotoIdUrl, fetchPhotoIdOptions)
     .then((response) => response.json())
-    .then((data) => data.result.photos[0][1].file_id)
+    .then((data) => {
+      if (data.result.total_count === 0) {
+        return null;
+      }
+      return data.result.photos[0][1].file_id;
+    })
     .catch(console.error);
   console.log('Photo ID obtained:', photoID);
+
+  // If there is no photo ID, return null
+  if (photoID === null) {
+    return null;
+  }
 
   // Now when we have a photo ID, we can create the options to process a photo path request
   const fetchPhotoPathOptions = {
@@ -203,13 +214,19 @@ async function addUserToDatabase(message, photo, token) {
     Body: photo,
   };
 
-  // Save photo to S3
-  s3.upload(s3uploadParams, async (err, data) => {
-    if (err) return console.error(err);
-    // Update user record in the database
-    user.photo = data.Location;
+  // If there is no photo, skip s3 upload
+  if (photo === null) {
+    user.photo = null;
     await user.save();
-  });
+  } else {
+    // Save photo to S3
+    s3.upload(s3uploadParams, async (err, data) => {
+      if (err) return console.error(err);
+      // Update user record in the database
+      user.photo = data.Location;
+      await user.save();
+    });
+  }
 
   // If we are here, that means that everything is completed successfully
   console.log(
