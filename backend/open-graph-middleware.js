@@ -31,7 +31,7 @@ async function runOpenGraphMiddleware() {
       return res.status(404).send('Card ID not found in URL');
     }
 
-    const id = req.query.card;
+    const id = req.query.card.replace(/`/g, '');
     const master = await Master.findById(id);
     const professions = await Profession.find();
     const locations = await Location.find();

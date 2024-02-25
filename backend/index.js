@@ -217,7 +217,7 @@ async function addMaster(req, res) {
 
   bot.sendMessage(
     TELEGRAM_ADMIN_CHAT_ID,
-    `New master added, check it: https://majstr.com/admin\n${master.OGimage}`
+    `New master added, check it: ${master.OGimage}\nhttps://majstr.com/admin`
   );
 
   res.status(200).json({ success: true });
