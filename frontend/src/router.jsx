@@ -1,16 +1,16 @@
-import { createBrowserRouter } from 'react-router-dom';
-import AddNewRecord from './pages/AddNewRecord';
+import { createBrowserRouter } from "react-router-dom";
+import AddNewRecord from "./pages/AddNewRecord";
 
-import { mainRoute } from './pages/Main';
-import { adminRoute } from './pages/Admin';
-import Root from './components/Root';
-import Login from './pages/Login';
-import Profile from './pages/Profile';
-import ErrorPage from './pages/ErrorPage';
+import { mainRoute } from "./pages/Main";
+import { adminRoute } from "./pages/Admin";
+import Root from "./components/Root";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import ErrorPage from "./pages/ErrorPage";
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <Root />,
     children: [
       {
@@ -21,19 +21,19 @@ export const router = createBrowserRouter([
             ...mainRoute,
           },
           {
-            path: '/add',
+            path: "/add",
             element: <AddNewRecord />,
           },
           {
-            path: '/login',
+            path: "/login",
             element: <Login />,
           },
           {
-            path: '/profile',
+            path: "/profile",
             element: <Profile />,
           },
           {
-            path: '/admin',
+            path: "/admin",
             ...adminRoute,
           },
         ],

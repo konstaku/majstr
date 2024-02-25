@@ -4,16 +4,16 @@ import {
   useEffect,
   useReducer,
   useState,
-} from 'react';
-import { useLoaderData } from 'react-router-dom';
-import { MasterContext } from '../context';
-import Avatar from '../components/Avatar';
-import ContactsLayout from '../components/ContactsLayout';
-import { ACTIONS } from '../reducer';
+} from "react";
+import { useLoaderData } from "react-router-dom";
+import { MasterContext } from "../context";
+import Avatar from "../components/Avatar";
+import ContactsLayout from "../components/ContactsLayout";
+import { ACTIONS } from "../reducer";
 
 function Admin() {
   const newMasters = useLoaderData();
-  const [token] = useState(() => JSON.parse(localStorage.getItem('token')));
+  const [token] = useState(() => JSON.parse(localStorage.getItem("token")));
   const {
     state: { locations, professions },
   } = useContext(MasterContext);
@@ -38,18 +38,18 @@ function Admin() {
 }
 
 function NewMasterPreview({ master, token, professions }) {
-  console.log('master:', master);
+  console.log("master:", master);
   const { _id, name, tags, contacts, about, locationID, professionID } = master;
 
   return (
     <div className="master-card" id={_id}>
       <div
         className="master-card-body"
-        style={{ backgroundColor: '8080ff' + '35' }}
+        style={{ backgroundColor: "8080ff" + "35" }}
       >
         <div>
           <div className="master-card-header">
-            <Avatar img={master.photo} color={'8080ff'} name={name} />
+            <Avatar img={master.photo} color={"8080ff"} name={name} />
             <div className="bookmark-container">
               <img src="/img/icons/bookmark-passive.svg" alt="" />
             </div>
@@ -77,13 +77,13 @@ function NewMasterPreview({ master, token, professions }) {
       <div className="master-card-footer">
         <button
           className="btn admin"
-          onClick={() => approveMaster('approve', _id, token)}
+          onClick={() => approveMaster("approve", _id, token)}
         >
           ✅
         </button>
         <button
           className="btn admin"
-          onClick={() => approveMaster('decline', _id, token)}
+          onClick={() => approveMaster("decline", _id, token)}
         >
           ❌
         </button>
@@ -100,9 +100,9 @@ function NewMasterPreview({ master, token, professions }) {
 
     const controller = new AbortController();
 
-    await fetch('https://api.majstr.com/approve-master', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("https://api.majstr.com/approve-master", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(masterData),
       signal: controller.signal,
     })
@@ -117,7 +117,7 @@ function NewMasterPreview({ master, token, professions }) {
 }
 
 function loader({ request }) {
-  return fetch('https://api.majstr.com/?q=newmasters', {
+  return fetch("https://api.majstr.com/?q=newmasters", {
     signal: request.signal,
   });
 }

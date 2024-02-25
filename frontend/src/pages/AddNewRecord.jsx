@@ -1,22 +1,22 @@
-import 'react-phone-input-2/lib/style.css';
+import "react-phone-input-2/lib/style.css";
 
-import Select from 'react-select';
-import { useContext, useEffect, useState } from 'react';
-import { MasterContext } from '../context';
-import { Controller, useForm } from 'react-hook-form';
-import PhoneInput from 'react-phone-input-2';
+import Select from "react-select";
+import { useContext, useEffect, useState } from "react";
+import { MasterContext } from "../context";
+import { Controller, useForm } from "react-hook-form";
+import PhoneInput from "react-phone-input-2";
 
-import CreatableSelect from 'react-select/creatable';
-import MasterCardPreview from '../components/MasterCardPreview';
-import useAuthenticateUser from '../custom-hooks/useAuthenticateUser';
+import CreatableSelect from "react-select/creatable";
+import MasterCardPreview from "../components/MasterCardPreview";
+import useAuthenticateUser from "../custom-hooks/useAuthenticateUser";
 import {
   formatContactsForSchema,
   formatTagsForSchema,
-} from '../helpers/new-master-form';
+} from "../helpers/new-master-form";
 import {
   trackClickOutsideCard,
   trackEscWhenModalShown,
-} from '../helpers/modal';
+} from "../helpers/modal";
 
 export default function AddNewRecord() {
   const [successPopup, setSuccessPopup] = useState(false);
@@ -32,32 +32,32 @@ export default function AddNewRecord() {
     formState: { errors, isLoading, isSubmitting, isSubmitSuccessful },
   } = useForm({});
 
+  // Fetch photo dynamically
+  const { photo, telegramID } = useAuthenticateUser();
+
   // As user name is updated in state, update form default value as state changes
   useEffect(() => {
-    setValue('telegram', username);
-    setValue('name', firstName);
-    setValue('useThisPhoto', true);
-  }, [username, firstName]);
+    setValue("telegram", username);
+    setValue("name", firstName);
+    setValue("useThisPhoto", photo ? true : false);
+  }, [username, firstName, photo]);
 
   // Close modal on click outside / esc
   // TODO: abstract as a separate hook useCloseModal
   useEffect(() => {
     if (successPopup) {
-      document.addEventListener('click', (e) =>
-        trackClickOutsideCard(e, 'success', setSuccessPopup)
+      document.addEventListener("click", (e) =>
+        trackClickOutsideCard(e, "success", setSuccessPopup)
       );
-      document.addEventListener('keyup', (e) =>
+      document.addEventListener("keyup", (e) =>
         trackEscWhenModalShown(e, setSuccessPopup)
       );
     }
     return () => {
-      document.removeEventListener('click', trackClickOutsideCard);
-      document.removeEventListener('keyup', trackEscWhenModalShown);
+      document.removeEventListener("click", trackClickOutsideCard);
+      document.removeEventListener("keyup", trackEscWhenModalShown);
     };
   }, [successPopup]);
-
-  // Fetch photo dynamically
-  const { photo, telegramID } = useAuthenticateUser();
 
   // Get live updates from all fields
   const watcher = watch();
@@ -69,19 +69,20 @@ export default function AddNewRecord() {
   };
 
   const [profCategoryID, setProfCategoryID] = useState(
-    watcher.profCategoryID || ''
+    watcher.profCategoryID || ""
   );
 
   // Post form on submit
   async function onSubmit(data) {
     const contacts = formatContactsForSchema(data);
     const tags = formatTagsForSchema(data);
+    const { useThisPhoto } = data;
 
     // Add Telegram ID and photo url to user profile
     const dataToSave = {
       ...data,
       telegramID: telegramID || null,
-      photo: photo || null,
+      photo: useThisPhoto ? photo || null : null,
       countryID,
       contacts,
       tags,
@@ -89,16 +90,16 @@ export default function AddNewRecord() {
 
     // Send form data
     const controller = new AbortController();
-    await fetch('https://api.majstr.com/addmaster', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("https://api.majstr.com/addmaster", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dataToSave),
       signal: controller.signal,
     })
       .then((response) => {
         if (response.ok) {
           setSuccessPopup(true);
-          return console.log('Data submitted successfully');
+          return console.log("Data submitted successfully");
         }
         return Promise.reject(response);
       })
@@ -145,20 +146,20 @@ export default function AddNewRecord() {
             <button
               className={`btn ${
                 isLoading || isSubmitting
-                  ? 'is-loading'
+                  ? "is-loading"
                   : isSubmitSuccessful
-                  ? 'is-loaded'
-                  : ''
+                  ? "is-loaded"
+                  : ""
               } `}
               type="submit"
               disabled={isSubmitSuccessful}
             >
               {`${
                 isLoading || isSubmitting
-                  ? 'Додаємо запис...'
+                  ? "Додаємо запис..."
                   : isSubmitSuccessful
-                  ? 'Запис додано!'
-                  : 'Створити запис'
+                  ? "Запис додано!"
+                  : "Створити запис"
               } `}
             </button>
           </form>
@@ -186,9 +187,9 @@ function PhotoInput({ photo, register }) {
         ></div>
         <label>
           <input
-            {...register('useThisPhoto')}
+            {...register("useThisPhoto")}
             type="checkbox"
-            id={'use-this-photo'}
+            id={"use-this-photo"}
           />
           Використати це фото
         </label>
@@ -206,12 +207,18 @@ function NameInput({ register, errors }) {
         </div>
         <input
           className={`create-user-input ${
-            errors?.name?.message ? 'error' : ''
+            errors?.name?.message ? "error" : ""
           }`}
           placeholder="Ваше імʼя"
-          {...register('name', {
-            required: { value: true, message: 'Це обовʼязкове поле' },
-            maxLength: { value: 25, message: 'Максимум 25 символів' },
+          {...register("name", {
+            required: {
+              value: true,
+              message: "Це обовʼязкове поле",
+            },
+            maxLength: {
+              value: 25,
+              message: "Максимум 25 символів",
+            },
           })}
         />
       </label>
@@ -232,7 +239,8 @@ function ProfCategoryInput({
     <div className="input-field">
       <label>
         <div className="input-label">
-          Оберіть професійну категорію<span className="required">*</span>
+          Оберіть професійну категорію
+          <span className="required">*</span>
         </div>
         <Controller
           control={control}
@@ -240,7 +248,7 @@ function ProfCategoryInput({
           rules={{
             required: {
               value: true,
-              message: 'Обовʼязково вкажіть професійну категорію',
+              message: "Обовʼязково вкажіть професійну категорію",
             },
           }}
           render={({ field: { onChange } }) => (
@@ -255,7 +263,7 @@ function ProfCategoryInput({
                 errors?.profCategoryID?.message && {
                   control: (baseStyles) => ({
                     ...baseStyles,
-                    borderColor: 'rgb(255, 77, 77)',
+                    borderColor: "rgb(255, 77, 77)",
                   }),
                 }
               }
@@ -302,7 +310,7 @@ function ProfessionInput({ control, errors, professions, profCategoryID }) {
           rules={{
             required: {
               value: true,
-              message: 'Обовʼязково вкажіть професію',
+              message: "Обовʼязково вкажіть професію",
             },
           }}
           render={({ field: { onChange } }) => (
@@ -316,7 +324,7 @@ function ProfessionInput({ control, errors, professions, profCategoryID }) {
                 errors?.professionID?.message && {
                   control: (baseStyles) => ({
                     ...baseStyles,
-                    borderColor: 'rgb(255, 77, 77)',
+                    borderColor: "rgb(255, 77, 77)",
                   }),
                 }
               }
@@ -337,13 +345,17 @@ function LocationInput({ control, locations, errors }) {
     <div className="input-field">
       <label>
         <div className="input-label">
-          Оберіть найближче велике місто.<span className="required">*</span>
+          Оберіть найближче велике місто.
+          <span className="required">*</span>
         </div>
         <Controller
           control={control}
           name="locationID"
           rules={{
-            required: { value: true, message: 'Обовʼязково вкажіть місто' },
+            required: {
+              value: true,
+              message: "Обовʼязково вкажіть місто",
+            },
           }}
           render={({ field: { onChange } }) => (
             <Select
@@ -356,7 +368,7 @@ function LocationInput({ control, locations, errors }) {
                 errors?.locationID?.message && {
                   control: (baseStyles) => ({
                     ...baseStyles,
-                    borderColor: 'rgb(255, 77, 77)',
+                    borderColor: "rgb(255, 77, 77)",
                   }),
                 }
               }
@@ -389,7 +401,7 @@ function TagsInput({ control, tags = [], errors }) {
           rules={{
             required: {
               value: true,
-              message: 'Вкажіть хоча б одну послугу',
+              message: "Вкажіть хоча б одну послугу",
             },
           }}
           render={({ field: { onChange } }) => (
@@ -405,11 +417,11 @@ function TagsInput({ control, tags = [], errors }) {
                 errors?.tags?.message && {
                   control: (baseStyles) => ({
                     ...baseStyles,
-                    borderColor: 'rgb(255, 77, 77)',
+                    borderColor: "rgb(255, 77, 77)",
                   }),
                 }
               }
-              noOptionsMessage={() => 'Введіть назву до 25 символів'}
+              noOptionsMessage={() => "Введіть назву до 25 символів"}
               formatCreateLabel={(value) => `Додати ${value}`}
               isMulti
             />
@@ -445,17 +457,17 @@ function TelephoneInput({ register, control, countryID }) {
           <label>
             <input
               type="checkbox"
-              {...register('isTelephone')}
+              {...register("isTelephone")}
               defaultChecked
             />
             Телефон
           </label>
           <label>
-            <input type="checkbox" {...register('isWhatsapp')} />
+            <input type="checkbox" {...register("isWhatsapp")} />
             Whatsapp
           </label>
           <label>
-            <input type="checkbox" {...register('isViber')} />
+            <input type="checkbox" {...register("isViber")} />
             Viber
           </label>
         </div>
@@ -471,7 +483,7 @@ function InstagramInput({ register }) {
         <div className="input-label">Instagram: </div>
         <input
           className="create-user-input"
-          {...register('instagram')}
+          {...register("instagram")}
           placeholder="Імʼя користувача без @"
         />
       </label>
@@ -484,7 +496,7 @@ function TelegramInput({ register }) {
     <div className="input-field">
       <label>
         <div className="input-label">Telegram:</div>
-        <input className="create-user-input" {...register('telegram')} />
+        <input className="create-user-input" {...register("telegram")} />
       </label>
     </div>
   );
@@ -498,11 +510,14 @@ function AboutInput({ register, errors }) {
           Інформація про вас<span className="required">*</span>
         </div>
         <textarea
-          {...register('about', {
-            required: { value: true, message: 'Це обовʼязкове поле' },
+          {...register("about", {
+            required: {
+              value: true,
+              message: "Це обовʼязкове поле",
+            },
           })}
           className={`create-user-input ${
-            errors?.about?.message ? 'error' : ''
+            errors?.about?.message ? "error" : ""
           }`}
           placeholder={`Додаткова інформація про вас:\nЯкі самі послуги ви надаєте? В якому районі знаходитеся? Що треба знати перед тим, як звертутися до вас?`}
           cols="30"
