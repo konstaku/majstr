@@ -1,46 +1,46 @@
-import './../styles.css';
+import "./../styles.css";
 
-import { useContext, useEffect, useState } from 'react';
-import Select from 'react-select';
-import SearchResults from '../components/SearchResults';
-import { MasterContext } from '../context';
-import { ACTIONS } from '../reducer';
-import Modal from '../components/Modal';
-import { useNavigation } from 'react-router-dom';
+import { useContext, useEffect, useState } from "react";
+import Select from "react-select";
+import SearchResults from "../components/SearchResults";
+import { MasterContext } from "../context";
+import { ACTIONS } from "../reducer";
+import Modal from "../components/Modal";
+import { useNavigation } from "react-router-dom";
 import {
   trackClickOutsideCard,
   trackEscWhenModalShown,
-} from '../helpers/modal';
+} from "../helpers/modal";
 
 // Setting styles for select elements
 export const baseSelectStyles = {
-  singleValue: (base) => ({ ...base, color: 'white' }),
+  singleValue: (base) => ({ ...base, color: "white" }),
   menu: (base) => ({
     ...base,
-    backgroundColor: '#171923',
-    borderRadius: '1rem',
-    overflow: 'hidden',
+    backgroundColor: "#171923",
+    borderRadius: "1rem",
+    overflow: "hidden",
   }),
   valueContainer: (base) => ({
     ...base,
-    background: '#171923',
-    color: 'white',
-    width: '100%',
-    margin: '1rem',
-    maxWidth: '300px',
+    background: "#171923",
+    color: "white",
+    width: "100%",
+    margin: "1rem",
+    maxWidth: "300px",
   }),
   option: (base, state) => ({
     ...base,
-    padding: '1rem',
-    cursor: 'pointer',
-    paddingTop: '0.5rem',
-    paddingBottom: '0.5rem',
-    borderRadius: '10px',
-    backgroundColor: state.isFocused ? '#4fd1c5' : '#171923',
+    padding: "1rem",
+    cursor: "pointer",
+    paddingTop: "0.5rem",
+    paddingBottom: "0.5rem",
+    borderRadius: "10px",
+    backgroundColor: state.isFocused ? "#4fd1c5" : "#171923",
   }),
   control: (base) => ({
     ...base,
-    cursor: 'pointer',
+    cursor: "pointer",
   }),
 };
 
@@ -60,7 +60,7 @@ function Main() {
   const { selectedCity, selectedProfessionCategory } = searchParams;
   const [showModal, setShowModal] = useState(null);
   const { state: loadingState } = useNavigation();
-  const isLoading = loadingState === 'loading';
+  const isLoading = loadingState === "loading";
   const isError = false; // Need to add state
 
   const currentCountry = countries.find((country) => country.id === countryID);
@@ -72,7 +72,7 @@ function Main() {
   // Check for an open mastercard in search params on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const modalCard = params.get('card');
+    const modalCard = params.get("card");
     if (!modalCard) return;
 
     const masterIsValid = masters.find((master) => master._id === modalCard);
@@ -85,15 +85,15 @@ function Main() {
   // Track document clicks outside modal
   useEffect(() => {
     const clickListener = (e) =>
-      trackClickOutsideCard(e, 'details-modal', setShowModal);
+      trackClickOutsideCard(e, "details-modal", setShowModal);
     const keyUpListener = (e) => trackEscWhenModalShown(e, setShowModal);
 
     if (showModal) {
       const currentMaster = masters.find((master) => master._id === showModal);
       if (!currentMaster) return;
 
-      document.addEventListener('click', clickListener);
-      document.addEventListener('keyup', keyUpListener);
+      document.addEventListener("click", clickListener);
+      document.addEventListener("keyup", keyUpListener);
 
       const professionName = professions.find(
         (profession) => profession.id === currentMaster.professionID
@@ -107,10 +107,10 @@ function Main() {
 
     return () => {
       if (showModal) {
-        document.removeEventListener('click', clickListener);
-        document.removeEventListener('keyup', keyUpListener);
+        document.removeEventListener("click", clickListener);
+        document.removeEventListener("keyup", keyUpListener);
       }
-      document.title = 'Majstr : Знаходь українських майстрів';
+      document.title = "Majstr : Знаходь українських майстрів";
     };
   }, [showModal, masters]);
 
@@ -118,10 +118,10 @@ function Main() {
   // Then, I always display every location with at least one master in it
   const locationPlaceholder = currentCountry
     ? {
-        value: '',
+        value: "",
         label: `Вся ${currentCountry?.name.ua}`,
       }
-    : { value: '', label: '🤔 🤔 🤔' };
+    : { value: "", label: "🤔 🤔 🤔" };
   const availableLocations = [locationPlaceholder].concat(
     // Array of unique locations only
     [
@@ -160,8 +160,8 @@ function Main() {
 
     result.push({
       // The first element is "Everyone", which is an empty string
-      value: '',
-      label: 'Всі майстри',
+      value: "",
+      label: "Всі майстри",
     });
 
     const uniqueProfessionCategories = [
@@ -246,7 +246,7 @@ function Main() {
           ...baseSelectStyles,
           valueContainer: (base) => ({
             ...base,
-            minWidth: '150px',
+            minWidth: "150px",
           }),
         }}
         onChange={(e) => {

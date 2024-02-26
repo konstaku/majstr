@@ -37,8 +37,8 @@ export default function AddNewRecord() {
 
   // As user name is updated in state, update form default value as state changes
   useEffect(() => {
-    setValue("telegram", username);
-    setValue("name", firstName);
+    setValue("telegram", username || "");
+    setValue("name", firstName || "");
     setValue("useThisPhoto", photo ? true : false);
   }, [username, firstName, photo]);
 
