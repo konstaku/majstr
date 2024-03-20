@@ -132,7 +132,7 @@ export default function Root() {
         </li>
       ) : (
         <li>
-          <a href="https://t.me/chupakabra_dev_bot">Додати майстра</a>
+          <a href="https://t.me/majstr_bot">Додати майстра</a>
         </li>
       )}
       <li className="inactive">FAQ</li>
