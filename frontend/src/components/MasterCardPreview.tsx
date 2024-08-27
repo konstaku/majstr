@@ -1,7 +1,8 @@
 import Avatar from "./Avatar";
 import { useContext } from "react";
 import { MasterContext } from "../context";
-import { MasterPreviewType } from "../types";
+import { MasterPreviewType } from "../schema/form/form.schema";
+import { Location, Profession } from "../schema/state/state.schema";
 
 type MasterCardPreviewProps = {
   className?: string;
@@ -38,13 +39,14 @@ export default function MasterCardPreview({
             <div className="master-card-name">{name}</div>
             <div className="master-card-profession">
               {professionID
-                ? professions.find((p) => p.id === professionID)?.name.ua
+                ? professions.find((p: Profession) => p.id === professionID)
+                    ?.name.ua
                 : "Професія невідома"}
             </div>
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
               {locationID
-                ? locations.find((l) => l.id === locationID)?.name.ua
+                ? locations.find((l: Location) => l.id === locationID)?.name.ua
                 : "Локація невідома"}
             </div>
           </div>

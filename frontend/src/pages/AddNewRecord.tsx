@@ -24,20 +24,25 @@ import {
   trackEscWhenModalShown,
 } from "../helpers/modal";
 
-import type { FormTag, MasterFormData } from "../types";
-import type { MasterPreviewType } from "../types";
+import type {
+  MasterPreviewType,
+  FormTag,
+  MasterFormData,
+} from "../schema/form/form.schema";
 import type {
   Location,
   ProfCategory,
   Profession,
-} from "../schema/state/state.type";
+} from "../schema/state/state.schema";
 
 export default function AddNewRecord() {
   // Fetch photo dynamically
   const { user, loading, error } = useAuthenticateUser();
 
   return loading ? (
-    <h1>hi</h1>
+    <div className="create-user-container">
+      <h1>Loading...</h1>
+    </div>
   ) : user ? (
     <AddNewRecordForm photo={user.photo} telegramID={user.telegramID} />
   ) : error ? (
@@ -111,8 +116,6 @@ function AddNewRecordForm({
       );
     };
   }, [successPopup]);
-
-  console.log("********** watcher:", watcher);
 
   return (
     <>

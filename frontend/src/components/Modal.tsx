@@ -4,11 +4,12 @@ import { MasterContext } from "../context";
 import ContactsLayout from "./ContactsLayout";
 import { colorPalette } from "../data/colors";
 
-import type { Master } from "../schema/master/master.type";
+import type { Master } from "../schema/master/master.schema";
+import { Location, Profession } from "../schema/state/state.schema";
 
 type ModalProps = {
   master: Master;
-  setShowModal: React.Dispatch<React.SetStateAction<string | null>>;
+  setShowModal: React.Dispatch<React.SetStateAction<string | null | boolean>>;
 };
 
 export default function Modal({ master, setShowModal }: ModalProps) {
@@ -83,11 +84,18 @@ export default function Modal({ master, setShowModal }: ModalProps) {
               </div>
               <div className="master-card-name">{master.name}</div>
               <div className="master-card-profession">
-                {professions.find((p) => p.id === master.professionID)?.name.ua}
+                {
+                  professions.find(
+                    (p: Profession) => p.id === master.professionID
+                  )?.name.ua
+                }
               </div>
               <div className="mastercard-location">
                 <img src="/img/icons/geopin.svg" alt="" />
-                {locations.find((l) => l.id === master.locationID)?.name.ua}
+                {
+                  locations.find((l: Location) => l.id === master.locationID)
+                    ?.name.ua
+                }
               </div>
               <div className="mastercard-about">
                 <pre className="about-pre">

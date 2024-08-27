@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import type { Contacts } from "../schema/master/master.type";
+import type { Contacts } from "../schema/master/master.schema";
 
 type ContactsLayoutProps = { contacts: Contacts[] };
 

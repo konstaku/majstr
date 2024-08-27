@@ -1,5 +1,5 @@
-import { Tags } from "../schema/master/master.type";
-import { MasterFormData } from "../types";
+import { Tags } from "../schema/master/master.schema";
+import { MasterFormData } from "../schema/form/form.schema";
 
 export function formatContactsForSchema(formData: MasterFormData) {
   if (!formData.telephone && !formData.instagram && !formData.telegram) {

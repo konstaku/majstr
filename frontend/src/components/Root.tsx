@@ -8,11 +8,12 @@ import {
 } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { MasterContext } from "../context";
-import { Action, ACTIONS } from "../reducer";
+import { Action } from "../reducer";
+import { ACTIONS } from "../data/actions";
 import Select from "react-select";
 import { baseSelectStyles } from "../pages/Main";
 
-import type { Country } from "../schema/state/state.type";
+import type { Country } from "../schema/state/state.schema";
 
 export default function Root() {
   const { state, dispatch } = useContext(MasterContext);

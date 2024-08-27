@@ -1,5 +1,5 @@
-import { Master } from "../schema/master/master.type";
-import { Profession } from "../schema/state/state.type";
+import { Master } from "../schema/master/master.schema";
+import { Profession } from "../schema/state/state.schema";
 import Avatar from "./Avatar";
 import ContactsLayout from "./ContactsLayout";
 

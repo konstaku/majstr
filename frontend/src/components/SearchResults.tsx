@@ -2,7 +2,8 @@ import { useContext } from "react";
 import { MasterContext } from "../context";
 import MasterCard from "./MasterCard";
 
-import type { Master } from "../schema/master/master.type";
+import type { Master } from "../schema/master/master.schema";
+import type { Profession } from "../schema/state/state.schema";
 
 type SearchResultsProps = {
   masters: Master[];
@@ -22,10 +23,10 @@ export default function SearchResults({
   } = useContext(MasterContext);
 
   const availableProfessionIDs = professions
-    .filter((p) =>
+    .filter((p: Profession) =>
       !professionCategory ? true : p.categoryID === professionCategory
     )
-    .map((p) => p.id);
+    .map((p: Profession) => p.id);
 
   const filteredMasters = masters.filter(
     (master) =>

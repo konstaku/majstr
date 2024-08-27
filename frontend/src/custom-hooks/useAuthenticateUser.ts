@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { User } from "../schema/user/user.type";
+import type { User } from "../schema/user/user.schema";
 import { UserSchema } from "../schema/user/user.schema";
 
 type AuthenticatedUserState = {

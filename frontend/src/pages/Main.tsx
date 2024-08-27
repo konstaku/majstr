@@ -6,17 +6,19 @@ import Select, {
   GroupBase,
   OptionProps,
 } from "react-select";
-import SearchResults from "../components/SearchResults";
 import { MasterContext } from "../context";
-import { ACTIONS } from "../reducer";
-import Modal from "../components/Modal";
+import { ACTIONS } from "../data/actions";
 import { useNavigation } from "react-router-dom";
+
+import SearchResults from "../components/SearchResults";
+import Modal from "../components/Modal";
 import {
   trackClickOutsideCard,
   trackEscWhenModalShown,
 } from "../helpers/modal";
-import { Profession } from "../schema/state/state.type";
-import { Master } from "../schema/master/master.type";
+
+import type { Profession } from "../schema/state/state.schema";
+import type { Master } from "../schema/master/master.schema";
 
 // Setting styles for select elements
 export const baseSelectStyles = {
@@ -71,12 +73,12 @@ function Main() {
     error,
   } = state;
   const { selectedCity, selectedProfessionCategory } = searchParams;
-  const [showModal, setShowModal] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState<string | null | boolean>(null);
   const { state: loadingState } = useNavigation();
   const isLoading = loadingState === "loading";
   const isError = false; // Need to add state
 
-  const currentCountry = countries.find(country => country.id === countryID);
+  const currentCountry = countries.find((country) => country.id === countryID);
 
   if (error) {
     throw new Error(error);
@@ -88,7 +90,7 @@ function Main() {
     const modalCard = params.get("card" || null);
     if (!modalCard) return;
 
-    const masterIsValid = masters.find(master => master._id === modalCard);
+    const masterIsValid = masters.find((master) => master._id === modalCard);
     if (modalCard && masterIsValid) {
       setShowModal(modalCard);
     }
@@ -103,17 +105,17 @@ function Main() {
       trackEscWhenModalShown(e, setShowModal);
 
     if (showModal) {
-      const currentMaster = masters.find(master => master._id === showModal);
+      const currentMaster = masters.find((master) => master._id === showModal);
       if (!currentMaster) return;
 
       document.addEventListener("click", clickListener);
       document.addEventListener("keyup", keyUpListener);
 
       const professionName = professions.find(
-        profession => profession.id === currentMaster.professionID
+        (profession) => profession.id === currentMaster.professionID
       )?.name.ua;
       const cityName = locations.find(
-        location => location.id === currentMaster.locationID
+        (location) => location.id === currentMaster.locationID
       )?.name.ua_alt;
 
       document.title = `${currentMaster.name} | ${professionName} в ${cityName}`;
@@ -142,13 +144,13 @@ function Main() {
     [
       ...new Set(
         masters
-          .filter(master => master.countryID === countryID)
-          .map(master => master.locationID)
+          .filter((master) => master.countryID === countryID)
+          .map((master) => master.locationID)
       ),
-    ].map(masterLocationId => ({
+    ].map((masterLocationId) => ({
       value: masterLocationId,
       label:
-        locations.find(location => location.id === masterLocationId)?.name
+        locations.find((location) => location.id === masterLocationId)?.name
           .ua_alt || "",
     }))
   );
@@ -159,7 +161,7 @@ function Main() {
     [
       ...new Set(
         masters
-          .filter(master => {
+          .filter((master) => {
             if (selectedCity) {
               // If a city is selected, display unique proffessions for that city
               return master.locationID === selectedCity;
@@ -167,7 +169,7 @@ function Main() {
             // Otherwise display unique proffessions from all cities
             return true;
           })
-          .map(master => master.professionID)
+          .map((master) => master.professionID)
       ),
     ];
 
@@ -182,14 +184,14 @@ function Main() {
 
     const uniqueProfessionCategories = [
       ...new Set(
-        professionIDlist.map(p => getProfessionCategoryById(professions, p))
+        professionIDlist.map((p) => getProfessionCategoryById(professions, p))
       ),
     ];
 
     const professionLabelList = uniqueProfessionCategories.map(
-      professionCategoryID => {
+      (professionCategoryID) => {
         let label = profCategories.find(
-          profCategory => profCategory.id === professionCategoryID
+          (profCategory) => profCategory.id === professionCategoryID
         )?.name.ua;
         if (!label) label = "";
 
@@ -260,18 +262,18 @@ function Main() {
         isSearchable={false}
         defaultValue={
           selectedCity
-            ? availableLocations.find(l => l.value === selectedCity)
+            ? availableLocations.find((l) => l.value === selectedCity)
             : availableLocations[0]
         }
         options={availableLocations}
         styles={{
           ...baseSelectStyles,
-          valueContainer: base => ({
+          valueContainer: (base) => ({
             ...base,
             minWidth: "150px",
           }),
         }}
-        onChange={e => {
+        onChange={(e) => {
           if (e && "value" in e) {
             dispatch({
               type: ACTIONS.SET_CITY,
@@ -285,7 +287,7 @@ function Main() {
 
   function SearchProffession() {
     const foundSelectedProfession = professionSelectOptions.find(
-      p => p.value === selectedProfessionCategory
+      (p) => p.value === selectedProfessionCategory
     );
 
     const defaultProfessionValue = foundSelectedProfession
@@ -311,7 +313,7 @@ function Main() {
         options={professionSelectOptions}
         styles={baseSelectStyles}
         placeholder="Всі майстри"
-        onChange={e => {
+        onChange={(e) => {
           if (e && "value" in e) {
             dispatch({
               type: ACTIONS.SET_PROFESSION,
@@ -323,8 +325,9 @@ function Main() {
     );
   }
 
-  function isModalMaster(id: string) {
-    return masters.find(master => master._id === id) || null;
+  function isModalMaster(id: string | boolean) {
+    if (!(typeof id === "string")) return false;
+    return masters.find((master) => master._id === id) || null;
   }
 }
 
@@ -332,7 +335,7 @@ function getProfessionCategoryById(
   professions: Profession[],
   professionID: string
 ) {
-  const result = professions.find(p => p.id === professionID)?.categoryID;
+  const result = professions.find((p) => p.id === professionID)?.categoryID;
   if (typeof result !== "string") {
     throw new Error(`Can not find profession category for id ${professionID}`);
   }

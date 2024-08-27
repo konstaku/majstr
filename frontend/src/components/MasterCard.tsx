@@ -1,9 +1,10 @@
 import { useContext, useMemo, useRef } from "react";
-import Avatar from "./Avatar";
 import { MasterContext } from "../context";
-
-import type { Master } from "../schema/master/master.type";
 import { colorPalette } from "../data/colors";
+import Avatar from "./Avatar";
+
+import type { Master } from "../schema/master/master.schema";
+import { Location, Profession } from "../schema/state/state.schema";
 
 type MasterCardProps = {
   master: Master;
@@ -46,11 +47,14 @@ export default function MasterCard({ master, setShowModal }: MasterCardProps) {
             </div>
             <div className="master-card-name">{name}</div>
             <div className="master-card-profession">
-              {professions.find((p) => p.id === professionID)?.name.ua}
+              {
+                professions.find((p: Profession) => p.id === professionID)?.name
+                  .ua
+              }
             </div>
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
-              {locations.find((l) => l.id === locationID)?.name.ua}
+              {locations.find((l: Location) => l.id === locationID)?.name.ua}
             </div>
           </div>
           <div className="mastercard-tag-container">
