@@ -1,7 +1,11 @@
 import "./../styles.css";
 
 import { useContext, useEffect, useState } from "react";
-import Select from "react-select";
+import Select, {
+  CSSObjectWithLabel,
+  GroupBase,
+  OptionProps,
+} from "react-select";
 import SearchResults from "../components/SearchResults";
 import { MasterContext } from "../context";
 import { ACTIONS } from "../reducer";
@@ -11,17 +15,19 @@ import {
   trackClickOutsideCard,
   trackEscWhenModalShown,
 } from "../helpers/modal";
+import { Profession } from "../schema/state/state.type";
+import { Master } from "../schema/master/master.type";
 
 // Setting styles for select elements
 export const baseSelectStyles = {
-  singleValue: (base) => ({ ...base, color: "white" }),
-  menu: (base) => ({
+  singleValue: (base: CSSObjectWithLabel) => ({ ...base, color: "white" }),
+  menu: (base: CSSObjectWithLabel) => ({
     ...base,
     backgroundColor: "#171923",
     borderRadius: "1rem",
     overflow: "hidden",
   }),
-  valueContainer: (base) => ({
+  valueContainer: (base: CSSObjectWithLabel) => ({
     ...base,
     background: "#171923",
     color: "white",
@@ -29,7 +35,14 @@ export const baseSelectStyles = {
     margin: "1rem",
     maxWidth: "300px",
   }),
-  option: (base, state) => ({
+  option: (
+    base: CSSObjectWithLabel,
+    state: OptionProps<
+      { value: string; label: string },
+      boolean,
+      GroupBase<{ value: string; label: string }>
+    >
+  ) => ({
     ...base,
     padding: "1rem",
     cursor: "pointer",
@@ -38,12 +51,13 @@ export const baseSelectStyles = {
     borderRadius: "10px",
     backgroundColor: state.isFocused ? "#4fd1c5" : "#171923",
   }),
-  control: (base) => ({
+  control: (base: CSSObjectWithLabel) => ({
     ...base,
     cursor: "pointer",
   }),
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 function Main() {
   const { state, dispatch } = useContext(MasterContext);
   const {
@@ -55,15 +69,14 @@ function Main() {
     profCategories,
     searchParams,
     error,
-    countrySet,
   } = state;
   const { selectedCity, selectedProfessionCategory } = searchParams;
-  const [showModal, setShowModal] = useState(null);
+  const [showModal, setShowModal] = useState<string | null>(null);
   const { state: loadingState } = useNavigation();
   const isLoading = loadingState === "loading";
   const isError = false; // Need to add state
 
-  const currentCountry = countries.find((country) => country.id === countryID);
+  const currentCountry = countries.find(country => country.id === countryID);
 
   if (error) {
     throw new Error(error);
@@ -72,10 +85,10 @@ function Main() {
   // Check for an open mastercard in search params on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const modalCard = params.get("card");
+    const modalCard = params.get("card" || null);
     if (!modalCard) return;
 
-    const masterIsValid = masters.find((master) => master._id === modalCard);
+    const masterIsValid = masters.find(master => master._id === modalCard);
     if (modalCard && masterIsValid) {
       setShowModal(modalCard);
     }
@@ -84,23 +97,24 @@ function Main() {
   // Display master name in page title whenever modal pops
   // Track document clicks outside modal
   useEffect(() => {
-    const clickListener = (e) =>
+    const clickListener = (e: MouseEvent) =>
       trackClickOutsideCard(e, "details-modal", setShowModal);
-    const keyUpListener = (e) => trackEscWhenModalShown(e, setShowModal);
+    const keyUpListener = (e: KeyboardEvent) =>
+      trackEscWhenModalShown(e, setShowModal);
 
     if (showModal) {
-      const currentMaster = masters.find((master) => master._id === showModal);
+      const currentMaster = masters.find(master => master._id === showModal);
       if (!currentMaster) return;
 
       document.addEventListener("click", clickListener);
       document.addEventListener("keyup", keyUpListener);
 
       const professionName = professions.find(
-        (profession) => profession.id === currentMaster.professionID
-      ).name.ua;
+        profession => profession.id === currentMaster.professionID
+      )?.name.ua;
       const cityName = locations.find(
-        (location) => location.id === currentMaster.locationID
-      ).name.ua_alt;
+        location => location.id === currentMaster.locationID
+      )?.name.ua_alt;
 
       document.title = `${currentMaster.name} | ${professionName} в ${cityName}`;
     }
@@ -112,7 +126,7 @@ function Main() {
       }
       document.title = "Majstr : Знаходь українських майстрів";
     };
-  }, [showModal, masters]);
+  }, [showModal, masters, locations, professions]);
 
   // The first value is always an empty string, so the user can always return to "all" as an option
   // Then, I always display every location with at least one master in it
@@ -122,28 +136,30 @@ function Main() {
         label: `Вся ${currentCountry?.name.ua}`,
       }
     : { value: "", label: "🤔 🤔 🤔" };
+
   const availableLocations = [locationPlaceholder].concat(
     // Array of unique locations only
     [
       ...new Set(
         masters
-          .filter((master) => master.countryID === countryID)
-          .map((master) => master.locationID)
+          .filter(master => master.countryID === countryID)
+          .map(master => master.locationID)
       ),
-    ].map((masterLocationId) => ({
+    ].map(masterLocationId => ({
       value: masterLocationId,
-      label: locations.find((location) => location.id === masterLocationId)
-        ?.name.ua_alt,
+      label:
+        locations.find(location => location.id === masterLocationId)?.name
+          .ua_alt || "",
     }))
   );
 
   // Here I filter out unique proffessions for the selected city
-  const availableProfessions =
+  const availableProfessionIDs =
     // Array of unique proffessions
     [
       ...new Set(
         masters
-          .filter((master) => {
+          .filter(master => {
             if (selectedCity) {
               // If a city is selected, display unique proffessions for that city
               return master.locationID === selectedCity;
@@ -151,40 +167,47 @@ function Main() {
             // Otherwise display unique proffessions from all cities
             return true;
           })
-          .map((master) => master.professionID)
+          .map(master => master.professionID)
       ),
     ];
 
-  function generateProfessionsSelectOptions(professionList) {
-    const result = [];
-
-    result.push({
-      // The first element is "Everyone", which is an empty string
-      value: "",
-      label: "Всі майстри",
-    });
+  function generateProfessionsSelectOptions(professionIDlist: string[]) {
+    const result = [
+      {
+        // The first element is "Everyone", which is an empty string
+        value: "",
+        label: "Всі майстри",
+      },
+    ];
 
     const uniqueProfessionCategories = [
       ...new Set(
-        professionList.map((p) => getProfessionCategoryById(professions, p))
+        professionIDlist.map(p => getProfessionCategoryById(professions, p))
       ),
     ];
 
     const professionLabelList = uniqueProfessionCategories.map(
-      (professionCategoryID) => ({
-        value: professionCategoryID,
-        label: profCategories.find(
-          (profCategory) => profCategory.id === professionCategoryID
-        )?.name.ua,
-      })
+      professionCategoryID => {
+        let label = profCategories.find(
+          profCategory => profCategory.id === professionCategoryID
+        )?.name.ua;
+        if (!label) label = "";
+
+        return {
+          value: professionCategoryID,
+          label: label,
+        };
+      }
     );
 
     result.push(...professionLabelList);
+
     return result;
   }
 
-  const professionSelectOptions =
-    generateProfessionsSelectOptions(availableProfessions);
+  const professionSelectOptions = generateProfessionsSelectOptions(
+    availableProfessionIDs
+  );
 
   return (
     <>
@@ -213,14 +236,13 @@ function Main() {
               masters={masters}
               city={selectedCity}
               professionCategory={selectedProfessionCategory}
-              showModal={showModal}
               setShowModal={setShowModal}
             />
             {/* The modal is shown conditionally, when there is someone to show */}
             {showModal && isModalMaster(showModal) && (
               <Modal
                 // id={showModal}
-                master={isModalMaster(showModal)}
+                master={isModalMaster(showModal) as Master}
                 setShowModal={setShowModal}
               ></Modal>
             )}
@@ -238,61 +260,83 @@ function Main() {
         isSearchable={false}
         defaultValue={
           selectedCity
-            ? availableLocations.find((l) => l.value === selectedCity)
+            ? availableLocations.find(l => l.value === selectedCity)
             : availableLocations[0]
         }
         options={availableLocations}
         styles={{
           ...baseSelectStyles,
-          valueContainer: (base) => ({
+          valueContainer: base => ({
             ...base,
             minWidth: "150px",
           }),
         }}
-        onChange={(e) => {
-          dispatch({
-            type: ACTIONS.SET_CITY,
-            payload: { selectedCity: e.value },
-          });
+        onChange={e => {
+          if (e && "value" in e) {
+            dispatch({
+              type: ACTIONS.SET_CITY,
+              payload: { selectedCity: e.value },
+            });
+          }
         }}
       />
     );
   }
 
   function SearchProffession() {
+    const foundSelectedProfession = professionSelectOptions.find(
+      p => p.value === selectedProfessionCategory
+    );
+
+    const defaultProfessionValue = foundSelectedProfession
+      ? foundSelectedProfession
+      : {
+          // The first element is "Everyone", which is an empty string
+          value: "",
+          label: "Всі майстри",
+        };
+    console.log("defaultProfessionValue:", defaultProfessionValue);
+    console.log("selectedProfessionCategory:", selectedProfessionCategory);
+
     return (
       <Select
         className="headline-select"
-        defaultValue={
-          selectedProfessionCategory
-            ? professionSelectOptions.find(
-                (p) => p.value === selectedProfessionCategory
-              )
-            : selectedProfessionCategory
-        }
+        defaultValue={{
+          value: selectedProfessionCategory,
+          label: defaultProfessionValue.label,
+        }}
         unstyled
         isSearchable={false}
         // options={availableProfessions}
         options={professionSelectOptions}
         styles={baseSelectStyles}
         placeholder="Всі майстри"
-        onChange={(e) =>
-          dispatch({
-            type: ACTIONS.SET_PROFESSION,
-            payload: { selectedProfessionCategory: e.value },
-          })
-        }
+        onChange={e => {
+          if (e && "value" in e) {
+            dispatch({
+              type: ACTIONS.SET_PROFESSION,
+              payload: { selectedProfessionCategory: e.value },
+            });
+          }
+        }}
       />
     );
   }
 
-  function isModalMaster(id) {
-    return masters.find((master) => master._id === id);
+  function isModalMaster(id: string) {
+    return masters.find(master => master._id === id) || null;
   }
 }
 
-function getProfessionCategoryById(professions, professionID) {
-  return professions.find((p) => p.id === professionID)?.categoryID;
+function getProfessionCategoryById(
+  professions: Profession[],
+  professionID: string
+) {
+  const result = professions.find(p => p.id === professionID)?.categoryID;
+  if (typeof result !== "string") {
+    throw new Error(`Can not find profession category for id ${professionID}`);
+  }
+  return result;
 }
 
 export const mainRoute = {

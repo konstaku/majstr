@@ -1,36 +1,21 @@
-import { useContext, useMemo, useRef } from 'react';
-import Avatar from './Avatar';
-import { MasterContext } from '../context';
+import { useContext, useMemo, useRef } from "react";
+import Avatar from "./Avatar";
+import { MasterContext } from "../context";
 
-export const colorPalette = [
-  '#F94C66', // coral
-  '#F37D5D', // pumpkin
-  '#FBB13C', // yellow
-  '#FCD34D', // dandelion
-  '#BCE784', // green
-  '#63B2AF', // teal
-  '#5E9FE0', // sky
-  '#DF73FF', // magenta
-  '#B671F6', // purple
-  '#F49AC1', // pink
-  '#EF5B5B', // red
-  '#FF842D', // orange
-  '#E9777D', // rose
-  '#FFCF48', // sunflower
-  '#F3AB47', // gold
-  '#A0E4CB', // turquoise
-  '#9DF1DF', // mint
-  '#D599FF', // lilac
-  '#B5B2FF', // periwinkle
-];
+import type { Master } from "../schema/master/master.type";
+import { colorPalette } from "../data/colors";
 
-export default function MasterCard({ master, setShowModal }) {
+type MasterCardProps = {
+  master: Master;
+  setShowModal: (show: string) => void;
+};
+
+export default function MasterCard({ master, setShowModal }: MasterCardProps) {
   const {
     state: { locations, professions },
   } = useContext(MasterContext);
 
-  const { _id, name, professionID, locationID, contacts, about, likes, tags } =
-    master;
+  const { _id, name, professionID, locationID, tags } = master;
 
   // Null if no photo. Used for conditional rendering of avatar or first lettar of the name
   const photoRef = useRef(master.photo);
@@ -46,7 +31,7 @@ export default function MasterCard({ master, setShowModal }) {
       <div className="master-card" id={_id}>
         <div
           className="master-card-body"
-          style={{ backgroundColor: randomAvatarColor + '35' }}
+          style={{ backgroundColor: randomAvatarColor + "35" }}
         >
           <div>
             <div className="master-card-header">

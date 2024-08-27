@@ -1,14 +1,20 @@
+/* eslint-disable react/no-unescaped-entities */
 import "react-phone-input-2/lib/style.css";
-
 import Select from "react-select";
 import { useContext, useEffect, useState } from "react";
 import { MasterContext } from "../context";
-import { Controller, useForm } from "react-hook-form";
+import {
+  Control,
+  Controller,
+  FieldErrors,
+  useForm,
+  UseFormRegister,
+} from "react-hook-form";
 import PhoneInput from "react-phone-input-2";
-
 import CreatableSelect from "react-select/creatable";
 import MasterCardPreview from "../components/MasterCardPreview";
 import useAuthenticateUser from "../custom-hooks/useAuthenticateUser";
+
 import {
   formatContactsForSchema,
   formatTagsForSchema,
@@ -18,11 +24,36 @@ import {
   trackEscWhenModalShown,
 } from "../helpers/modal";
 
+import type { FormTag, MasterFormData } from "../types";
+import type { MasterPreviewType } from "../types";
+import type {
+  Location,
+  ProfCategory,
+  Profession,
+} from "../schema/state/state.type";
+
 export default function AddNewRecord() {
-  const [successPopup, setSuccessPopup] = useState(false);
-  const { state } = useContext(MasterContext);
-  const { user, locations, professions, profCategories, countryID } = state;
-  const { firstName, username } = user;
+  // Fetch photo dynamically
+  const { user, loading, error } = useAuthenticateUser();
+
+  return loading ? (
+    <h1>hi</h1>
+  ) : user ? (
+    <AddNewRecordForm photo={user.photo} telegramID={user.telegramID} />
+  ) : error ? (
+    <h1>Error</h1>
+  ) : (
+    <h1>never</h1>
+  );
+}
+
+function AddNewRecordForm({
+  photo,
+  telegramID,
+}: {
+  photo: string | null;
+  telegramID: number | null;
+}) {
   const {
     register,
     handleSubmit,
@@ -30,17 +61,35 @@ export default function AddNewRecord() {
     control,
     watch,
     formState: { errors, isLoading, isSubmitting, isSubmitSuccessful },
-  } = useForm({});
+  } = useForm<MasterFormData>({});
 
-  // Fetch photo dynamically
-  const { photo, telegramID } = useAuthenticateUser();
+  const { state } = useContext(MasterContext);
+  const { user, locations, professions, profCategories, countryID } = state;
+  const { firstName, username } = user;
+
+  const [successPopup, setSuccessPopup] = useState<string | null | boolean>(
+    false
+  );
+
+  // Get live updates from all fields
+  const watcher = watch() as MasterFormData;
+
+  // Card preview, with up-to-date data via watcher
+  const masterPreview: MasterPreviewType = {
+    photo,
+    watcher,
+  };
+
+  const [profCategoryID, setProfCategoryID] = useState(
+    watcher.profCategoryID || ""
+  );
 
   // As user name is updated in state, update form default value as state changes
   useEffect(() => {
     setValue("telegram", username || "");
     setValue("name", firstName || "");
     setValue("useThisPhoto", photo ? true : false);
-  }, [username, firstName, photo]);
+  }, [username, firstName, photo, setValue]);
 
   // Close modal on click outside / esc
   // TODO: abstract as a separate hook useCloseModal
@@ -54,26 +103,95 @@ export default function AddNewRecord() {
       );
     }
     return () => {
-      document.removeEventListener("click", trackClickOutsideCard);
-      document.removeEventListener("keyup", trackEscWhenModalShown);
+      document.removeEventListener("click", (e) =>
+        trackClickOutsideCard(e, "success", setSuccessPopup)
+      );
+      document.removeEventListener("keyup", (e) =>
+        trackEscWhenModalShown(e, setSuccessPopup)
+      );
     };
   }, [successPopup]);
 
-  // Get live updates from all fields
-  const watcher = watch();
+  console.log("********** watcher:", watcher);
 
-  // Card preview, with up-to-date data via watcher
-  const masterPreview = {
-    photo,
-    watcher,
-  };
-
-  const [profCategoryID, setProfCategoryID] = useState(
-    watcher.profCategoryID || ""
+  return (
+    <>
+      {
+        <div className="create-user-container">
+          {/* Form */}
+          <div className="create-user-form">
+            <div className="create-record-header">
+              <h2>Створити запис:</h2>
+            </div>
+            <div id="add-new-piggy">
+              <PhotoInput photo={photo} register={register} />
+              <NameInput register={register} errors={errors} />
+              <ProfCategoryInput
+                control={control}
+                profCategories={profCategories}
+                setProfCategoryID={setProfCategoryID}
+                errors={errors}
+              />
+              <ProfessionInput
+                control={control}
+                professions={professions}
+                profCategoryID={profCategoryID}
+                errors={errors}
+              />
+              <LocationInput
+                control={control}
+                locations={locations}
+                errors={errors}
+              />
+              <TagsInput
+                control={control}
+                // watcher={watcher}
+                tags={watcher.tags}
+                errors={errors}
+              />
+              <TelephoneInput
+                register={register}
+                control={control}
+                countryID={countryID}
+              />
+              <InstagramInput register={register} />
+              <TelegramInput register={register} />
+              <AboutInput register={register} errors={errors} />
+              <button
+                className={`btn ${
+                  isLoading || isSubmitting
+                    ? "is-loading"
+                    : isSubmitSuccessful
+                    ? "is-loaded"
+                    : ""
+                } `}
+                type="submit"
+                disabled={isSubmitSuccessful}
+                onClick={handleSubmit(onSubmit)}
+              >
+                {`${
+                  isLoading || isSubmitting
+                    ? "Додаємо запис..."
+                    : isSubmitSuccessful
+                    ? "Запис додано!"
+                    : "Створити запис"
+                } `}
+              </button>
+            </div>
+          </div>
+          {/* Card preview */}
+          <MasterCardPreview
+            className="master-preview-container"
+            masterPreview={masterPreview}
+          />
+        </div>
+      }
+      {successPopup && <SuccessPopup setSuccessPopup={setSuccessPopup} />}
+    </>
   );
 
   // Post form on submit
-  async function onSubmit(data) {
+  async function onSubmit(data: MasterFormData) {
     const contacts = formatContactsForSchema(data);
     const tags = formatTagsForSchema(data);
     const { useThisPhoto } = data;
@@ -105,77 +223,14 @@ export default function AddNewRecord() {
       })
       .catch(console.error);
   }
-
-  return (
-    <>
-      <div className="create-user-container">
-        {/* Form */}
-        <div className="create-user-form">
-          <div className="create-record-header">
-            <h2>Створити запис:</h2>
-          </div>
-          <form id="add-new-piggy" onSubmit={handleSubmit(onSubmit)}>
-            <PhotoInput photo={photo} register={register} />
-            <NameInput register={register} errors={errors} />
-            <ProfCategoryInput
-              control={control}
-              profCategories={profCategories}
-              setProfCategoryID={setProfCategoryID}
-              errors={errors}
-            />
-            <ProfessionInput
-              control={control}
-              professions={professions}
-              profCategoryID={profCategoryID}
-              errors={errors}
-            />
-            <LocationInput
-              control={control}
-              locations={locations}
-              errors={errors}
-            />
-            <TagsInput control={control} tags={watcher.tags} errors={errors} />
-            <TelephoneInput
-              register={register}
-              control={control}
-              countryID={countryID}
-            />
-            <InstagramInput register={register} />
-            <TelegramInput register={register} />
-            <AboutInput register={register} errors={errors} />
-            <button
-              className={`btn ${
-                isLoading || isSubmitting
-                  ? "is-loading"
-                  : isSubmitSuccessful
-                  ? "is-loaded"
-                  : ""
-              } `}
-              type="submit"
-              disabled={isSubmitSuccessful}
-            >
-              {`${
-                isLoading || isSubmitting
-                  ? "Додаємо запис..."
-                  : isSubmitSuccessful
-                  ? "Запис додано!"
-                  : "Створити запис"
-              } `}
-            </button>
-          </form>
-        </div>
-        {/* Card preview */}
-        <MasterCardPreview
-          className="master-preview-container"
-          master={masterPreview}
-        />
-      </div>
-      {successPopup && <SuccessPopup setSuccessPopup={setSuccessPopup} />}
-    </>
-  );
 }
 
-function PhotoInput({ photo, register }) {
+type PhotoInputProps = {
+  photo: string | null;
+  register: UseFormRegister<MasterFormData>;
+};
+
+function PhotoInput({ photo, register }: PhotoInputProps) {
   return (
     photo && (
       <>
@@ -198,7 +253,12 @@ function PhotoInput({ photo, register }) {
   );
 }
 
-function NameInput({ register, errors }) {
+type NameInputProps = {
+  register: UseFormRegister<MasterFormData>;
+  errors: FieldErrors<MasterFormData>;
+};
+
+function NameInput({ register, errors }: NameInputProps) {
   return (
     <div className="input-field">
       <label>
@@ -229,12 +289,19 @@ function NameInput({ register, errors }) {
   );
 }
 
+type ProfCategoryInputProps = {
+  control: Control<MasterFormData>;
+  profCategories: ProfCategory[];
+  setProfCategoryID: (id: string) => void;
+  errors: FieldErrors<MasterFormData>;
+};
+
 function ProfCategoryInput({
   control,
   profCategories,
   setProfCategoryID,
   errors,
-}) {
+}: ProfCategoryInputProps) {
   return (
     <div className="input-field">
       <label>
@@ -254,19 +321,20 @@ function ProfCategoryInput({
           render={({ field: { onChange } }) => (
             <Select
               onChange={(e) => {
+                if (e === null) return;
                 // Important to call the original onChange provided by Controller
                 onChange(e.value);
                 setProfCategoryID(e.value);
               }}
               // Style is applied only if there are errors
-              styles={
-                errors?.profCategoryID?.message && {
-                  control: (baseStyles) => ({
-                    ...baseStyles,
-                    borderColor: "rgb(255, 77, 77)",
-                  }),
-                }
-              }
+              styles={{
+                control: (baseStyles) => ({
+                  ...baseStyles,
+                  borderColor: errors?.profCategoryID?.message
+                    ? "rgb(255, 77, 77)"
+                    : baseStyles.borderColor,
+                }),
+              }}
               options={profCategories?.map((profCategory) => ({
                 value: profCategory.id,
                 label: profCategory.name.ua,
@@ -282,21 +350,37 @@ function ProfCategoryInput({
   );
 }
 
-function ProfessionInput({ control, errors, professions, profCategoryID }) {
-  const [availableProfessionOptions, setAvailableProfessionOptions] = useState(
-    []
-  );
+type ProfessionInputProps = {
+  control: Control<MasterFormData>;
+  errors: FieldErrors<MasterFormData>;
+  professions: Profession[];
+  profCategoryID: string;
+};
+
+function ProfessionInput({
+  control,
+  errors,
+  professions,
+  profCategoryID,
+}: ProfessionInputProps) {
+  const [availableProfessionOptions, setAvailableProfessionOptions] =
+    useState<professionSelectOptions>([]);
+
+  type professionSelectOptions = {
+    value: string;
+    label: string;
+  }[];
 
   useEffect(() => {
     setAvailableProfessionOptions(
       professions
-        ?.filter((profession) => profession.categoryID === profCategoryID)
+        .filter((profession) => profession.categoryID === profCategoryID)
         .map((profession) => ({
           value: profession.id,
           label: profession.name.ua,
         }))
     );
-  }, [profCategoryID]);
+  }, [profCategoryID, professions]);
 
   return (
     <div className="input-field">
@@ -316,18 +400,19 @@ function ProfessionInput({ control, errors, professions, profCategoryID }) {
           render={({ field: { onChange } }) => (
             <Select
               onChange={(e) => {
+                if (e === null) return;
                 // Important to call the original onChange provided by Controller
                 onChange(e.value);
               }}
               // Style is applied only if there are errors
-              styles={
-                errors?.professionID?.message && {
-                  control: (baseStyles) => ({
-                    ...baseStyles,
-                    borderColor: "rgb(255, 77, 77)",
-                  }),
-                }
-              }
+              styles={{
+                control: (baseStyles) => ({
+                  ...baseStyles,
+                  borderColor: errors?.professionID?.message
+                    ? "rgb(255, 77, 77)"
+                    : baseStyles.borderColor,
+                }),
+              }}
               options={availableProfessionOptions}
             />
           )}
@@ -340,7 +425,13 @@ function ProfessionInput({ control, errors, professions, profCategoryID }) {
   );
 }
 
-function LocationInput({ control, locations, errors }) {
+type LocationInputProps = {
+  control: Control<MasterFormData>;
+  locations: Location[];
+  errors: FieldErrors<MasterFormData>;
+};
+
+function LocationInput({ control, locations, errors }: LocationInputProps) {
   return (
     <div className="input-field">
       <label>
@@ -360,18 +451,19 @@ function LocationInput({ control, locations, errors }) {
           render={({ field: { onChange } }) => (
             <Select
               onChange={(e) => {
+                if (e === null) return;
                 // Important to call the original onChange provided by Controller
                 onChange(e.value);
               }}
               // Style is applied only if there are errors
-              styles={
-                errors?.locationID?.message && {
-                  control: (baseStyles) => ({
-                    ...baseStyles,
-                    borderColor: "rgb(255, 77, 77)",
-                  }),
-                }
-              }
+              styles={{
+                control: (baseStyles) => ({
+                  ...baseStyles,
+                  borderColor: errors?.locationID?.message
+                    ? "rgb(255, 77, 77)"
+                    : baseStyles.borderColor,
+                }),
+              }}
               options={locations?.map((location) => ({
                 value: location.id,
                 label: location.name.ua,
@@ -387,7 +479,13 @@ function LocationInput({ control, locations, errors }) {
   );
 }
 
-function TagsInput({ control, tags = [], errors }) {
+type TagsInputProps = {
+  control: Control<MasterFormData>;
+  tags: FormTag[];
+  errors: FieldErrors<MasterFormData>;
+};
+
+function TagsInput({ control, tags = [], errors }: TagsInputProps) {
   return (
     <div className="input-field">
       <label>
@@ -413,17 +511,20 @@ function TagsInput({ control, tags = [], errors }) {
               }}
               onChange={onChange}
               // Style is applied only if there are errors
-              styles={
-                errors?.tags?.message && {
-                  control: (baseStyles) => ({
-                    ...baseStyles,
-                    borderColor: "rgb(255, 77, 77)",
-                  }),
-                }
-              }
+              styles={{
+                control: (baseStyles) => ({
+                  ...baseStyles,
+                  borderColor: errors?.tags?.message
+                    ? "rgb(255, 77, 77)"
+                    : baseStyles.borderColor,
+                }),
+              }}
               noOptionsMessage={() => "Введіть назву до 25 символів"}
               formatCreateLabel={(value) => `Додати ${value}`}
               isMulti
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.stopPropagation();
+              }}
             />
           )}
         />
@@ -435,7 +536,13 @@ function TagsInput({ control, tags = [], errors }) {
   );
 }
 
-function TelephoneInput({ register, control, countryID }) {
+type TelephoneInputProps = {
+  register: UseFormRegister<MasterFormData>;
+  control: Control<MasterFormData>;
+  countryID: string;
+};
+
+function TelephoneInput({ register, control, countryID }: TelephoneInputProps) {
   return (
     <div className="input-field">
       <label>
@@ -476,7 +583,11 @@ function TelephoneInput({ register, control, countryID }) {
   );
 }
 
-function InstagramInput({ register }) {
+type InstagramInputProps = {
+  register: UseFormRegister<MasterFormData>;
+};
+
+function InstagramInput({ register }: InstagramInputProps) {
   return (
     <div className="input-field">
       <label>
@@ -491,7 +602,11 @@ function InstagramInput({ register }) {
   );
 }
 
-function TelegramInput({ register }) {
+type TelegramInputProps = {
+  register: UseFormRegister<MasterFormData>;
+};
+
+function TelegramInput({ register }: TelegramInputProps) {
   return (
     <div className="input-field">
       <label>
@@ -502,7 +617,12 @@ function TelegramInput({ register }) {
   );
 }
 
-function AboutInput({ register, errors }) {
+type AboutInputProps = {
+  register: UseFormRegister<MasterFormData>;
+  errors: FieldErrors<MasterFormData>;
+};
+
+function AboutInput({ register, errors }: AboutInputProps) {
   return (
     <div className="input-field">
       <label>
@@ -520,8 +640,8 @@ function AboutInput({ register, errors }) {
             errors?.about?.message ? "error" : ""
           }`}
           placeholder={`Додаткова інформація про вас:\nЯкі самі послуги ви надаєте? В якому районі знаходитеся? Що треба знати перед тим, як звертутися до вас?`}
-          cols="30"
-          rows="6"
+          cols={30}
+          rows={6}
         ></textarea>
       </label>
       <div className="error-message" hidden={!errors?.about?.message}>
@@ -531,7 +651,11 @@ function AboutInput({ register, errors }) {
   );
 }
 
-function SuccessPopup({ setSuccessPopup }) {
+type SuccessPopupProps = {
+  setSuccessPopup: (show: boolean) => void;
+};
+
+function SuccessPopup({ setSuccessPopup }: SuccessPopupProps) {
   return (
     <div className="modal-overlay">
       <div className="modal-overlay-inside">

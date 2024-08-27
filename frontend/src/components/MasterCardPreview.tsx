@@ -1,9 +1,17 @@
-import Avatar from './Avatar';
-import { useContext } from 'react';
-import { MasterContext } from '../context';
+import Avatar from "./Avatar";
+import { useContext } from "react";
+import { MasterContext } from "../context";
+import { MasterPreviewType } from "../types";
 
-export default function MasterCardPreview({ master }) {
-  const { photo, watcher } = master;
+type MasterCardPreviewProps = {
+  className?: string;
+  masterPreview: MasterPreviewType;
+};
+
+export default function MasterCardPreview({
+  masterPreview,
+}: MasterCardPreviewProps) {
+  const { photo, watcher } = masterPreview;
   const { name, locationID, professionID, tags, useThisPhoto } = watcher;
   const {
     state: { locations, professions },
@@ -14,11 +22,15 @@ export default function MasterCardPreview({ master }) {
       <div className="master-card preview">
         <div
           className="master-card-body"
-          style={{ backgroundColor: '#F3AB4735' }}
+          style={{ backgroundColor: "#F3AB4735" }}
         >
           <div>
             <div className="master-card-header">
-              <Avatar img={useThisPhoto && photo} color="#F3AB47" name={name} />
+              <Avatar
+                img={useThisPhoto ? photo : null}
+                color="#F3AB47"
+                name={name}
+              />
               <div className="bookmark-container">
                 <img src="/img/icons/bookmark-passive.svg" alt="" />
               </div>
@@ -26,14 +38,14 @@ export default function MasterCardPreview({ master }) {
             <div className="master-card-name">{name}</div>
             <div className="master-card-profession">
               {professionID
-                ? professions.find((p) => p.id === professionID).name.ua
-                : 'Професія невідома'}
+                ? professions.find((p) => p.id === professionID)?.name.ua
+                : "Професія невідома"}
             </div>
             <div className="mastercard-location">
               <img src="/img/icons/geopin.svg" alt="" />
               {locationID
                 ? locations.find((l) => l.id === locationID)?.name.ua
-                : 'Локація невідома'}
+                : "Локація невідома"}
             </div>
           </div>
           <div className="mastercard-tag-container">

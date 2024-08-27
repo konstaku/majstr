@@ -1,9 +1,18 @@
-import { useContext, useEffect, useState } from "react";
+import {
+  Dispatch,
+  ReactElement,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Link, Outlet } from "react-router-dom";
 import { MasterContext } from "../context";
-import { ACTIONS } from "../reducer";
+import { Action, ACTIONS } from "../reducer";
 import Select from "react-select";
 import { baseSelectStyles } from "../pages/Main";
+
+import type { Country } from "../schema/state/state.type";
 
 export default function Root() {
   const { state, dispatch } = useContext(MasterContext);
@@ -12,7 +21,7 @@ export default function Root() {
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
 
   // Add to .env
-  const availableCountries = ["IT", "PT"];
+  const availableCountries = useMemo(() => ["IT", "PT"], []);
   const defaultCountry = "IT";
 
   // Define and set countryID
@@ -43,7 +52,7 @@ export default function Root() {
           throw new Error(error);
         });
     })();
-  }, []);
+  }, [dispatch, availableCountries]);
 
   // Populate masters, professions, categories and available countries when a base country is set
   useEffect(() => {
@@ -86,7 +95,8 @@ export default function Root() {
           })
         );
       } catch (err) {
-        if (err.name === "AbortError") {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          console.log("err instanceof DOMException");
           return;
         }
         dispatch({
@@ -97,12 +107,12 @@ export default function Root() {
     })();
 
     return () => controller.abort();
-  }, [state.countrySet, state.countryID]);
+  }, [state.countrySet, countryID, dispatch]);
 
   // Check if a user is authenticated on load
   useEffect(() => {
     // It is important to JSON parse token in order to get rid of double quotes
-    const token = JSON.parse(localStorage.getItem("token"));
+    const token = JSON.parse(localStorage.getItem("token") as string);
     if (!token) {
       return dispatch({ type: ACTIONS.LOGOUT });
     }
@@ -110,7 +120,7 @@ export default function Root() {
     // On page load, read the user info from token and add to state
     const user = JSON.parse(atob(token.split(".")[1]));
     dispatch({ type: ACTIONS.LOGIN, payload: { user } });
-  }, []);
+  }, [dispatch]);
 
   const linkStyle = {
     color: "#fff",
@@ -165,7 +175,11 @@ export default function Root() {
   );
 }
 
-function Logo({ dispatch }) {
+type LogoProps = {
+  dispatch: Dispatch<Action>;
+};
+
+function Logo({ dispatch }: LogoProps) {
   return (
     <div className="logo">
       <Link to="/">
@@ -180,7 +194,11 @@ function Logo({ dispatch }) {
   );
 }
 
-function Menu({ menuItems }) {
+type MenuProps = {
+  menuItems: ReactElement;
+};
+
+function Menu({ menuItems }: MenuProps) {
   return (
     <>
       <div className="menu">
@@ -190,7 +208,17 @@ function Menu({ menuItems }) {
   );
 }
 
-function BurgerMenu({ menuItems, showBurgerMenu, setShowBurgerMenu }) {
+type BurgerMenuProps = {
+  menuItems: ReactElement;
+  showBurgerMenu: boolean;
+  setShowBurgerMenu: (show: boolean) => void;
+};
+
+function BurgerMenu({
+  menuItems,
+  showBurgerMenu,
+  setShowBurgerMenu,
+}: BurgerMenuProps) {
   return (
     <div
       className="menu-burger"
@@ -201,15 +229,23 @@ function BurgerMenu({ menuItems, showBurgerMenu, setShowBurgerMenu }) {
   );
 }
 
+type CountrySelectProps = {
+  showBurgerMenu: boolean;
+  setShowBurgerMenu: (show: boolean) => void;
+  countries: Country[];
+  countryID: string;
+  dispatch: Dispatch<Action>;
+};
+
 function CountrySelect({
   showBurgerMenu,
   setShowBurgerMenu,
   countries,
-  countryID,
   dispatch,
-}) {
+}: CountrySelectProps) {
   const countrySelectOptions = [
     ...countries.map((country) => ({
+      // eslint-disable-next-line no-irregular-whitespace
       label: `${country.flag}  ${country.name.ua}`,
       value: country.id,
     })),
@@ -236,12 +272,14 @@ function CountrySelect({
               }),
             }}
             onChange={(e) => {
-              // Clear city and profession before country change
-              dispatch({ type: ACTIONS.RESET_SEARCH });
-              dispatch({
-                type: ACTIONS.SET_COUNTRY,
-                payload: { countryID: e.value },
-              });
+              if (e && "value" in e) {
+                // Clear city and profession before country change
+                dispatch({ type: ACTIONS.RESET_SEARCH });
+                dispatch({
+                  type: ACTIONS.SET_COUNTRY,
+                  payload: { countryID: e.value },
+                });
+              }
             }}
           />
         ) : (

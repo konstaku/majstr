@@ -1,4 +1,10 @@
-export default function Avatar({ img, color, name }) {
+type AvatarProps = {
+  img: string | null;
+  color: string;
+  name: string;
+};
+
+export default function Avatar({ img, color, name }: AvatarProps) {
   return (
     <div
       className="card-avatar"

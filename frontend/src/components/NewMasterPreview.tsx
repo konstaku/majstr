@@ -1,45 +1,21 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useReducer,
-  useState,
-} from "react";
-import { useLoaderData } from "react-router-dom";
-import { MasterContext } from "../context";
-import Avatar from "../components/Avatar";
-import ContactsLayout from "../components/ContactsLayout";
-import { ACTIONS } from "../reducer";
+import { Master } from "../schema/master/master.type";
+import { Profession } from "../schema/state/state.type";
+import Avatar from "./Avatar";
+import ContactsLayout from "./ContactsLayout";
 
-function Admin() {
-  const newMasters = useLoaderData();
-  const [token] = useState(() => JSON.parse(localStorage.getItem("token")));
-  const {
-    state: { locations, professions },
-  } = useContext(MasterContext);
+type NewMasterPreviewProps = {
+  master: Master;
+  token: string;
+  professions: Profession[];
+};
 
-  return (
-    <div className="search-results-container">
-      <div className="search-results-header">
-        <h2>Нових майстрів:</h2>
-        <span className="found-amount">{newMasters.length}</span>
-      </div>
-      {newMasters.map((master, i) => (
-        <NewMasterPreview
-          key={i}
-          master={master}
-          token={token}
-          locations={locations}
-          professions={professions}
-        />
-      ))}
-    </div>
-  );
-}
-
-function NewMasterPreview({ master, token, professions }) {
+export default function NewMasterPreview({
+  master,
+  token,
+  professions,
+}: NewMasterPreviewProps) {
   console.log("master:", master);
-  const { _id, name, tags, contacts, about, locationID, professionID } = master;
+  const { _id, name, tags, contacts, locationID, professionID } = master;
 
   return (
     <div className="master-card" id={_id}>
@@ -91,7 +67,11 @@ function NewMasterPreview({ master, token, professions }) {
     </div>
   );
 
-  async function approveMaster(action, masterID, token) {
+  async function approveMaster(
+    action: "approve" | "decline",
+    masterID: string,
+    token: string
+  ) {
     const masterData = {
       action,
       masterID,
@@ -115,14 +95,3 @@ function NewMasterPreview({ master, token, professions }) {
       .catch(console.error);
   }
 }
-
-function loader({ request }) {
-  return fetch("https://api.majstr.com/?q=newmasters", {
-    signal: request.signal,
-  });
-}
-
-export const adminRoute = {
-  element: <Admin />,
-  loader,
-};

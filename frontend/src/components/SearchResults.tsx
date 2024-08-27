@@ -1,14 +1,22 @@
-import { useContext } from 'react';
-import { MasterContext } from '../context';
-import MasterCard from './MasterCard';
+import { useContext } from "react";
+import { MasterContext } from "../context";
+import MasterCard from "./MasterCard";
+
+import type { Master } from "../schema/master/master.type";
+
+type SearchResultsProps = {
+  masters: Master[];
+  city: string;
+  professionCategory: string;
+  setShowModal: (show: string) => void;
+};
 
 export default function SearchResults({
   masters,
   city,
   professionCategory,
-  showModal,
   setShowModal,
-}) {
+}: SearchResultsProps) {
   const {
     state: { professions, countryID },
   } = useContext(MasterContext);
@@ -36,7 +44,6 @@ export default function SearchResults({
         <MasterCard
           key={master._id}
           master={master}
-          showModal={showModal}
           setShowModal={setShowModal}
         />
       ))}
