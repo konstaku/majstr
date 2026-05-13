@@ -466,6 +466,8 @@ body {
   justify-content: space-between;
   width: calc(var(--modal-card-width) * var(--modal-scaling-factor));
   min-height: calc(var(--modal-card-height) * var(--modal-scaling-factor));
+  max-height: 90vh;
+  overflow-y: auto;
 
   flex-shrink: 0;
   border-radius: 1.25rem;

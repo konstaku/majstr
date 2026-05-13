@@ -130,7 +130,7 @@ function AddNewRecordForm({
             <div className="create-record-header">
               <h2>Створити запис:</h2>
             </div>
-            <div id="add-new-piggy">
+            <form id="add-new-piggy" onSubmit={handleSubmit(onSubmit)}>
               <PhotoInput photo={photo} register={register} />
               <NameInput register={register} errors={errors} />
               <ProfCategoryInput
@@ -174,7 +174,6 @@ function AddNewRecordForm({
                 } `}
                 type="submit"
                 disabled={isSubmitSuccessful}
-                onClick={handleSubmit(onSubmit)}
               >
                 {`${
                   isLoading || isSubmitting
@@ -184,7 +183,7 @@ function AddNewRecordForm({
                     : "Створити запис"
                 } `}
               </button>
-            </div>
+            </form>
           </div>
           {/* Card preview */}
           <MasterCardPreview
