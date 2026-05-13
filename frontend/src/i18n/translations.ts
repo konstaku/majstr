@@ -1,5 +1,5 @@
 export type LangTranslations = {
-  nav: { search: string; addMaster: string; faq: string };
+  nav: { search: string; addMaster: string; faq: string; howItWorks: string; forBusiness: string };
   footer: {
     terms: string;
     faq: string;
@@ -18,12 +18,17 @@ export type LangTranslations = {
     searching: string;
     cannotSearch: string;
     appTitle: string;
+    cityKicker: string;
+    tradeKicker: string;
   };
   hero: {
     eyebrow: string;
     title: string;
     titleAccent: string;
     subtitle: string;
+    liveLabel: string;
+    searchBtn: string;
+    vettedStrip: string;
   };
   how: {
     label: string;
@@ -34,10 +39,10 @@ export type LangTranslations = {
     step3Title: string;
     step3Desc: string;
   };
-  browse: { label: string; allCategories: string };
-  results: { found: string; empty: string; tryChanging: string };
+  browse: { label: string; allCategories: string; browseLabel: string };
+  results: { found: string; empty: string; tryChanging: string; sortedByRating: string };
   modal: { noAbout: string; languages: string; about: string; skills: string; contact: string };
-  masterCard: { details: string };
+  masterCard: { details: string; noReviews: string };
   login: { loading: string; error: string; home: string };
   availability: { available: string; next_week: string; busy: string };
   countryNames: Record<string, string>;
@@ -45,7 +50,7 @@ export type LangTranslations = {
 
 export const translations: Record<string, LangTranslations> = {
   uk: {
-    nav: { search: "Пошук", addMaster: "Додати майстра", faq: "FAQ" },
+    nav: { search: "Пошук", addMaster: "Додати майстра", faq: "FAQ", howItWorks: "Як це працює", forBusiness: "Для бізнесу" },
     footer: {
       terms: "Умови використання",
       faq: "Питання та відповіді",
@@ -64,12 +69,17 @@ export const translations: Record<string, LangTranslations> = {
       searching: "Шукаємо...",
       cannotSearch: "Неможливо виконати запит",
       appTitle: "Majstr : Знаходь українських майстрів",
+      cityKicker: "Місто",
+      tradeKicker: "Спеціальність",
     },
     hero: {
       eyebrow: "2 400+ перевірених українських майстрів в Італії та Португалії",
       title: "Ваш сусідський майстер,",
       titleAccent: "просто українець.",
       subtitle: "Знаходьте сантехніків, електриків, косметологів, IT-спеціалістів та інших — надійних, перевірених, готових до роботи.",
+      liveLabel: "Онлайн · Оновлено щойно",
+      searchBtn: "ПОШУК →",
+      vettedStrip: "Перевірені · Вільномовні · Готові",
     },
     how: {
       label: "Як це працює",
@@ -80,11 +90,12 @@ export const translations: Record<string, LangTranslations> = {
       step3Title: "Замов",
       step3Desc: "Домовся напряму",
     },
-    browse: { label: "Переглянути за категорією", allCategories: "Всі категорії" },
+    browse: { label: "Переглянути за категорією", allCategories: "Всі категорії", browseLabel: "Перегляд →" },
     results: {
       found: "Знайдено майстрів:",
       empty: "Майстрів за вашим запитом не знайдено.",
       tryChanging: "Спробуйте змінити місто або категорію.",
+      sortedByRating: "МАЙСТРІВ · ЗА РЕЙТИНГОМ",
     },
     modal: {
       noAbout: "Нажаль, майстер не має детального опису 🤷‍♂️",
@@ -93,7 +104,7 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Навички",
       contact: "Зв'язатися",
     },
-    masterCard: { details: "Детальніше" },
+    masterCard: { details: "OPEN", noReviews: "Поки немає відгуків" },
     login: {
       loading: "Вхід в систему...",
       error: "Помилка входу: токен відсутній",
@@ -108,7 +119,7 @@ export const translations: Record<string, LangTranslations> = {
   },
 
   en: {
-    nav: { search: "Search", addMaster: "Add master", faq: "FAQ" },
+    nav: { search: "Search", addMaster: "Add master", faq: "FAQ", howItWorks: "How it works", forBusiness: "For business" },
     footer: {
       terms: "Terms of use",
       faq: "FAQ",
@@ -127,12 +138,17 @@ export const translations: Record<string, LangTranslations> = {
       searching: "Searching...",
       cannotSearch: "Cannot perform search",
       appTitle: "Majstr : Find Ukrainian craftsmen",
+      cityKicker: "City",
+      tradeKicker: "Trade",
     },
     hero: {
       eyebrow: "2,400+ verified Ukrainian masters in Italy & Portugal",
       title: "Your neighbourhood craftsman,",
       titleAccent: "just Ukrainian.",
       subtitle: "Find plumbers, electricians, beauticians, IT experts and more — trusted, vetted, ready to work.",
+      liveLabel: "Live · Updated just now",
+      searchBtn: "SEARCH →",
+      vettedStrip: "Vetted · Fluent · Ready",
     },
     how: {
       label: "How it works",
@@ -143,11 +159,12 @@ export const translations: Record<string, LangTranslations> = {
       step3Title: "Hire",
       step3Desc: "Book your job directly",
     },
-    browse: { label: "Browse by Category", allCategories: "All Categories" },
+    browse: { label: "Browse by Category", allCategories: "All Categories", browseLabel: "Browse →" },
     results: {
       found: "Masters found:",
       empty: "No masters found for your request.",
       tryChanging: "Try changing the city or category.",
+      sortedByRating: "RESULTS · SORTED BY RATING",
     },
     modal: {
       noAbout: "Unfortunately, the master has no detailed description 🤷‍♂️",
@@ -156,7 +173,7 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Skills",
       contact: "Contact",
     },
-    masterCard: { details: "Details" },
+    masterCard: { details: "OPEN", noReviews: "No reviews yet" },
     login: {
       loading: "Logging in...",
       error: "Login error: no token",
@@ -171,7 +188,7 @@ export const translations: Record<string, LangTranslations> = {
   },
 
   it: {
-    nav: { search: "Cerca", addMaster: "Aggiungi artigiano", faq: "FAQ" },
+    nav: { search: "Cerca", addMaster: "Aggiungi artigiano", faq: "FAQ", howItWorks: "Come funziona", forBusiness: "Per le aziende" },
     footer: {
       terms: "Termini di utilizzo",
       faq: "Domande frequenti",
@@ -190,12 +207,17 @@ export const translations: Record<string, LangTranslations> = {
       searching: "Ricerca in corso...",
       cannotSearch: "Impossibile eseguire la ricerca",
       appTitle: "Majstr : Trova artigiani ucraini",
+      cityKicker: "Città",
+      tradeKicker: "Mestiere",
     },
     hero: {
       eyebrow: "2.400+ artigiani ucraini verificati in Italia e Portogallo",
       title: "Il tuo artigiano di quartiere,",
       titleAccent: "semplicemente ucraino.",
       subtitle: "Trova idraulici, elettricisti, estetiste, esperti IT e altro — affidabili, verificati, pronti a lavorare.",
+      liveLabel: "Live · Aggiornato adesso",
+      searchBtn: "CERCA →",
+      vettedStrip: "Verificati · Fluenti · Pronti",
     },
     how: {
       label: "Come funziona",
@@ -206,11 +228,12 @@ export const translations: Record<string, LangTranslations> = {
       step3Title: "Assumi",
       step3Desc: "Prenota direttamente",
     },
-    browse: { label: "Sfoglia per Categoria", allCategories: "Tutte le Categorie" },
+    browse: { label: "Sfoglia per Categoria", allCategories: "Tutte le Categorie", browseLabel: "Sfoglia →" },
     results: {
       found: "Artigiani trovati:",
       empty: "Nessun artigiano trovato per la tua ricerca.",
       tryChanging: "Prova a cambiare città o categoria.",
+      sortedByRating: "ARTIGIANI · PER VALUTAZIONE",
     },
     modal: {
       noAbout: "Purtroppo, l'artigiano non ha una descrizione dettagliata 🤷‍♂️",
@@ -219,7 +242,7 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Competenze",
       contact: "Contatta",
     },
-    masterCard: { details: "Dettagli" },
+    masterCard: { details: "OPEN", noReviews: "Nessuna recensione" },
     login: {
       loading: "Accesso in corso...",
       error: "Errore di accesso: nessun token",
@@ -234,7 +257,7 @@ export const translations: Record<string, LangTranslations> = {
   },
 
   pt: {
-    nav: { search: "Pesquisar", addMaster: "Adicionar artesão", faq: "FAQ" },
+    nav: { search: "Pesquisar", addMaster: "Adicionar artesão", faq: "FAQ", howItWorks: "Como funciona", forBusiness: "Para empresas" },
     footer: {
       terms: "Termos de uso",
       faq: "Perguntas frequentes",
@@ -253,12 +276,17 @@ export const translations: Record<string, LangTranslations> = {
       searching: "A pesquisar...",
       cannotSearch: "Não é possível realizar a pesquisa",
       appTitle: "Majstr : Encontre artesãos ucranianos",
+      cityKicker: "Cidade",
+      tradeKicker: "Ofício",
     },
     hero: {
       eyebrow: "2.400+ artesãos ucranianos verificados em Itália e Portugal",
       title: "O seu artesão de bairro,",
       titleAccent: "simplesmente ucraniano.",
       subtitle: "Encontre canalizadores, eletricistas, esteticistas, especialistas em TI e mais — de confiança, verificados, prontos a trabalhar.",
+      liveLabel: "Live · Actualizado agora",
+      searchBtn: "PESQUISAR →",
+      vettedStrip: "Verificados · Fluentes · Prontos",
     },
     how: {
       label: "Como funciona",
@@ -269,11 +297,12 @@ export const translations: Record<string, LangTranslations> = {
       step3Title: "Contrate",
       step3Desc: "Reserve diretamente",
     },
-    browse: { label: "Explorar por Categoria", allCategories: "Todas as Categorias" },
+    browse: { label: "Explorar por Categoria", allCategories: "Todas as Categorias", browseLabel: "Explorar →" },
     results: {
       found: "Artesãos encontrados:",
       empty: "Nenhum artesão encontrado para a sua pesquisa.",
       tryChanging: "Tente mudar a cidade ou categoria.",
+      sortedByRating: "ARTESÃOS · POR AVALIAÇÃO",
     },
     modal: {
       noAbout: "Infelizmente, o artesão não tem uma descrição detalhada 🤷‍♂️",
@@ -282,7 +311,7 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Competências",
       contact: "Contactar",
     },
-    masterCard: { details: "Detalhes" },
+    masterCard: { details: "OPEN", noReviews: "Sem avaliações" },
     login: {
       loading: "A iniciar sessão...",
       error: "Erro de login: sem token",

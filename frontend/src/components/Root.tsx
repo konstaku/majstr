@@ -1,18 +1,25 @@
 import {
   Dispatch,
-  ReactElement,
   useContext,
   useEffect,
   useState,
 } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { MasterContext } from "../context";
 import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
-import { COUNTRY_TO_LANG, LANG_FLAGS, LANG_LABELS } from "../i18n/translations";
+import { COUNTRY_TO_LANG, LANG_LABELS } from "../i18n/translations";
 
 import type { Country } from "../schema/state/state.schema";
+
+function getISOWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
 
 export default function Root() {
   const { state, dispatch } = useContext(MasterContext);
@@ -20,9 +27,13 @@ export default function Root() {
   const { isLoggedIn } = user;
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
   const { t, lang } = useTranslation();
+  const location = useLocation();
 
   const availableCountries = ["IT", "PT"];
   const defaultCountry = "IT";
+  const now = new Date();
+  const weekNum = getISOWeek(now);
+  const yearSuffix = String(now.getFullYear()).slice(2);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,7 +54,6 @@ export default function Root() {
   useEffect(() => {
     if (!state.countrySet) return;
     const controller = new AbortController();
-
     (async () => {
       try {
         const [masters, professions, profCategories, locations, countriesData] =
@@ -60,7 +70,6 @@ export default function Root() {
         dispatch({ type: ACTIONS.ERROR, payload: { error: "Can't load data" } });
       }
     })();
-
     return () => controller.abort();
   }, [state.countrySet, countryID, dispatch]);
 
@@ -71,60 +80,68 @@ export default function Root() {
     dispatch({ type: ACTIONS.LOGIN, payload: { user } });
   }, [dispatch]);
 
-  const menuItems = (
-    <>
-      <li>
-        <Link to="/">{t("nav.search")}</Link>
-      </li>
-      {isLoggedIn ? (
-        <li>
-          <Link to="/add">{t("nav.addMaster")}</Link>
-        </li>
-      ) : (
-        <li>
-          <a href="https://t.me/majstr_bot">{t("nav.addMaster")}</a>
-        </li>
-      )}
-      <li className="inactive">{t("nav.faq")}</li>
-    </>
-  );
+  const AddMasterLink = isLoggedIn
+    ? <Link to="/add">{t("nav.addMaster")}</Link>
+    : <a href="https://t.me/majstr_bot">{t("nav.addMaster")}</a>;
+
+  const AddMasterCta = isLoggedIn
+    ? <Link to="/add" className="cta-header">JOIN AS MASTER →</Link>
+    : <a href="https://t.me/majstr_bot" className="cta-header">JOIN AS MASTER →</a>;
 
   return (
     <>
       <header className="header">
-        <LogoMark dispatch={dispatch} />
-        <DesktopMenu menuItems={menuItems} />
-        <div className="header-right">
-          <CountryToggle
-            countries={countries}
-            countryID={countryID}
-            dispatch={dispatch}
-            lang={lang}
-          />
-          <LanguageSwitcher countryID={countryID} />
-          {isLoggedIn ? (
-            <Link to="/add" className="cta-header">
-              + {t("nav.addMaster")}
-            </Link>
-          ) : (
-            <a href="https://t.me/majstr_bot" className="cta-header">
-              + {t("nav.addMaster")}
-            </a>
-          )}
-          <div
+        {/* Top meta strip */}
+        <div className="header-meta">
+          <span className="header-meta-label">EST. 2024 · UA → IT / PT · WEEK {weekNum}/{yearSuffix}</span>
+
+          <nav className="header-nav">
+            <Link to="/" className={location.pathname === "/" ? "active" : ""}>{t("nav.search")}</Link>
+            {AddMasterLink}
+            <span className="nav-item inactive">{t("nav.howItWorks")}</span>
+            <span className="nav-item inactive">{t("nav.forBusiness")}</span>
+          </nav>
+
+          <div className="header-controls">
+            <CountryToggle
+              countries={countries}
+              countryID={countryID}
+              dispatch={dispatch}
+              lang={lang}
+            />
+            <LanguageSwitcher countryID={countryID} />
+            {AddMasterCta}
+          </div>
+
+          <button
             className="burger-open"
             onClick={() => setShowBurgerMenu(!showBurgerMenu)}
-          >
-            <img src="/img/icons/burger.svg" alt="menu" width="20px" />
-          </div>
+            aria-label="Menu"
+          >≡</button>
+        </div>
+
+        {/* Wordmark */}
+        <div className="header-wordmark">
+          <Link to="/" onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}>
+            MAJSTR<span className="wordmark-dot">.</span>
+          </Link>
         </div>
       </header>
 
+      {/* Mobile burger menu */}
       <div
         className={`menu-burger ${showBurgerMenu ? "open" : ""}`}
         style={{ display: showBurgerMenu ? "block" : "none" }}
+        onClick={() => setShowBurgerMenu(false)}
       >
-        <ul onClick={() => setShowBurgerMenu(false)}>{menuItems}</ul>
+        <ul>
+          <li><Link to="/">{t("nav.search")}</Link></li>
+          <li>{isLoggedIn
+            ? <Link to="/add">{t("nav.addMaster")}</Link>
+            : <a href="https://t.me/majstr_bot">{t("nav.addMaster")}</a>}
+          </li>
+          <li><span className="inactive">{t("nav.faq")}</span></li>
+        </ul>
       </div>
 
       <Outlet />
@@ -133,29 +150,6 @@ export default function Root() {
         <FooterContent />
       </footer>
     </>
-  );
-}
-
-type LogoMarkProps = { dispatch: Dispatch<Action> };
-
-function LogoMark({ dispatch }: LogoMarkProps) {
-  return (
-    <Link to="/" className="logo" onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}>
-      <div className="logo-icon">M</div>
-      <span className="logo-text">
-        maj<span className="logo-accent">str</span>
-      </span>
-    </Link>
-  );
-}
-
-type DesktopMenuProps = { menuItems: ReactElement };
-
-function DesktopMenu({ menuItems }: DesktopMenuProps) {
-  return (
-    <nav className="menu">
-      <ul>{menuItems}</ul>
-    </nav>
   );
 }
 
@@ -202,7 +196,6 @@ function LanguageSwitcher({ countryID }: LanguageSwitcherProps) {
           onClick={() => setLang(code)}
           title={code.toUpperCase()}
         >
-          <span className="lang-flag-emoji">{LANG_FLAGS[code]}</span>
           {LANG_LABELS[code]}
         </button>
       ))}
@@ -212,7 +205,6 @@ function LanguageSwitcher({ countryID }: LanguageSwitcherProps) {
           onClick={() => setLang(localLang)}
           title={localLang.toUpperCase()}
         >
-          <span className="lang-flag-emoji">{LANG_FLAGS[localLang]}</span>
           {LANG_LABELS[localLang]}
         </button>
       )}
@@ -224,11 +216,13 @@ function FooterContent() {
   const { t } = useTranslation();
   return (
     <div className="footer-inner">
+      <div className="footer-big">
+        2 400+<br />
+        <span className="footer-terra">UKRAINIAN</span><br />
+        CRAFTSMEN.
+        <span className="footer-meta">© MAJSTR · MADE FOR THE COMMUNITY</span>
+      </div>
       <div className="footer-top">
-        <div>
-          <div className="footer-logo">majstr</div>
-          <p className="footer-tagline">{t("footer.tagline")}</p>
-        </div>
         <div className="footer-col">
           <h4>Platform</h4>
           <Link to="/">{t("nav.search")}</Link>
@@ -247,8 +241,8 @@ function FooterContent() {
         </div>
       </div>
       <div className="footer-bottom">
-        <p>{t("footer.copyright")}</p>
-        <p>{t("footer.madeWith")}</p>
+        <span>{t("footer.copyright")}</span>
+        <span>{t("footer.madeWith")}</span>
       </div>
     </div>
   );

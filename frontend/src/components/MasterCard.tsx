@@ -1,44 +1,37 @@
 import { useContext, useMemo, useRef } from "react";
 import { MasterContext } from "../context";
-import Avatar from "./Avatar";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { transliterate } from "../helpers/transliterate";
 
 import type { Master } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
 
+type CardVariant = "cream" | "ink" | "terra";
+
 type MasterCardProps = {
   master: Master;
   setShowModal: (show: string) => void;
+  variant?: CardVariant;
 };
 
-const LANG_FLAG_MAP: Record<string, string> = {
-  uk: "🇺🇦 UA",
-  en: "🇬🇧 EN",
-  it: "🇮🇹 IT",
-  pt: "🇵🇹 PT",
-  es: "🇪🇸 ES",
-  de: "🇩🇪 DE",
-  fr: "🇫🇷 FR",
-  pl: "🇵🇱 PL",
+const LANG_LABELS: Record<string, string> = {
+  uk: "UA", en: "EN", it: "IT", pt: "PT",
+  es: "ES", de: "DE", fr: "FR", pl: "PL",
 };
 
-export default function MasterCard({ master, setShowModal }: MasterCardProps) {
+export default function MasterCard({ master, setShowModal, variant = "cream" }: MasterCardProps) {
   const {
     state: { locations, professions },
   } = useContext(MasterContext);
   const { t, lang } = useTranslation();
 
-  const { _id, name, professionID, locationID, tags, availability, languages, rating, reviewCount } = master;
+  const { _id, name, professionID, locationID, availability, languages, rating, reviewCount, countryID } = master;
 
   const photoRef = useRef(master.photo);
   const displayName = lang === "uk" ? name : transliterate(name);
 
-  // derive avatar color from last 2 hex digits of ID
-  const avatarColor = useMemo(() => {
-    const colors = ["#c84b31", "#5a7a5c", "#c9a84c", "#4a7fb5", "#7b5ea7"];
-    const seed = parseInt(_id.slice(-2), 16) % colors.length;
-    return colors[seed];
+  const hue = useMemo(() => {
+    return (parseInt(_id.slice(-4), 16) % 360);
   }, [_id]);
 
   const profName = lang === "uk"
@@ -49,83 +42,90 @@ export default function MasterCard({ master, setShowModal }: MasterCardProps) {
     ? locations.find((l: Location) => l.id === locationID)?.name.ua
     : locations.find((l: Location) => l.id === locationID)?.name.en;
 
-  const cardTags = (lang === "uk" ? tags.ua : tags.en)
-    .sort((a, b) => a.length - b.length)
-    .slice(0, 4);
+  const initials = displayName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
-  const availClass =
-    availability === "available" ? "" :
-    availability === "next_week" ? "amber-text" : "red-text";
+  const hasRating = rating != null && reviewCount != null && reviewCount > 0;
+
+  const displayLangs = (languages && languages.length > 0)
+    ? languages
+    : countryID === "IT" ? ["uk", "it"]
+    : countryID === "PT" ? ["uk", "pt"]
+    : ["uk"];
 
   return (
-    <div
-      className="card-with-strip"
+    <article
+      className={`master-card variant-${variant}`}
       id={_id}
       onClick={() => setShowModal(_id)}
     >
-      <div className="card-left-strip" />
-      <div className="card-inner">
-        <div className="card-top">
-          <div className="card-avatar-wrapper">
-            <Avatar img={photoRef.current} color={avatarColor} name={displayName} />
-            {availability && (
-              <span
-                className={`avail-dot ${
-                  availability === "available" ? "green" :
-                  availability === "next_week" ? "amber" : "red"
-                }`}
-              />
-            )}
-          </div>
-          <div className="card-info">
-            <div className="card-name" title={displayName}>{displayName}</div>
-            <div className="card-profession">{profName}</div>
-            <div className="card-location">📍 {locName}</div>
-          </div>
+      {/* Top row: photo + identity */}
+      <div className="card-top-row">
+        <div
+          className="card-photo-block"
+          style={{
+            background: photoRef.current
+              ? undefined
+              : `linear-gradient(135deg, hsl(${hue},45%,52%), hsl(${hue},52%,32%))`,
+          }}
+        >
+          {photoRef.current ? (
+            <div
+              className="card-avatar"
+              style={{ backgroundImage: `url(${photoRef.current})` }}
+            />
+          ) : (
+            initials
+          )}
+          {availability && (
+            <span
+              className={`card-avail-dot ${
+                availability === "available" ? "green" :
+                availability === "next_week" ? "amber" : "red"
+              }`}
+            />
+          )}
         </div>
 
-        {availability && (
-          <div className={`avail-status ${availClass}`}>
-            {t(`availability.${availability}`)}
+        <div className="card-identity">
+          <div>
+            <div className="card-name" title={displayName}>{displayName}</div>
+            <div className="card-meta">{profName} · {locName?.toUpperCase()}</div>
           </div>
-        )}
-
-        {languages && languages.length > 0 && (
-          <div className="lang-badges">
-            {languages.map((code) => (
-              <span key={code} className="lang-badge">
-                {LANG_FLAG_MAP[code] ?? code.toUpperCase()}
+          <div className="card-lang-row">
+            {displayLangs.slice(0, 3).map((code) => (
+              <span key={code} className="card-lang-badge">
+                {LANG_LABELS[code] ?? code.toUpperCase()}
               </span>
             ))}
           </div>
-        )}
-
-        {cardTags.length > 0 && (
-          <div className="tags">
-            {cardTags.map((tag, i) => (
-              <span key={i} className="tag">{tag}</span>
-            ))}
-          </div>
-        )}
-
-        <div className="card-footer">
-          {rating != null && reviewCount != null ? (
-            <div className="card-stars">
-              <span className="star">★</span>
-              <span className="star-rating">{rating.toFixed(1)}</span>
-              <span className="star-count">({reviewCount})</span>
-            </div>
-          ) : (
-            <div />
-          )}
-          <button
-            className="details-btn"
-            onClick={(e) => { e.stopPropagation(); setShowModal(_id); }}
-          >
-            {t("masterCard.details")}
-          </button>
         </div>
       </div>
-    </div>
+
+      {/* Bottom row: rating + OPEN */}
+      <div className="card-bottom-row">
+        <div className={`card-rating-num${!hasRating ? " card-rating-none" : ""}`}>
+          {hasRating ? rating!.toFixed(1) : "—"}
+        </div>
+        <div className="card-rating-detail">
+          <div className="card-stars-row">★★★★★</div>
+          <div className="card-review-count">
+            {hasRating
+              ? `${reviewCount} ${lang === "uk" ? "відгуків" : "reviews"}`
+              : t("masterCard.noReviews")}
+          </div>
+        </div>
+        <button
+          className="card-open-btn"
+          onClick={(e) => { e.stopPropagation(); setShowModal(_id); }}
+        >
+          {t("masterCard.details")} →
+        </button>
+      </div>
+    </article>
   );
 }

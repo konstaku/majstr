@@ -6,6 +6,8 @@ import { useTranslation } from "../custom-hooks/useTranslation";
 import type { Master } from "../schema/master/master.schema";
 import type { Profession } from "../schema/state/state.schema";
 
+const VARIANTS = ["cream", "ink", "terra"] as const;
+
 type SearchResultsProps = {
   masters: Master[];
   city: string;
@@ -39,8 +41,10 @@ export default function SearchResults({
     <>
       <div className="results-top">
         <div className="search-results-header">
-          <h2>{t("results.found")}</h2>
-          <span className="found-amount">{filteredMasters.length}</span>
+          <h2>
+            <span className="found-amount">{filteredMasters.length}</span>
+            {" "}{t("results.sortedByRating")}
+          </h2>
         </div>
       </div>
 
@@ -51,8 +55,13 @@ export default function SearchResults({
         </div>
       ) : (
         <div className="masters-grid">
-          {filteredMasters.map((master) => (
-            <MasterCard key={master._id} master={master} setShowModal={setShowModal} />
+          {filteredMasters.map((master, i) => (
+            <MasterCard
+              key={master._id}
+              master={master}
+              setShowModal={setShowModal}
+              variant={VARIANTS[i % 3]}
+            />
           ))}
         </div>
       )}

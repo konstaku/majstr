@@ -11,6 +11,7 @@ const User = require('./database/schema/User');
 const Profession = require('./database/schema/Profession');
 const ProfCategory = require('./database/schema/ProfCategory');
 const Location = require('./database/schema/Location');
+const Review = require('./database/schema/Review');
 
 const PORT_NUMBER = process.env.PORT || 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
@@ -50,6 +51,7 @@ async function main() {
   app.get('/auth', authenticateUser);
   app.post('/addmaster', addMaster);
   app.post('/approve-master', handleApproveMaster);
+  app.post('/review', addReview);
 
   const server = httpsOptions
     ? https.createServer(httpsOptions, app)
@@ -111,6 +113,14 @@ async function handleApiRequests(req, res) {
         const countries = await Country.find();
         console.log(`Fetching countries...`);
         res.status(200).send(countries);
+        break;
+      case 'reviews':
+        if (!req.query.master) {
+          res.status(400).send('Missing master ID');
+          break;
+        }
+        const reviews = await Review.find({ masterID: req.query.master }).sort({ createdAt: -1 });
+        res.status(200).send(reviews);
         break;
       default:
         console.log(`Unknown request, sending 404...`);
@@ -254,7 +264,13 @@ async function handleApproveMaster(req, res) {
         await approveMaster(masterID);
         await bot.sendMessage(
           telegramId,
-          `Картку майстра додано на сайт: https://majstr.com/?card=${masterID}`
+          `✅ Картку майстра додано на сайт: https://majstr.com/?card=${masterID}\n\n` +
+          'Управляйте своїм профілем через бот:\n' +
+          '/available — доступний зараз\n' +
+          '/nextweek — з наступного тижня\n' +
+          '/busy — зайнятий\n' +
+          '/status — переглянути статус\n' +
+          '/languages — мови спілкування'
         );
         success = true;
       } catch (err) {
@@ -296,4 +312,34 @@ async function declineMaster(id) {
   if (!deleted) {
     throw new Error('Can not delete master');
   }
+}
+
+async function addReview(req, res) {
+  const { masterID, authorName, rating, comment } = req.body;
+
+  if (!masterID || !authorName || !rating) {
+    return res.status(400).json({ error: 'masterID, authorName, and rating are required' });
+  }
+  const ratingNum = Number(rating);
+  if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+    return res.status(400).json({ error: 'rating must be a number between 1 and 5' });
+  }
+
+  const master = await Master.findById(masterID);
+  if (!master || !master.approved) {
+    return res.status(404).json({ error: 'Master not found' });
+  }
+
+  const review = new Review({ masterID, authorName, rating: ratingNum, comment: comment || '' });
+  await review.save();
+
+  // Recalculate aggregate rating on the master record
+  const allReviews = await Review.find({ masterID });
+  const avg = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+  master.rating = Math.round(avg * 10) / 10;
+  master.reviewCount = allReviews.length;
+  await master.save();
+
+  console.log(`Review added for master ${masterID}: ${ratingNum}/5 by ${authorName}`);
+  res.status(201).json({ success: true, review });
 }

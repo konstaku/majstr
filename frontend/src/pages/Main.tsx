@@ -23,30 +23,45 @@ import type { Master } from "../schema/master/master.schema";
 import type { Dispatch } from "react";
 import type { Action } from "../reducer";
 
+// Brutalist react-select styles — borderless control, Archivo Black value
+// Used inside .filter-toggle-wrap which provides its own border.
 export const lightSelectStyles = {
   control: (base: CSSObjectWithLabel) => ({
     ...base,
-    background: "white",
-    border: "1.5px solid #ede8e0",
-    borderRadius: "10px",
+    background: "transparent",
+    border: "none",
     boxShadow: "none",
+    minHeight: "auto",
     cursor: "pointer",
-    minWidth: "160px",
-    "&:hover": { borderColor: "#c84b31" },
   }),
   singleValue: (base: CSSObjectWithLabel) => ({
     ...base,
-    color: "#1a1208",
-    fontWeight: 600,
-    fontSize: "14.5px",
+    fontFamily: '"Archivo Black", "DM Sans", sans-serif',
+    fontSize: "22px",
+    fontWeight: 900,
+    letterSpacing: "-0.03em",
+    lineHeight: 1,
+    color: "inherit",
   }),
+  valueContainer: (base: CSSObjectWithLabel) => ({
+    ...base,
+    padding: "0",
+  }),
+  dropdownIndicator: (base: CSSObjectWithLabel) => ({
+    ...base,
+    padding: "0 0 0 4px",
+    color: "inherit",
+    opacity: 0.5,
+  }),
+  indicatorSeparator: () => ({ display: "none" as const }),
   menu: (base: CSSObjectWithLabel) => ({
     ...base,
-    borderRadius: "12px",
-    border: "1.5px solid #ede8e0",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-    backgroundColor: "white",
+    borderRadius: "0",
+    border: "2px solid #0e0a06",
+    boxShadow: "4px 4px 0 #0e0a06",
+    backgroundColor: "#fffaf0",
     overflow: "hidden",
+    marginTop: "2px",
   }),
   option: (
     base: CSSObjectWithLabel,
@@ -57,26 +72,19 @@ export const lightSelectStyles = {
     >
   ) => ({
     ...base,
-    backgroundColor: state.isFocused ? "rgba(200,75,49,0.08)" : "white",
-    color: state.isFocused ? "#c84b31" : "#1a1208",
-    fontSize: "14px",
-    padding: "10px 14px",
+    backgroundColor: state.isFocused ? "#c84b31" : "#fffaf0",
+    color: state.isFocused ? "#fffaf0" : "#0e0a06",
+    fontFamily: '"Archivo Black", "DM Sans", sans-serif',
+    fontSize: "13px",
+    fontWeight: 900,
+    letterSpacing: "-0.01em",
+    textTransform: "uppercase" as const,
     cursor: "pointer",
+    padding: "10px 14px",
   }),
-  valueContainer: (base: CSSObjectWithLabel) => ({
-    ...base,
-    padding: "6px 12px",
-    background: "white",
-  }),
-  dropdownIndicator: (base: CSSObjectWithLabel) => ({
-    ...base,
-    color: "#a8998e",
-    padding: "0 8px",
-  }),
-  indicatorSeparator: () => ({ display: "none" as const }),
 };
 
-// Kept for backward compatibility with any other import
+// Backward compat alias
 // eslint-disable-next-line react-refresh/only-export-components
 export const baseSelectStyles = lightSelectStyles;
 
@@ -121,12 +129,41 @@ function Main() {
   const [showModal, setShowModal] = useState<string | null | boolean>(null);
   const { state: loadingState } = useNavigation();
   const isLoading = loadingState === "loading";
-  const isError = false;
   const { t, lang } = useTranslation();
 
   const currentCountry = countries.find((c) => c.id === countryID);
+  const countryDisplayName = currentCountry
+    ? lang === "uk" ? currentCountry.name.ua : currentCountry.name.en
+    : "";
 
-  if (error) throw new Error(error);
+  if (error) return (
+    <div className="hero-section" style={{ minHeight: 200 }}>
+      <div className="hero-terra-panel" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div className="hero-live-label">Connection error</div>
+        <div className="hero-stat-number" style={{ fontSize: "clamp(32px,5vw,72px)" }}>
+          Can't reach server
+        </div>
+        <div className="hero-stat-desc">
+          Make sure the backend is running on{" "}
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>
+            {import.meta.env.VITE_API_URL}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Hero stat: total masters in current country + city filter
+  const heroCount = masters.filter(
+    (m) => m.countryID === countryID &&
+      (selectedCity ? m.locationID === selectedCity : true)
+  ).length;
+
+  // Location name for stat description
+  const selectedCityData = selectedCity ? locations.find((l) => l.id === selectedCity) : null;
+  const statLocationName = selectedCityData
+    ? (lang === "uk" ? selectedCityData.name.ua : selectedCityData.name.en)
+    : countryDisplayName;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -166,10 +203,6 @@ function Main() {
     };
   }, [showModal, masters, locations, professions, lang, t]);
 
-  const countryDisplayName = currentCountry
-    ? lang === "uk" ? currentCountry.name.ua : currentCountry.name.en
-    : "";
-
   const locationPlaceholder = currentCountry
     ? { value: "", label: t("main.allCountry", { country: countryDisplayName }) }
     : { value: "", label: "..." };
@@ -181,7 +214,10 @@ function Main() {
         .map((m) => m.locationID)
     )].map((locId) => {
       const loc = locations.find((l) => l.id === locId);
-      return { value: locId, label: lang === "uk" ? loc?.name.ua_alt ?? "" : loc?.name.en ?? "" };
+      return {
+        value: locId,
+        label: lang === "uk" ? loc?.name.ua_alt ?? "" : loc?.name.en ?? "",
+      };
     })
   );
 
@@ -199,7 +235,10 @@ function Main() {
     result.push(
       ...uniqueCategories.map((catId) => {
         const cat = profCategories.find((c) => c.id === catId);
-        return { value: catId, label: lang === "uk" ? cat?.name.ua ?? "" : cat?.name.en ?? "" };
+        return {
+          value: catId,
+          label: lang === "uk" ? cat?.name.ua ?? "" : cat?.name.en ?? "",
+        };
       })
     );
     return result;
@@ -218,89 +257,83 @@ function Main() {
 
   return (
     <>
-      {/* ── Hero search ── */}
-      <section className="hero-search">
-        <div className="hero-inner">
-          <div className="hero-eyebrow">
-            <span className="hero-eyebrow-dot" />
-            {t("hero.eyebrow")}
+      {/* ── Hero section: terra stat | headline + filters | testimonial ── */}
+      <section className="hero-section">
+        {/* Left: terra stat panel */}
+        <div className="hero-terra-panel">
+          <div className="hero-live-label">{t("hero.liveLabel")}</div>
+          <div className="hero-stat-number">{heroCount}</div>
+          <div className="hero-stat-desc">
+            {lang === "uk"
+              ? `Українських майстрів доступно цього тижня у ${statLocationName}.`
+              : `Ukrainian craftsmen available this week in ${statLocationName}.`}
           </div>
-          <h1>
-            {t("hero.title")}&nbsp;
-            <span className="hero-accent">{t("hero.titleAccent")}</span>
-          </h1>
-          <p>{t("hero.subtitle")}</p>
-          <div className="search-bar">
-            <span className="search-bar-text">{t("main.liveIn")}</span>
-            <Select
-              className="headline-select"
-              unstyled
-              isSearchable={false}
-              value={
-                selectedCity
-                  ? availableLocations.find((l) => l.value === selectedCity) ?? availableLocations[0]
-                  : availableLocations[0]
-              }
-              options={availableLocations}
-              styles={lightSelectStyles}
-              onChange={(e) => {
-                if (e && "value" in e) {
-                  dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: e.value } });
-                }
-              }}
-            />
-            <div className="search-divider" />
-            <span className="search-bar-text">{t("main.lookingFor")}</span>
-            <Select
-              className="headline-select"
-              value={{ value: selectedProfessionCategory, label: defaultProfessionValue.label }}
-              unstyled
-              isSearchable={false}
-              options={professionSelectOptions}
-              styles={lightSelectStyles}
-              placeholder={t("main.allMasters")}
-              onChange={(e) => {
-                if (e && "value" in e) {
-                  dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: e.value } });
-                }
-              }}
-            />
+        </div>
+
+        {/* Center: headline + filter controls */}
+        <div className="hero-main-panel">
+          <div className="hero-headline">
+            <span>{t("hero.title")}</span>
+            <br />
+            <span className="hero-headline-terra">{t("hero.titleAccent")}</span>
           </div>
+          <div className="hero-filter-row">
+            <div className="filter-toggle-wrap">
+              <span className="filter-kicker">{t("main.cityKicker")}</span>
+              <Select
+                className="headline-select"
+                classNamePrefix="majstr-select"
+                unstyled
+                isSearchable={false}
+                value={
+                  selectedCity
+                    ? availableLocations.find((l) => l.value === selectedCity) ?? availableLocations[0]
+                    : availableLocations[0]
+                }
+                options={availableLocations}
+                styles={lightSelectStyles}
+                onChange={(e) => {
+                  if (e && "value" in e) {
+                    dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: e.value } });
+                  }
+                }}
+              />
+            </div>
+            <div className="filter-toggle-wrap dark">
+              <span className="filter-kicker">{t("main.tradeKicker")}</span>
+              <Select
+                className="headline-select"
+                classNamePrefix="majstr-select"
+                value={{ value: selectedProfessionCategory, label: defaultProfessionValue.label }}
+                unstyled
+                isSearchable={false}
+                options={professionSelectOptions}
+                styles={lightSelectStyles}
+                placeholder={t("main.allMasters")}
+                onChange={(e) => {
+                  if (e && "value" in e) {
+                    dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: e.value } });
+                  }
+                }}
+              />
+            </div>
+            <button className="hero-search-btn">{t("hero.searchBtn")}</button>
+          </div>
+        </div>
+
+        {/* Right: testimonial */}
+        <div className="hero-testimonial">
+          <div className="hero-testimonial-label">What clients say</div>
+          <div className="hero-testimonial-q">"</div>
+          <div className="hero-testimonial-text">
+            Marko fixed our boiler same day. Spoke fluent Italian. Saved our weekend.
+          </div>
+          <div className="hero-testimonial-attr">MARCO B. · ROMA · ★ 5/5</div>
         </div>
       </section>
 
-      {/* ── How it works ── */}
-      <section className="how-section">
-        <div className="how-inner">
-          <div className="how-label">{t("how.label")}</div>
-          <div className="how-steps">
-            <div className="how-step">
-              <div className="how-num">1</div>
-              <div className="how-text">
-                <strong>{t("how.step1Title")}</strong>
-                <span>{t("how.step1Desc")}</span>
-              </div>
-            </div>
-            <div className="how-step">
-              <div className="how-num">2</div>
-              <div className="how-text">
-                <strong>{t("how.step2Title")}</strong>
-                <span>{t("how.step2Desc")}</span>
-              </div>
-            </div>
-            <div className="how-step">
-              <div className="how-num">3</div>
-              <div className="how-text">
-                <strong>{t("how.step3Title")}</strong>
-                <span>{t("how.step3Desc")}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Category pills ── */}
-      <CategoryPills
+      {/* ── Trade chips ── */}
+      <TradeChips
         profCategories={profCategories}
         selectedProfessionCategory={selectedProfessionCategory}
         dispatch={dispatch}
@@ -308,33 +341,13 @@ function Main() {
         t={t}
       />
 
-      {/* ── Testimonial ── */}
-      <div className="testimonial-bar">
-        <div className="testimonial-inner">
-          <div className="testimonial-big-quote">"</div>
-          <p className="testimonial-quote">
-            I found Ivan through Majstr and he fixed our entire apartment's electrical system in two days. Professional, affordable, and spoke perfect Italian.
-          </p>
-          <div className="testimonial-author">
-            <div className="testimonial-avatar">🧑‍💼</div>
-            <div>
-              <div className="testimonial-name">Marco Bianchi</div>
-              <div className="testimonial-city">Homeowner, Rome</div>
-              <div className="testimonial-stars">★★★★★</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* ── Results ── */}
       <div className="results-section">
         {isLoading ? (
-          <div className="search-results-header">
-            <h2>{t("main.searching")}</h2>
-          </div>
-        ) : isError ? (
-          <div className="search-results-header">
-            <h2>{t("main.cannotSearch")}</h2>
+          <div className="results-top">
+            <div className="search-results-header">
+              <h2>{t("main.searching")}</h2>
+            </div>
           </div>
         ) : (
           <>
@@ -357,7 +370,7 @@ function Main() {
   );
 }
 
-type CategoryPillsProps = {
+type TradeChipsProps = {
   profCategories: ProfCategory[];
   selectedProfessionCategory: string;
   dispatch: Dispatch<Action>;
@@ -365,39 +378,34 @@ type CategoryPillsProps = {
   t: (key: string) => string;
 };
 
-function CategoryPills({ profCategories, selectedProfessionCategory, dispatch, lang, t }: CategoryPillsProps) {
+function TradeChips({ profCategories, selectedProfessionCategory, dispatch, lang, t }: TradeChipsProps) {
   if (!profCategories.length) return null;
 
   return (
-    <section className="cat-section">
-      <div className="cat-inner">
-        <div className="cat-label">{t("browse.label")}</div>
-        <div className="cat-pills">
-          <button
-            className={`cat-pill ${!selectedProfessionCategory ? "active" : ""}`}
-            onClick={() => dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: "" } })}
-          >
-            <span className="cat-icon">✨</span>
-            {t("browse.allCategories")}
-          </button>
-          {profCategories.map((cat) => (
-            <button
-              key={cat.id}
-              className={`cat-pill ${selectedProfessionCategory === cat.id ? "active" : ""}`}
-              onClick={() =>
-                dispatch({
-                  type: ACTIONS.SET_PROFESSION,
-                  payload: { selectedProfessionCategory: cat.id },
-                })
-              }
-            >
-              <span className="cat-icon">{getCategoryIcon(cat.name.en || cat.name.ua)}</span>
-              {lang === "uk" ? cat.name.ua : cat.name.en}
-            </button>
-          ))}
-        </div>
-      </div>
-    </section>
+    <div className="trade-chips-row">
+      <span className="trade-chips-label">{t("browse.browseLabel")}</span>
+      <button
+        className={`trade-chip ${!selectedProfessionCategory ? "active" : ""}`}
+        onClick={() => dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: "" } })}
+      >
+        {t("browse.allCategories")}
+      </button>
+      {profCategories.map((cat) => (
+        <button
+          key={cat.id}
+          className={`trade-chip ${selectedProfessionCategory === cat.id ? "active" : ""}`}
+          onClick={() =>
+            dispatch({
+              type: ACTIONS.SET_PROFESSION,
+              payload: { selectedProfessionCategory: cat.id },
+            })
+          }
+        >
+          <span className="chip-icon">{getCategoryIcon(cat.name.en || cat.name.ua)}</span>
+          {lang === "uk" ? cat.name.ua : cat.name.en}
+        </button>
+      ))}
+    </div>
   );
 }
 

@@ -25,6 +25,23 @@ const s3 = new AWS.S3({
 
 const bot = new TelegramBot(BOT_TOKEN);
 
+const SUPPORTED_LANGUAGES = [
+  { code: 'uk', label: '🇺🇦 UA' },
+  { code: 'it', label: '🇮🇹 IT' },
+  { code: 'en', label: '🇬🇧 EN' },
+  { code: 'pt', label: '🇵🇹 PT' },
+  { code: 'de', label: '🇩🇪 DE' },
+  { code: 'fr', label: '🇫🇷 FR' },
+  { code: 'es', label: '🇪🇸 ES' },
+  { code: 'pl', label: '🇵🇱 PL' },
+];
+
+const AVAILABILITY_LABELS = {
+  available: '🟢 Доступний зараз',
+  next_week: '🟡 З наступного тижня',
+  busy: '🔴 Зайнятий',
+};
+
 async function runBot() {
   if (WEBHOOK_URL) {
     const app = express();
@@ -48,6 +65,7 @@ async function runBot() {
     await bot.deleteWebHook();
     bot.startPolling();
     bot.on('message', handleMessage);
+    bot.on('callback_query', handleCallbackQuery);
     console.log('Telegram bot started in polling mode');
   }
 }
@@ -62,8 +80,8 @@ async function handleWebhook(req, res, bot) {
   console.log('request body:', req.body);
 
   if (req.body.callback_query) {
-    console.log(`The request has a callback query, that can't be handled`);
-    return res.status(200).end();
+    await handleCallbackQuery(req.body.callback_query);
+    return res.status(200).send('OK');
   }
 
   const message = req.body.message;
@@ -78,12 +96,44 @@ async function handleWebhook(req, res, bot) {
 }
 
 async function handleMessage(message) {
-  if (message.text !== '/start') {
-    console.log('Unknown command:', message.text);
-    bot.sendMessage(message.chat.id, 'Unknown command, use /start to sign in.');
-    return;
-  }
+  const chatId = message.chat.id;
+  const text = message.text || '';
 
+  switch (text) {
+    case '/start':
+      await handleStart(message);
+      break;
+    case '/available':
+      await setAvailability(chatId, 'available');
+      break;
+    case '/nextweek':
+      await setAvailability(chatId, 'next_week');
+      break;
+    case '/busy':
+      await setAvailability(chatId, 'busy');
+      break;
+    case '/status':
+      await showStatus(chatId);
+      break;
+    case '/languages':
+      await showLanguageSelector(chatId);
+      break;
+    default:
+      console.log('Unknown command:', text);
+      bot.sendMessage(
+        chatId,
+        'Невідома команда. Доступні команди:\n' +
+        '/start — увійти на сайт\n' +
+        '/available — доступний зараз\n' +
+        '/nextweek — з наступного тижня\n' +
+        '/busy — зайнятий\n' +
+        '/status — переглянути статус\n' +
+        '/languages — мови спілкування'
+      );
+  }
+}
+
+async function handleStart(message) {
   console.log('Looking for a user with an ID of:', message.chat.id);
 
   const registeredUserID = await User.exists({
@@ -101,6 +151,112 @@ async function handleMessage(message) {
   const userPhoto = await fetchUserTelegramPhoto(message);
   await addUserToDatabase(message, userPhoto, token);
   sendLoginLink(message.chat.id, token);
+}
+
+async function setAvailability(chatId, availability) {
+  const masters = await Master.find({ telegramID: chatId, approved: true });
+
+  if (!masters.length) {
+    return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
+  }
+
+  await Master.updateMany({ telegramID: chatId, approved: true }, { availability });
+  bot.sendMessage(chatId, `Статус оновлено: ${AVAILABILITY_LABELS[availability]}`);
+}
+
+async function showStatus(chatId) {
+  const masters = await Master.find({ telegramID: chatId, approved: true });
+
+  if (!masters.length) {
+    return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
+  }
+
+  const master = masters[0];
+  const availLabel = master.availability
+    ? AVAILABILITY_LABELS[master.availability]
+    : 'не вказано';
+  const langs =
+    master.languages && master.languages.length
+      ? master.languages
+          .map((l) => SUPPORTED_LANGUAGES.find((s) => s.code === l)?.label ?? l)
+          .join(', ')
+      : 'не вказано';
+
+  bot.sendMessage(
+    chatId,
+    `📋 Ваш профіль:\nСтатус: ${availLabel}\nМови: ${langs}\n\n` +
+      'Команди:\n/available /nextweek /busy /languages'
+  );
+}
+
+function buildLanguageKeyboard(currentLanguages) {
+  const langs = currentLanguages || [];
+  const buttons = SUPPORTED_LANGUAGES.map(({ code, label }) => ({
+    text: langs.includes(code) ? `✅ ${label}` : label,
+    callback_data: `lang:${code}`,
+  }));
+
+  const rows = [];
+  for (let i = 0; i < buttons.length; i += 4) {
+    rows.push(buttons.slice(i, i + 4));
+  }
+  rows.push([{ text: '💾 Зберегти', callback_data: 'lang:save' }]);
+  return { inline_keyboard: rows };
+}
+
+async function showLanguageSelector(chatId) {
+  const masters = await Master.find({ telegramID: chatId, approved: true });
+
+  if (!masters.length) {
+    return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
+  }
+
+  const currentLanguages = masters[0].languages || [];
+  bot.sendMessage(chatId, 'Оберіть мови спілкування (можна декілька):', {
+    reply_markup: buildLanguageKeyboard(currentLanguages),
+  });
+}
+
+async function handleCallbackQuery(callbackQuery) {
+  const { id: queryId, message, data } = callbackQuery;
+  if (!data || !data.startsWith('lang:')) {
+    console.log('Unknown callback data:', data);
+    return bot.answerCallbackQuery(queryId, { text: 'Невідома дія' });
+  }
+
+  const chatId = message.chat.id;
+  const langCode = data.slice(5);
+
+  if (langCode === 'save') {
+    const masters = await Master.find({ telegramID: chatId, approved: true });
+    const langs = masters[0]?.languages || [];
+    const langLabels =
+      langs.map((l) => SUPPORTED_LANGUAGES.find((s) => s.code === l)?.label ?? l).join(', ') ||
+      'жодної';
+    await bot.answerCallbackQuery(queryId, { text: '✅ Збережено' });
+    return bot.editMessageText(`Мови збережено: ${langLabels}`, {
+      chat_id: chatId,
+      message_id: message.message_id,
+    });
+  }
+
+  const masters = await Master.find({ telegramID: chatId, approved: true });
+  if (!masters.length) {
+    return bot.answerCallbackQuery(queryId, { text: 'Профіль не знайдено' });
+  }
+
+  const currentLangs = masters[0].languages || [];
+  const newLangs = currentLangs.includes(langCode)
+    ? currentLangs.filter((l) => l !== langCode)
+    : [...currentLangs, langCode];
+
+  await Master.updateMany({ telegramID: chatId, approved: true }, { languages: newLangs });
+
+  await bot.answerCallbackQuery(queryId, { text: '' });
+  await bot.editMessageReplyMarkup(buildLanguageKeyboard(newLangs), {
+    chat_id: chatId,
+    message_id: message.message_id,
+  });
 }
 
 function sendLoginLink(id, token) {
@@ -235,74 +391,3 @@ async function addUserToDatabase(message, photo, token) {
   );
 }
 
-// async function handleCallbackQuery(req, res, bot) {
-//   // I need to rewrite logic and check for new entries at will
-//   // because now I have only 60 seconds to answer each callback query
-//   try {
-//     if (!req.body.callback_query.data) {
-//       res.status(200).send('No callback data!');
-//     }
-
-//     console.log('callback data:', req.body.callback_query.data);
-
-//     const queryId = req.body.callback_query.id;
-//     const callbackData = JSON.parse(req.body.callback_query.data);
-//     const { masterId, value: callbackValue } = callbackData;
-
-//     const master = await Master.findById(masterId);
-//     const telegramId = master?.telegramID;
-
-//     if (master === null) {
-//       await bot.answerCallbackQuery(queryId, {
-//         text: '❌ The master does not exist or have been deleted',
-//       });
-//       return res.status(200).end();
-//     }
-
-//     let success;
-
-//     switch (callbackValue) {
-//       case 'accept':
-//         try {
-//           await approveMaster(masterId);
-//           await bot.sendMessage(
-//             telegramId,
-//             `Картку майстра додано на сайт: https://majstr.com/?card=${masterId}`
-//           );
-//           success = await bot.answerCallbackQuery(queryId, {
-//             text: `Master ${masterId} accepted`,
-//           });
-//         } catch (err) {
-//           throw new Error(err?.message);
-//         }
-//         break;
-//       case 'decline':
-//         try {
-//           await declineMaster(masterId);
-//           await bot.sendMessage(
-//             telegramId,
-//             `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
-//           );
-//           success = await bot.answerCallbackQuery(queryId, {
-//             text: `Master ${masterId} declined`,
-//           });
-//         } catch (err) {
-//           throw new Error(err?.message);
-//         }
-//         break;
-//       default:
-//         await bot.answerCallbackQuery(queryId, {
-//           text: 'Error: please try again later',
-//         });
-//         throw new Error('Unknown callback data!');
-//     }
-
-//     if (success) {
-//       return res.status(200).send('OK');
-//     }
-//   } catch (err) {
-//     console.error(err);
-//   }
-
-//   return res.status(200).end();
-// }

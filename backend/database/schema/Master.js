@@ -30,6 +30,22 @@ const masterSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  availability: {
+    type: String,
+    enum: ['available', 'next_week', 'busy'],
+  },
+  languages: {
+    type: [String],
+    default: undefined,
+  },
+  rating: {
+    type: Number,
+    default: null,
+  },
+  reviewCount: {
+    type: Number,
+    default: 0,
+  },
 });
 
 module.exports = mongoose.model('Master', masterSchema);
