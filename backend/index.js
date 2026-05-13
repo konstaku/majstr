@@ -12,7 +12,7 @@ const Profession = require('./database/schema/Profession');
 const ProfCategory = require('./database/schema/ProfCategory');
 const Location = require('./database/schema/Location');
 
-const PORT_NUMBER = 5000;
+const PORT_NUMBER = process.env.PORT || 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
 const KEYFILE = process.env.KEYFILE_API;
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
