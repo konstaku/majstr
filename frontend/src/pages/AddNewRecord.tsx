@@ -1,6 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import "react-phone-input-2/lib/style.css";
 import Select from "react-select";
+import { Link, Navigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { MasterContext } from "../context";
 import {
@@ -46,9 +47,12 @@ export default function AddNewRecord() {
   ) : user ? (
     <AddNewRecordForm photo={user.photo} telegramID={user.telegramID} />
   ) : error ? (
-    <h1>Error</h1>
+    <div className="create-user-container">
+      <h1>Помилка авторизації</h1>
+      <Link to="/">На головну</Link>
+    </div>
   ) : (
-    <h1>never</h1>
+    <Navigate to="/" />
   );
 }
 
@@ -417,6 +421,8 @@ function ProfessionInput({
                 }),
               }}
               options={availableProfessionOptions}
+              isDisabled={!profCategoryID}
+              placeholder={profCategoryID ? "Оберіть професію" : "Спершу оберіть категорію"}
             />
           )}
         />
@@ -522,7 +528,13 @@ function TagsInput({ control, tags = [], errors }: TagsInputProps) {
                     : baseStyles.borderColor,
                 }),
               }}
-              noOptionsMessage={() => "Введіть назву до 25 символів"}
+              noOptionsMessage={({ inputValue }) =>
+                tags.length >= 3
+                  ? "Максимум 3 теги"
+                  : inputValue.length > 0 && inputValue.length <= 3
+                  ? "Мінімум 4 символи"
+                  : "Введіть назву до 25 символів"
+              }
               formatCreateLabel={(value) => `Додати ${value}`}
               isMulti
               onKeyDown={(e) => {

@@ -308,8 +308,14 @@ body {
 
 .close-container > img,
 .share-container > img {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
+}
+
+.close-container,
+.share-container {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .share-container.confirm {
@@ -808,4 +814,14 @@ Mobile phone layout
   .master-card.preview {
     display: none;
   }
+}
+
+.error {
+  padding: 2rem;
+}
+
+.search-empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #a0aec0;
 }

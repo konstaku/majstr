@@ -29,7 +29,7 @@ export default function MasterCard({ master, setShowModal }: MasterCardProps) {
 
   return (
     <>
-      <div className="master-card" id={_id}>
+      <div className="master-card" id={_id} onClick={() => setShowModal(_id)} style={{ cursor: "pointer" }}>
         <div
           className="master-card-body"
           style={{ backgroundColor: randomAvatarColor + "35" }}
@@ -68,7 +68,7 @@ export default function MasterCard({ master, setShowModal }: MasterCardProps) {
           </div>
         </div>
         <div className="master-card-footer">
-          <button className="btn" onClick={() => setShowModal(_id)}>
+          <button className="btn" onClick={(e) => { e.stopPropagation(); setShowModal(_id); }}>
             Детальніше
           </button>
         </div>

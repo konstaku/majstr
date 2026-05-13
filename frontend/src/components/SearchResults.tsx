@@ -41,13 +41,20 @@ export default function SearchResults({
         <h2>Знайдено майстрів:</h2>
         <span className="found-amount">{filteredMasters.length}</span>
       </div>
-      {filteredMasters.map((master) => (
-        <MasterCard
-          key={master._id}
-          master={master}
-          setShowModal={setShowModal}
-        />
-      ))}
+      {filteredMasters.length === 0 ? (
+        <div className="search-empty-state">
+          <p>Майстрів за вашим запитом не знайдено.</p>
+          <p>Спробуйте змінити місто або категорію.</p>
+        </div>
+      ) : (
+        filteredMasters.map((master) => (
+          <MasterCard
+            key={master._id}
+            master={master}
+            setShowModal={setShowModal}
+          />
+        ))
+      )}
     </>
   );
 }

@@ -44,6 +44,7 @@ export default function Modal({ master, setShowModal }: ModalProps) {
     try {
       await navigator.clipboard.writeText(url);
       setCopyUrl(url);
+      setTimeout(() => setCopyUrl(null), 2000);
     } catch (err) {
       console.error("Failed to copy text to clipboard", err);
     }

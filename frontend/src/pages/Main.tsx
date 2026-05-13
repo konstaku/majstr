@@ -297,9 +297,6 @@ function Main() {
           value: "",
           label: "Всі майстри",
         };
-    console.log("defaultProfessionValue:", defaultProfessionValue);
-    console.log("selectedProfessionCategory:", selectedProfessionCategory);
-
     return (
       <Select
         className="headline-select"
