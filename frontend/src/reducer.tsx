@@ -86,6 +86,13 @@ export function reducer(state: State, { type, payload }: Action): State {
       };
     }
 
+    case ACTIONS.SET_LANGUAGE: {
+      return {
+        ...state,
+        lang: payload.lang,
+      };
+    }
+
     default: {
       return state;
     }

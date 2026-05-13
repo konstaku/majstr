@@ -9,6 +9,7 @@ import Select, {
 import { MasterContext } from "../context";
 import { ACTIONS } from "../data/actions";
 import { useNavigation } from "react-router-dom";
+import { useTranslation } from "../custom-hooks/useTranslation";
 
 import SearchResults from "../components/SearchResults";
 import Modal from "../components/Modal";
@@ -77,6 +78,7 @@ function Main() {
   const { state: loadingState } = useNavigation();
   const isLoading = loadingState === "loading";
   const isError = false; // Need to add state
+  const { t, lang } = useTranslation();
 
   const currentCountry = countries.find((country) => country.id === countryID);
 
@@ -111,14 +113,16 @@ function Main() {
       document.addEventListener("click", clickListener);
       document.addEventListener("keyup", keyUpListener);
 
-      const professionName = professions.find(
+      const profEntry = professions.find(
         (profession) => profession.id === currentMaster.professionID
-      )?.name.ua;
-      const cityName = locations.find(
+      );
+      const professionName = lang === "uk" ? profEntry?.name.ua : profEntry?.name.en;
+      const cityData = locations.find(
         (location) => location.id === currentMaster.locationID
-      )?.name.ua_alt;
+      );
+      const cityName = lang === "uk" ? cityData?.name.ua_alt : cityData?.name.en;
 
-      document.title = `${currentMaster.name} | ${professionName} в ${cityName}`;
+      document.title = `${currentMaster.name} | ${professionName} ${t("main.inCity")} ${cityName}`;
     }
 
     return () => {
@@ -126,17 +130,19 @@ function Main() {
         document.removeEventListener("click", clickListener);
         document.removeEventListener("keyup", keyUpListener);
       }
-      document.title = "Majstr : Знаходь українських майстрів";
+      document.title = t("main.appTitle");
     };
   }, [showModal, masters, locations, professions]);
 
   // The first value is always an empty string, so the user can always return to "all" as an option
   // Then, I always display every location with at least one master in it
+  const countryDisplayName = currentCountry
+    ? lang === "uk"
+      ? currentCountry.name.ua
+      : currentCountry.name.en
+    : "";
   const locationPlaceholder = currentCountry
-    ? {
-        value: "",
-        label: `Вся ${currentCountry?.name.ua}`,
-      }
+    ? { value: "", label: t("main.allCountry", { country: countryDisplayName }) }
     : { value: "", label: "🤔 🤔 🤔" };
 
   const availableLocations = [locationPlaceholder].concat(
@@ -147,12 +153,13 @@ function Main() {
           .filter((master) => master.countryID === countryID)
           .map((master) => master.locationID)
       ),
-    ].map((masterLocationId) => ({
-      value: masterLocationId,
-      label:
-        locations.find((location) => location.id === masterLocationId)?.name
-          .ua_alt || "",
-    }))
+    ].map((masterLocationId) => {
+      const loc = locations.find((l) => l.id === masterLocationId);
+      return {
+        value: masterLocationId,
+        label: lang === "uk" ? loc?.name.ua_alt ?? "" : loc?.name.en ?? "",
+      };
+    })
   );
 
   // Here I filter out unique proffessions for the selected city
@@ -176,9 +183,8 @@ function Main() {
   function generateProfessionsSelectOptions(professionIDlist: string[]) {
     const result = [
       {
-        // The first element is "Everyone", which is an empty string
         value: "",
-        label: "Всі майстри",
+        label: t("main.allMasters"),
       },
     ];
 
@@ -190,15 +196,9 @@ function Main() {
 
     const professionLabelList = uniqueProfessionCategories.map(
       (professionCategoryID) => {
-        let label = profCategories.find(
-          (profCategory) => profCategory.id === professionCategoryID
-        )?.name.ua;
-        if (!label) label = "";
-
-        return {
-          value: professionCategoryID,
-          label: label,
-        };
+        const cat = profCategories.find((c) => c.id === professionCategoryID);
+        const label = lang === "uk" ? cat?.name.ua ?? "" : cat?.name.en ?? "";
+        return { value: professionCategoryID, label };
       }
     );
 
@@ -215,22 +215,22 @@ function Main() {
     <>
       <div className="search-field">
         <span className="search-left">
-          Я мешкаю в
+          {t("main.liveIn")}
           <SearchLocation />
         </span>
         <span className="search-right">
-          та шукаю <SearchProffession />
+          {t("main.lookingFor")} <SearchProffession />
         </span>
       </div>
 
       <div className="search-results-container">
         {isLoading ? (
           <div className="search-results-header">
-            <h2>Шукаємо...</h2>
+            <h2>{t("main.searching")}</h2>
           </div>
         ) : isError ? (
           <div className="search-results-header">
-            <h2>Неможливо виконати запит</h2>
+            <h2>{t("main.cannotSearch")}</h2>
           </div>
         ) : (
           <>
@@ -292,11 +292,7 @@ function Main() {
 
     const defaultProfessionValue = foundSelectedProfession
       ? foundSelectedProfession
-      : {
-          // The first element is "Everyone", which is an empty string
-          value: "",
-          label: "Всі майстри",
-        };
+      : { value: "", label: t("main.allMasters") };
     return (
       <Select
         className="headline-select"
@@ -306,10 +302,9 @@ function Main() {
         }}
         unstyled
         isSearchable={false}
-        // options={availableProfessions}
         options={professionSelectOptions}
         styles={baseSelectStyles}
-        placeholder="Всі майстри"
+        placeholder={t("main.allMasters")}
         onChange={(e) => {
           if (e && "value" in e) {
             dispatch({

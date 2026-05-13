@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useLocation, Navigate, Link } from "react-router-dom";
+import { useTranslation } from "../custom-hooks/useTranslation";
 
 export default function Login() {
     const location = useLocation();
+    const { t } = useTranslation();
     const [loginElement, setLoginElement] = useState<JSX.Element>(
-        <h2>Logging in...</h2>
+        <h2>{t("login.loading")}</h2>
     );
 
     useEffect(() => {
@@ -18,8 +20,8 @@ export default function Login() {
         } else {
             setLoginElement(
                 <div>
-                    <h2>Login error: no token</h2>
-                    <Link to="/">На головну</Link>
+                    <h2>{t("login.error")}</h2>
+                    <Link to="/">{t("login.home")}</Link>
                 </div>
             );
         }

@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { MasterContext } from "../context";
 import MasterCard from "./MasterCard";
+import { useTranslation } from "../custom-hooks/useTranslation";
 
 import type { Master } from "../schema/master/master.schema";
 import type { Profession } from "../schema/state/state.schema";
@@ -21,6 +22,7 @@ export default function SearchResults({
   const {
     state: { professions, countryID },
   } = useContext(MasterContext);
+  const { t } = useTranslation();
 
   const availableProfessionIDs = professions
     .filter((p: Profession) =>
@@ -38,13 +40,13 @@ export default function SearchResults({
   return (
     <>
       <div className="search-results-header">
-        <h2>Знайдено майстрів:</h2>
+        <h2>{t("results.found")}</h2>
         <span className="found-amount">{filteredMasters.length}</span>
       </div>
       {filteredMasters.length === 0 ? (
         <div className="search-empty-state">
-          <p>Майстрів за вашим запитом не знайдено.</p>
-          <p>Спробуйте змінити місто або категорію.</p>
+          <p>{t("results.empty")}</p>
+          <p>{t("results.tryChanging")}</p>
         </div>
       ) : (
         filteredMasters.map((master) => (

@@ -12,6 +12,8 @@ import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import Select from "react-select";
 import { baseSelectStyles } from "../pages/Main";
+import { useTranslation } from "../custom-hooks/useTranslation";
+import { COUNTRY_TO_LANG, LANG_FLAGS } from "../i18n/translations";
 
 import type { Country } from "../schema/state/state.schema";
 
@@ -20,6 +22,7 @@ export default function Root() {
   const { user, countryID, countries } = state;
   const { isLoggedIn } = user;
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
+  const { t } = useTranslation();
 
   // Add to .env
   const availableCountries = useMemo(() => ["IT", "PT"], []);
@@ -132,21 +135,21 @@ export default function Root() {
     <>
       <li>
         <Link to="/" style={linkStyle}>
-          Пошук
+          {t("nav.search")}
         </Link>
       </li>
       {isLoggedIn ? (
         <li>
           <Link to="/add" style={linkStyle}>
-            Додати майстра
+            {t("nav.addMaster")}
           </Link>
         </li>
       ) : (
         <li>
-          <a href="https://t.me/majstr_bot">Додати майстра</a>
+          <a href="https://t.me/majstr_bot">{t("nav.addMaster")}</a>
         </li>
       )}
-      <li className="inactive">FAQ</li>
+      <li className="inactive">{t("nav.faq")}</li>
     </>
   );
 
@@ -155,6 +158,7 @@ export default function Root() {
       <header className="header">
         <Logo dispatch={dispatch} />
         <Menu menuItems={menuItems} />
+        <LanguageSwitcher countryID={countryID} />
         <CountrySelect
           showBurgerMenu={showBurgerMenu}
           setShowBurgerMenu={setShowBurgerMenu}
@@ -298,14 +302,15 @@ function CountrySelect({
 }
 
 function FooterContent() {
+  const { t } = useTranslation();
   return (
     <>
       <div className="terms">
         <ul>
-          <li>Умови використання</li>
-          <li>Питання та відповіді</li>
-          <li>Політика модерації</li>
-          <li>Зворотній звʼязок</li>
+          <li>{t("footer.terms")}</li>
+          <li>{t("footer.faq")}</li>
+          <li>{t("footer.moderation")}</li>
+          <li>{t("footer.feedback")}</li>
         </ul>
       </div>
       <div className="love">
@@ -313,5 +318,43 @@ function FooterContent() {
         <span>🇺🇦</span>
       </div>
     </>
+  );
+}
+
+type LanguageSwitcherProps = {
+  countryID: string;
+};
+
+function LanguageSwitcher({ countryID }: LanguageSwitcherProps) {
+  const { lang, setLang } = useTranslation();
+  const localLang = COUNTRY_TO_LANG[countryID];
+  const showLocal = localLang && localLang !== "uk" && localLang !== "en";
+
+  return (
+    <div className="lang-switcher">
+      <button
+        className={`lang-btn ${lang === "uk" ? "active" : ""}`}
+        onClick={() => setLang("uk")}
+        title="Українська"
+      >
+        {LANG_FLAGS["uk"]}
+      </button>
+      <button
+        className={`lang-btn ${lang === "en" ? "active" : ""}`}
+        onClick={() => setLang("en")}
+        title="English"
+      >
+        {LANG_FLAGS["en"]}
+      </button>
+      {showLocal && (
+        <button
+          className={`lang-btn ${lang === localLang ? "active" : ""}`}
+          onClick={() => setLang(localLang)}
+          title={localLang.toUpperCase()}
+        >
+          {LANG_FLAGS[localLang]}
+        </button>
+      )}
+    </div>
   );
 }

@@ -3,6 +3,8 @@ import Avatar from "./Avatar";
 import { MasterContext } from "../context";
 import ContactsLayout from "./ContactsLayout";
 import { colorPalette } from "../data/colors";
+import { useTranslation } from "../custom-hooks/useTranslation";
+import { transliterate } from "../helpers/transliterate";
 
 import type { Master } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
@@ -16,9 +18,11 @@ export default function Modal({ master, setShowModal }: ModalProps) {
   const {
     state: { locations, professions },
   } = useContext(MasterContext);
+  const { t, lang } = useTranslation();
 
   const { _id: id } = master;
   const [copyUrl, setCopyUrl] = useState<string | null>(null);
+  const displayName = lang === "uk" ? master.name : transliterate(master.name);
 
   // I am using last two digits of an ID to derive a pseudorandom color for a card
   const randomAvatarColor = useMemo(() => {
@@ -63,7 +67,7 @@ export default function Modal({ master, setShowModal }: ModalProps) {
                 <Avatar
                   img={master.photo}
                   color={randomAvatarColor}
-                  name={master.name}
+                  name={displayName}
                 />
                 <div className="share-close-container">
                   <div
@@ -83,26 +87,21 @@ export default function Modal({ master, setShowModal }: ModalProps) {
                   </div>
                 </div>
               </div>
-              <div className="master-card-name">{master.name}</div>
+              <div className="master-card-name">{displayName}</div>
               <div className="master-card-profession">
-                {
-                  professions.find(
-                    (p: Profession) => p.id === master.professionID
-                  )?.name.ua
-                }
+                {lang === "uk"
+                  ? professions.find((p: Profession) => p.id === master.professionID)?.name.ua
+                  : professions.find((p: Profession) => p.id === master.professionID)?.name.en}
               </div>
               <div className="mastercard-location">
                 <img src="/img/icons/geopin.svg" alt="" />
-                {
-                  locations.find((l: Location) => l.id === master.locationID)
-                    ?.name.ua
-                }
+                {lang === "uk"
+                  ? locations.find((l: Location) => l.id === master.locationID)?.name.ua
+                  : locations.find((l: Location) => l.id === master.locationID)?.name.en}
               </div>
               <div className="mastercard-about">
                 <pre className="about-pre">
-                  {master.about
-                    ? master.about
-                    : `Нажаль, майстер немає детального опису 🤷‍♂️`}
+                  {master.about ? master.about : t("modal.noAbout")}
                 </pre>
               </div>
             </div>

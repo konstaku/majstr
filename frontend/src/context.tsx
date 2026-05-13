@@ -4,6 +4,14 @@ import type { State } from "./schema/state/state.schema";
 
 import type { Action } from "./reducer";
 
+function getInitialLang(): string {
+  const saved = localStorage.getItem("lang");
+  if (saved) return saved;
+  const browser = navigator.language.split("-")[0].toLowerCase();
+  const known = ["uk", "en", "it", "pt", "es", "de", "fr", "pl"];
+  return known.includes(browser) ? browser : "uk";
+}
+
 const INITIAL_STATE: State = {
   masters: [],
   professions: [],
@@ -25,6 +33,7 @@ const INITIAL_STATE: State = {
   countryID: "",
   countrySet: false,
   error: "",
+  lang: getInitialLang(),
 };
 
 type ContextType = {

@@ -100,6 +100,34 @@ body {
   display: none;
 }
 
+.lang-switcher {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  padding-right: 1rem;
+}
+
+.lang-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 18px;
+  opacity: 0.45;
+  transition: opacity 0.15s;
+  line-height: 1.4;
+}
+
+.lang-btn:hover {
+  opacity: 0.75;
+}
+
+.lang-btn.active {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
 .select-country {
   margin-right: 4rem;
   display: flex;

@@ -54,6 +54,7 @@ export const StateSchema = z.object({
   countryID: z.string(),
   countrySet: z.boolean(),
   error: z.string(),
+  lang: z.string(),
 });
 
 export type State = z.infer<typeof StateSchema>;
