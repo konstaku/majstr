@@ -68,3 +68,19 @@ Backend requires a `.env` file with:
 - `AWS_ACCESS_KEY` / `AWS_SECRET_ACCESS_KEY` — S3 upload credentials
 - `CERTIFICATE` / `KEYFILE` — SSL cert paths for the bot server (port 8443)
 - `CERTIFICATE_API` / `KEYFILE_API` — SSL cert paths for the API server (port 5000)
+- `WEBHOOK_URL` — Public HTTPS base URL for the Telegram webhook (e.g. `https://majstr.com`). When absent, the bot starts in polling mode — no SSL or public URL needed
+- `FRONTEND_URL` — Base URL sent in Telegram login links (e.g. `https://majstr.com`). Defaults to `http://localhost:5173`
+
+## Local Development
+
+The app can now run locally without SSL certificates:
+
+```bash
+# Terminal 1 — backend (HTTP on port 5000)
+cd backend && npm run devStart
+
+# Terminal 2 — frontend (Vite dev server on port 5173)
+cd frontend && npm run dev
+```
+
+The frontend `.env.development` points to `http://localhost:5000` automatically. The Telegram bot starts in polling mode when `WEBHOOK_URL` is not set. Note: the Telegram login flow requires HTTPS and a registered domain, so authentication won't work locally — use `ngrok` if you need to test auth end-to-end.

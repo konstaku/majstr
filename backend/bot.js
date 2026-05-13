@@ -14,6 +14,8 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const JWT_ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_TOKEN_SECRET;
 const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const PORT_NUMBER = 8443;
 
 const s3 = new AWS.S3({
@@ -24,27 +26,30 @@ const s3 = new AWS.S3({
 const bot = new TelegramBot(BOT_TOKEN);
 
 async function runBot() {
-  const app = express();
-  app.use(express.json());
-
-  const httpsOptions = {
-    key: fs.readFileSync(KEYFILE),
-    cert: fs.readFileSync(CERTIFICATE),
-  };
-  const httpsServer = https.createServer(httpsOptions, app);
-
-  await bot.setWebHook(`https://majstr.com:${PORT_NUMBER}/webhook`);
-  bot.on('webhook_error', console.error);
-
-  app.post('/webhook', async (req, res) => await handleWebhook(req, res, bot));
-
-  httpsServer
-    .listen(PORT_NUMBER, () =>
-      console.log(`Telegram bot started on port ${PORT_NUMBER}`)
-    )
-    .on('error', (err) => {
-      console.log('Error starting telegram bot server:', err);
-    });
+  if (WEBHOOK_URL) {
+    const app = express();
+    app.use(express.json());
+    const httpsOptions = {
+      key: fs.readFileSync(KEYFILE),
+      cert: fs.readFileSync(CERTIFICATE),
+    };
+    const httpsServer = https.createServer(httpsOptions, app);
+    await bot.setWebHook(`${WEBHOOK_URL}:${PORT_NUMBER}/webhook`);
+    bot.on('webhook_error', console.error);
+    app.post('/webhook', async (req, res) => await handleWebhook(req, res, bot));
+    httpsServer
+      .listen(PORT_NUMBER, () =>
+        console.log(`Telegram bot started on port ${PORT_NUMBER}`)
+      )
+      .on('error', (err) => {
+        console.log('Error starting telegram bot server:', err);
+      });
+  } else {
+    await bot.deleteWebHook();
+    bot.startPolling();
+    bot.on('message', handleMessage);
+    console.log('Telegram bot started in polling mode');
+  }
 }
 
 module.exports = {
@@ -59,22 +64,24 @@ async function handleWebhook(req, res, bot) {
   if (req.body.callback_query) {
     console.log(`The request has a callback query, that can't be handled`);
     return res.status(200).end();
-    // return await handleCallbackQuery(req, res, bot);
   }
 
   const message = req.body.message;
 
-  // If webhook activated, but there is no message, do nothing
   if (!message) {
     console.log('Webhook activated, but no message detected');
     return res.status(200).send('OK');
   }
 
-  // If the message is unknown command, return
+  await handleMessage(message);
+  res.status(200).send('OK');
+}
+
+async function handleMessage(message) {
   if (message.text !== '/start') {
-    console.log('Webhook activated, but command unknown:', message.text);
+    console.log('Unknown command:', message.text);
     bot.sendMessage(message.chat.id, 'Unknown command, use /start to sign in.');
-    return res.status(200).send('unknown command but ok');
+    return;
   }
 
   console.log('Looking for a user with an ID of:', message.chat.id);
@@ -83,24 +90,20 @@ async function handleWebhook(req, res, bot) {
     telegramID: message.chat.id,
   });
 
-  // If user found, just send the link
   if (registeredUserID) {
     console.log('User already registered! ID:', registeredUserID);
     const registeredUser = await User.findById(registeredUserID);
-    return sendLoginLink(res, bot, message.chat.id, registeredUser.token);
+    return sendLoginLink(message.chat.id, registeredUser.token);
   }
 
-  // Otherwise create a new user
   console.log('Welcome new user!, ID:', registeredUserID);
   const token = createTokenForUser(message);
   const userPhoto = await fetchUserTelegramPhoto(message);
   await addUserToDatabase(message, userPhoto, token);
-
-  // Sending a link with a token in URl params and directing to a login page which is handled by a frontend
-  sendLoginLink(res, bot, message.chat.id, token);
+  sendLoginLink(message.chat.id, token);
 }
 
-function sendLoginLink(res, bot, id, token) {
+function sendLoginLink(id, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
 
   bot.sendMessage(id, 'Увійти на majstr.com?', {
@@ -110,15 +113,13 @@ function sendLoginLink(res, bot, id, token) {
           {
             text: 'Увійти',
             login_url: {
-              url: `https://majstr.com/login?token=${encodedToken}&path=add`, // This endpoint is handled by frontend app
+              url: `${FRONTEND_URL}/login?token=${encodedToken}&path=add`,
             },
           },
         ],
       ],
     },
   });
-
-  res.status(200).send('OK');
 }
 
 function createTokenForUser(message) {

@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const fs = require('fs');
+const http = require('http');
 const https = require('https');
 const cors = require('cors');
 
@@ -15,10 +16,10 @@ const PORT_NUMBER = 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
 const KEYFILE = process.env.KEYFILE_API;
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
-const httpsOptions = {
-  key: fs.readFileSync(KEYFILE),
-  cert: fs.readFileSync(CERTIFICATE),
-};
+const httpsOptions =
+  CERTIFICATE && KEYFILE
+    ? { key: fs.readFileSync(KEYFILE), cert: fs.readFileSync(CERTIFICATE) }
+    : null;
 
 const db = require('./database/db');
 const { bot, runBot } = require('./bot');
@@ -50,9 +51,11 @@ async function main() {
   app.post('/addmaster', addMaster);
   app.post('/approve-master', handleApproveMaster);
 
-  const httpsServer = https.createServer(httpsOptions, app);
+  const server = httpsOptions
+    ? https.createServer(httpsOptions, app)
+    : http.createServer(app);
 
-  httpsServer
+  server
     .listen(PORT_NUMBER, () =>
       console.log(`Backend server started on port ${PORT_NUMBER}`)
     )

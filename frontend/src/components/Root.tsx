@@ -66,19 +66,19 @@ export default function Root() {
     (async function () {
       try {
         const promises = [
-          fetch(`https://api.majstr.com/?q=masters&country=${countryID}`, {
+          fetch(`${import.meta.env.VITE_API_URL}/?q=masters&country=${countryID}`, {
             signal: controller.signal,
           }).then((response) => response.json()),
-          fetch("https://api.majstr.com/?q=professions", {
+          fetch(`${import.meta.env.VITE_API_URL}/?q=professions`, {
             signal: controller.signal,
           }).then((response) => response.json()),
-          fetch("https://api.majstr.com/?q=prof-categories", {
+          fetch(`${import.meta.env.VITE_API_URL}/?q=prof-categories`, {
             signal: controller.signal,
           }).then((response) => response.json()),
-          fetch(`https://api.majstr.com/?q=locations&country=${countryID}`, {
+          fetch(`${import.meta.env.VITE_API_URL}/?q=locations&country=${countryID}`, {
             signal: controller.signal,
           }).then((response) => response.json()),
-          fetch("https://api.majstr.com/?q=countries", {
+          fetch(`${import.meta.env.VITE_API_URL}/?q=countries`, {
             signal: controller.signal,
           }).then((response) => response.json()),
         ];

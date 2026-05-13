@@ -47,7 +47,7 @@ export default function useAuthenticateUser(): UseAuthenticateUserState {
       }
 
       try {
-        const response = await fetch("https://api.majstr.com/auth", {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth`, {
           headers: { Authorization: token },
           signal: controller.signal,
         });

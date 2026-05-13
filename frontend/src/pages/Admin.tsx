@@ -34,7 +34,7 @@ function Admin() {
 }
 
 function loader({ request }: { request: Request }) {
-  return fetch("https://api.majstr.com/?q=newmasters", {
+  return fetch(`${import.meta.env.VITE_API_URL}/?q=newmasters`, {
     signal: request.signal,
   });
 }

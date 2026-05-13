@@ -40,7 +40,7 @@ export default function Modal({ master, setShowModal }: ModalProps) {
   }, [id]);
 
   async function copyUrlToClipboard(id: string) {
-    const url = `https://majstr.com/?card=${id}`;
+    const url = `${import.meta.env.VITE_APP_URL}/?card=${id}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopyUrl(url);

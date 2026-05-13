@@ -211,7 +211,7 @@ function AddNewRecordForm({
 
     // Send form data
     const controller = new AbortController();
-    await fetch("https://api.majstr.com/addmaster", {
+    await fetch(`${import.meta.env.VITE_API_URL}/addmaster`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dataToSave),
