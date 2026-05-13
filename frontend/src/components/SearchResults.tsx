@@ -25,37 +25,36 @@ export default function SearchResults({
   const { t } = useTranslation();
 
   const availableProfessionIDs = professions
-    .filter((p: Profession) =>
-      !professionCategory ? true : p.categoryID === professionCategory
-    )
+    .filter((p: Profession) => (!professionCategory ? true : p.categoryID === professionCategory))
     .map((p: Profession) => p.id);
 
   const filteredMasters = masters.filter(
-    (master) =>
-      master.countryID === countryID &&
-      master.locationID.includes(city) &&
-      availableProfessionIDs.includes(master.professionID)
+    (m) =>
+      m.countryID === countryID &&
+      m.locationID.includes(city) &&
+      availableProfessionIDs.includes(m.professionID)
   );
 
   return (
     <>
-      <div className="search-results-header">
-        <h2>{t("results.found")}</h2>
-        <span className="found-amount">{filteredMasters.length}</span>
+      <div className="results-top">
+        <div className="search-results-header">
+          <h2>{t("results.found")}</h2>
+          <span className="found-amount">{filteredMasters.length}</span>
+        </div>
       </div>
+
       {filteredMasters.length === 0 ? (
         <div className="search-empty-state">
           <p>{t("results.empty")}</p>
           <p>{t("results.tryChanging")}</p>
         </div>
       ) : (
-        filteredMasters.map((master) => (
-          <MasterCard
-            key={master._id}
-            master={master}
-            setShowModal={setShowModal}
-          />
-        ))
+        <div className="masters-grid">
+          {filteredMasters.map((master) => (
+            <MasterCard key={master._id} master={master} setShowModal={setShowModal} />
+          ))}
+        </div>
       )}
     </>
   );

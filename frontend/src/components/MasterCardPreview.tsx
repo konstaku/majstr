@@ -9,64 +9,57 @@ type MasterCardPreviewProps = {
   masterPreview: MasterPreviewType;
 };
 
-export default function MasterCardPreview({
-  masterPreview,
-}: MasterCardPreviewProps) {
+export default function MasterCardPreview({ masterPreview }: MasterCardPreviewProps) {
   const { photo, watcher } = masterPreview;
   const { name, locationID, professionID, tags, useThisPhoto } = watcher;
   const {
     state: { locations, professions },
   } = useContext(MasterContext);
 
+  const profName = professionID
+    ? professions.find((p: Profession) => p.id === professionID)?.name.ua
+    : "Професія невідома";
+
+  const locName = locationID
+    ? locations.find((l: Location) => l.id === locationID)?.name.ua
+    : "Локація невідома";
+
+  const previewTags = Array.isArray(tags)
+    ? tags.sort((a, b) => a.value.length - b.value.length).slice(0, 4)
+    : [];
+
   return (
-    <>
-      <div className="master-card preview">
-        <div
-          className="master-card-body"
-          style={{ backgroundColor: "#F3AB4735" }}
-        >
-          <div>
-            <div className="master-card-header">
-              <Avatar
-                img={useThisPhoto ? photo : null}
-                color="#F3AB47"
-                name={name}
-              />
-              <div className="bookmark-container">
-                <img src="/img/icons/bookmark-passive.svg" alt="" />
-              </div>
-            </div>
-            <div className="master-card-name">{name}</div>
-            <div className="master-card-profession">
-              {professionID
-                ? professions.find((p: Profession) => p.id === professionID)
-                    ?.name.ua
-                : "Професія невідома"}
-            </div>
-            <div className="mastercard-location">
-              <img src="/img/icons/geopin.svg" alt="" />
-              {locationID
-                ? locations.find((l: Location) => l.id === locationID)?.name.ua
-                : "Локація невідома"}
-            </div>
+    <div className="card-with-strip master-card preview">
+      <div className="card-left-strip" />
+      <div className="card-inner">
+        <div className="card-top">
+          <div className="card-avatar-wrapper">
+            <Avatar
+              img={useThisPhoto ? photo : null}
+              color="#c84b31"
+              name={name || "?"}
+            />
           </div>
-          <div className="mastercard-tag-container">
-            {!!tags?.length &&
-              tags
-                .sort((a, b) => a.value.length - b.value.length)
-                .map((tag, index) => (
-                  <div key={index} className="mastercard-tag">
-                    {tag.value.toLowerCase()}
-                  </div>
-                ))}
+          <div className="card-info">
+            <div className="card-name">{name || "Ваше ім'я"}</div>
+            <div className="card-profession">{profName}</div>
+            <div className="card-location">📍 {locName}</div>
           </div>
         </div>
-        <div className="master-card-footer">
-          <button className="btn" /* onClick={() => setShowModal(_id)} */>
-            Детальніше
-          </button>
+
+        {previewTags.length > 0 && (
+          <div className="tags">
+            {previewTags.map((tag, i) => (
+              <span key={i} className="tag">{tag.value.toLowerCase()}</span>
+            ))}
+          </div>
+        )}
+
+        <div className="card-footer">
+          <div />
+          <button className="details-btn" disabled>Детальніше</button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

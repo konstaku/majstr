@@ -24,6 +24,10 @@ export const MasterSchema = z.object({
   likes: z.number().default(0),
   tags: TagsSchema,
   isAdmin: z.boolean().default(false),
+  languages: z.array(z.string()).optional(),
+  availability: z.enum(["available", "next_week", "busy"]).optional(),
+  rating: z.number().min(0).max(5).optional(),
+  reviewCount: z.number().min(0).optional(),
 });
 
 export type Master = z.infer<typeof MasterSchema>;

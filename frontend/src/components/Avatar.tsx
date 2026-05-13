@@ -9,10 +9,12 @@ export default function Avatar({ img, color, name }: AvatarProps) {
     <div
       className="card-avatar"
       style={
-        img ? { backgroundImage: `url(${img})` } : { backgroundColor: color }
+        img
+          ? { backgroundImage: `url(${img})`, backgroundColor: "transparent" }
+          : { backgroundColor: color }
       }
     >
-      {!img && name && name[0]}
+      {!img && name && name[0]?.toUpperCase()}
     </div>
   );
 }

@@ -1,48 +1,54 @@
-import { ReactElement } from "react";
 import type { Contacts } from "../schema/master/master.schema";
 
 type ContactsLayoutProps = { contacts: Contacts[] };
 
+const CONTACT_ICONS: Record<string, string> = {
+  telegram: "✈️",
+  instagram: "📸",
+  phone: "📞",
+  facebook: "👤",
+};
+
 export default function ContactsLayout({ contacts }: ContactsLayoutProps) {
+  if (!contacts.length) return null;
+
   return (
-    <div className="mastercard-contacts">
-      {contacts.map(generateContactLayout)}
+    <div className="contact-btns">
+      {contacts.map((contact, index) => {
+        const { contactType, value } = contact;
+        let href = "#";
+
+        switch (contactType) {
+          case "telegram":
+            href = `https://t.me/${value.replace(/@/g, "")}`;
+            break;
+          case "instagram":
+            href = `https://www.instagram.com/${value}/`;
+            break;
+          case "phone":
+            href = `tel:${value}`;
+            break;
+          case "facebook":
+            href = value;
+            break;
+        }
+
+        const isPrimary = index === 0;
+
+        return (
+          <a
+            key={index}
+            href={href}
+            className={`contact-btn-link ${isPrimary ? "primary" : "secondary"}`}
+            target={contactType !== "phone" ? "_blank" : undefined}
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>{CONTACT_ICONS[contactType] ?? "💬"}</span>
+            <span style={{ textTransform: "capitalize" }}>{contactType}</span>
+          </a>
+        );
+      })}
     </div>
   );
-
-  function generateContactLayout(
-    { contactType, value }: Contacts,
-    index: number
-  ): JSX.Element {
-    let contactValue: string | ReactElement;
-    let link: string;
-
-    switch (contactType) {
-      case "instagram":
-        link = `https://www.instagram.com/${value}/`;
-        contactValue = <a href={link}>{value}</a>;
-        break;
-      case "telegram": {
-        const handle = value.replace(/@/g, "");
-        link = `https://t.me/${handle}`;
-        contactValue = <a href={link}>{value}</a>;
-        break;
-      }
-      case "phone":
-        contactValue = <a href={`tel:${value}`}>{value}</a>;
-        break;
-      case "facebook":
-        contactValue = <a href={value}>link</a>;
-        break;
-      default:
-        contactValue = value;
-    }
-
-    return (
-      <div key={index}>
-        <span className="contact-name">{contactType}:</span>
-        <span className="contact-value">{contactValue}</span>
-      </div>
-    );
-  }
 }
