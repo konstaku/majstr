@@ -262,7 +262,7 @@ async function handleCallbackQuery(callbackQuery) {
 function sendLoginLink(id, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
 
-  bot.sendMessage(id, 'Увійти на majstr.com?', {
+  bot.sendMessage(id, 'Увійти на majstr.xyz?', {
     reply_markup: {
       inline_keyboard: [
         [

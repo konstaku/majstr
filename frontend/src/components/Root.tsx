@@ -29,27 +29,9 @@ export default function Root() {
   const { t, lang } = useTranslation();
   const location = useLocation();
 
-  const availableCountries = ["IT", "PT"];
-  const defaultCountry = "IT";
   const now = new Date();
   const weekNum = getISOWeek(now);
   const yearSuffix = String(now.getFullYear()).slice(2);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("https://ipinfo.io/json", { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-      .then((result) => {
-        const userCountry = availableCountries.includes(result.country)
-          ? result.country
-          : defaultCountry;
-        dispatch({ type: ACTIONS.SET_COUNTRY, payload: { countryID: userCountry } });
-      })
-      .catch((err) => {
-        if (err?.name === "AbortError") return;
-      });
-    return () => controller.abort();
-  }, [dispatch]);
 
   useEffect(() => {
     if (!state.countrySet) return;

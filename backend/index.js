@@ -28,11 +28,18 @@ const runOpenGraphMiddleware = require('./open-graph-middleware');
 const createOGimageForMaster = require('./helpers/generateOpenGraph');
 const Country = require('./database/schema/Country');
 
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['*'];
+
 const corsMiddleware = (req, res, next) => {
-  // CORS headers temporary set to allow all origins - will change on production
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(204).end();
   next();
 };
 
@@ -75,6 +82,10 @@ async function handleApiRequests(req, res) {
   );
 
   // Whenever I need to fetch data, I am using URL params to define which data to send
+  if (!req.query || !req.query.q) {
+    return res.status(400).send('Missing query parameter');
+  }
+
   if (req.query && req.query.q) {
     switch (req.query.q) {
       case 'masters':
@@ -167,7 +178,7 @@ async function addMaster(req, res) {
   // 1. Validate data
   const validationError = master.validateSync();
   if (validationError) {
-    throw new Error(validationError);
+    return res.status(400).send(validationError.message);
   }
 
   // 2. Find user in database with matching userId
@@ -230,7 +241,7 @@ async function addMaster(req, res) {
 
   bot.sendMessage(
     TELEGRAM_ADMIN_CHAT_ID,
-    `New master added, check it: https://majstr.com/admin\n${master.OGimage}`
+    `New master added, check it: https://majstr.xyz/admin\n${master.OGimage}`
   );
 
   res.status(200).json({ success: true });
@@ -244,17 +255,20 @@ async function handleApproveMaster(req, res) {
   const master = await Master.findById(masterID);
   const telegramId = master?.telegramID;
 
+  if (master === null) {
+    return res.status(404).end();
+  }
+
   const adminTokens = (await User.find({ isAdmin: true })).map(
     (user) => user?.token
   );
 
-  if (adminTokens.includes(token)) {
-    console.log('auth success');
+  if (!adminTokens.includes(token)) {
+    console.log('auth failed — token not in admin list');
+    return res.status(403).send('Unauthorized');
   }
 
-  if (master === null) {
-    return res.status(404).end();
-  }
+  console.log('auth success');
 
   let success = false;
 
@@ -264,7 +278,7 @@ async function handleApproveMaster(req, res) {
         await approveMaster(masterID);
         await bot.sendMessage(
           telegramId,
-          `✅ Картку майстра додано на сайт: https://majstr.com/?card=${masterID}\n\n` +
+          `✅ Картку майстра додано на сайт: https://majstr.xyz/?card=${masterID}\n\n` +
           'Управляйте своїм профілем через бот:\n' +
           '/available — доступний зараз\n' +
           '/nextweek — з наступного тижня\n' +

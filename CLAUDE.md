@@ -81,13 +81,13 @@ The project has three separate Node processes running in production, all requiri
 | Telegram bot | `backend/bot.js` | 8443 (HTTPS) | Webhook handler for Telegram |
 | OG middleware | `backend/open-graph-middleware.js` | 5050 (HTTP) | SSR for social sharing previews |
 
-Nginx routes traffic: requests with `?card=` in the URL go to the OG middleware (port 5050); everything else goes to the static frontend. The API lives at `api.majstr.com`.
+Nginx routes traffic: requests with `?card=` in the URL go to the OG middleware (port 5050); everything else goes to the static frontend. The API lives at `api.majstr.xyz`.
 
 ## Authentication Flow
 
 1. User sends `/start` to the Telegram bot
 2. Bot creates a JWT, stores the user in MongoDB, fetches their Telegram profile photo, uploads it to S3
-3. Bot sends a login button with a URL: `https://majstr.com/login?token=<encoded-jwt>`
+3. Bot sends a login button with a URL: `https://majstr.xyz/login?token=<encoded-jwt>`
 4. Frontend `/login` page reads the token from the URL, saves it to `localStorage`
 5. On subsequent visits, `useAuthenticateUser` hook reads the token from `localStorage` and hits `GET /auth` with it as the `Authorization` header
 
@@ -101,7 +101,7 @@ Nginx routes traffic: requests with `?card=` in the URL go to the OG middleware 
 
 ## Frontend State
 
-Global state is managed with `useReducer` + React Context (`MasterContext`). The reducer (`reducer.jsx`) handles: `POPULATE`, `SET_CITY`, `SET_PROFESSION`, `RESET_SEARCH`, `LOGIN`, `LOGOUT`. Masters are loaded via a React Router v6 `loader` on the main route, fetching from `https://api.majstr.com/?q=masters`.
+Global state is managed with `useReducer` + React Context (`MasterContext`). The reducer (`reducer.jsx`) handles: `POPULATE`, `SET_CITY`, `SET_PROFESSION`, `RESET_SEARCH`, `LOGIN`, `LOGOUT`. Masters are loaded via a React Router v6 `loader` on the main route, fetching from `https://api.majstr.xyz/?q=masters`.
 
 Static data (`locations.json`, `professions.json`) is duplicated in both `backend/data/` and `frontend/src/data/` — keep them in sync when updating.
 
@@ -115,8 +115,8 @@ Backend requires a `.env` file with:
 - `AWS_ACCESS_KEY` / `AWS_SECRET_ACCESS_KEY` — S3 upload credentials
 - `CERTIFICATE` / `KEYFILE` — SSL cert paths for the bot server (port 8443)
 - `CERTIFICATE_API` / `KEYFILE_API` — SSL cert paths for the API server (port 5000)
-- `WEBHOOK_URL` — Public HTTPS base URL for the Telegram webhook (e.g. `https://majstr.com`). When absent, the bot starts in polling mode — no SSL or public URL needed
-- `FRONTEND_URL` — Base URL sent in Telegram login links (e.g. `https://majstr.com`). Defaults to `http://localhost:5173`
+- `WEBHOOK_URL` — Public HTTPS base URL for the Telegram webhook (e.g. `https://majstr.xyz`). When absent, the bot starts in polling mode — no SSL or public URL needed
+- `FRONTEND_URL` — Base URL sent in Telegram login links (e.g. `https://majstr.xyz`). Defaults to `http://localhost:5173`
 
 ## Local Development
 

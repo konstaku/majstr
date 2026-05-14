@@ -4,8 +4,9 @@
   "description": "find your local masters, everywhere",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "devStart": "nodemon index.js"
+    "start": "node index.js",
+    "devStart": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Konstantin Kupriyanov",
   "license": "ISC",
