@@ -19,22 +19,12 @@
   --font-body:    "DM Sans", system-ui, sans-serif;
   --font-mono:    "JetBrains Mono", monospace;
 
-  /* legacy compat vars used by form */
-  --bg:         var(--cream);
-  --bg2:        #f0e8d8;
-  --bg3:        var(--cream2);
-  --white:      var(--paper);
+  /* form vars */
   --text:       var(--ink);
   --text2:      #3a3028;
   --text3:      #6a5e54;
   --text4:      #9a8e84;
-  --terra-light:#e05a3a;
-  --terra-dim:  rgba(200,75,49,0.08);
-  --terra-border: rgba(200,75,49,0.2);
   --sage:       #5a7a5c;
-  --sage-dim:   rgba(90,122,92,0.12);
-  --avail-green:#22c55e;
-  --avail-amber:#d97706;
 }
 
 /* ============================================================
@@ -110,12 +100,16 @@ img { display: block; max-width: 100%; }
   gap: 6px;
 }
 
-/* Country toggle */
-.country-toggle {
+/* Country toggle + Language switcher */
+.country-toggle,
+.lang-switcher {
   display: flex;
   gap: 6px;
 }
-.ctry-btn {
+.ctry-btn,
+.lang-btn {
+  display: flex;
+  align-items: center;
   padding: 4px 8px;
   font-family: var(--font-mono);
   font-size: 10px;
@@ -128,27 +122,7 @@ img { display: block; max-width: 100%; }
   cursor: pointer;
   white-space: nowrap;
 }
-.ctry-btn.active { background: var(--ink); color: var(--paper); }
-
-/* Language switcher */
-.lang-switcher {
-  display: flex;
-  gap: 6px;
-}
-.lang-btn {
-  padding: 4px 8px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border: var(--border);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
+.ctry-btn.active,
 .lang-btn.active { background: var(--ink); color: var(--paper); }
 
 /* CTA button */
@@ -365,7 +339,6 @@ img { display: block; max-width: 100%; }
   text-transform: uppercase;
   opacity: 0.7;
 }
-
 
 /* ============================================================
    FILTER TOGGLES (inside hero-filter-row)
@@ -732,26 +705,6 @@ img { display: block; max-width: 100%; }
 }
 .master-card.variant-ink .card-review-count { opacity: 0.65; }
 
-.card-tags-bottom {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-.card-tag {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  border: 1px solid currentColor;
-  padding: 2px 5px;
-  letter-spacing: 0.06em;
-  opacity: 0.55;
-  text-transform: uppercase;
-}
-
 .card-open-btn {
   padding: 0 18px;
   border: none;
@@ -820,19 +773,6 @@ img { display: block; max-width: 100%; }
   color: #fff;
   flex-shrink: 0;
 }
-.avail-dot {
-  position: absolute;
-  bottom: 1px;
-  right: 1px;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  border: 2px solid var(--paper);
-}
-.avail-dot.green  { background: var(--green); }
-.avail-dot.amber  { background: var(--amber); }
-.avail-dot.red    { background: var(--red); }
-
 .card-info { flex: 1; min-width: 0; }
 .card-info .card-name {
   font-family: var(--font-display);
@@ -847,21 +787,6 @@ img { display: block; max-width: 100%; }
 .card-profession { font-size: 12px; font-weight: 600; margin-top: 2px; opacity: 0.65; }
 .card-location    { font-size: 11px; margin-top: 2px; opacity: 0.55; }
 
-.avail-status { font-size: 11px; font-weight: 600; margin-bottom: 6px; }
-.amber-text { color: var(--amber); }
-.red-text   { color: var(--red); }
-
-.lang-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
-.lang-badge {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  background: var(--ink);
-  color: var(--paper);
-  padding: 2px 5px;
-  letter-spacing: 0.06em;
-}
-
 .tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
 .tag {
   font-size: 10px;
@@ -873,10 +798,6 @@ img { display: block; max-width: 100%; }
 }
 
 .card-footer { display: flex; justify-content: space-between; align-items: center; }
-.card-stars { display: flex; align-items: center; gap: 4px; }
-.star { color: var(--star); font-size: 13px; }
-.star-rating { font-weight: 700; font-size: 13px; }
-.star-count  { font-size: 11px; opacity: 0.6; }
 
 .details-btn {
   background: var(--terra);
@@ -1142,8 +1063,6 @@ img { display: block; max-width: 100%; }
   color: var(--paper);
   border-top: var(--border);
 }
-.footer-inner { padding: 0; }
-
 .footer-big {
   padding: 28px 32px 24px;
   font-family: var(--font-display);
@@ -1168,7 +1087,7 @@ img { display: block; max-width: 100%; }
 
 .footer-top {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
