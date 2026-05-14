@@ -163,6 +163,15 @@ function Main() {
     };
   }, [showModal, masters, locations, professions, lang, t]);
 
+  // ── Trade select options — must be before any early return ──
+  const availableCategoryIDs = useMemo(() => {
+    const pool = selectedCity
+      ? masters.filter((m) => m.countryID === countryID && m.locationID === selectedCity)
+      : masters.filter((m) => m.countryID === countryID);
+    const profIDs = new Set(pool.map((m) => m.professionID));
+    return new Set(professions.filter((p) => profIDs.has(p.id)).map((p) => p.categoryID));
+  }, [masters, professions, countryID, selectedCity]);
+
   if (error) return (
     <div className="hero-section" style={{ minHeight: 200 }}>
       <div className="hero-terra-panel" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -198,15 +207,6 @@ function Main() {
       };
     })
   );
-
-  // ── Trade select options — only categories present in the selected city ──
-  const availableCategoryIDs = useMemo(() => {
-    const pool = selectedCity
-      ? masters.filter((m) => m.countryID === countryID && m.locationID === selectedCity)
-      : masters.filter((m) => m.countryID === countryID);
-    const profIDs = new Set(pool.map((m) => m.professionID));
-    return new Set(professions.filter((p) => profIDs.has(p.id)).map((p) => p.categoryID));
-  }, [masters, professions, countryID, selectedCity]);
 
   const allTradesOption = { value: "", label: t("browse.allCategories") };
   const tradeOptions = [allTradesOption].concat(
