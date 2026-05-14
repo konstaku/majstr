@@ -116,7 +116,7 @@ export default function SearchResults({
                 key={master._id}
                 master={master}
                 setShowModal={setShowModal}
-                variant={VARIANTS[i % 3]}
+                variant={VARIANTS[(showQuote && i >= 2 ? i + 1 : i) % 3]}
                 badge={badgeMap.get(master._id)}
               />
             );
