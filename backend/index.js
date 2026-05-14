@@ -4,7 +4,6 @@ const express = require('express');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
-const cors = require('cors');
 
 const Master = require('./database/schema/Master');
 const User = require('./database/schema/User');
@@ -29,15 +28,17 @@ const createOGimageForMaster = require('./helpers/generateOpenGraph');
 const Country = require('./database/schema/Country');
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
   : ['*'];
 
 const corsMiddleware = (req, res, next) => {
   const origin = req.headers.origin;
-  if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
+  const allowed = ALLOWED_ORIGINS.includes('*') || (origin && ALLOWED_ORIGINS.includes(origin));
+  if (allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Vary', 'Origin');
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(204).end();
   next();
@@ -46,7 +47,6 @@ const corsMiddleware = (req, res, next) => {
 async function main() {
   const app = express();
   app.use(express.json());
-  app.use(cors());
   app.use(corsMiddleware);
   app.use('/img', express.static('data/img'));
 
