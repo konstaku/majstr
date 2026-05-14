@@ -1,7 +1,9 @@
 import {
   Dispatch,
+  useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -206,43 +208,62 @@ function LanguageSwitcher({ countryID }: LanguageSwitcherProps) {
   );
 }
 
-const FOOTER_NATIONALITIES = ["UKRAINIAN", "GEORGIAN", "BELORUSSIAN", "RUSSIAN", "TURKISH"];
-const TYPE_SPEED = 90;
-const DELETE_SPEED = 45;
-const PAUSE_AFTER_TYPE = 1400;
+const FOOTER_NATIONALITIES = ["UKRAINIAN", "GEORGIAN", "BELORUSSIAN", "RUSSIAN"];
 
 function FooterContent() {
   const { t } = useTranslation();
   const [natIdx, setNatIdx] = useState(0);
-  const [displayed, setDisplayed] = useState("");
-  const [deleting, setDeleting] = useState(false);
+  const [fading, setFading] = useState(false);
+  const busy = useRef(false);
 
-  useEffect(() => {
-    const target = FOOTER_NATIONALITIES[natIdx];
-    if (!deleting) {
-      if (displayed.length < target.length) {
-        const t = setTimeout(() => setDisplayed(target.slice(0, displayed.length + 1)), TYPE_SPEED);
-        return () => clearTimeout(t);
-      }
-      const t = setTimeout(() => setDeleting(true), PAUSE_AFTER_TYPE);
-      return () => clearTimeout(t);
-    } else {
-      if (displayed.length > 0) {
-        const t = setTimeout(() => setDisplayed(displayed.slice(0, -1)), DELETE_SPEED);
-        return () => clearTimeout(t);
-      }
-      setDeleting(false);
+  const nextWord = useCallback(() => {
+    if (busy.current) return;
+    busy.current = true;
+    setFading(true);
+    setTimeout(() => {
       setNatIdx((i) => (i + 1) % FOOTER_NATIONALITIES.length);
-    }
-  }, [displayed, deleting, natIdx]);
+      setFading(false);
+      busy.current = false;
+    }, 180);
+  }, []);
+
+  // Mobile: change word on overscroll-down (page already at bottom)
+  useEffect(() => {
+    let startY = 0;
+    let changed = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+      changed = false;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (changed) return;
+      const draggedDown = startY - e.touches[0].clientY > 20;
+      const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      if (atBottom && draggedDown) {
+        changed = true;
+        nextWord();
+      }
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [nextWord]);
 
   return (
     <div className="footer-inner">
       <div className="footer-big">
         2 400+<br />
-        <span className="footer-terra">
-          {displayed}
-          <span style={{ opacity: deleting ? 0 : 1 }}>▌</span>
+        <span
+          className="footer-terra"
+          style={{ transition: "opacity 0.18s", opacity: fading ? 0 : 1, cursor: "default" }}
+          onMouseEnter={nextWord}
+        >
+          {FOOTER_NATIONALITIES[natIdx]}
         </span><br />
         CRAFTSMEN.
         <span className="footer-meta">© MAJSTR · MADE FOR THE COMMUNITY</span>
