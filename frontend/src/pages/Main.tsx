@@ -115,23 +115,6 @@ function Main() {
     ? lang === "uk" ? currentCountry.name.ua : currentCountry.name.en
     : "";
 
-  if (error) return (
-    <div className="hero-section" style={{ minHeight: 200 }}>
-      <div className="hero-terra-panel" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div className="hero-live-label">Connection error</div>
-        <div className="hero-stat-number" style={{ fontSize: "clamp(32px,5vw,72px)" }}>
-          Can't reach server
-        </div>
-        <div className="hero-stat-desc">
-          Make sure the backend is running on{" "}
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>
-            {import.meta.env.VITE_API_URL}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-
   const heroCount = loading ? null : masters.filter(
     (m) => m.countryID === countryID &&
       (selectedCity ? m.locationID === selectedCity : true)
@@ -179,6 +162,23 @@ function Main() {
       document.title = t("main.appTitle");
     };
   }, [showModal, masters, locations, professions, lang, t]);
+
+  if (error) return (
+    <div className="hero-section" style={{ minHeight: 200 }}>
+      <div className="hero-terra-panel" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div className="hero-live-label">Connection error</div>
+        <div className="hero-stat-number" style={{ fontSize: "clamp(32px,5vw,72px)" }}>
+          Can't reach server
+        </div>
+        <div className="hero-stat-desc">
+          Make sure the backend is running on{" "}
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>
+            {import.meta.env.VITE_API_URL}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 
   // ── City select options ──
   const locationPlaceholder = currentCountry
