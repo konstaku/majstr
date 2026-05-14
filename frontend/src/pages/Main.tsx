@@ -1,6 +1,6 @@
 import "./../styles.css";
 
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import Select, {
   CSSObjectWithLabel,
   GroupBase,
@@ -199,13 +199,23 @@ function Main() {
     })
   );
 
-  // ── Trade select options ──
+  // ── Trade select options — only categories present in the selected city ──
+  const availableCategoryIDs = useMemo(() => {
+    const pool = selectedCity
+      ? masters.filter((m) => m.countryID === countryID && m.locationID === selectedCity)
+      : masters.filter((m) => m.countryID === countryID);
+    const profIDs = new Set(pool.map((m) => m.professionID));
+    return new Set(professions.filter((p) => profIDs.has(p.id)).map((p) => p.categoryID));
+  }, [masters, professions, countryID, selectedCity]);
+
   const allTradesOption = { value: "", label: t("browse.allCategories") };
   const tradeOptions = [allTradesOption].concat(
-    profCategories.map((cat: ProfCategory) => ({
-      value: cat.id,
-      label: lang === "uk" ? cat.name.ua : cat.name.en,
-    }))
+    profCategories
+      .filter((cat: ProfCategory) => availableCategoryIDs.has(cat.id))
+      .map((cat: ProfCategory) => ({
+        value: cat.id,
+        label: lang === "uk" ? cat.name.ua : cat.name.en,
+      }))
   );
 
   function isModalMaster(id: string | boolean) {
@@ -257,7 +267,18 @@ function Main() {
                 styles={lightSelectStyles}
                 onChange={(e) => {
                   if (e && "value" in e) {
-                    dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: e.value } });
+                    const newCity = e.value;
+                    dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: newCity } });
+                    if (selectedProfessionCategory) {
+                      const pool = newCity
+                        ? masters.filter((m) => m.countryID === countryID && m.locationID === newCity)
+                        : masters.filter((m) => m.countryID === countryID);
+                      const profIDs = new Set(pool.map((m) => m.professionID));
+                      const catIDs = new Set(professions.filter((p) => profIDs.has(p.id)).map((p) => p.categoryID));
+                      if (!catIDs.has(selectedProfessionCategory)) {
+                        dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: "" } });
+                      }
+                    }
                   }
                 }}
               />
