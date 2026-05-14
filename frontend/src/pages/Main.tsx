@@ -13,6 +13,7 @@ import { useTranslation } from "../custom-hooks/useTranslation";
 
 import SearchResults from "../components/SearchResults";
 import Modal from "../components/Modal";
+import { useSlotCount } from "../custom-hooks/useSlotCount";
 import {
   trackClickOutsideCard,
   trackEscWhenModalShown,
@@ -163,6 +164,8 @@ function Main() {
     };
   }, [showModal, masters, locations, professions, lang, t]);
 
+  const animatedCount = useSlotCount(heroCount);
+
   // ── Trade select options — must be before any early return ──
   const availableCategoryIDs = useMemo(() => {
     const pool = selectedCity
@@ -231,7 +234,7 @@ function Main() {
         <div className="hero-terra-panel">
           <div className="hero-live-label">{t("hero.liveLabel")}</div>
           <div className="hero-stat-number">
-            {heroCount === null ? <span className="hero-stat-loading">…</span> : heroCount}
+            {animatedCount === null ? <span className="hero-stat-loading">…</span> : animatedCount}
           </div>
           <div className="hero-stat-desc">
             {loading
