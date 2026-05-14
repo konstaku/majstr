@@ -78,7 +78,7 @@ export default function Root() {
       <header className="header">
         {/* Top meta strip */}
         <div className="header-meta">
-          <span className="header-meta-label">EST. 2024 · UA → IT / PT · WEEK {weekNum}/{yearSuffix}</span>
+          <span className="header-meta-label">EST. 2023 · WEEK {weekNum}/{yearSuffix}</span>
 
           <nav className="header-nav">
             <Link to="/" className={location.pathname === "/" ? "active" : ""}>{t("nav.search")}</Link>
@@ -206,13 +206,34 @@ function LanguageSwitcher({ countryID }: LanguageSwitcherProps) {
   );
 }
 
+const FOOTER_NATIONALITIES = ["UKRAINIAN", "GEORGIAN", "BELORUSSIAN", "RUSSIAN", "TURKISH"];
+
 function FooterContent() {
   const { t } = useTranslation();
+  const [natIdx, setNatIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setNatIdx((i) => (i + 1) % FOOTER_NATIONALITIES.length);
+        setFading(false);
+      }, 300);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="footer-inner">
       <div className="footer-big">
         2 400+<br />
-        <span className="footer-terra">UKRAINIAN</span><br />
+        <span
+          className="footer-terra"
+          style={{ transition: "opacity 0.3s", opacity: fading ? 0 : 1 }}
+        >
+          {FOOTER_NATIONALITIES[natIdx]}
+        </span><br />
         CRAFTSMEN.
         <span className="footer-meta">© MAJSTR · MADE FOR THE COMMUNITY</span>
       </div>

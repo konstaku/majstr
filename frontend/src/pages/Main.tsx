@@ -245,8 +245,8 @@ function Main() {
             {loading
               ? <span className="hero-stat-loading">&nbsp;</span>
               : lang === "uk"
-                ? `Українських майстрів доступно цього тижня у ${statLocationName}.`
-                : `Ukrainian craftsmen available this week in ${statLocationName}.`}
+                ? `Україномовних майстрів доступно цього тижня у ${statLocationName}.`
+                : `Ukrainian-speaking craftsmen available this week in ${statLocationName}.`}
           </div>
         </div>
 
