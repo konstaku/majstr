@@ -43,6 +43,10 @@ const AVAILABILITY_LABELS = {
 };
 
 async function runBot() {
+  if (!BOT_TOKEN) {
+    console.log('TELEGRAM_BOT_TOKEN not set — bot disabled');
+    return;
+  }
   if (WEBHOOK_URL) {
     const app = express();
     app.use(express.json());
