@@ -6,6 +6,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Majstr is a platform for finding Ukrainian craftsmen/masters in Italy. Users authenticate via Telegram, and admins approve new master listings through the Telegram bot.
 
+# Project Instructions
+
+## Meeting Notes System
+
+After any session where we discuss ideas, make decisions, review options, 
+or brainstorm — automatically save a meeting summary.
+
+### When to save
+Save a meeting note when the session included:
+- discussing approaches or options
+- making architectural/design decisions  
+- brainstorming features or solutions
+- reviewing code structure or plans
+- any back-and-forth that produced conclusions
+
+### How to save
+
+1. Create `meetings/` folder if it doesn't exist
+2. Filename: `YYYY-MM-DD_short-topic-slug.md`
+3. Save without asking me — just do it at the end of the session
+
+### File format
+
+```markdown
+# Meeting: <Topic>
+Date: YYYY-MM-DD
+
+## What we discussed
+<2-3 sentences, context>
+
+## Options considered
+- Option A — pros/cons
+- Option B — pros/cons
+
+## Decisions made
+- <concrete decision>
+- <concrete decision>
+
+## Open questions
+- <if any>
+
+## Next steps
+- [ ] <action item>
+```
+
+Save the note before ending the session. No need to ask for permission.
+
 ## Commands
 
 ### Backend
