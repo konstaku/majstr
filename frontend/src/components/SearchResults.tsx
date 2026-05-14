@@ -73,13 +73,12 @@ export default function SearchResults({
 
   const hasActiveFilter = city !== "" || professionCategory !== "";
 
-  // Show QuoteCard on mobile (2+ results) and on 3-col desktop (5+ results)
+  // QuoteCard shown in grid for all layouts when 2+ results; CSS hides it at ≥1540px
   const showQuote = filteredMasters.length >= 2;
-  const showQuoteDesktop = filteredMasters.length >= 5;
 
   function quoteVariantIndex(i: number): number {
     if (!showQuote || i < 2) return i % 3;
-    if (showQuoteDesktop && i >= 4) return (i + 2) % 3;
+    if (i >= 4) return (i + 2) % 3;
     return (i + 1) % 3;
   }
 
@@ -128,15 +127,8 @@ export default function SearchResults({
               />
             );
 
-            // Inject after 2nd master card: mobile always, desktop only at 5+ results
             if (showQuote && i === 1) {
-              cards.push(
-                <QuoteCard
-                  key="quote-card"
-                  variant="terra"
-                  showOnDesktop={showQuoteDesktop}
-                />
-              );
+              cards.push(<QuoteCard key="quote-card" variant="terra" />);
             }
 
             return cards;
