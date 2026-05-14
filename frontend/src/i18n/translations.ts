@@ -87,8 +87,8 @@ export const translations: Record<string, LangTranslations> = {
       searchBtn: "ПОШУК →",
       vettedStrip: "Перевірені · Вільномовні · Готові",
       testimonialLabel: "Що кажуть клієнти",
-      testimonialQuote: "Марко полагодив наш котел того ж дня. Говорив чудовою українською. Врятував наші вихідні.",
-      testimonialAttr: "MARCO B. · ROMA · ★ 5/5",
+      testimonialQuote: "Хочу поділитися відгуком про роботу з Максимом, якого знайшов тут. Він організував наш переїзд із Санремо до Лекко. Хлопці акуратно запакували та перевезли всі меблі, включаючи холодильник, пральну машину та інші великі речі. На місці все розвантажили та підняли на високий поверх. Все виконано чітко та вчасно. Настійно рекомендую роботу з Максимом.",
+      testimonialAttr: "КОСТЯНТИН К. · САНРЕМО · ★ 5/5",
       telegramNote: "Telegram · Без посередників · Безкоштовно",
     },
     how: {
@@ -162,8 +162,8 @@ export const translations: Record<string, LangTranslations> = {
       searchBtn: "SEARCH →",
       vettedStrip: "Vetted · Fluent · Ready",
       testimonialLabel: "What clients say",
-      testimonialQuote: "Marko fixed our boiler same day. Spoke fluent Ukrainian. Saved our weekend.",
-      testimonialAttr: "MARCO B. · ROMA · ★ 5/5",
+      testimonialQuote: "I want to share a review of working with Maxim, whom I found here. He organized our move from Sanremo to Lecco. They packed and carefully transported all the furniture, including the refrigerator, washing machine, and other large items. They unloaded everything on site and transported it to a high floor. Everything was done efficiently and on time. I highly recommend working with Maxim.",
+      testimonialAttr: "KONSTANTIN K. · SANREMO · ★ 5/5",
       telegramNote: "Via Telegram · No middlemen · Free",
     },
     how: {
@@ -237,8 +237,8 @@ export const translations: Record<string, LangTranslations> = {
       searchBtn: "CERCA →",
       vettedStrip: "Verificati · Fluenti · Pronti",
       testimonialLabel: "Cosa dicono i clienti",
-      testimonialQuote: "Marko ha riparato la caldaia lo stesso giorno. Parlava ucraino perfettamente. Ha salvato il nostro weekend.",
-      testimonialAttr: "MARCO B. · ROMA · ★ 5/5",
+      testimonialQuote: "Voglio condividere una recensione su Maxim, che ho trovato qui. Ha organizzato il nostro trasloco da Sanremo a Lecco. Hanno imballato e trasportato con cura tutti i mobili, inclusi il frigorifero, la lavatrice e altri oggetti ingombranti. Hanno scaricato tutto sul posto e portato a un piano alto. Tutto è stato fatto in modo efficiente e puntuale. Raccomando vivamente Maxim.",
+      testimonialAttr: "KONSTANTIN K. · SANREMO · ★ 5/5",
       telegramNote: "Via Telegram · Senza intermediari · Gratuito",
     },
     how: {
@@ -312,8 +312,8 @@ export const translations: Record<string, LangTranslations> = {
       searchBtn: "PESQUISAR →",
       vettedStrip: "Verificados · Fluentes · Prontos",
       testimonialLabel: "O que dizem os clientes",
-      testimonialQuote: "O Marko reparou a caldeira no mesmo dia. Falava ucraniano fluentemente. Salvou o nosso fim de semana.",
-      testimonialAttr: "MARCO B. · ROMA · ★ 5/5",
+      testimonialQuote: "Quero partilhar uma avaliação sobre o Maxim, que encontrei aqui. Ele organizou a nossa mudança de Sanremo para Lecco. Embalaram e transportaram com cuidado todos os móveis, incluindo o frigorífico, a máquina de lavar e outros artigos grandes. Descarregaram tudo no local e levaram a um andar alto. Tudo foi feito de forma eficiente e a tempo. Recomendo vivamente o Maxim.",
+      testimonialAttr: "KONSTANTIN K. · SANREMO · ★ 5/5",
       telegramNote: "Via Telegram · Sem intermediários · Gratuito",
     },
     how: {
