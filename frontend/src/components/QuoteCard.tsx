@@ -4,12 +4,20 @@ type QuoteCardVariant = "terra" | "ink";
 
 type QuoteCardProps = {
   variant?: QuoteCardVariant;
+  showOnDesktop?: boolean;
 };
 
-export default function QuoteCard({ variant = "terra" }: QuoteCardProps) {
+export default function QuoteCard({ variant = "terra", showOnDesktop = false }: QuoteCardProps) {
   const { t } = useTranslation();
+  const cls = [
+    "quote-card",
+    `quote-card-${variant}`,
+    "quote-card--show-mobile",
+    showOnDesktop ? "quote-card--show-desktop" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <article className={`quote-card quote-card-${variant}`}>
+    <article className={cls}>
       <div className="quote-card-header">
         <span className="quote-card-label">{t("hero.testimonialLabel")}</span>
         <span className="quote-card-stars">★★★★★</span>

@@ -1420,12 +1420,55 @@ img {
    QUOTE CARD (What clients say)
    ============================================================ */
 .quote-card {
+  display: none; /* shown via modifier classes below */
   border: 2px solid var(--ink);
-  display: flex;
   flex-direction: column;
   overflow: hidden;
   max-width: 480px;
 }
+
+/* Mobile: show at natural card height */
+@media (max-width: 640px) {
+  .quote-card--show-mobile {
+    display: flex;
+  }
+}
+
+/* Desktop 3-col area: show spanning 2 rows */
+@media (min-width: 1152px) and (max-width: 1439px) {
+  .quote-card--show-desktop {
+    display: flex;
+    grid-row: span 2;
+    max-width: none;
+  }
+  .quote-card--show-desktop .quote-card-header {
+    padding: 10px 20px;
+  }
+  .quote-card--show-desktop .quote-card-label {
+    font-size: 12px;
+  }
+  .quote-card--show-desktop .quote-card-stars {
+    font-size: 13px;
+  }
+  .quote-card--show-desktop .quote-card-body {
+    padding: 20px 24px 18px;
+    gap: 16px;
+  }
+  .quote-card--show-desktop .quote-card-mark {
+    font-size: 120px;
+  }
+  .quote-card--show-desktop .quote-card-text {
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    display: block;
+  }
+  .quote-card--show-desktop .quote-card-attr {
+    font-size: 11px;
+  }
+}
+
 .quote-card-header {
   padding: 7px 14px;
   border-bottom: 2px solid var(--ink);
