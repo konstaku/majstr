@@ -12,6 +12,7 @@ type MasterCardProps = {
   master: Master;
   setShowModal: (show: string) => void;
   variant?: CardVariant;
+  badge?: string;
 };
 
 const LANG_LABELS: Record<string, string> = {
@@ -19,13 +20,23 @@ const LANG_LABELS: Record<string, string> = {
   es: "ES", de: "DE", fr: "FR", pl: "PL",
 };
 
-export default function MasterCard({ master, setShowModal, variant = "cream" }: MasterCardProps) {
+function getCreatedMonth(id: string): string {
+  const ms = parseInt(id.slice(0, 8), 16) * 1000;
+  return new Date(ms).toLocaleDateString("en", { month: "long", year: "numeric" });
+}
+
+function renderStars(rating: number): string {
+  const filled = Math.round(rating);
+  return "★".repeat(filled) + "☆".repeat(5 - filled);
+}
+
+export default function MasterCard({ master, setShowModal, variant = "cream", badge }: MasterCardProps) {
   const {
     state: { locations, professions },
   } = useContext(MasterContext);
   const { t, lang } = useTranslation();
 
-  const { _id, name, professionID, locationID, availability, languages, rating, reviewCount, countryID } = master;
+  const { _id, name, professionID, locationID, availability, languages, rating, reviewCount, countryID, photo } = master;
 
   const photoRef = useRef(master.photo);
   const displayName = lang === "uk" ? name : transliterate(name);
@@ -102,23 +113,38 @@ export default function MasterCard({ master, setShowModal, variant = "cream" }: 
                 {LANG_LABELS[code] ?? code.toUpperCase()}
               </span>
             ))}
+            {badge && <span className="card-badge">{badge}</span>}
           </div>
         </div>
       </div>
 
-      {/* Bottom row: rating + OPEN */}
+      {/* Bottom row: signal or rating + OPEN */}
       <div className="card-bottom-row">
-        <div className={`card-rating-num${!hasRating ? " card-rating-none" : ""}`}>
-          {hasRating ? rating!.toFixed(1) : "—"}
-        </div>
-        <div className="card-rating-detail">
-          <div className="card-stars-row">★★★★★</div>
-          <div className="card-review-count">
-            {hasRating
-              ? `${reviewCount} ${lang === "uk" ? "відгуків" : "reviews"}`
-              : t("masterCard.noReviews")}
-          </div>
-        </div>
+        {hasRating ? (
+          <>
+            <div className="card-rating-num">{rating!.toFixed(1)}</div>
+            <div className="card-rating-detail">
+              <div className="card-stars-row">{renderStars(rating!)}</div>
+              <div className="card-review-count">
+                {reviewCount} {lang === "uk" ? "відгуків" : "reviews"}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="card-signal-icon">
+              {photo ? "✓" : "◎"}
+            </div>
+            <div className="card-signal-text">
+              <div className="card-signal-primary">
+                {photo ? t("masterCard.verified") : t("masterCard.memberSince")}
+              </div>
+              {!photo && (
+                <div className="card-signal-secondary">{getCreatedMonth(_id)}</div>
+              )}
+            </div>
+          </>
+        )}
         <button
           className="card-open-btn"
           onClick={(e) => { e.stopPropagation(); setShowModal(_id); }}

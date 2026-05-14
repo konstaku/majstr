@@ -29,6 +29,10 @@ export type LangTranslations = {
     liveLabel: string;
     searchBtn: string;
     vettedStrip: string;
+    testimonialLabel: string;
+    testimonialQuote: string;
+    testimonialAttr: string;
+    telegramNote: string;
   };
   how: {
     label: string;
@@ -42,7 +46,9 @@ export type LangTranslations = {
   browse: { label: string; allCategories: string; browseLabel: string };
   results: { found: string; empty: string; tryChanging: string; sortedByRating: string };
   modal: { noAbout: string; languages: string; about: string; skills: string; contact: string };
-  masterCard: { details: string; noReviews: string };
+  masterCard: { details: string; noReviews: string; verified: string; memberSince: string };
+  badge: { newThisWeek: string; recentlyAdded: string };
+  cta: { microcopy: string };
   login: { loading: string; error: string; home: string };
   availability: { available: string; next_week: string; busy: string };
   countryNames: Record<string, string>;
@@ -74,12 +80,16 @@ export const translations: Record<string, LangTranslations> = {
     },
     hero: {
       eyebrow: "2 400+ перевірених українських майстрів в Італії та Португалії",
-      title: "Ваш сусідський майстер,",
-      titleAccent: "просто українець.",
+      title: "Знайди перевіреного майстра,",
+      titleAccent: "що говорить твоєю мовою.",
       subtitle: "Знаходьте сантехніків, електриків, косметологів, IT-спеціалістів та інших — надійних, перевірених, готових до роботи.",
       liveLabel: "Онлайн · Оновлено щойно",
       searchBtn: "ПОШУК →",
       vettedStrip: "Перевірені · Вільномовні · Готові",
+      testimonialLabel: "Що кажуть клієнти",
+      testimonialQuote: "Марко полагодив наш котел того ж дня. Говорив чудовою італійською. Врятував наші вихідні.",
+      testimonialAttr: "MARCO B. · ROMA · ★ 5/5",
+      telegramNote: "Telegram · Без посередників · Безкоштовно",
     },
     how: {
       label: "Як це працює",
@@ -104,7 +114,9 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Навички",
       contact: "Зв'язатися",
     },
-    masterCard: { details: "OPEN", noReviews: "Поки немає відгуків" },
+    masterCard: { details: "OPEN", noReviews: "Поки немає відгуків", verified: "Профіль підтверджено", memberSince: "Учасник з" },
+    badge: { newThisWeek: "Новий цього тижня", recentlyAdded: "Щойно доданий" },
+    cta: { microcopy: "3 хв · Безкоштовно · Telegram" },
     login: {
       loading: "Вхід в систему...",
       error: "Помилка входу: токен відсутній",
@@ -143,12 +155,16 @@ export const translations: Record<string, LangTranslations> = {
     },
     hero: {
       eyebrow: "2,400+ verified Ukrainian masters in Italy & Portugal",
-      title: "Your neighbourhood craftsman,",
-      titleAccent: "just Ukrainian.",
+      title: "Find trusted masters",
+      titleAccent: "who speak your language.",
       subtitle: "Find plumbers, electricians, beauticians, IT experts and more — trusted, vetted, ready to work.",
       liveLabel: "Live · Updated just now",
       searchBtn: "SEARCH →",
       vettedStrip: "Vetted · Fluent · Ready",
+      testimonialLabel: "What clients say",
+      testimonialQuote: "Marko fixed our boiler same day. Spoke fluent Italian. Saved our weekend.",
+      testimonialAttr: "MARCO B. · ROMA · ★ 5/5",
+      telegramNote: "Via Telegram · No middlemen · Free",
     },
     how: {
       label: "How it works",
@@ -173,7 +189,9 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Skills",
       contact: "Contact",
     },
-    masterCard: { details: "OPEN", noReviews: "No reviews yet" },
+    masterCard: { details: "OPEN", noReviews: "No reviews yet", verified: "Profile verified", memberSince: "Member since" },
+    badge: { newThisWeek: "New this week", recentlyAdded: "Recently added" },
+    cta: { microcopy: "3 min · Free · Via Telegram" },
     login: {
       loading: "Logging in...",
       error: "Login error: no token",
@@ -212,12 +230,16 @@ export const translations: Record<string, LangTranslations> = {
     },
     hero: {
       eyebrow: "2.400+ artigiani ucraini verificati in Italia e Portogallo",
-      title: "Il tuo artigiano di quartiere,",
-      titleAccent: "semplicemente ucraino.",
+      title: "Trova artigiani di fiducia",
+      titleAccent: "che parlano la tua lingua.",
       subtitle: "Trova idraulici, elettricisti, estetiste, esperti IT e altro — affidabili, verificati, pronti a lavorare.",
       liveLabel: "Live · Aggiornato adesso",
       searchBtn: "CERCA →",
       vettedStrip: "Verificati · Fluenti · Pronti",
+      testimonialLabel: "Cosa dicono i clienti",
+      testimonialQuote: "Marko ha riparato la caldaia lo stesso giorno. Parlava italiano perfettamente. Ha salvato il nostro weekend.",
+      testimonialAttr: "MARCO B. · ROMA · ★ 5/5",
+      telegramNote: "Via Telegram · Senza intermediari · Gratuito",
     },
     how: {
       label: "Come funziona",
@@ -242,7 +264,9 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Competenze",
       contact: "Contatta",
     },
-    masterCard: { details: "OPEN", noReviews: "Nessuna recensione" },
+    masterCard: { details: "OPEN", noReviews: "Nessuna recensione", verified: "Profilo verificato", memberSince: "Membro da" },
+    badge: { newThisWeek: "Nuovo questa settimana", recentlyAdded: "Aggiunto di recente" },
+    cta: { microcopy: "3 min · Gratis · Via Telegram" },
     login: {
       loading: "Accesso in corso...",
       error: "Errore di accesso: nessun token",
@@ -281,12 +305,16 @@ export const translations: Record<string, LangTranslations> = {
     },
     hero: {
       eyebrow: "2.400+ artesãos ucranianos verificados em Itália e Portugal",
-      title: "O seu artesão de bairro,",
-      titleAccent: "simplesmente ucraniano.",
+      title: "Encontre artesãos de confiança",
+      titleAccent: "que falam a sua língua.",
       subtitle: "Encontre canalizadores, eletricistas, esteticistas, especialistas em TI e mais — de confiança, verificados, prontos a trabalhar.",
       liveLabel: "Live · Actualizado agora",
       searchBtn: "PESQUISAR →",
       vettedStrip: "Verificados · Fluentes · Prontos",
+      testimonialLabel: "O que dizem os clientes",
+      testimonialQuote: "O Marko reparou a caldeira no mesmo dia. Falava italiano fluentemente. Salvou o nosso fim de semana.",
+      testimonialAttr: "MARCO B. · ROMA · ★ 5/5",
+      telegramNote: "Via Telegram · Sem intermediários · Gratuito",
     },
     how: {
       label: "Como funciona",
@@ -311,7 +339,9 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Competências",
       contact: "Contactar",
     },
-    masterCard: { details: "OPEN", noReviews: "Sem avaliações" },
+    masterCard: { details: "OPEN", noReviews: "Sem avaliações", verified: "Perfil verificado", memberSince: "Membro desde" },
+    badge: { newThisWeek: "Novo esta semana", recentlyAdded: "Adicionado recentemente" },
+    cta: { microcopy: "3 min · Grátis · Via Telegram" },
     login: {
       loading: "A iniciar sessão...",
       error: "Erro de login: sem token",

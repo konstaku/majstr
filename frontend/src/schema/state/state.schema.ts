@@ -53,6 +53,7 @@ export const StateSchema = z.object({
   }),
   countryID: z.string(),
   countrySet: z.boolean(),
+  loading: z.boolean(),
   error: z.string(),
   lang: z.string(),
 });

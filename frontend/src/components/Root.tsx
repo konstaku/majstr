@@ -141,6 +141,15 @@ export default function Root() {
             : <a href="https://t.me/majstr_bot">{t("nav.addMaster")}</a>}
           </li>
           <li><span className="inactive">{t("nav.faq")}</span></li>
+          <li className="burger-controls" onClick={(e) => e.stopPropagation()}>
+            <CountryToggle
+              countries={countries}
+              countryID={countryID}
+              dispatch={dispatch}
+              lang={lang}
+            />
+            <LanguageSwitcher countryID={countryID} />
+          </li>
         </ul>
       </div>
 

@@ -32,6 +32,7 @@ const INITIAL_STATE: State = {
   },
   countryID: "",
   countrySet: false,
+  loading: true,
   error: "",
   lang: getInitialLang(),
 };

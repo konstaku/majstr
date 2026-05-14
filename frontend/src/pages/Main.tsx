@@ -23,8 +23,6 @@ import type { Master } from "../schema/master/master.schema";
 import type { Dispatch } from "react";
 import type { Action } from "../reducer";
 
-// Brutalist react-select styles — borderless control, Archivo Black value
-// Used inside .filter-toggle-wrap which provides its own border.
 export const lightSelectStyles = {
   control: (base: CSSObjectWithLabel) => ({
     ...base,
@@ -84,7 +82,6 @@ export const lightSelectStyles = {
   }),
 };
 
-// Backward compat alias
 // eslint-disable-next-line react-refresh/only-export-components
 export const baseSelectStyles = lightSelectStyles;
 
@@ -124,11 +121,12 @@ function Main() {
     profCategories,
     searchParams,
     error,
+    loading,
   } = state;
   const { selectedCity, selectedProfessionCategory } = searchParams;
   const [showModal, setShowModal] = useState<string | null | boolean>(null);
   const { state: loadingState } = useNavigation();
-  const isLoading = loadingState === "loading";
+  const isNavigating = loadingState === "loading";
   const { t, lang } = useTranslation();
 
   const currentCountry = countries.find((c) => c.id === countryID);
@@ -153,13 +151,11 @@ function Main() {
     </div>
   );
 
-  // Hero stat: total masters in current country + city filter
-  const heroCount = masters.filter(
+  const heroCount = loading ? null : masters.filter(
     (m) => m.countryID === countryID &&
       (selectedCity ? m.locationID === selectedCity : true)
   ).length;
 
-  // Location name for stat description
   const selectedCityData = selectedCity ? locations.find((l) => l.id === selectedCity) : null;
   const statLocationName = selectedCityData
     ? (lang === "uk" ? selectedCityData.name.ua : selectedCityData.name.en)
@@ -221,35 +217,6 @@ function Main() {
     })
   );
 
-  const availableProfessionIDs = [
-    ...new Set(
-      masters
-        .filter((m) => (selectedCity ? m.locationID === selectedCity : true))
-        .map((m) => m.professionID)
-    ),
-  ];
-
-  function buildProfessionOptions(ids: string[]) {
-    const result = [{ value: "", label: t("main.allMasters") }];
-    const uniqueCategories = [...new Set(ids.map((id) => getProfessionCategoryById(professions, id)))];
-    result.push(
-      ...uniqueCategories.map((catId) => {
-        const cat = profCategories.find((c) => c.id === catId);
-        return {
-          value: catId,
-          label: lang === "uk" ? cat?.name.ua ?? "" : cat?.name.en ?? "",
-        };
-      })
-    );
-    return result;
-  }
-
-  const professionSelectOptions = buildProfessionOptions(availableProfessionIDs);
-
-  const defaultProfessionValue =
-    professionSelectOptions.find((p) => p.value === selectedProfessionCategory) ??
-    { value: "", label: t("main.allMasters") };
-
   function isModalMaster(id: string | boolean) {
     if (typeof id !== "string") return false;
     return masters.find((m) => m._id === id) || null;
@@ -257,20 +224,24 @@ function Main() {
 
   return (
     <>
-      {/* ── Hero section: terra stat | headline + filters | testimonial ── */}
+      {/* ── Hero section: terra stat | headline + city filter | testimonial ── */}
       <section className="hero-section">
         {/* Left: terra stat panel */}
         <div className="hero-terra-panel">
           <div className="hero-live-label">{t("hero.liveLabel")}</div>
-          <div className="hero-stat-number">{heroCount}</div>
+          <div className="hero-stat-number">
+            {heroCount === null ? <span className="hero-stat-loading">…</span> : heroCount}
+          </div>
           <div className="hero-stat-desc">
-            {lang === "uk"
-              ? `Українських майстрів доступно цього тижня у ${statLocationName}.`
-              : `Ukrainian craftsmen available this week in ${statLocationName}.`}
+            {loading
+              ? <span className="hero-stat-loading">&nbsp;</span>
+              : lang === "uk"
+                ? `Українських майстрів доступно цього тижня у ${statLocationName}.`
+                : `Ukrainian craftsmen available this week in ${statLocationName}.`}
           </div>
         </div>
 
-        {/* Center: headline + filter controls */}
+        {/* Center: headline + city filter only */}
         <div className="hero-main-panel">
           <div className="hero-headline">
             <span>{t("hero.title")}</span>
@@ -299,38 +270,20 @@ function Main() {
                 }}
               />
             </div>
-            <div className="filter-toggle-wrap dark">
-              <span className="filter-kicker">{t("main.tradeKicker")}</span>
-              <Select
-                className="headline-select"
-                classNamePrefix="majstr-select"
-                value={{ value: selectedProfessionCategory, label: defaultProfessionValue.label }}
-                unstyled
-                isSearchable={false}
-                options={professionSelectOptions}
-                styles={lightSelectStyles}
-                placeholder={t("main.allMasters")}
-                onChange={(e) => {
-                  if (e && "value" in e) {
-                    dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: e.value } });
-                  }
-                }}
-              />
-            </div>
-            <button className="hero-search-btn">{t("hero.searchBtn")}</button>
           </div>
         </div>
 
         {/* Right: testimonial */}
         <div className="hero-testimonial">
-          <div className="hero-testimonial-label">What clients say</div>
+          <div className="hero-testimonial-label">{t("hero.testimonialLabel")}</div>
           <div className="hero-testimonial-q">"</div>
-          <div className="hero-testimonial-text">
-            Marko fixed our boiler same day. Spoke fluent Italian. Saved our weekend.
-          </div>
-          <div className="hero-testimonial-attr">MARCO B. · ROMA · ★ 5/5</div>
+          <div className="hero-testimonial-text">{t("hero.testimonialQuote")}</div>
+          <div className="hero-testimonial-attr">{t("hero.testimonialAttr")}</div>
         </div>
       </section>
+
+      {/* ── How it works ── */}
+      <HowItWorks t={t} />
 
       {/* ── Trade chips ── */}
       <TradeChips
@@ -343,12 +296,8 @@ function Main() {
 
       {/* ── Results ── */}
       <div className="results-section">
-        {isLoading ? (
-          <div className="results-top">
-            <div className="search-results-header">
-              <h2>{t("main.searching")}</h2>
-            </div>
-          </div>
+        {loading || isNavigating ? (
+          <SkeletonGrid />
         ) : (
           <>
             <SearchResults
@@ -367,6 +316,60 @@ function Main() {
         )}
       </div>
     </>
+  );
+}
+
+function SkeletonGrid() {
+  return (
+    <>
+      <div className="results-top results-top-skeleton">
+        <div className="skeleton-block" style={{ width: 220, height: 22, borderRadius: 0 }} />
+      </div>
+      <div className="masters-grid">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="skeleton-card">
+            <div className="skeleton-card-top">
+              <div className="skeleton-block skeleton-photo" />
+              <div className="skeleton-card-identity">
+                <div className="skeleton-block" style={{ height: 16, width: "70%" }} />
+                <div className="skeleton-block" style={{ height: 12, width: "50%", marginTop: 8 }} />
+                <div className="skeleton-block" style={{ height: 18, width: "40%", marginTop: 10 }} />
+              </div>
+            </div>
+            <div className="skeleton-card-bottom">
+              <div className="skeleton-block skeleton-rating" />
+              <div className="skeleton-block" style={{ flex: 1, margin: "8px 12px" }} />
+              <div className="skeleton-block skeleton-btn" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function HowItWorks({ t }: { t: (key: string) => string }) {
+  return (
+    <div className="how-it-works">
+      <div className="how-label">{t("how.label")}</div>
+      <div className="how-steps">
+        <div className="how-step">
+          <div className="how-step-num">01</div>
+          <div className="how-step-title">{t("how.step1Title")}</div>
+          <div className="how-step-desc">{t("how.step1Desc")}</div>
+        </div>
+        <div className="how-step">
+          <div className="how-step-num">02</div>
+          <div className="how-step-title">{t("how.step2Title")}</div>
+          <div className="how-step-desc">{t("how.step2Desc")}</div>
+        </div>
+        <div className="how-step">
+          <div className="how-step-num">03</div>
+          <div className="how-step-title">{t("how.step3Title")}</div>
+          <div className="how-step-desc">{t("how.step3Desc")}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -416,6 +419,9 @@ function getProfessionCategoryById(professions: Profession[], professionID: stri
   }
   return result;
 }
+
+// kept for potential future use
+void getProfessionCategoryById;
 
 export const mainRoute = {
   element: <Main />,

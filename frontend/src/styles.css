@@ -279,25 +279,7 @@ img { display: block; max-width: 100%; }
   flex: 1;
   min-height: 60px;
 }
-.hero-filter-row .filter-toggle-wrap.dark {
-  border-right: none;
-}
-.hero-search-btn {
-  background: var(--terra);
-  color: var(--paper);
-  border: none;
-  border-left: var(--border);
-  padding: 0 20px;
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.hero-search-btn:hover { background: var(--terra-dk); }
+.hero-filter-row .filter-toggle-wrap:last-child { border-right: none; }
 
 /* Right: testimonial panel */
 .hero-testimonial {
@@ -505,6 +487,8 @@ img { display: block; max-width: 100%; }
   font-size: clamp(16px, 2vw, 22px);
   font-weight: 900;
   color: var(--terra);
+  display: inline-block;
+  animation: count-pop 0.35s ease-out both;
 }
 
 .masters-grid {
@@ -520,8 +504,8 @@ img { display: block; max-width: 100%; }
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.5;
 }
+.search-empty-state p { opacity: 0.5; }
 
 /* ============================================================
    MASTER CARD — Brutalist
@@ -1297,6 +1281,256 @@ img { display: block; max-width: 100%; }
 .error a { color: var(--terra); text-decoration: underline; }
 
 /* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes count-pop {
+  0%   { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+/* ============================================================
+   HOW IT WORKS
+   ============================================================ */
+.how-it-works {
+  border-bottom: var(--border);
+  background: var(--paper);
+  padding: 0 32px;
+}
+.how-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  padding: 14px 0 10px;
+  display: block;
+}
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: var(--border);
+}
+.how-step {
+  padding: 16px 24px 16px 0;
+  border-right: var(--border);
+}
+.how-step:last-child { border-right: none; }
+.how-step + .how-step { padding-left: 24px; }
+.how-step-num {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: var(--terra);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.how-step-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.how-step-desc {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  opacity: 0.62;
+}
+
+/* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+.skeleton-block {
+  background: linear-gradient(90deg, var(--cream) 25%, var(--cream2) 50%, var(--cream) 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.skeleton-card {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  max-width: 480px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.skeleton-card-top {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 2px solid var(--ink);
+}
+.skeleton-photo {
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--ink);
+}
+.skeleton-card-identity {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.skeleton-card-bottom {
+  display: flex;
+  align-items: stretch;
+  min-height: 50px;
+}
+.skeleton-rating {
+  width: 84px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--ink);
+}
+.skeleton-btn {
+  width: 70px;
+  flex-shrink: 0;
+}
+.results-top-skeleton {
+  border-bottom: none;
+}
+
+/* ============================================================
+   HERO STAT LOADING
+   ============================================================ */
+.hero-stat-loading {
+  opacity: 0.3;
+  font-size: 0.55em;
+  letter-spacing: 0;
+}
+
+/* ============================================================
+   CARD BADGE
+   ============================================================ */
+.card-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--terra);
+  color: var(--paper);
+  padding: 2px 6px;
+}
+.master-card.variant-ink .card-badge { background: var(--paper); color: var(--ink); }
+.master-card.variant-terra .card-badge { background: var(--ink); color: var(--paper); }
+
+/* ============================================================
+   CARD SIGNAL ROW (proxy for unrated masters)
+   ============================================================ */
+.card-signal-icon {
+  width: 84px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  font-size: 18px;
+  border-right: 2px solid var(--divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.65;
+}
+.card-signal-text {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.card-signal-primary {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.card-signal-secondary {
+  font-size: 10.5px;
+  opacity: 0.5;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   RESULTS EXTRAS
+   ============================================================ */
+.results-telegram-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  white-space: nowrap;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.empty-state-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--paper);
+  border: var(--border);
+  cursor: pointer;
+  opacity: 1;
+}
+.empty-state-btn:hover { background: var(--terra); border-color: var(--terra); }
+.empty-state-btn-secondary { background: transparent; color: var(--ink); }
+.empty-state-btn-secondary:hover { background: var(--cream2); border-color: var(--ink); }
+
+/* ============================================================
+   CTA MICROCOPY WRAP
+   ============================================================ */
+.cta-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.cta-microcopy {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.48;
+  margin-top: 3px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   BURGER CONTROLS (country + lang in mobile menu)
+   ============================================================ */
+.burger-controls {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: var(--border);
+}
+
+/* ============================================================
    MEDIA QUERIES — Tablet
    ============================================================ */
 @media (max-width: 1100px) {
@@ -1317,6 +1551,7 @@ img { display: block; max-width: 100%; }
   .trade-chips-row { padding: 0 20px; }
   .results-top { padding: 12px 20px; }
   .masters-grid { padding: 0 20px 24px; }
+  .how-it-works { padding: 0 20px; }
   .footer-big { padding: 24px 20px 20px; }
   .footer-top { grid-template-columns: 1fr 1fr; padding: 0; }
   .footer-col { padding: 16px 20px; }
@@ -1339,17 +1574,21 @@ img { display: block; max-width: 100%; }
   .hero-main-panel { padding: 16px; border-right: none; }
   .hero-headline { font-size: clamp(26px, 8vw, 40px); }
   .hero-filter-row { flex-direction: column; }
-  .hero-filter-row .filter-toggle-wrap { border-right: none; border-bottom: var(--border); }
-  .hero-filter-row .filter-toggle-wrap.dark { border-bottom: none; }
-  .hero-search-btn { border-left: none; border-top: var(--border); padding: 14px 20px; }
+  .hero-filter-row .filter-toggle-wrap { border-right: none; border-bottom: none; }
 
   .trade-chips-row { padding: 0 16px; }
   .trade-chips-label { display: none; }
   .trade-chip { padding: 5px 10px; font-size: 10px; min-height: 32px; }
 
   .results-top { padding: 10px 16px; }
+  .results-telegram-note { display: none; }
   .masters-grid { padding: 0 16px 20px; }
   .search-empty-state { padding: 32px 16px; }
+  .how-it-works { padding: 0 16px; }
+  .how-steps { grid-template-columns: 1fr; }
+  .how-step { border-right: none; border-bottom: var(--border); padding: 12px 0; }
+  .how-step + .how-step { padding-left: 0; }
+  .how-step:last-child { border-bottom: none; }
 
   .card-photo-block { width: 70px; height: 70px; }
   .card-rating-num { font-size: 28px; padding: 6px 10px; }
