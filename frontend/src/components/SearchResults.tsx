@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { MasterContext } from "../context";
 import MasterCard from "./MasterCard";
+import QuoteCard from "./QuoteCard";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { ACTIONS } from "../data/actions";
 
@@ -72,6 +73,9 @@ export default function SearchResults({
 
   const hasActiveFilter = city !== "" || professionCategory !== "";
 
+  // Inject quote card at position 2 (after 2nd master) when there are 2+ results
+  const showQuote = filteredMasters.length >= 2;
+
   return (
     <>
       <div className="results-top">
@@ -104,15 +108,26 @@ export default function SearchResults({
         </div>
       ) : (
         <div className="masters-grid">
-          {filteredMasters.map((master, i) => (
-            <MasterCard
-              key={master._id}
-              master={master}
-              setShowModal={setShowModal}
-              variant={VARIANTS[i % 3]}
-              badge={badgeMap.get(master._id)}
-            />
-          ))}
+          {filteredMasters.map((master, i) => {
+            const cards = [];
+
+            cards.push(
+              <MasterCard
+                key={master._id}
+                master={master}
+                setShowModal={setShowModal}
+                variant={VARIANTS[i % 3]}
+                badge={badgeMap.get(master._id)}
+              />
+            );
+
+            // Inject quote card after the 2nd master card
+            if (showQuote && i === 1) {
+              cards.push(<QuoteCard key="quote-card" variant="terra" />);
+            }
+
+            return cards;
+          })}
         </div>
       )}
     </>

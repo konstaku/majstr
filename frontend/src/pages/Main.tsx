@@ -23,6 +23,8 @@ import type { Master } from "../schema/master/master.schema";
 import type { Dispatch } from "react";
 import type { Action } from "../reducer";
 
+// ── Select styles ────────────────────────────────────────────────────────────
+
 export const lightSelectStyles = {
   control: (base: CSSObjectWithLabel) => ({
     ...base,
@@ -40,6 +42,7 @@ export const lightSelectStyles = {
     letterSpacing: "-0.03em",
     lineHeight: 1,
     color: "inherit",
+    textTransform: "uppercase" as const,
   }),
   valueContainer: (base: CSSObjectWithLabel) => ({
     ...base,
@@ -85,29 +88,7 @@ export const lightSelectStyles = {
 // eslint-disable-next-line react-refresh/only-export-components
 export const baseSelectStyles = lightSelectStyles;
 
-const CATEGORY_ICONS: [string, string][] = [
-  ["renov", "🔧"], ["constru", "🔧"], ["ремон", "🔧"],
-  ["plumb", "🚿"], ["water", "🚿"], ["сантех", "🚿"],
-  ["electr", "⚡"],
-  ["beauty", "💅"], ["nail", "💅"], ["манік", "💅"],
-  ["hair", "✂️"], ["stylist", "✂️"], ["barber", "✂️"], ["перукар", "✂️"],
-  ["it ", "💻"], ["tech", "💻"], ["computer", "💻"], ["software", "💻"],
-  ["clean", "🏠"], ["прибир", "🏠"],
-  ["paint", "🎨"], ["малярн", "🎨"],
-  ["garden", "🌿"], ["садів", "🌿"],
-  ["massage", "💆"], ["масаж", "💆"],
-  ["medical", "🏥"], ["health", "🏥"],
-  ["transport", "🚗"], ["moving", "📦"],
-  ["cook", "🍳"], ["chef", "🍳"],
-];
-
-function getCategoryIcon(name: string): string {
-  const lower = name.toLowerCase();
-  for (const [key, icon] of CATEGORY_ICONS) {
-    if (lower.includes(key)) return icon;
-  }
-  return "⚡";
-}
+// ── Main component ────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line react-refresh/only-export-components
 function Main() {
@@ -199,6 +180,7 @@ function Main() {
     };
   }, [showModal, masters, locations, professions, lang, t]);
 
+  // ── City select options ──
   const locationPlaceholder = currentCountry
     ? { value: "", label: t("main.allCountry", { country: countryDisplayName }) }
     : { value: "", label: "..." };
@@ -217,6 +199,15 @@ function Main() {
     })
   );
 
+  // ── Trade select options ──
+  const allTradesOption = { value: "", label: t("browse.allCategories") };
+  const tradeOptions = [allTradesOption].concat(
+    profCategories.map((cat: ProfCategory) => ({
+      value: cat.id,
+      label: lang === "uk" ? cat.name.ua : cat.name.en,
+    }))
+  );
+
   function isModalMaster(id: string | boolean) {
     if (typeof id !== "string") return false;
     return masters.find((m) => m._id === id) || null;
@@ -224,7 +215,7 @@ function Main() {
 
   return (
     <>
-      {/* ── Hero section: terra stat | headline + city filter | testimonial ── */}
+      {/* ── Hero section ── */}
       <section className="hero-section">
         {/* Left: terra stat panel */}
         <div className="hero-terra-panel">
@@ -241,7 +232,7 @@ function Main() {
           </div>
         </div>
 
-        {/* Center: headline + city filter only */}
+        {/* Center: headline + city/trade filter */}
         <div className="hero-main-panel">
           <div className="hero-headline">
             <span>{t("hero.title")}</span>
@@ -249,6 +240,7 @@ function Main() {
             <span className="hero-headline-terra">{t("hero.titleAccent")}</span>
           </div>
           <div className="hero-filter-row">
+            {/* City toggle — paper bg */}
             <div className="filter-toggle-wrap">
               <span className="filter-kicker">{t("main.cityKicker")}</span>
               <Select
@@ -270,13 +262,35 @@ function Main() {
                 }}
               />
             </div>
+            {/* Trade toggle — ink bg */}
+            <div className="filter-toggle-wrap dark">
+              <span className="filter-kicker">{t("main.tradeKicker")}</span>
+              <Select
+                className="headline-select"
+                classNamePrefix="majstr-select"
+                unstyled
+                isSearchable={false}
+                value={
+                  selectedProfessionCategory
+                    ? tradeOptions.find((o) => o.value === selectedProfessionCategory) ?? tradeOptions[0]
+                    : tradeOptions[0]
+                }
+                options={tradeOptions}
+                styles={lightSelectStyles}
+                onChange={(e) => {
+                  if (e && "value" in e) {
+                    dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: e.value } });
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Right: testimonial */}
+        {/* Right: "What clients say" — ink panel, ≥1440 only (CSS-controlled) */}
         <div className="hero-testimonial">
           <div className="hero-testimonial-label">{t("hero.testimonialLabel")}</div>
-          <div className="hero-testimonial-q">"</div>
+          <div className="hero-testimonial-q">&ldquo;</div>
           <div className="hero-testimonial-text">{t("hero.testimonialQuote")}</div>
           <div className="hero-testimonial-attr">{t("hero.testimonialAttr")}</div>
         </div>
@@ -284,15 +298,6 @@ function Main() {
 
       {/* ── How it works ── */}
       <HowItWorks t={t} />
-
-      {/* ── Trade chips ── */}
-      <TradeChips
-        profCategories={profCategories}
-        selectedProfessionCategory={selectedProfessionCategory}
-        dispatch={dispatch}
-        lang={lang}
-        t={t}
-      />
 
       {/* ── Results ── */}
       <div className="results-section">
@@ -318,6 +323,8 @@ function Main() {
     </>
   );
 }
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function SkeletonGrid() {
   return (
@@ -348,69 +355,43 @@ function SkeletonGrid() {
   );
 }
 
+// ── How It Works ──────────────────────────────────────────────────────────────
+
+const HOW_STEPS = [
+  { n: "01", titleKey: "how.step1Title", descKey: "how.step1Desc" },
+  { n: "02", titleKey: "how.step2Title", descKey: "how.step2Desc" },
+  { n: "03", titleKey: "how.step3Title", descKey: "how.step3Desc" },
+] as const;
+
 function HowItWorks({ t }: { t: (key: string) => string }) {
   return (
     <div className="how-it-works">
-      <div className="how-label">{t("how.label")}</div>
-      <div className="how-steps">
-        <div className="how-step">
-          <div className="how-step-num">01</div>
-          <div className="how-step-title">{t("how.step1Title")}</div>
-          <div className="how-step-desc">{t("how.step1Desc")}</div>
-        </div>
-        <div className="how-step">
-          <div className="how-step-num">02</div>
-          <div className="how-step-title">{t("how.step2Title")}</div>
-          <div className="how-step-desc">{t("how.step2Desc")}</div>
-        </div>
-        <div className="how-step">
-          <div className="how-step-num">03</div>
-          <div className="how-step-title">{t("how.step3Title")}</div>
-          <div className="how-step-desc">{t("how.step3Desc")}</div>
+      <div className="how-works-inner">
+        <div className="how-works-label">{t("how.label")}</div>
+        <div className="how-works-steps">
+          {HOW_STEPS.map((s, i) => (
+            <div key={s.n} className={`how-step${i === 1 ? " how-step-mid" : ""}`}>
+              {/* Mobile: separate left number column */}
+              <div className="how-step-num-col">
+                <span className="how-step-num">{s.n}</span>
+              </div>
+              {/* Desktop+tablet: num + title inline, desc below */}
+              <div className="how-step-body">
+                <div className="how-step-header">
+                  <span className="how-step-num how-step-num-inline">{s.n}</span>
+                  <span className="how-step-title">{t(s.titleKey)}</span>
+                </div>
+                <div className="how-step-desc">{t(s.descKey)}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-type TradeChipsProps = {
-  profCategories: ProfCategory[];
-  selectedProfessionCategory: string;
-  dispatch: Dispatch<Action>;
-  lang: string;
-  t: (key: string) => string;
-};
-
-function TradeChips({ profCategories, selectedProfessionCategory, dispatch, lang, t }: TradeChipsProps) {
-  if (!profCategories.length) return null;
-
-  return (
-    <div className="trade-chips-row">
-      <span className="trade-chips-label">{t("browse.browseLabel")}</span>
-      <button
-        className={`trade-chip ${!selectedProfessionCategory ? "active" : ""}`}
-        onClick={() => dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: "" } })}
-      >
-        {t("browse.allCategories")}
-      </button>
-      {profCategories.map((cat) => (
-        <button
-          key={cat.id}
-          className={`trade-chip ${selectedProfessionCategory === cat.id ? "active" : ""}`}
-          onClick={() =>
-            dispatch({
-              type: ACTIONS.SET_PROFESSION,
-              payload: { selectedProfessionCategory: cat.id },
-            })
-          }
-        >
-          <span className="chip-icon">{getCategoryIcon(cat.name.en || cat.name.ua)}</span>
-          {lang === "uk" ? cat.name.ua : cat.name.en}
-        </button>
-      ))}
-    </div>
-  );
-}
+// ── Unused but retained ───────────────────────────────────────────────────────
 
 function getProfessionCategoryById(professions: Profession[], professionID: string) {
   const result = professions.find((p) => p.id === professionID)?.categoryID;
@@ -419,9 +400,17 @@ function getProfessionCategoryById(professions: Profession[], professionID: stri
   }
   return result;
 }
-
-// kept for potential future use
 void getProfessionCategoryById;
+
+// ── TradeChips kept as dead code — category browsing now lives in hero filter
+type TradeChipsProps = {
+  profCategories: ProfCategory[];
+  selectedProfessionCategory: string;
+  dispatch: Dispatch<Action>;
+  lang: string;
+  t: (key: string) => string;
+};
+void (null as unknown as TradeChipsProps);
 
 export const mainRoute = {
   element: <Main />,

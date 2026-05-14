@@ -22,7 +22,7 @@ const LANG_LABELS: Record<string, string> = {
 
 function getCreatedMonth(id: string): string {
   const ms = parseInt(id.slice(0, 8), 16) * 1000;
-  return new Date(ms).toLocaleDateString("en", { month: "long", year: "numeric" });
+  return new Date(ms).toLocaleDateString("en", { month: "short", year: "numeric" }).toUpperCase();
 }
 
 function renderStars(rating: number): string {
@@ -36,10 +36,11 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
   } = useContext(MasterContext);
   const { t, lang } = useTranslation();
 
-  const { _id, name, professionID, locationID, availability, languages, rating, reviewCount, countryID, photo } = master;
+  const { _id, name, professionID, locationID, languages, rating, reviewCount, countryID, photo } = master;
 
   const photoRef = useRef(master.photo);
   const displayName = lang === "uk" ? name : transliterate(name);
+  const isVerified = !!photo;
 
   const hue = useMemo(() => {
     return (parseInt(_id.slice(-4), 16) % 360);
@@ -80,25 +81,26 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
           className="card-photo-block"
           style={{
             background: photoRef.current
-              ? undefined
+              ? "var(--ink)"
               : `linear-gradient(135deg, hsl(${hue},45%,52%), hsl(${hue},52%,32%))`,
           }}
         >
           {photoRef.current ? (
-            <div
-              className="card-avatar"
-              style={{ backgroundImage: `url(${photoRef.current})` }}
-            />
+            <>
+              <div
+                className="card-avatar"
+                style={{ backgroundImage: `url(${photoRef.current})` }}
+              />
+              <div className="card-avatar-overlay" />
+            </>
           ) : (
-            initials
+            <>
+              <div className="card-photo-scanlines" />
+              {initials}
+            </>
           )}
-          {availability && (
-            <span
-              className={`card-avail-dot ${
-                availability === "available" ? "green" :
-                availability === "next_week" ? "amber" : "red"
-              }`}
-            />
+          {isVerified && (
+            <span className="card-verified-badge" title="Verified">✓</span>
           )}
         </div>
 
@@ -118,7 +120,7 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
         </div>
       </div>
 
-      {/* Bottom row: signal or rating + OPEN */}
+      {/* Bottom row: rating or member-since + OPEN */}
       <div className="card-bottom-row">
         {hasRating ? (
           <>
@@ -131,19 +133,15 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
             </div>
           </>
         ) : (
-          <>
-            <div className="card-signal-icon">
-              {photo ? "✓" : "◎"}
+          <div className="card-member-row">
+            <div className="card-member-info">
+              <span className="card-member-label">{t("masterCard.memberSince")}</span>
+              <div className="card-member-date">{getCreatedMonth(_id)}</div>
             </div>
-            <div className="card-signal-text">
-              <div className="card-signal-primary">
-                {photo ? t("masterCard.verified") : t("masterCard.memberSince")}
-              </div>
-              {!photo && (
-                <div className="card-signal-secondary">{getCreatedMonth(_id)}</div>
-              )}
-            </div>
-          </>
+            {isVerified && (
+              <span className="card-verified-pill">✓ {t("masterCard.verified")}</span>
+            )}
+          </div>
         )}
         <button
           className="card-open-btn"
