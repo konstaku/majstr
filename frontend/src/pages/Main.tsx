@@ -116,10 +116,15 @@ function Main() {
     ? lang === "uk" ? currentCountry.name.ua : currentCountry.name.en
     : "";
 
-  const heroCount = loading ? null : masters.filter(
-    (m) => m.countryID === countryID &&
-      (selectedCity ? m.locationID === selectedCity : true)
-  ).length;
+  const heroCount = loading ? null : masters.filter((m) => {
+    if (m.countryID !== countryID) return false;
+    if (selectedCity && m.locationID !== selectedCity) return false;
+    if (selectedProfessionCategory) {
+      const catID = professions.find((p) => p.id === m.professionID)?.categoryID;
+      if (catID !== selectedProfessionCategory) return false;
+    }
+    return true;
+  }).length;
 
   const selectedCityData = selectedCity ? locations.find((l) => l.id === selectedCity) : null;
   const statLocationName = selectedCityData

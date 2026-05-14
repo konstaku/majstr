@@ -4,6 +4,8 @@ import {
   useEffect,
   useState,
 } from "react";
+
+const IS_DEV = window.location.hostname.startsWith("dev.");
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { MasterContext } from "../context";
 import { Action } from "../reducer";
@@ -72,6 +74,7 @@ export default function Root() {
 
   return (
     <>
+      {IS_DEV && <DevBanner />}
       <header className="header">
         {/* Top meta strip */}
         <div className="header-meta">
@@ -235,6 +238,49 @@ function FooterContent() {
         <span>{t("footer.copyright")}</span>
         <span>{t("footer.madeWith")}</span>
       </div>
+    </div>
+  );
+}
+
+function DevBanner() {
+  const [visible, setVisible] = useState(true);
+  if (!visible) return null;
+  return (
+    <div style={{
+      background: "#f5c542",
+      color: "#0e0a06",
+      fontSize: 11,
+      fontFamily: "var(--font-mono)",
+      fontWeight: 700,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      padding: "6px 40px 6px 16px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderBottom: "2px solid #0e0a06",
+      position: "relative",
+    }}>
+      Dev version — not for public use
+      <button
+        onClick={() => setVisible(false)}
+        aria-label="Dismiss"
+        style={{
+          position: "absolute",
+          right: 12,
+          top: "50%",
+          transform: "translateY(-50%)",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          fontSize: 14,
+          fontWeight: 900,
+          color: "#0e0a06",
+          lineHeight: 1,
+          padding: "2px 6px",
+          fontFamily: "var(--font-mono)",
+        }}
+      >✕</button>
     </div>
   );
 }

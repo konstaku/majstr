@@ -14,7 +14,8 @@ export function useSlotCount(target: number | null): number | null {
       return;
     }
 
-    const from = prevRef.current ?? target;
+    // Animate from 0 on initial load (prevRef is null), otherwise from previous value
+    const from = prevRef.current !== null ? prevRef.current : 0;
     prevRef.current = target;
 
     if (from === target) return;
