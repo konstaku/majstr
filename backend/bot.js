@@ -284,9 +284,7 @@ async function handleCallbackQuery(callbackQuery) {
 
 function sendLoginLink(id, token, payload) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
-  const tmaUrl = payload
-    ? `https://app.majstr.xyz?startapp=${encodeURIComponent(payload)}`
-    : 'https://app.majstr.xyz?startapp=onboard';
+  const tmaUrl = 'https://app.majstr.xyz/onboard';
 
   bot.sendMessage(
     id,
