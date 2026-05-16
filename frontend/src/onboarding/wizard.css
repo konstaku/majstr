@@ -57,6 +57,310 @@
   color: var(--app-hint);
 }
 
+/* ── Step fields ── */
+
+.wizard-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.wizard-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-fg);
+  letter-spacing: 0.03em;
+}
+
+.wizard-required {
+  color: var(--app-destructive);
+  margin-left: 2px;
+}
+
+.wizard-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  font-size: 16px;
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  box-sizing: border-box;
+  outline: none;
+  font-family: inherit;
+}
+
+.wizard-input:focus {
+  border-color: var(--app-accent);
+}
+
+.wizard-input--error {
+  border-color: var(--app-destructive);
+}
+
+.wizard-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--app-hint);
+  line-height: 1.4;
+}
+
+.wizard-field-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--app-destructive);
+}
+
+.wizard-readonly {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--app-secondary-bg);
+  color: var(--app-hint);
+  font-size: 15px;
+  border: 1.5px solid var(--app-border);
+}
+
+/* ── Picker button ── */
+
+.wizard-picker-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.wizard-picker-btn--placeholder {
+  color: var(--app-hint);
+}
+
+.wizard-picker-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wizard-picker-chevron {
+  font-size: 18px;
+  color: var(--app-hint);
+}
+
+/* ── Language chips ── */
+
+.wizard-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wizard-chip {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--app-border);
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.wizard-chip--active {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: var(--app-accent-fg);
+}
+
+/* ── Ghost buttons (photo actions) ── */
+
+.step-photo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.step-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--app-secondary-bg);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--app-border);
+  flex-shrink: 0;
+}
+
+.step-avatar-placeholder {
+  font-size: 36px;
+  color: var(--app-hint);
+}
+
+.step-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.wizard-ghost-btn {
+  background: none;
+  border: 1.5px solid var(--app-border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--app-link);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.wizard-ghost-btn--danger {
+  color: var(--app-destructive);
+  border-color: var(--app-destructive);
+}
+
+.wizard-ghost-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Skeleton ── */
+
+.wizard-skeleton {
+  height: 44px;
+  border-radius: 10px;
+  background: var(--app-secondary-bg);
+  margin-bottom: 16px;
+  animation: wizard-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes wizard-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── PickerSheet ── */
+
+.picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.picker-sheet {
+  width: 100%;
+  max-height: 80dvh;
+  background: var(--app-bg);
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--app-border);
+  flex-shrink: 0;
+}
+
+.picker-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.picker-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--app-hint);
+  padding: 4px 8px;
+}
+
+.picker-search-wrap {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--app-border);
+  flex-shrink: 0;
+}
+
+.picker-search {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  font-size: 15px;
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0 env(safe-area-inset-bottom, 0);
+}
+
+.picker-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.picker-item:last-child {
+  border-bottom: none;
+}
+
+.picker-item--selected .picker-item-label {
+  color: var(--app-accent);
+  font-weight: 600;
+}
+
+.picker-item-label {
+  font-size: 15px;
+  color: var(--app-fg);
+}
+
+.picker-item-sublabel {
+  font-size: 12px;
+  color: var(--app-hint);
+  margin-top: 2px;
+}
+
+.picker-empty {
+  padding: 24px 20px;
+  text-align: center;
+  color: var(--app-hint);
+  font-size: 14px;
+}
+
 .wizard-sync-error {
   margin: 0 20px 8px;
   padding: 8px 12px;
