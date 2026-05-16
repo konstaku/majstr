@@ -70,6 +70,15 @@ async function runBot() {
   } else {
     await bot.deleteWebHook();
     bot.startPolling();
+    bot.on('polling_error', (err) => {
+      console.error('[polling_error]', err.message);
+      // 409 means another instance is still running. Exit so the process
+      // manager can restart us after the old process is gone.
+      if (err.message && err.message.includes('409 Conflict')) {
+        console.error('Polling conflict — another instance running. Exiting.');
+        process.exit(1);
+      }
+    });
     bot.on('message', handleMessage);
     bot.on('callback_query', handleCallbackQuery);
     console.log('Telegram bot started in polling mode');
