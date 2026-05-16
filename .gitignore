@@ -7,4 +7,6 @@
 /backend-ts/
 **/.DS_Store
 -backup
+/dump/
+/.claude/settings.local.json
 
