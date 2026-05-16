@@ -30,24 +30,76 @@ function enqueue(payload: Partial<DraftData>) {
   localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
 }
 
+class PatchError extends Error {
+  status: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  body: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(status: number, body: any) {
+    super(`patch_${status}`);
+    this.status = status;
+    this.body = body;
+  }
+}
+
+const is4xx = (e: unknown): e is PatchError =>
+  e instanceof PatchError && e.status >= 400 && e.status < 500;
+
+function describePatchError(e: unknown): string {
+  if (e instanceof PatchError) {
+    if (e.status === 409)
+      return "У вас вже є активна картка майстра — створити ще одну не можна.";
+    if (e.status === 401)
+      return "Сесію не підтверджено. Закрийте і відкрийте міні-застосунок.";
+    if (e.status === 422) {
+      const fields = e.body?.errors
+        ? Object.keys(e.body.errors).join(", ")
+        : "";
+      return `Дані не збережено — помилка перевірки${fields ? ` (${fields})` : ""}.`;
+    }
+    return `Не вдалося зберегти (помилка ${e.status}).`;
+  }
+  return "Немає звʼязку. Дані збережено локально — повторимо пізніше.";
+}
+
 async function sendPatch(payload: Partial<DraftData>, attempt = 0): Promise<void> {
+  let res: Response;
   try {
-    const res = await apiFetch("/api/masters/draft", {
+    res = await apiFetch("/api/masters/draft", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formToServerPatch(payload)),
     });
-    if (!res.ok) throw new Error(res.status.toString());
-    localStorage.setItem(LAST_EDIT_KEY, Date.now().toString());
-  } catch (err) {
+  } catch (netErr) {
+    // Network failure — transient, retry then queue for next session.
     if (attempt < MAX_RETRIES - 1) {
       await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
       return sendPatch(payload, attempt + 1);
     }
-    // All retries exhausted — persist so next session can retry.
     enqueue(payload);
-    throw err;
+    throw netErr;
   }
+
+  if (res.ok) {
+    localStorage.setItem(LAST_EDIT_KEY, Date.now().toString());
+    return;
+  }
+
+  // 4xx (422 validation, 409 already-has-card, 401 auth) is permanent:
+  // retrying or queuing only poisons the offline queue forever and hides
+  // the real reason behind a generic "saved locally" message. Surface it.
+  if (res.status >= 400 && res.status < 500) {
+    const body = await res.json().catch(() => ({}));
+    throw new PatchError(res.status, body);
+  }
+
+  // 5xx — transient server error: retry then queue.
+  if (attempt < MAX_RETRIES - 1) {
+    await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+    return sendPatch(payload, attempt + 1);
+  }
+  enqueue(payload);
+  throw new PatchError(res.status, {});
 }
 
 async function drainQueue() {
@@ -57,8 +109,10 @@ async function drainQueue() {
   for (const item of q) {
     try {
       await sendPatch(item.payload);
-    } catch {
-      remaining.push(item);
+    } catch (e) {
+      // Drop items rejected with 4xx — they will never succeed and would
+      // otherwise block every future session with a stale "saved locally".
+      if (!is4xx(e)) remaining.push(item);
     }
   }
   localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
@@ -164,8 +218,8 @@ export function useDraft(form: UseFormReturn<DraftData>): UseDraftResult {
         try {
           await sendPatch(diff);
           serverSnap.current = { ...serverSnap.current, ...diff };
-        } catch {
-          setSyncError("Не вдалося зберегти. Дані збережено локально.");
+        } catch (e) {
+          setSyncError(describePatchError(e));
         } finally {
           setIsSyncing(false);
         }
@@ -193,7 +247,11 @@ export function useDraft(form: UseFormReturn<DraftData>): UseDraftResult {
         try {
           await sendPatch(diff);
           serverSnap.current = { ...serverSnap.current, ...diff };
-        } catch {
+        } catch (e) {
+          if (e instanceof PatchError && e.status === 409)
+            return { ok: false, error: "active_master_exists" };
+          if (e instanceof PatchError && e.status === 422)
+            return { ok: false, error: "validation", errors: e.body?.errors };
           return { ok: false, error: "offline" };
         }
       }
