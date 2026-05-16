@@ -17,8 +17,8 @@ export interface ProfCategory {
 export interface Location {
   _id: string;
   id: string;
-  city: { ua: string; en: string; ua_alt?: string };
-  province: { ua: string; en: string };
+  countryID?: string;
+  name: { ua: string; en: string; ua_alt?: string; ru?: string };
 }
 
 interface RefData {

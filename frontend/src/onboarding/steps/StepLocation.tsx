@@ -38,9 +38,7 @@ export function StepLocation() {
               className={`wizard-picker-btn${!selected ? " wizard-picker-btn--placeholder" : ""}`}
               onClick={() => setShowPicker(true)}
             >
-              {selected
-                ? `${selected.city.ua} — ${selected.province.ua}`
-                : "Оберіть місто"}
+              {selected ? selected.name?.ua ?? selected.id : "Оберіть місто"}
               <span className="wizard-picker-chevron">›</span>
             </button>
           )}
@@ -65,8 +63,7 @@ export function StepLocation() {
           title="Місто"
           options={locations.map((l) => ({
             value: l.id,
-            label: l.city.ua,
-            sublabel: l.province.ua,
+            label: l.name?.ua ?? l.id,
           }))}
           selected={locationID}
           onSelect={(id) => {
