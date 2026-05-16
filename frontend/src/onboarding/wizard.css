@@ -526,3 +526,34 @@
   text-align: center;
   border-radius: 8px;
 }
+
+.wizard-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 28px;
+  min-height: 60vh;
+  gap: 12px;
+}
+
+.wizard-success-icon {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.wizard-success-title {
+  margin: 0;
+  font-size: 24px;
+  color: var(--app-fg);
+}
+
+.wizard-success-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--app-fg);
+  opacity: 0.85;
+  max-width: 320px;
+}

@@ -9,27 +9,63 @@ const DRAFT_FIELDS = [
   'name', 'professionID', 'locationID', 'countryID',
   'contacts', 'about', 'photo', 'tags', 'languages', 'availability',
 ];
+const STRING_FIELDS = ['name', 'professionID', 'locationID', 'countryID', 'about', 'photo'];
 const AVAILABILITY_VALUES = ['available', 'next_week', 'busy'];
+
+const isPlainString = (v) => typeof v === 'string';
+const isStringArray = (v) => Array.isArray(v) && v.every(isPlainString);
+
+// Reject any object whose keys could drive Mongo operator/dot injection.
+function hasInjectionKeys(obj) {
+  return Object.keys(obj).some((k) => k.startsWith('$') || k.includes('.'));
+}
 
 function validatePatch(body) {
   const errors = {};
 
-  if (body.name !== undefined) {
-    if (typeof body.name !== 'string') errors.name = 'must be a string';
-    else if (body.name.length > 80) errors.name = 'max 80 characters';
+  // Type-strict checks double as NoSQL-injection guards: a string field that
+  // arrives as an object (e.g. {"$gt":""}) is rejected outright.
+  for (const f of STRING_FIELDS) {
+    if (body[f] !== undefined && !isPlainString(body[f])) {
+      errors[f] = 'must be a string';
+    }
   }
-  if (body.about !== undefined) {
-    if (typeof body.about !== 'string') errors.about = 'must be a string';
-    else if (body.about.length > 1000) errors.about = 'max 1000 characters';
+  if (!errors.name && body.name !== undefined && body.name.length > 80) {
+    errors.name = 'max 80 characters';
   }
+  if (!errors.about && body.about !== undefined && body.about.length > 1000) {
+    errors.about = 'max 1000 characters';
+  }
+
   if (body.tags !== undefined) {
-    if (!Array.isArray(body.tags)) errors.tags = 'must be an array';
-    else if (body.tags.length > 10) errors.tags = 'max 10 tags';
+    const t = body.tags;
+    const okShape =
+      t && typeof t === 'object' && !Array.isArray(t) &&
+      !hasInjectionKeys(t) &&
+      (t.ua === undefined || isStringArray(t.ua)) &&
+      (t.en === undefined || isStringArray(t.en));
+    if (!okShape) errors.tags = 'must be { ua: string[], en?: string[] }';
+    else if ((t.ua?.length || 0) + (t.en?.length || 0) > 20) errors.tags = 'too many tags';
   }
+
+  if (body.languages !== undefined && !isStringArray(body.languages)) {
+    errors.languages = 'must be an array of strings';
+  }
+
   if (body.contacts !== undefined) {
     if (!Array.isArray(body.contacts)) errors.contacts = 'must be an array';
     else if (body.contacts.length > 5) errors.contacts = 'max 5 contacts';
+    else if (
+      body.contacts.some(
+        (c) =>
+          !c || typeof c !== 'object' || Array.isArray(c) || hasInjectionKeys(c) ||
+          !isPlainString(c.contactType) || !isPlainString(c.value)
+      )
+    ) {
+      errors.contacts = 'each contact must be { contactType: string, value: string }';
+    }
   }
+
   if (body.availability !== undefined && !AVAILABILITY_VALUES.includes(body.availability)) {
     errors.availability = `must be one of: ${AVAILABILITY_VALUES.join(', ')}`;
   }
@@ -131,13 +167,6 @@ async function submitDraft(req, res) {
     to: 'pending',
   }).catch(err => console.error('Failed to write submit audit row:', err));
 
-  if (TELEGRAM_ADMIN_CHAT_ID) {
-    bot.sendMessage(
-      TELEGRAM_ADMIN_CHAT_ID,
-      `New master added, check it: https://majstr.xyz/admin\n${draft.OGimage}`
-    ).catch(err => console.error('Failed to notify admin:', err));
-  }
-
   // Admin submissions skip the approval queue
   if (req.user.isAdmin) {
     draft.status = 'approved';
@@ -153,9 +182,32 @@ async function submitDraft(req, res) {
       to: 'approved',
       reason: 'auto-approved (admin)',
     }).catch(err => console.error('Failed to write auto-approve audit row:', err));
+
+    return res.json({ masterID: draft._id, status: 'approved' });
   }
 
-  return res.json({ masterID: draft._id });
+  // Non-admin: queue for review with an actionable admin keyboard.
+  if (TELEGRAM_ADMIN_CHAT_ID) {
+    const cardUrl = `https://majstr.xyz/?card=${draft._id}`;
+    bot.sendMessage(
+      TELEGRAM_ADMIN_CHAT_ID,
+      `🆕 Нова картка майстра на модерації\n\n` +
+        `👤 ${draft.name || '—'}\n` +
+        `🔗 ${cardUrl}\n${draft.OGimage || ''}`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '✅ Схвалити', callback_data: `master:approve:${draft._id}` },
+              { text: '❌ Відхилити', callback_data: `master:decline:${draft._id}` },
+            ],
+          ],
+        },
+      }
+    ).catch(err => console.error('Failed to notify admin:', err));
+  }
+
+  return res.json({ masterID: draft._id, status: 'pending' });
 }
 
 async function getMine(req, res) {

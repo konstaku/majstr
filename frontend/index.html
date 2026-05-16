@@ -13,6 +13,10 @@
         })(window, document, 'script', 'dataLayer', 'GTM-MB2CPXFD');</script>
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8" />
+    <!-- Telegram Mini App bridge — must load (classic, non-deferred) before
+         the deferred app module so window.Telegram.WebApp / initData exist
+         when surface detection runs in main.tsx. -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="icon" type="image/png" href="/img/icons/favicon.png" />
     <link rel="apple-touch-icon" href="/img/icons/apple-app-icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

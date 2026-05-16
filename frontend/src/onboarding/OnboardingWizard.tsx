@@ -1,7 +1,9 @@
 import "./wizard.css";
+import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { BackAffordance } from "../ui/BackAffordance";
 import { PrimaryCTA } from "../ui/PrimaryCTA";
+import { usePopup } from "../ui/usePopup";
 import { useWizardMachine } from "./useWizardMachine";
 import { useDraft } from "./useDraft";
 import { DRAFT_DEFAULTS, STEP_SCHEMAS, STEP_TRIGGER_FIELDS, type DraftData } from "./schema";
@@ -49,14 +51,39 @@ export default function OnboardingWizard() {
     defaultValues: DRAFT_DEFAULTS,
     mode: "onBlur",
   });
-  const { isSyncing, syncError } = useDraft(form);
+  const { isSyncing, syncError, isSubmitting, submit } = useDraft(form);
   const { step, total, isFirst, isLast, goNext, goPrev } = useWizardMachine();
   const haptic = useHaptic();
+  const popup = usePopup();
+  const [submitted, setSubmitted] = useState(false);
   const StepComponent = STEP_COMPONENTS[step];
 
   // Gate: is the current step's required data filled in?
   const values = form.watch();
   const isStepValid = STEP_SCHEMAS[step].safeParse(values).success;
+
+  const handleSubmit = async () => {
+    const result = await submit();
+    if (result.ok) {
+      haptic.notify("success");
+      setSubmitted(true);
+      return;
+    }
+    haptic.notify("error");
+    const message =
+      result.error === "active_master_exists"
+        ? "У вас вже є активна картка майстра."
+        : result.error === "offline" || result.error === "network"
+        ? "Немає звʼязку. Дані збережено — спробуйте надіслати ще раз."
+        : result.errors
+        ? "Перевірте заповнені поля: " + Object.keys(result.errors).join(", ")
+        : "Не вдалося надіслати. Спробуйте ще раз.";
+    await popup({
+      title: "Не вдалося надіслати",
+      message,
+      buttons: [{ id: "ok", text: "Зрозуміло" }],
+    });
+  };
 
   const handleNext = async () => {
     // Always trigger validation so inline errors appear on first Next tap.
@@ -67,8 +94,27 @@ export default function OnboardingWizard() {
       return;
     }
     haptic.selection();
+    if (isLast) {
+      await handleSubmit();
+      return;
+    }
     goNext();
   };
+
+  if (submitted) {
+    return (
+      <div className="wizard">
+        <div className="wizard-success">
+          <div className="wizard-success-icon">✅</div>
+          <h2 className="wizard-success-title">Дякуємо!</h2>
+          <p className="wizard-success-text">
+            Вашу картку надіслано на модерацію. Ми повідомимо вас у Telegram,
+            щойно її буде схвалено.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <FormProvider {...form}>
@@ -88,7 +134,7 @@ export default function OnboardingWizard() {
         <PrimaryCTA
           label={isLast ? "Надіслати" : "Далі"}
           onPress={handleNext}
-          isEnabled={isStepValid && !isSyncing}
+          isEnabled={isStepValid && !isSyncing && !isSubmitting}
         />
       </div>
     </FormProvider>

@@ -3,7 +3,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { apiFetch } from "../api/client";
 import { usePopup } from "../ui/usePopup";
 import type { DraftData } from "./schema";
-import { serverDraftToForm } from "./schema";
+import { serverDraftToForm, formToServerPatch } from "./schema";
 
 const QUEUE_KEY = "draft:failed-queue";
 const LAST_EDIT_KEY = "draft:last-edit";
@@ -35,7 +35,7 @@ async function sendPatch(payload: Partial<DraftData>, attempt = 0): Promise<void
     const res = await apiFetch("/api/masters/draft", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(formToServerPatch(payload)),
     });
     if (!res.ok) throw new Error(res.status.toString());
     localStorage.setItem(LAST_EDIT_KEY, Date.now().toString());
@@ -78,15 +78,25 @@ function diffPayload(
   return diff;
 }
 
+export interface SubmitResult {
+  ok: boolean;
+  status?: string;
+  errors?: Record<string, string>;
+  error?: string;
+}
+
 export interface UseDraftResult {
   isSyncing: boolean;
   syncError: string | null;
+  isSubmitting: boolean;
+  submit: () => Promise<SubmitResult>;
 }
 
 export function useDraft(form: UseFormReturn<DraftData>): UseDraftResult {
   const popup = usePopup();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Tracks what the server last confirmed so we only PATCH changed fields.
   const serverSnap = useRef<Partial<DraftData>>({});
@@ -168,5 +178,47 @@ export function useDraft(form: UseFormReturn<DraftData>): UseDraftResult {
     };
   }, [form]);
 
-  return { isSyncing, syncError };
+  // Flush any pending edits, then promote the draft to a pending master.
+  const submit = async (): Promise<SubmitResult> => {
+    setIsSubmitting(true);
+    try {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+
+      const current = form.getValues() as Partial<DraftData>;
+      const diff = diffPayload(current, serverSnap.current);
+      if (Object.keys(diff).length) {
+        try {
+          await sendPatch(diff);
+          serverSnap.current = { ...serverSnap.current, ...diff };
+        } catch {
+          return { ok: false, error: "offline" };
+        }
+      }
+
+      const res = await apiFetch("/api/masters/draft/submit", {
+        method: "POST",
+      });
+
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { ok: true, status: data.status };
+      }
+      if (res.status === 422) {
+        const data = await res.json().catch(() => ({}));
+        return { ok: false, errors: data.errors, error: "validation" };
+      }
+      if (res.status === 409) return { ok: false, error: "active_master_exists" };
+      if (res.status === 404) return { ok: false, error: "no_draft" };
+      return { ok: false, error: "server" };
+    } catch {
+      return { ok: false, error: "network" };
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return { isSyncing, syncError, isSubmitting, submit };
 }
