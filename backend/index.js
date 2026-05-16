@@ -16,6 +16,10 @@ const Review = require('./database/schema/Review');
 const requireAuth = require('./middleware/requireAuth');
 const requireAdmin = require('./middleware/requireAdmin');
 const requireUser = require('./middleware/requireUser');
+const { getDraft, patchDraft, deleteDraft, submitDraft, getMine } = require('./routes/draft');
+const { uploadDraftPhoto, uploadDraftPhotoFromTelegram } = require('./routes/photo');
+const { patchDraftLimiter, submitDraftLimiter, photoUploadLimiter, claimsLimiter } = require('./middleware/draftRateLimiter');
+const { submitClaim, getMyClaims, withdrawClaim } = require('./routes/claims');
 
 const PORT_NUMBER = process.env.PORT || 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
@@ -43,8 +47,8 @@ const corsMiddleware = (req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Vary', 'Origin');
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Telegram-Init-Data');
   if (req.method === 'OPTIONS') return res.status(204).end();
   next();
 };
@@ -64,6 +68,20 @@ async function main() {
   app.post('/addmaster', requireUser, addMaster);
   app.post('/approve-master', requireAuth, requireAdmin, handleApproveMaster);
   app.post('/review', addReview);
+
+  // Draft lifecycle (Mini App onboarding wizard)
+  app.get('/api/masters/draft', requireUser, getDraft);
+  app.patch('/api/masters/draft', requireUser, patchDraftLimiter, patchDraft);
+  app.post('/api/masters/draft/submit', requireUser, submitDraftLimiter, submitDraft);
+  app.post('/api/masters/draft/photo', requireUser, photoUploadLimiter, uploadDraftPhoto);
+  app.post('/api/masters/draft/photo/from-telegram', requireUser, photoUploadLimiter, uploadDraftPhotoFromTelegram);
+  app.delete('/api/masters/draft', requireUser, deleteDraft);
+  app.get('/api/masters/mine', requireUser, getMine);
+
+  // Claims
+  app.post('/api/claims', requireUser, claimsLimiter, submitClaim);
+  app.get('/api/claims/mine', requireUser, getMyClaims);
+  app.delete('/api/claims/:id', requireUser, withdrawClaim);
 
   // Mini App bootstrap + reference data (legacy /?q= aliases kept below)
   app.get('/api/me', requireUser, (req, res) => res.json(req.user));

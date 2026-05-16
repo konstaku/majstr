@@ -2,13 +2,14 @@ const crypto = require('crypto');
 const User = require('../database/schema/User');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const BOT_TOKEN_PREV = process.env.TELEGRAM_BOT_TOKEN_PREV; // optional; set during rotation for ~24h overlap
 const MAX_AGE_SECONDS = 24 * 60 * 60;
 
 // Verifies Telegram Mini App initData per
 // https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 // Returns { user, authDate, startParam } on success, null otherwise.
-function verifyInitData(initData) {
-  if (!BOT_TOKEN) return null;
+function verifyInitData(initData, token) {
+  if (!token) return null;
 
   const params = new URLSearchParams(initData);
   const hash = params.get('hash');
@@ -22,7 +23,7 @@ function verifyInitData(initData) {
 
   const secret = crypto
     .createHmac('sha256', 'WebAppData')
-    .update(BOT_TOKEN)
+    .update(token)
     .digest();
   const computed = crypto
     .createHmac('sha256', secret)
@@ -53,7 +54,11 @@ function verifyInitData(initData) {
 
 module.exports = async function requireMiniAppAuth(req, res, next) {
   const raw = req.headers['x-telegram-init-data'];
-  const parsed = raw && verifyInitData(raw);
+  if (!raw) return res.status(401).json({ error: 'invalid_init_data' });
+
+  // Try current token first, then previous token (rotation overlap window).
+  const parsed = verifyInitData(raw, BOT_TOKEN) ||
+    (BOT_TOKEN_PREV ? verifyInitData(raw, BOT_TOKEN_PREV) : null);
   if (!parsed) {
     return res.status(401).json({ error: 'invalid_init_data' });
   }
@@ -78,4 +83,4 @@ module.exports = async function requireMiniAppAuth(req, res, next) {
   next();
 };
 
-module.exports.verifyInitData = verifyInitData;
+module.exports.verifyInitData = verifyInitData; // exported for testing
