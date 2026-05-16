@@ -128,6 +128,9 @@ function AddNewRecordForm({
         <div className="create-user-container">
           {/* Form */}
           <div className="create-user-form">
+            <div className="fallback-notice">
+              Цей шлях — для тих, у кого немає Telegram. Основна реєстрація — через Mini App.
+            </div>
             <div className="create-record-header">
               <h2>Створити запис:</h2>
             </div>
@@ -575,15 +578,9 @@ function TelephoneInput({ register, control, countryID }: TelephoneInputProps) {
             ></PhoneInput>
           )}
         />
+        <input type="checkbox" {...register("isTelephone")} defaultChecked style={{ display: "none" }} />
         <div className="contact-type-container">
-          <label>
-            <input
-              type="checkbox"
-              {...register("isTelephone")}
-              defaultChecked
-            />
-            Телефон
-          </label>
+          <div className="contact-type-label">Цей номер також доступний в:</div>
           <label>
             <input type="checkbox" {...register("isWhatsapp")} />
             Whatsapp
