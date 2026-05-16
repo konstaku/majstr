@@ -242,6 +242,9 @@ async function handleCallbackQuery(callbackQuery) {
   if (data.startsWith('claim:')) {
     return handleClaimCallback(queryId, message, data, from);
   }
+  if (data.startsWith('master:')) {
+    return handleMasterCallback(queryId, message, data, from);
+  }
   if (!data.startsWith('lang:')) {
     console.log('Unknown callback data:', data);
     return bot.answerCallbackQuery(queryId, { text: 'Невідома дія' });
@@ -383,6 +386,86 @@ async function fetchUserTelegramPhoto(message) {
     .then((blob) => blob.arrayBuffer())
     .then(Buffer.from)
     .catch(console.error);
+}
+
+async function handleMasterCallback(queryId, message, data, from) {
+  // data format: master:approve:<masterID> or master:decline:<masterID>
+  const [, action, masterId] = data.split(':');
+  if (!masterId || !['approve', 'decline'].includes(action)) {
+    return bot.answerCallbackQuery(queryId, { text: 'Невідома дія' });
+  }
+
+  const master = await Master.findById(masterId);
+  if (!master) {
+    return bot.answerCallbackQuery(queryId, { text: 'Картку не знайдено' });
+  }
+  if (master.status !== 'pending') {
+    await bot.answerCallbackQuery(queryId, { text: `Вже ${master.status}` });
+    return bot.editMessageText(`${message.text}\n\nℹ️ Вже оброблено (${master.status}).`, {
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+    }).catch(() => {});
+  }
+
+  const adminUser = await User.findOne({ telegramID: from.id });
+
+  if (action === 'approve') {
+    master.status = 'approved';
+    master.approvedAt = new Date();
+    await master.save();
+
+    await MasterAudit.create({
+      masterID: master._id,
+      actorUserID: adminUser?._id,
+      actorTelegramID: from.id,
+      action: 'approve',
+      from: 'pending',
+      to: 'approved',
+      reason: 'approved by admin',
+    }).catch(err => console.error('Failed to write approve audit row:', err));
+
+    await bot.answerCallbackQuery(queryId, { text: '✅ Схвалено' });
+    await bot.editMessageText(
+      `${message.text}\n\n✅ Схвалено — ${from.first_name}`,
+      { chat_id: message.chat.id, message_id: message.message_id }
+    ).catch(() => {});
+
+    if (master.telegramID) {
+      bot.sendMessage(
+        master.telegramID,
+        `✅ Вашу картку майстра схвалено та опубліковано!\n\n` +
+          `Переглянути: https://majstr.xyz/?card=${master._id}`
+      ).catch(() => {});
+    }
+  } else {
+    master.status = 'rejected';
+    master.rejectedAt = new Date();
+    await master.save();
+
+    await MasterAudit.create({
+      masterID: master._id,
+      actorUserID: adminUser?._id,
+      actorTelegramID: from.id,
+      action: 'reject',
+      from: 'pending',
+      to: 'rejected',
+      reason: 'declined by admin',
+    }).catch(err => console.error('Failed to write reject audit row:', err));
+
+    await bot.answerCallbackQuery(queryId, { text: '❌ Відхилено' });
+    await bot.editMessageText(
+      `${message.text}\n\n❌ Відхилено — ${from.first_name}`,
+      { chat_id: message.chat.id, message_id: message.message_id }
+    ).catch(() => {});
+
+    if (master.telegramID) {
+      bot.sendMessage(
+        master.telegramID,
+        `❌ На жаль, вашу картку майстра не схвалено. ` +
+          `Ви можете відредагувати дані та надіслати її повторно через бота.`
+      ).catch(() => {});
+    }
+  }
 }
 
 async function handleClaimCallback(queryId, message, data, from) {

@@ -85,6 +85,14 @@ export interface TgWebApp {
     params: { title?: string; message: string; buttons?: TgPopupButton[] },
     cb?: (buttonId: string) => void
   ): void;
+  requestContact?(
+    cb: (
+      ok: boolean,
+      response?: {
+        responseUnsafe?: { contact?: { phone_number?: string } };
+      }
+    ) => void
+  ): void;
 }
 
 declare global {

@@ -86,7 +86,6 @@ export const lightSelectStyles = {
   }),
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const baseSelectStyles = lightSelectStyles;
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -185,7 +184,7 @@ function Main() {
       <div className="hero-terra-panel" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div className="hero-live-label">Connection error</div>
         <div className="hero-stat-number" style={{ fontSize: "clamp(32px,5vw,72px)" }}>
-          Can't reach server
+          Can&apos;t reach server
         </div>
         <div className="hero-stat-desc">
           Make sure the backend is running on{" "}
