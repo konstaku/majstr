@@ -7,6 +7,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const jwt = require('jsonwebtoken');
 const User = require('./database/schema/User');
 const Master = require('./database/schema/Master');
+const MasterClaim = require('./database/schema/MasterClaim');
+const MasterAudit = require('./database/schema/MasterAudit');
 
 const CERTIFICATE = process.env.CERTIFICATE;
 const KEYFILE = process.env.KEYFILE;
@@ -68,6 +70,15 @@ async function runBot() {
   } else {
     await bot.deleteWebHook();
     bot.startPolling();
+    bot.on('polling_error', (err) => {
+      console.error('[polling_error]', err.message);
+      // 409 means another instance is still running. Exit so the process
+      // manager can restart us after the old process is gone.
+      if (err.message && err.message.includes('409 Conflict')) {
+        console.error('Polling conflict — another instance running. Exiting.');
+        process.exit(1);
+      }
+    });
     bot.on('message', handleMessage);
     bot.on('callback_query', handleCallbackQuery);
     console.log('Telegram bot started in polling mode');
@@ -103,8 +114,8 @@ async function handleMessage(message) {
   const chatId = message.chat.id;
   const text = message.text || '';
 
-  switch (text) {
-    case '/start':
+  switch (true) {
+    case text === '/start' || text.startsWith('/start '):
       await handleStart(message);
       break;
     case '/available':
@@ -158,18 +169,18 @@ async function handleStart(message) {
 }
 
 async function setAvailability(chatId, availability) {
-  const masters = await Master.find({ telegramID: chatId, approved: true });
+  const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
     return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
   }
 
-  await Master.updateMany({ telegramID: chatId, approved: true }, { availability });
+  await Master.updateMany({ telegramID: chatId, status: 'approved' }, { availability });
   bot.sendMessage(chatId, `Статус оновлено: ${AVAILABILITY_LABELS[availability]}`);
 }
 
 async function showStatus(chatId) {
-  const masters = await Master.find({ telegramID: chatId, approved: true });
+  const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
     return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
@@ -209,7 +220,7 @@ function buildLanguageKeyboard(currentLanguages) {
 }
 
 async function showLanguageSelector(chatId) {
-  const masters = await Master.find({ telegramID: chatId, approved: true });
+  const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
     return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
@@ -222,8 +233,14 @@ async function showLanguageSelector(chatId) {
 }
 
 async function handleCallbackQuery(callbackQuery) {
-  const { id: queryId, message, data } = callbackQuery;
-  if (!data || !data.startsWith('lang:')) {
+  const { id: queryId, message, data, from } = callbackQuery;
+  if (!data) {
+    return bot.answerCallbackQuery(queryId, { text: 'Невідома дія' });
+  }
+  if (data.startsWith('claim:')) {
+    return handleClaimCallback(queryId, message, data, from);
+  }
+  if (!data.startsWith('lang:')) {
     console.log('Unknown callback data:', data);
     return bot.answerCallbackQuery(queryId, { text: 'Невідома дія' });
   }
@@ -232,7 +249,7 @@ async function handleCallbackQuery(callbackQuery) {
   const langCode = data.slice(5);
 
   if (langCode === 'save') {
-    const masters = await Master.find({ telegramID: chatId, approved: true });
+    const masters = await Master.find({ telegramID: chatId, status: 'approved' });
     const langs = masters[0]?.languages || [];
     const langLabels =
       langs.map((l) => SUPPORTED_LANGUAGES.find((s) => s.code === l)?.label ?? l).join(', ') ||
@@ -244,7 +261,7 @@ async function handleCallbackQuery(callbackQuery) {
     });
   }
 
-  const masters = await Master.find({ telegramID: chatId, approved: true });
+  const masters = await Master.find({ telegramID: chatId, status: 'approved' });
   if (!masters.length) {
     return bot.answerCallbackQuery(queryId, { text: 'Профіль не знайдено' });
   }
@@ -254,7 +271,7 @@ async function handleCallbackQuery(callbackQuery) {
     ? currentLangs.filter((l) => l !== langCode)
     : [...currentLangs, langCode];
 
-  await Master.updateMany({ telegramID: chatId, approved: true }, { languages: newLangs });
+  await Master.updateMany({ telegramID: chatId, status: 'approved' }, { languages: newLangs });
 
   await bot.answerCallbackQuery(queryId, { text: '' });
   await bot.editMessageReplyMarkup(buildLanguageKeyboard(newLangs), {
@@ -266,20 +283,28 @@ async function handleCallbackQuery(callbackQuery) {
 function sendLoginLink(id, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
 
-  bot.sendMessage(id, 'Увійти на majstr.xyz?', {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: 'Увійти',
-            login_url: {
+  bot.sendMessage(
+    id,
+    'Вітаємо у Majstr! 🛠\n\nЗнайдіть майстра або зареєструйте себе як фахівця.',
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🌐 Увійти на сайт',
               url: `${FRONTEND_URL}/login?token=${encodedToken}&path=add`,
             },
-          },
+          ],
+          [
+            {
+              text: '➕ Додати картку майстра',
+              url: 'https://t.me/majstr_bot?startapp=onboard',
+            },
+          ],
         ],
-      ],
-    },
-  });
+      },
+    }
+  ).catch(err => console.error('[sendLoginLink] failed:', err.message));
 }
 
 function createTokenForUser(message) {
@@ -355,6 +380,92 @@ async function fetchUserTelegramPhoto(message) {
     .then((blob) => blob.arrayBuffer())
     .then(Buffer.from)
     .catch(console.error);
+}
+
+async function handleClaimCallback(queryId, message, data, from) {
+  // data format: claim:approve:<claimID> or claim:decline:<claimID>
+  const [, action, claimId] = data.split(':');
+  if (!claimId || !['approve', 'decline'].includes(action)) {
+    return bot.answerCallbackQuery(queryId, { text: 'Невідома дія' });
+  }
+
+  const claim = await MasterClaim.findById(claimId);
+  if (!claim) {
+    return bot.answerCallbackQuery(queryId, { text: 'Claim not found' });
+  }
+  if (claim.status !== 'pending') {
+    await bot.answerCallbackQuery(queryId, { text: `Already ${claim.status}` });
+    return bot.editMessageText(`Already ${claim.status}.`, {
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+    });
+  }
+
+  const adminUser = await User.findOne({ telegramID: from.id });
+
+  if (action === 'approve') {
+    const master = await Master.findById(claim.masterID);
+    const previousOwnerID = master?.ownerUserID || null;
+
+    await Master.findByIdAndUpdate(claim.masterID, {
+      ownerUserID: claim.claimantUserID,
+      telegramID: claim.claimantTelegramID,
+      claimable: false,
+      claimedAt: new Date(),
+    });
+
+    claim.status = 'approved';
+    claim.reviewedBy = adminUser?._id;
+    claim.reviewedAt = new Date();
+    await claim.save();
+
+    await MasterAudit.create({
+      masterID: claim.masterID,
+      actorUserID: adminUser?._id,
+      actorTelegramID: from.id,
+      action: 'edit',
+      diff: { ownerUserID: [previousOwnerID, claim.claimantUserID] },
+      reason: 'claim approved by admin',
+    }).catch(err => console.error('Failed to write claim audit row:', err));
+
+    await bot.answerCallbackQuery(queryId, { text: '✅ Approved' });
+    await bot.editMessageText(
+      `${message.text}\n\n✅ Approved by ${from.first_name}`,
+      { chat_id: message.chat.id, message_id: message.message_id }
+    );
+
+    // Notify claimant
+    bot.sendMessage(
+      claim.claimantTelegramID,
+      `✅ Your claim was approved! You are now the owner of the card:\nhttps://majstr.xyz/?card=${claim.masterID}`
+    ).catch(() => {});
+
+  } else {
+    claim.status = 'rejected';
+    claim.reviewedBy = adminUser?._id;
+    claim.reviewedAt = new Date();
+    await claim.save();
+
+    await MasterAudit.create({
+      masterID: claim.masterID,
+      actorUserID: adminUser?._id,
+      actorTelegramID: from.id,
+      action: 'reject',
+      reason: 'claim declined by admin',
+    }).catch(err => console.error('Failed to write claim audit row:', err));
+
+    await bot.answerCallbackQuery(queryId, { text: '❌ Declined' });
+    await bot.editMessageText(
+      `${message.text}\n\n❌ Declined by ${from.first_name}`,
+      { chat_id: message.chat.id, message_id: message.message_id }
+    );
+
+    // Notify claimant
+    bot.sendMessage(
+      claim.claimantTelegramID,
+      `❌ Your ownership claim could not be verified. Contact support for more info.`
+    ).catch(() => {});
+  }
 }
 
 async function addUserToDatabase(message, photo, token) {

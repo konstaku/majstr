@@ -1,16 +1,14 @@
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import { useLoaderData } from "react-router-dom";
 import { MasterContext } from "../context";
 import NewMasterPreview from "../components/NewMasterPreview";
+import { apiFetch } from "../api/client";
 
 import type { Master } from "../schema/master/master.schema";
 
 // eslint-disable-next-line react-refresh/only-export-components
 function Admin() {
   const newMasters = useLoaderData() as Master[];
-  const [token] = useState(() =>
-    JSON.parse(localStorage.getItem("token") as string)
-  );
   const {
     state: { professions },
   } = useContext(MasterContext);
@@ -25,7 +23,6 @@ function Admin() {
         <NewMasterPreview
           key={i}
           master={master}
-          token={token}
           professions={professions}
         />
       ))}
@@ -34,9 +31,7 @@ function Admin() {
 }
 
 function loader({ request }: { request: Request }) {
-  return fetch(`${import.meta.env.VITE_API_URL}/?q=newmasters`, {
-    signal: request.signal,
-  });
+  return apiFetch("/?q=newmasters", { signal: request.signal });
 }
 
 export const adminRoute = {

@@ -14,6 +14,7 @@ import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { COUNTRY_TO_LANG, LANG_LABELS } from "../i18n/translations";
+import { apiFetch } from "../api/client";
 
 import type { Country } from "../schema/state/state.schema";
 
@@ -44,11 +45,11 @@ export default function Root() {
       try {
         const [masters, professions, profCategories, locations, countriesData] =
           await Promise.all([
-            fetch(`${import.meta.env.VITE_API_URL}/?q=masters&country=${countryID}`, { signal: controller.signal }).then((r) => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/?q=professions`, { signal: controller.signal }).then((r) => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/?q=prof-categories`, { signal: controller.signal }).then((r) => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/?q=locations&country=${countryID}`, { signal: controller.signal }).then((r) => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/?q=countries`, { signal: controller.signal }).then((r) => r.json()),
+            apiFetch(`/?q=masters&country=${countryID}`, { signal: controller.signal }).then((r) => r.json()),
+            apiFetch(`/?q=professions`, { signal: controller.signal }).then((r) => r.json()),
+            apiFetch(`/?q=prof-categories`, { signal: controller.signal }).then((r) => r.json()),
+            apiFetch(`/?q=locations&country=${countryID}`, { signal: controller.signal }).then((r) => r.json()),
+            apiFetch(`/?q=countries`, { signal: controller.signal }).then((r) => r.json()),
           ]);
         dispatch({ type: ACTIONS.POPULATE, payload: { masters, professions, profCategories, locations, countries: countriesData } });
       } catch (err) {

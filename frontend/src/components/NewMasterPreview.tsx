@@ -2,16 +2,15 @@ import { Master } from "../schema/master/master.schema";
 import { Profession } from "../schema/state/state.schema";
 import Avatar from "./Avatar";
 import ContactsLayout from "./ContactsLayout";
+import { apiFetch } from "../api/client";
 
 type NewMasterPreviewProps = {
   master: Master;
-  token: string;
   professions: Profession[];
 };
 
 export default function NewMasterPreview({
   master,
-  token,
   professions,
 }: NewMasterPreviewProps) {
   console.log("master:", master);
@@ -53,13 +52,13 @@ export default function NewMasterPreview({
       <div className="master-card-footer">
         <button
           className="btn admin"
-          onClick={() => approveMaster("approve", _id, token)}
+          onClick={() => approveMaster("approve", _id)}
         >
           ✅
         </button>
         <button
           className="btn admin"
-          onClick={() => approveMaster("decline", _id, token)}
+          onClick={() => approveMaster("decline", _id)}
         >
           ❌
         </button>
@@ -69,18 +68,12 @@ export default function NewMasterPreview({
 
   async function approveMaster(
     action: "approve" | "decline",
-    masterID: string,
-    token: string
+    masterID: string
   ) {
-    const masterData = {
-      action,
-      masterID,
-      token,
-    };
-
+    const masterData = { action, masterID };
     const controller = new AbortController();
 
-    await fetch(`${import.meta.env.VITE_API_URL}/approve-master`, {
+    await apiFetch("/approve-master", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(masterData),
