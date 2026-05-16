@@ -7,8 +7,14 @@ import Root from "./components/Root";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import ErrorPage from "./pages/ErrorPage";
+import OnboardingWizard from "./onboarding/OnboardingWizard";
 
 export const router = createBrowserRouter([
+  {
+    path: "/onboard",
+    element: <OnboardingWizard />,
+    errorElement: <ErrorPage />,
+  },
   {
     path: "/",
     element: <Root />,
