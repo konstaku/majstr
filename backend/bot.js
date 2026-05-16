@@ -114,8 +114,8 @@ async function handleMessage(message) {
   const chatId = message.chat.id;
   const text = message.text || '';
 
-  switch (text) {
-    case '/start':
+  switch (true) {
+    case text === '/start' || text.startsWith('/start '):
       await handleStart(message);
       break;
     case '/available':
@@ -283,20 +283,28 @@ async function handleCallbackQuery(callbackQuery) {
 function sendLoginLink(id, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
 
-  bot.sendMessage(id, 'Увійти на majstr.xyz?', {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: 'Увійти',
-            login_url: {
+  bot.sendMessage(
+    id,
+    'Вітаємо у Majstr! 🛠\n\nЗнайдіть майстра або зареєструйте себе як фахівця.',
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🌐 Увійти на сайт',
               url: `${FRONTEND_URL}/login?token=${encodedToken}&path=add`,
             },
-          },
+          ],
+          [
+            {
+              text: '➕ Додати картку майстра',
+              url: 'https://t.me/majstr_bot?startapp=onboard',
+            },
+          ],
         ],
-      ],
-    },
-  });
+      },
+    }
+  ).catch(err => console.error('[sendLoginLink] failed:', err.message));
 }
 
 function createTokenForUser(message) {
