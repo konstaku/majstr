@@ -158,18 +158,18 @@ async function handleStart(message) {
 }
 
 async function setAvailability(chatId, availability) {
-  const masters = await Master.find({ telegramID: chatId, approved: true });
+  const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
     return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
   }
 
-  await Master.updateMany({ telegramID: chatId, approved: true }, { availability });
+  await Master.updateMany({ telegramID: chatId, status: 'approved' }, { availability });
   bot.sendMessage(chatId, `Статус оновлено: ${AVAILABILITY_LABELS[availability]}`);
 }
 
 async function showStatus(chatId) {
-  const masters = await Master.find({ telegramID: chatId, approved: true });
+  const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
     return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
@@ -209,7 +209,7 @@ function buildLanguageKeyboard(currentLanguages) {
 }
 
 async function showLanguageSelector(chatId) {
-  const masters = await Master.find({ telegramID: chatId, approved: true });
+  const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
     return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
@@ -232,7 +232,7 @@ async function handleCallbackQuery(callbackQuery) {
   const langCode = data.slice(5);
 
   if (langCode === 'save') {
-    const masters = await Master.find({ telegramID: chatId, approved: true });
+    const masters = await Master.find({ telegramID: chatId, status: 'approved' });
     const langs = masters[0]?.languages || [];
     const langLabels =
       langs.map((l) => SUPPORTED_LANGUAGES.find((s) => s.code === l)?.label ?? l).join(', ') ||
@@ -244,7 +244,7 @@ async function handleCallbackQuery(callbackQuery) {
     });
   }
 
-  const masters = await Master.find({ telegramID: chatId, approved: true });
+  const masters = await Master.find({ telegramID: chatId, status: 'approved' });
   if (!masters.length) {
     return bot.answerCallbackQuery(queryId, { text: 'Профіль не знайдено' });
   }
@@ -254,7 +254,7 @@ async function handleCallbackQuery(callbackQuery) {
     ? currentLangs.filter((l) => l !== langCode)
     : [...currentLangs, langCode];
 
-  await Master.updateMany({ telegramID: chatId, approved: true }, { languages: newLangs });
+  await Master.updateMany({ telegramID: chatId, status: 'approved' }, { languages: newLangs });
 
   await bot.answerCallbackQuery(queryId, { text: '' });
   await bot.editMessageReplyMarkup(buildLanguageKeyboard(newLangs), {

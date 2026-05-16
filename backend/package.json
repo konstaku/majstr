@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "devStart": "nodemon index.js",
+    "postinstall": "patch-package",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Konstantin Kupriyanov",
@@ -22,6 +23,7 @@
     "node-telegram-bot-api": "^0.63.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "patch-package": "^8.0.1"
   }
 }

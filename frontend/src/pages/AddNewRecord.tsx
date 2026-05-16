@@ -15,6 +15,7 @@ import PhoneInput from "react-phone-input-2";
 import CreatableSelect from "react-select/creatable";
 import MasterCardPreview from "../components/MasterCardPreview";
 import useAuthenticateUser from "../custom-hooks/useAuthenticateUser";
+import { apiFetch } from "../api/client";
 
 import {
   formatContactsForSchema,
@@ -212,9 +213,9 @@ function AddNewRecordForm({
       tags,
     };
 
-    // Send form data
+    // Send form data — apiFetch attaches JWT (web) or initData (TMA).
     const controller = new AbortController();
-    await fetch(`${import.meta.env.VITE_API_URL}/addmaster`, {
+    await apiFetch("/addmaster", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dataToSave),

@@ -6,11 +6,16 @@ const http = require('http');
 const https = require('https');
 
 const Master = require('./database/schema/Master');
+const MasterAudit = require('./database/schema/MasterAudit');
 const User = require('./database/schema/User');
 const Profession = require('./database/schema/Profession');
 const ProfCategory = require('./database/schema/ProfCategory');
 const Location = require('./database/schema/Location');
 const Review = require('./database/schema/Review');
+
+const requireAuth = require('./middleware/requireAuth');
+const requireAdmin = require('./middleware/requireAdmin');
+const requireUser = require('./middleware/requireUser');
 
 const PORT_NUMBER = process.env.PORT || 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
@@ -55,10 +60,29 @@ async function main() {
   await runOpenGraphMiddleware();
 
   app.get('/', handleApiRequests);
-  app.get('/auth', authenticateUser);
-  app.post('/addmaster', addMaster);
-  app.post('/approve-master', handleApproveMaster);
+  app.get('/auth', requireAuth, authenticateUser);
+  app.post('/addmaster', requireUser, addMaster);
+  app.post('/approve-master', requireAuth, requireAdmin, handleApproveMaster);
   app.post('/review', addReview);
+
+  // Mini App bootstrap + reference data (legacy /?q= aliases kept below)
+  app.get('/api/me', requireUser, (req, res) => res.json(req.user));
+  app.get('/api/reference/professions', async (req, res) =>
+    res.json(await Profession.find())
+  );
+  app.get('/api/reference/prof-categories', async (req, res) =>
+    res.json(await ProfCategory.find())
+  );
+  app.get('/api/reference/locations', async (req, res) =>
+    res.json(
+      await Location.find(
+        req.query.country ? { countryID: req.query.country } : {}
+      )
+    )
+  );
+  app.get('/api/reference/countries', async (req, res) =>
+    res.json(await Country.find())
+  );
 
   const server = httpsOptions
     ? https.createServer(httpsOptions, app)
@@ -89,7 +113,7 @@ async function handleApiRequests(req, res) {
   if (req.query && req.query.q) {
     switch (req.query.q) {
       case 'masters':
-        let mastersQuery = { approved: true };
+        let mastersQuery = { status: 'approved' };
         if (req.query.country) {
           mastersQuery = { ...mastersQuery, countryID: req.query.country };
         }
@@ -98,7 +122,7 @@ async function handleApiRequests(req, res) {
         res.status(200).send(masters);
         break;
       case 'newmasters':
-        const newMasters = await Master.find({ approved: false });
+        const newMasters = await Master.find({ status: 'pending' });
         console.log(`Fetching new masters...`);
         res.status(200).send(newMasters);
         break;
@@ -141,190 +165,158 @@ async function handleApiRequests(req, res) {
   }
 }
 
-// This endpoint is checking if a user has token
-// If yes, it returns user data from DB
+// Returns the authenticated user. JWT verification + revocation check
+// happens in the requireAuth middleware.
 async function authenticateUser(req, res) {
-  const token = req.headers.authorization;
-  if (!token) {
-    console.log('Auth request without a token, returning 400');
-    return res.status(400).send('No token');
-  }
-
-  console.log(`Login request with token ${token}`);
-  console.log(`Looking up database entry...`);
-
-  const user = await User.findOne({ token: token.toString() });
-  if (!user) {
-    console.log('User with this token not found');
-    return res.status(404).send('User not found');
-  }
-
-  console.log('Login successful, sending user...');
-  res.status(200).send(JSON.stringify(user));
+  console.log(`Auth ok for user ${req.user.firstName} (${req.user.telegramID})`);
+  res.status(200).json(req.user);
 }
 
-// This is an endpoint for adding a new master.
-// Every user who has logged in may add one master.
-// All masters get "verified: false" by default which can later be set to true by an admin
+// Create a master card. Identity is taken from req.user (verified JWT),
+// never from the request body. Body telegramID / ownerUserID / status fields
+// are ignored to prevent spoofing.
 async function addMaster(req, res) {
-  console.log(`=== New data posted at ${new Date().toUTCString()}`);
-  console.log(`Request data:`);
-  for (const key in req.body) {
-    console.log(`${key}: ${req.body[key]}`);
-  }
+  console.log(`=== New master submission from ${req.user.telegramID}`);
 
-  const master = new Master(req.body);
+  const {
+    telegramID: _ignoredTelegramID,
+    ownerUserID: _ignoredOwner,
+    status: _ignoredStatus,
+    approved: _ignoredApproved,
+    submittedAt: _ignoredSubmittedAt,
+    approvedAt: _ignoredApprovedAt,
+    ...safeBody
+  } = req.body || {};
 
-  // 1. Validate data
+  const master = new Master({
+    ...safeBody,
+    telegramID: req.user.telegramID,
+    ownerUserID: req.user._id,
+    status: 'pending',
+    submittedAt: new Date(),
+    source: 'self_submitted',
+    claimable: false,
+    claimedAt: new Date(),
+  });
+
   const validationError = master.validateSync();
   if (validationError) {
     return res.status(400).send(validationError.message);
   }
 
-  // 2. Find user in database with matching userId
-  try {
-    const user = await User.find({ telegramID: master.telegramID });
-    if (!user) throw new Error('User not found in users db');
-  } catch (err) {
-    console.error(err);
-    return res.status(404).send('Error finding user');
-  }
-
-  // 4. Generate OG image
   try {
     const ogUrl = await createOGimageForMaster(master);
-    console.log('Open Graph image created successfully: ', ogUrl);
     master.OGimage = ogUrl.toString();
   } catch (err) {
     console.error(err);
     return res.status(500).send('Error creating open graph image');
   }
 
-  // 5. Update database record
   try {
     await master.save();
-    console.log('Master saved successfully!: ', master.OGimage);
   } catch (err) {
     console.error(err);
     return res.status(500).send('Error saving master data');
   }
 
-  // 5.5 (optional) Add master profile to the their user record
+  try {
+    await MasterAudit.create({
+      masterID: master._id,
+      actorUserID: req.user._id,
+      actorTelegramID: req.user.telegramID,
+      action: 'submit',
+      from: null,
+      to: 'pending',
+    });
+  } catch (err) {
+    console.error('Failed to write audit row:', err);
+  }
 
-  // 6. Send an update to a moderator telegram
-  // sendModeratorUpdate(masterId)
+  if (TELEGRAM_ADMIN_CHAT_ID) {
+    bot.sendMessage(
+      TELEGRAM_ADMIN_CHAT_ID,
+      `New master added, check it: https://majstr.xyz/admin\n${master.OGimage}`
+    );
+  }
 
-  // bot.sendMessage(TELEGRAM_ADMIN_CHAT_ID, master.toString(), {
-  //   reply_markup: {
-  //     inline_keyboard: [
-  //       [
-  //         {
-  //           text: '✅',
-  //           callback_data: JSON.stringify({
-  //             value: 'accept',
-  //             masterId: master._id,
-  //           }),
-  //         },
-  //       ],
-  //       [
-  //         {
-  //           text: '❌',
-  //           callback_data: JSON.stringify({
-  //             value: 'decline',
-  //             masterId: master._id,
-  //           }),
-  //         },
-  //       ],
-  //     ],
-  //   },
-  // });
-
-  bot.sendMessage(
-    TELEGRAM_ADMIN_CHAT_ID,
-    `New master added, check it: https://majstr.xyz/admin\n${master.OGimage}`
-  );
-
-  res.status(200).json({ success: true });
+  res.status(200).json({ success: true, masterID: master._id });
 }
 
+// Admin action on a pending master. Auth (requireAuth) and admin role
+// (requireAdmin) are enforced by middleware — body no longer carries a token.
 async function handleApproveMaster(req, res) {
-  console.log('new request', req.body);
+  const { action, masterID, reason } = req.body || {};
 
-  const data = req.body;
-  const { action, masterID, token } = data;
   const master = await Master.findById(masterID);
-  const telegramId = master?.telegramID;
-
-  if (master === null) {
-    return res.status(404).end();
+  if (!master) {
+    return res.status(404).send('Master not found');
   }
 
-  const adminTokens = (await User.find({ isAdmin: true })).map(
-    (user) => user?.token
-  );
+  const previousStatus = master.status;
+  const telegramId = master.telegramID;
 
-  if (!adminTokens.includes(token)) {
-    console.log('auth failed — token not in admin list');
-    return res.status(403).send('Unauthorized');
-  }
+  try {
+    if (action === 'approve') {
+      master.status = 'approved';
+      master.approvedAt = new Date();
+      master.rejectionReason = undefined;
+      await master.save();
 
-  console.log('auth success');
+      await MasterAudit.create({
+        masterID: master._id,
+        actorUserID: req.user._id,
+        actorTelegramID: req.user.telegramID,
+        action: 'approve',
+        from: previousStatus,
+        to: 'approved',
+      });
 
-  let success = false;
-
-  switch (action) {
-    case 'approve':
-      try {
-        await approveMaster(masterID);
+      if (telegramId) {
         await bot.sendMessage(
           telegramId,
           `✅ Картку майстра додано на сайт: https://majstr.xyz/?card=${masterID}\n\n` +
-          'Управляйте своїм профілем через бот:\n' +
-          '/available — доступний зараз\n' +
-          '/nextweek — з наступного тижня\n' +
-          '/busy — зайнятий\n' +
-          '/status — переглянути статус\n' +
-          '/languages — мови спілкування'
+            'Управляйте своїм профілем через бот:\n' +
+            '/available — доступний зараз\n' +
+            '/nextweek — з наступного тижня\n' +
+            '/busy — зайнятий\n' +
+            '/status — переглянути статус\n' +
+            '/languages — мови спілкування'
         );
-        success = true;
-      } catch (err) {
-        throw new Error(err?.message);
       }
-      break;
 
-    case 'decline':
-      try {
-        await declineMaster(masterID);
+      return res.status(200).json({ success: true });
+    }
+
+    if (action === 'decline') {
+      master.status = 'rejected';
+      master.rejectedAt = new Date();
+      if (reason) master.rejectionReason = reason;
+      await master.save();
+
+      await MasterAudit.create({
+        masterID: master._id,
+        actorUserID: req.user._id,
+        actorTelegramID: req.user.telegramID,
+        action: 'reject',
+        from: previousStatus,
+        to: 'rejected',
+        reason: reason || undefined,
+      });
+
+      if (telegramId) {
         await bot.sendMessage(
           telegramId,
           `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
         );
-        success = true;
-      } catch (err) {
-        throw new Error(err?.message);
       }
-      break;
-    default:
-      throw new Error('Cannot handle master approval!');
-  }
 
-  if (success) {
-    return res.status(200).send('ok');
-  }
+      return res.status(200).json({ success: true });
+    }
 
-  res.status(400).send('cannot handle request');
-}
-
-async function approveMaster(id) {
-  const master = await Master.findById(id).catch(console.error);
-  master.approved = true;
-  await master.save().catch(console.error);
-}
-
-async function declineMaster(id) {
-  const deleted = await Master.findByIdAndDelete(id).catch(console.error);
-  if (!deleted) {
-    throw new Error('Can not delete master');
+    return res.status(400).send('Unknown action');
+  } catch (err) {
+    console.error('Admin action failed:', err);
+    return res.status(500).send('Action failed');
   }
 }
 
@@ -340,7 +332,7 @@ async function addReview(req, res) {
   }
 
   const master = await Master.findById(masterID);
-  if (!master || !master.approved) {
+  if (!master || master.status !== 'approved') {
     return res.status(404).json({ error: 'Master not found' });
   }
 
