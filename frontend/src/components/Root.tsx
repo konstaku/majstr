@@ -15,6 +15,7 @@ import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { COUNTRY_TO_LANG, LANG_LABELS } from "../i18n/translations";
 import { apiFetch } from "../api/client";
+import AddMasterModal from "./AddMasterModal";
 
 import type { Country } from "../schema/state/state.schema";
 
@@ -28,9 +29,9 @@ function getISOWeek(date: Date): number {
 
 export default function Root() {
   const { state, dispatch } = useContext(MasterContext);
-  const { user, countryID, countries } = state;
-  const { isLoggedIn } = user;
+  const { countryID, countries } = state;
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
+  const [showAddMasterModal, setShowAddMasterModal] = useState(false);
   const { t, lang } = useTranslation();
   const location = useLocation();
 
@@ -67,13 +68,15 @@ export default function Root() {
     dispatch({ type: ACTIONS.LOGIN, payload: { user } });
   }, [dispatch]);
 
-  const AddMasterLink = isLoggedIn
-    ? <Link to="/add">{t("nav.addMaster")}</Link>
-    : <a href="https://t.me/majstr_bot">{t("nav.addMaster")}</a>;
+  const openAddMasterModal = () => setShowAddMasterModal(true);
 
-  const AddMasterCta = isLoggedIn
-    ? <Link to="/add" className="cta-header">JOIN AS MASTER →</Link>
-    : <a href="https://t.me/majstr_bot" className="cta-header">JOIN AS MASTER →</a>;
+  const AddMasterLink = (
+    <button className="nav-btn" onClick={openAddMasterModal}>{t("nav.addMaster")}</button>
+  );
+
+  const AddMasterCta = (
+    <button className="cta-header" onClick={openAddMasterModal}>JOIN AS MASTER →</button>
+  );
 
   return (
     <>
@@ -124,9 +127,10 @@ export default function Root() {
       >
         <ul>
           <li><Link to="/">{t("nav.search")}</Link></li>
-          <li>{isLoggedIn
-            ? <Link to="/add">{t("nav.addMaster")}</Link>
-            : <a href="https://t.me/majstr_bot">{t("nav.addMaster")}</a>}
+          <li>
+            <button className="nav-btn" onClick={() => { setShowBurgerMenu(false); openAddMasterModal(); }}>
+              {t("nav.addMaster")}
+            </button>
           </li>
           <li><span className="inactive">{t("nav.faq")}</span></li>
           <li className="burger-controls" onClick={(e) => e.stopPropagation()}>
@@ -144,8 +148,12 @@ export default function Root() {
       <Outlet />
 
       <footer className="footer">
-        <FooterContent />
+        <FooterContent onAddMasterClick={openAddMasterModal} />
       </footer>
+
+      {showAddMasterModal && (
+        <AddMasterModal onClose={() => setShowAddMasterModal(false)} />
+      )}
     </>
   );
 }
@@ -211,7 +219,7 @@ function LanguageSwitcher({ countryID }: LanguageSwitcherProps) {
 
 const FOOTER_NATIONALITIES = ["UKRAINIAN", "GEORGIAN", "BELORUSSIAN", "RUSSIAN"];
 
-function FooterContent() {
+function FooterContent({ onAddMasterClick }: { onAddMasterClick: () => void }) {
   const { t } = useTranslation();
   const [natIdx, setNatIdx] = useState(0);
   const [fading, setFading] = useState(false);
@@ -273,7 +281,7 @@ function FooterContent() {
         <div className="footer-col">
           <h4>Platform</h4>
           <Link to="/">{t("nav.search")}</Link>
-          <a href="https://t.me/majstr_bot">{t("nav.addMaster")}</a>
+          <button className="nav-btn" onClick={onAddMasterClick}>{t("nav.addMaster")}</button>
           <span className="inactive">{t("nav.faq")}</span>
         </div>
         <div className="footer-col">

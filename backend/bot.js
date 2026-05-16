@@ -115,9 +115,11 @@ async function handleMessage(message) {
   const text = message.text || '';
 
   switch (true) {
-    case text === '/start' || text.startsWith('/start '):
-      await handleStart(message);
+    case text === '/start' || text.startsWith('/start '): {
+      const payload = text.startsWith('/start ') ? text.slice(7).trim() : null;
+      await handleStart(message, payload);
       break;
+    }
     case '/available':
       await setAvailability(chatId, 'available');
       break;
@@ -148,7 +150,7 @@ async function handleMessage(message) {
   }
 }
 
-async function handleStart(message) {
+async function handleStart(message, payload) {
   console.log('Looking for a user with an ID of:', message.chat.id);
 
   const registeredUserID = await User.exists({
@@ -158,14 +160,14 @@ async function handleStart(message) {
   if (registeredUserID) {
     console.log('User already registered! ID:', registeredUserID);
     const registeredUser = await User.findById(registeredUserID);
-    return sendLoginLink(message.chat.id, registeredUser.token);
+    return sendLoginLink(message.chat.id, registeredUser.token, payload);
   }
 
   console.log('Welcome new user!, ID:', registeredUserID);
   const token = createTokenForUser(message);
   const userPhoto = await fetchUserTelegramPhoto(message);
   await addUserToDatabase(message, userPhoto, token);
-  sendLoginLink(message.chat.id, token);
+  sendLoginLink(message.chat.id, token, payload);
 }
 
 async function setAvailability(chatId, availability) {
@@ -280,8 +282,11 @@ async function handleCallbackQuery(callbackQuery) {
   });
 }
 
-function sendLoginLink(id, token) {
+function sendLoginLink(id, token, payload) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
+  const tmaUrl = payload
+    ? `https://app.majstr.xyz?startapp=${encodeURIComponent(payload)}`
+    : 'https://app.majstr.xyz?startapp=onboard';
 
   bot.sendMessage(
     id,
@@ -291,14 +296,14 @@ function sendLoginLink(id, token) {
         inline_keyboard: [
           [
             {
-              text: '🌐 Увійти на сайт',
-              url: `${FRONTEND_URL}/login?token=${encodedToken}&path=add`,
+              text: '➕ Додати картку майстра',
+              web_app: { url: tmaUrl },
             },
           ],
           [
             {
-              text: '➕ Додати картку майстра',
-              url: 'https://t.me/majstr_bot?startapp=onboard',
+              text: '🌐 Увійти на сайт',
+              url: `${FRONTEND_URL}/login?token=${encodedToken}&path=add`,
             },
           ],
         ],
