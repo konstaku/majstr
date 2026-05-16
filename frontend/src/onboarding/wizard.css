@@ -361,6 +361,152 @@
   font-size: 14px;
 }
 
+/* ── Bio textarea ── */
+
+.wizard-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Hide progress dots while the bio textarea is focused — reclaim vertical space. */
+.wizard:has(.wizard-textarea:focus) .wizard-progress {
+  display: none;
+}
+
+.bio-counter {
+  font-size: 12px;
+  text-align: right;
+  margin-top: 4px;
+  transition: color 0.2s;
+}
+
+/* ── TagPicker ── */
+
+.tag-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-secondary-bg);
+  min-height: 52px;
+  align-items: center;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.tag-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--app-accent-fg);
+  font-size: 15px;
+  padding: 0 0 0 2px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.tag-chip-remove:hover {
+  opacity: 1;
+}
+
+.tag-chip-add {
+  background: none;
+  border: 1.5px dashed var(--app-border);
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--app-link);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tag-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.tag-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1.5px solid var(--app-accent);
+  border-radius: 10px;
+  font-size: 15px;
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  outline: none;
+  font-family: inherit;
+}
+
+.tag-input-confirm {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tag-input-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-suggestions-label {
+  font-size: 12px;
+  color: var(--app-hint);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.tag-suggestions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-suggestion-chip {
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1.5px solid var(--app-border);
+  background: var(--app-bg);
+  color: var(--app-fg);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tag-suggestion-chip:hover {
+  background: var(--app-secondary-bg);
+}
+
 .wizard-sync-error {
   margin: 0 20px 8px;
   padding: 8px 12px;
