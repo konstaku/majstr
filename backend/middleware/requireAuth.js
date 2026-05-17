@@ -17,6 +17,7 @@ function extractToken(rawHeader) {
 module.exports = async function requireAuth(req, res, next) {
   const token = extractToken(req.headers.authorization);
   if (!token) {
+    console.warn(`[auth-jwt] reject: no_token (path=${req.path})`);
     return res.status(401).json({ error: 'no_token' });
   }
 
@@ -24,6 +25,7 @@ module.exports = async function requireAuth(req, res, next) {
   try {
     payload = jwt.verify(token, JWT_ACCESS_TOKEN_SECRET);
   } catch (err) {
+    console.warn(`[auth-jwt] reject: invalid_token (path=${req.path})`);
     return res.status(401).json({ error: 'invalid_token' });
   }
 
