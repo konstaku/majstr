@@ -66,6 +66,13 @@ const AVAILABILITY_LABELS = {
 };
 
 async function runBot() {
+  // One-glance environment fingerprint. Bot id (digits before ':') is the
+  // bot's public id, not a secret. Makes prod/staging misconfig obvious.
+  console.log(
+    `[boot] bot id=${BOT_TOKEN ? String(BOT_TOKEN).split(':')[0] : 'none'} ` +
+      `TMA_BASE_URL=${TMA_BASE_URL} PUBLIC_WEB_URL=${PUBLIC_WEB_URL} ` +
+      `FRONTEND_URL=${FRONTEND_URL}`
+  );
   if (!BOT_TOKEN) {
     console.log('TELEGRAM_BOT_TOKEN not set — bot disabled');
     return;
