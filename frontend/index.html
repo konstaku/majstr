@@ -17,6 +17,25 @@
          the deferred app module so window.Telegram.WebApp / initData exist
          when surface detection runs in main.tsx. -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Direct Link Mini App routing: t.me/<bot>?startapp=onboard[-<lng>]
+         opens the Mini App at its registered base URL (site root), passing
+         the payload only as start_param. Rewrite the path BEFORE the SPA
+         router mounts so the wizard is shown. Runs after the bridge script
+         so start_param is available; classic + synchronous so it precedes
+         the deferred app module. -->
+    <script>
+      (function () {
+        try {
+          var wa = window.Telegram && window.Telegram.WebApp;
+          var sp = wa && wa.initDataUnsafe && wa.initDataUnsafe.start_param;
+          if (sp && location.pathname !== "/onboard" && sp.indexOf("onboard") === 0) {
+            var m = sp.match(/^onboard[-_]?([a-z]{2})?$/i);
+            var lng = m && m[1];
+            history.replaceState(null, "", "/onboard" + (lng ? "?lng=" + lng.toLowerCase() : ""));
+          }
+        } catch (e) { /* never block app boot */ }
+      })();
+    </script>
     <link rel="icon" type="image/png" href="/img/icons/favicon.png" />
     <link rel="apple-touch-icon" href="/img/icons/apple-app-icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
