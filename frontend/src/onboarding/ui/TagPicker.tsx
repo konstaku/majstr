@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useHaptic } from "../../ui/useHaptic";
+import { useOnbT } from "../i18n";
 
 const MAX_TAGS = 3;
 const MIN_CHARS = 4;
@@ -17,6 +18,7 @@ interface TagPickerProps {
 }
 
 export function TagPicker({ value: tags, onChange, suggestions = [] }: TagPickerProps) {
+  const { t } = useOnbT();
   const [inputVisible, setInputVisible] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,10 +29,10 @@ export function TagPicker({ value: tags, onChange, suggestions = [] }: TagPicker
 
   function validationError(text: string): string | null {
     const trimmed = text.trim();
-    if (trimmed.startsWith("#")) return "Без символу # на початку";
-    if (trimmed.length < MIN_CHARS) return `Мінімум ${MIN_CHARS} символи`;
-    if (trimmed.length > MAX_CHARS) return `Максимум ${MAX_CHARS} символів`;
-    if (tagValues.includes(trimmed.toLowerCase())) return "Така послуга вже є";
+    if (trimmed.startsWith("#")) return t("tag.noHash");
+    if (trimmed.length < MIN_CHARS) return t("tag.minChars", { n: MIN_CHARS });
+    if (trimmed.length > MAX_CHARS) return t("tag.maxChars", { n: MAX_CHARS });
+    if (tagValues.includes(trimmed.toLowerCase())) return t("tag.dup");
     return null;
   }
 
@@ -90,7 +92,7 @@ export function TagPicker({ value: tags, onChange, suggestions = [] }: TagPicker
               setTimeout(() => inputRef.current?.focus(), 50);
             }}
           >
-            + Додати послугу
+            {t("tag.add")}
           </button>
         )}
       </div>
@@ -103,7 +105,7 @@ export function TagPicker({ value: tags, onChange, suggestions = [] }: TagPicker
             className="tag-input"
             inputMode="text"
             maxLength={MAX_CHARS}
-            placeholder="Назва послуги"
+            placeholder={t("tag.namePlaceholder")}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => {
@@ -123,7 +125,7 @@ export function TagPicker({ value: tags, onChange, suggestions = [] }: TagPicker
             disabled={!canAdd}
             onClick={() => addTag(inputValue)}
           >
-            Додати
+            {t("tag.addConfirm")}
           </button>
         </div>
       )}
@@ -131,16 +133,16 @@ export function TagPicker({ value: tags, onChange, suggestions = [] }: TagPicker
       {/* Helper / error */}
       <p className="wizard-hint">
         {atMax
-          ? "Можна вказати до 3 послуг."
+          ? t("tag.atMax")
           : inputVisible && inputValue.length > 0
           ? (validationError(inputValue) ?? `${inputValue.trim().length} / ${MAX_CHARS}`)
-          : "Наприклад: «Заміна мастила», «Сервіс BMW», «Техогляд»."}
+          : t("tag.example")}
       </p>
 
       {/* Suggestions */}
       {visibleSuggestions.length > 0 && !atMax && (
         <div className="tag-suggestions">
-          <span className="tag-suggestions-label">Запропоновані:</span>
+          <span className="tag-suggestions-label">{t("tag.suggested")}</span>
           <div className="tag-suggestions-list">
             {visibleSuggestions.map((s) => (
               <button

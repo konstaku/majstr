@@ -9,6 +9,22 @@ const User = require('./database/schema/User');
 const Master = require('./database/schema/Master');
 const MasterClaim = require('./database/schema/MasterClaim');
 const MasterAudit = require('./database/schema/MasterAudit');
+const i18n = require('./i18n');
+
+// Pull a known UI language out of a /start or startapp payload, e.g.
+// "add-it" -> "it", "onboard_en" -> "en", "ru" -> "ru". null if none.
+function parseLangFromPayload(payload) {
+  if (!payload) return null;
+  for (const tok of String(payload).split(/[^a-zA-Z]+/)) {
+    if (i18n.UI_LANGS.includes(tok.toLowerCase())) return tok.toLowerCase();
+  }
+  return null;
+}
+
+async function getUserLang(telegramID) {
+  const u = await User.findOne({ telegramID }).select('uiLanguage').lean();
+  return i18n.normalizeLang(u?.uiLanguage);
+}
 
 const CERTIFICATE = process.env.CERTIFICATE;
 const KEYFILE = process.env.KEYFILE;
@@ -135,78 +151,85 @@ async function handleMessage(message) {
     case '/languages':
       await showLanguageSelector(chatId);
       break;
-    default:
+    default: {
       console.log('Unknown command:', text);
-      bot.sendMessage(
-        chatId,
-        'Невідома команда. Доступні команди:\n' +
-        '/start — увійти на сайт\n' +
-        '/available — доступний зараз\n' +
-        '/nextweek — з наступного тижня\n' +
-        '/busy — зайнятий\n' +
-        '/status — переглянути статус\n' +
-        '/languages — мови спілкування'
-      );
+      const lang = await getUserLang(chatId);
+      bot.sendMessage(chatId, i18n.t(lang, 'unknownCommand'));
+    }
   }
 }
 
 async function handleStart(message, payload) {
   console.log('Looking for a user with an ID of:', message.chat.id);
 
-  const registeredUserID = await User.exists({
-    telegramID: message.chat.id,
-  });
+  const explicitLang = parseLangFromPayload(payload);
+  const tgLang = i18n.mapTgLang(message.from?.language_code);
 
-  if (registeredUserID) {
-    console.log('User already registered! ID:', registeredUserID);
-    const registeredUser = await User.findById(registeredUserID);
-    return sendLoginLink(message.chat.id, registeredUser.token, payload);
+  const registeredUser = await User.findOne({ telegramID: message.chat.id });
+
+  if (registeredUser) {
+    console.log('User already registered! ID:', registeredUser._id);
+    // A language from a localized website link wins; otherwise keep the
+    // user's existing (possibly manually chosen) preference.
+    const lang = i18n.normalizeLang(
+      explicitLang || registeredUser.uiLanguage || tgLang
+    );
+    if (lang !== registeredUser.uiLanguage) {
+      registeredUser.uiLanguage = lang;
+      await registeredUser.save().catch(() => {});
+    }
+    return sendLoginLink(message.chat.id, registeredUser.token, lang);
   }
 
-  console.log('Welcome new user!, ID:', registeredUserID);
+  console.log('Welcome new user!, ID:', message.chat.id);
+  const lang = i18n.normalizeLang(explicitLang || tgLang);
   const token = createTokenForUser(message);
   const userPhoto = await fetchUserTelegramPhoto(message);
-  await addUserToDatabase(message, userPhoto, token);
-  sendLoginLink(message.chat.id, token, payload);
+  await addUserToDatabase(message, userPhoto, token, lang);
+  sendLoginLink(message.chat.id, token, lang);
 }
 
 async function setAvailability(chatId, availability) {
+  const lang = await getUserLang(chatId);
   const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
-    return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
+    return bot.sendMessage(chatId, i18n.t(lang, 'avail.none'));
   }
 
   await Master.updateMany({ telegramID: chatId, status: 'approved' }, { availability });
-  bot.sendMessage(chatId, `Статус оновлено: ${AVAILABILITY_LABELS[availability]}`);
+  bot.sendMessage(
+    chatId,
+    i18n.t(lang, 'avail.updated', { label: i18n.t(lang, `avail.${availability}`) })
+  );
 }
 
 async function showStatus(chatId) {
+  const lang = await getUserLang(chatId);
   const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
-    return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
+    return bot.sendMessage(chatId, i18n.t(lang, 'avail.none'));
   }
 
   const master = masters[0];
   const availLabel = master.availability
-    ? AVAILABILITY_LABELS[master.availability]
-    : 'не вказано';
+    ? i18n.t(lang, `avail.${master.availability}`)
+    : i18n.t(lang, 'status.notset');
   const langs =
     master.languages && master.languages.length
       ? master.languages
           .map((l) => SUPPORTED_LANGUAGES.find((s) => s.code === l)?.label ?? l)
           .join(', ')
-      : 'не вказано';
+      : i18n.t(lang, 'status.notset');
 
   bot.sendMessage(
     chatId,
-    `📋 Ваш профіль:\nСтатус: ${availLabel}\nМови: ${langs}\n\n` +
-      'Команди:\n/available /nextweek /busy /languages'
+    i18n.t(lang, 'status.line', { avail: availLabel, langs })
   );
 }
 
-function buildLanguageKeyboard(currentLanguages) {
+function buildLanguageKeyboard(currentLanguages, uiLang) {
   const langs = currentLanguages || [];
   const buttons = SUPPORTED_LANGUAGES.map(({ code, label }) => ({
     text: langs.includes(code) ? `✅ ${label}` : label,
@@ -217,20 +240,21 @@ function buildLanguageKeyboard(currentLanguages) {
   for (let i = 0; i < buttons.length; i += 4) {
     rows.push(buttons.slice(i, i + 4));
   }
-  rows.push([{ text: '💾 Зберегти', callback_data: 'lang:save' }]);
+  rows.push([{ text: i18n.t(uiLang, 'langs.save'), callback_data: 'lang:save' }]);
   return { inline_keyboard: rows };
 }
 
 async function showLanguageSelector(chatId) {
+  const uiLang = await getUserLang(chatId);
   const masters = await Master.find({ telegramID: chatId, status: 'approved' });
 
   if (!masters.length) {
-    return bot.sendMessage(chatId, 'Не знайдено жодної схваленої картки майстра.');
+    return bot.sendMessage(chatId, i18n.t(uiLang, 'avail.none'));
   }
 
   const currentLanguages = masters[0].languages || [];
-  bot.sendMessage(chatId, 'Оберіть мови спілкування (можна декілька):', {
-    reply_markup: buildLanguageKeyboard(currentLanguages),
+  bot.sendMessage(chatId, i18n.t(uiLang, 'langs.prompt'), {
+    reply_markup: buildLanguageKeyboard(currentLanguages, uiLang),
   });
 }
 
@@ -245,12 +269,16 @@ async function handleCallbackQuery(callbackQuery) {
   if (data.startsWith('master:')) {
     return handleMasterCallback(queryId, message, data, from);
   }
+  if (data.startsWith('uilang:')) {
+    return handleUiLangCallback(queryId, message, data, from);
+  }
   if (!data.startsWith('lang:')) {
     console.log('Unknown callback data:', data);
     return bot.answerCallbackQuery(queryId, { text: 'Невідома дія' });
   }
 
   const chatId = message.chat.id;
+  const uiLang = await getUserLang(chatId);
   const langCode = data.slice(5);
 
   if (langCode === 'save') {
@@ -258,9 +286,9 @@ async function handleCallbackQuery(callbackQuery) {
     const langs = masters[0]?.languages || [];
     const langLabels =
       langs.map((l) => SUPPORTED_LANGUAGES.find((s) => s.code === l)?.label ?? l).join(', ') ||
-      'жодної';
-    await bot.answerCallbackQuery(queryId, { text: '✅ Збережено' });
-    return bot.editMessageText(`Мови збережено: ${langLabels}`, {
+      '—';
+    await bot.answerCallbackQuery(queryId, { text: i18n.t(uiLang, 'lang.switched') });
+    return bot.editMessageText(i18n.t(uiLang, 'langs.saved', { labels: langLabels }), {
       chat_id: chatId,
       message_id: message.message_id,
     });
@@ -268,7 +296,7 @@ async function handleCallbackQuery(callbackQuery) {
 
   const masters = await Master.find({ telegramID: chatId, status: 'approved' });
   if (!masters.length) {
-    return bot.answerCallbackQuery(queryId, { text: 'Профіль не знайдено' });
+    return bot.answerCallbackQuery(queryId, { text: i18n.t(uiLang, 'avail.none') });
   }
 
   const currentLangs = masters[0].languages || [];
@@ -279,38 +307,40 @@ async function handleCallbackQuery(callbackQuery) {
   await Master.updateMany({ telegramID: chatId, status: 'approved' }, { languages: newLangs });
 
   await bot.answerCallbackQuery(queryId, { text: '' });
-  await bot.editMessageReplyMarkup(buildLanguageKeyboard(newLangs), {
+  await bot.editMessageReplyMarkup(buildLanguageKeyboard(newLangs, uiLang), {
     chat_id: chatId,
     message_id: message.message_id,
   });
 }
 
-function sendLoginLink(id, token, payload) {
+function buildWelcomeKeyboard(lang, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
-  const tmaUrl = 'https://app.majstr.xyz/onboard';
+  return {
+    inline_keyboard: [
+      // Language switch row first, so it is the most apparent control —
+      // flags/RU label are understandable without reading any language.
+      i18n.langButtonsRow(lang),
+      [
+        {
+          text: i18n.t(lang, 'btn.addMaster'),
+          web_app: { url: `https://app.majstr.xyz/onboard?lng=${lang}` },
+        },
+      ],
+      [
+        {
+          text: i18n.t(lang, 'btn.loginSite'),
+          url: `${FRONTEND_URL}/login?token=${encodedToken}&path=add&lng=${lang}`,
+        },
+      ],
+    ],
+  };
+}
 
-  bot.sendMessage(
-    id,
-    'Вітаємо у Majstr! 🛠\n\nЗнайдіть майстра або зареєструйте себе як фахівця.',
-    {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '➕ Додати картку майстра',
-              web_app: { url: tmaUrl },
-            },
-          ],
-          [
-            {
-              text: '🌐 Увійти на сайт',
-              url: `${FRONTEND_URL}/login?token=${encodedToken}&path=add`,
-            },
-          ],
-        ],
-      },
-    }
-  ).catch(err => console.error('[sendLoginLink] failed:', err.message));
+function sendLoginLink(id, token, lang) {
+  const L = i18n.normalizeLang(lang);
+  bot.sendMessage(id, i18n.t(L, 'welcome.body'), {
+    reply_markup: buildWelcomeKeyboard(L, token),
+  }).catch((err) => console.error('[sendLoginLink] failed:', err.message));
 }
 
 function createTokenForUser(message) {
@@ -388,6 +418,24 @@ async function fetchUserTelegramPhoto(message) {
     .catch(console.error);
 }
 
+async function handleUiLangCallback(queryId, message, data, from) {
+  const code = i18n.normalizeLang(data.slice('uilang:'.length));
+  const user = await User.findOneAndUpdate(
+    { telegramID: from.id },
+    { $set: { uiLanguage: code } },
+    { new: true }
+  );
+
+  await bot.answerCallbackQuery(queryId, { text: i18n.t(code, 'lang.switched') });
+
+  // Re-render the welcome message + keyboard in the chosen language.
+  await bot.editMessageText(i18n.t(code, 'welcome.body'), {
+    chat_id: message.chat.id,
+    message_id: message.message_id,
+    reply_markup: buildWelcomeKeyboard(code, user?.token),
+  }).catch((err) => console.error('[uilang] edit failed:', err.message));
+}
+
 async function handleMasterCallback(queryId, message, data, from) {
   // data format: master:approve:<masterID> or master:decline:<masterID>
   const [, action, masterId] = data.split(':');
@@ -431,10 +479,12 @@ async function handleMasterCallback(queryId, message, data, from) {
     ).catch(() => {});
 
     if (master.telegramID) {
+      const oLang = await getUserLang(master.telegramID);
       bot.sendMessage(
         master.telegramID,
-        `✅ Вашу картку майстра схвалено та опубліковано!\n\n` +
-          `Переглянути: https://majstr.xyz/?card=${master._id}`
+        i18n.t(oLang, 'owner.approved', {
+          url: `https://majstr.xyz/?card=${master._id}`,
+        })
       ).catch(() => {});
     }
   } else {
@@ -459,10 +509,10 @@ async function handleMasterCallback(queryId, message, data, from) {
     ).catch(() => {});
 
     if (master.telegramID) {
+      const oLang = await getUserLang(master.telegramID);
       bot.sendMessage(
         master.telegramID,
-        `❌ На жаль, вашу картку майстра не схвалено. ` +
-          `Ви можете відредагувати дані та надіслати її повторно через бота.`
+        i18n.t(oLang, 'owner.declined')
       ).catch(() => {});
     }
   }
@@ -554,7 +604,7 @@ async function handleClaimCallback(queryId, message, data, from) {
   }
 }
 
-async function addUserToDatabase(message, photo, token) {
+async function addUserToDatabase(message, photo, token, lang) {
   // Add new user to database
   // NB: I am using mongo _id as a name for a photo, so database record is created prior to photo upload in s3
   const user = await User.create({
@@ -563,6 +613,7 @@ async function addUserToDatabase(message, photo, token) {
     lastName: message.chat.last_name || null,
     username: message.chat.username || null,
     token: token,
+    uiLanguage: i18n.normalizeLang(lang),
   }).catch(console.error);
 
   // Create parameters to upload photo

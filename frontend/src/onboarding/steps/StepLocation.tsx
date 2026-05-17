@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { PickerSheet } from "../ui/PickerSheet";
 import { useReferenceData } from "../useReferenceData";
+import { useOnbT } from "../i18n";
 import type { DraftData } from "../schema";
 
 export function StepLocation() {
+  const { t } = useOnbT();
   const { control, formState: { errors }, watch, setValue } = useFormContext<DraftData>();
   const { locations, loading } = useReferenceData();
   const [showPicker, setShowPicker] = useState(false);
@@ -26,26 +28,24 @@ export function StepLocation() {
       {/* Location picker */}
       <div className="wizard-field">
         <label className="wizard-label">
-          Найближче велике місто <span className="wizard-required">*</span>
+          {t("loc.cityLabel")} <span className="wizard-required">*</span>
         </label>
         <Controller
           control={control}
           name="locationID"
-          rules={{ required: "Обовʼязкове поле" }}
+          rules={{ required: t("common.required") }}
           render={() => (
             <button
               type="button"
               className={`wizard-picker-btn${!selected ? " wizard-picker-btn--placeholder" : ""}`}
               onClick={() => setShowPicker(true)}
             >
-              {selected ? selected.name?.ua ?? selected.id : "Оберіть місто"}
+              {selected ? selected.name?.ua ?? selected.id : t("loc.chooseCity")}
               <span className="wizard-picker-chevron">›</span>
             </button>
           )}
         />
-        <p className="wizard-hint">
-          Це місто буде на вашій картці. Це не означає, що ви не працюєте в інших.
-        </p>
+        <p className="wizard-hint">{t("loc.cityHint")}</p>
         {errors.locationID && (
           <p className="wizard-field-error">{errors.locationID.message}</p>
         )}
@@ -53,14 +53,14 @@ export function StepLocation() {
 
       {/* Country — read only */}
       <div className="wizard-field">
-        <label className="wizard-label">Країна</label>
-        <div className="wizard-readonly">🇮🇹 Італія</div>
-        <p className="wizard-hint">Поки що Majstr працює тільки в Італії.</p>
+        <label className="wizard-label">{t("loc.countryLabel")}</label>
+        <div className="wizard-readonly">{t("loc.italy")}</div>
+        <p className="wizard-hint">{t("loc.countryHint")}</p>
       </div>
 
       {showPicker && (
         <PickerSheet
-          title="Місто"
+          title={t("loc.cityLabel")}
           options={locations.map((l) => ({
             value: l.id,
             label: l.name?.ua ?? l.id,

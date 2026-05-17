@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useHaptic } from "../../ui/useHaptic";
+import { useOnbT } from "../i18n";
 
 export interface PickerOption {
   value: string;
@@ -22,8 +23,9 @@ export function PickerSheet({
   selected,
   onSelect,
   onClose,
-  searchPlaceholder = "Пошук",
+  searchPlaceholder,
 }: PickerSheetProps) {
+  const { t } = useOnbT();
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const haptic = useHaptic();
@@ -56,20 +58,20 @@ export function PickerSheet({
       <div className="picker-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="picker-header">
           <span className="picker-title">{title}</span>
-          <button className="picker-close" onClick={onClose} aria-label="Закрити">✕</button>
+          <button className="picker-close" onClick={onClose} aria-label={t("picker.close")}>✕</button>
         </div>
         <div className="picker-search-wrap">
           <input
             ref={searchRef}
             className="picker-search"
-            placeholder={searchPlaceholder}
+            placeholder={searchPlaceholder ?? t("picker.search")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <div className="picker-list">
           {filtered.length === 0 && (
-            <div className="picker-empty">Нічого не знайшли.</div>
+            <div className="picker-empty">{t("picker.empty")}</div>
           )}
           {filtered.map((opt) => (
             <button

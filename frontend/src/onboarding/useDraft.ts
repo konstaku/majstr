@@ -4,6 +4,7 @@ import { apiFetch } from "../api/client";
 import { usePopup } from "../ui/usePopup";
 import type { DraftData } from "./schema";
 import { serverDraftToForm, formToServerPatch } from "./schema";
+import { useOnbT, type TFunc } from "./i18n";
 
 const QUEUE_KEY = "draft:failed-queue";
 const LAST_EDIT_KEY = "draft:last-edit";
@@ -45,21 +46,19 @@ class PatchError extends Error {
 const is4xx = (e: unknown): e is PatchError =>
   e instanceof PatchError && e.status >= 400 && e.status < 500;
 
-function describePatchError(e: unknown): string {
+function describePatchError(e: unknown, t: TFunc): string {
   if (e instanceof PatchError) {
-    if (e.status === 409)
-      return "У вас вже є активна картка майстра — створити ще одну не можна.";
-    if (e.status === 401)
-      return "Сесію не підтверджено. Закрийте і відкрийте міні-застосунок.";
+    if (e.status === 409) return t("draft.errExists");
+    if (e.status === 401) return t("draft.errSession");
     if (e.status === 422) {
       const fields = e.body?.errors
         ? Object.keys(e.body.errors).join(", ")
-        : "";
-      return `Дані не збережено — помилка перевірки${fields ? ` (${fields})` : ""}.`;
+        : "—";
+      return t("draft.errValidation", { fields });
     }
-    return `Не вдалося зберегти (помилка ${e.status}).`;
+    return t("draft.errCode", { status: e.status });
   }
-  return "Немає звʼязку. Дані збережено локально — повторимо пізніше.";
+  return t("draft.errOffline");
 }
 
 async function sendPatch(payload: Partial<DraftData>, attempt = 0): Promise<void> {
@@ -148,6 +147,7 @@ export interface UseDraftResult {
 
 export function useDraft(form: UseFormReturn<DraftData>): UseDraftResult {
   const popup = usePopup();
+  const { t } = useOnbT();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -219,7 +219,7 @@ export function useDraft(form: UseFormReturn<DraftData>): UseDraftResult {
           await sendPatch(diff);
           serverSnap.current = { ...serverSnap.current, ...diff };
         } catch (e) {
-          setSyncError(describePatchError(e));
+          setSyncError(describePatchError(e, t));
         } finally {
           setIsSyncing(false);
         }

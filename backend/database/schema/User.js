@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  uiLanguage: {
+    type: String,
+    enum: ['uk', 'en', 'it', 'ru'],
+    default: 'uk',
+  },
 });
 
 module.exports = mongoose.model('User', userSchema);

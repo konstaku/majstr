@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTelegramContext } from "../../surface/useTelegramContext";
 import { apiFetch } from "../../api/client";
+import { useOnbT } from "../i18n";
 import type { DraftData } from "../schema";
 
 export function StepProfile() {
   const form = useFormContext<DraftData>();
+  const { t } = useOnbT();
   const { user } = useTelegramContext();
   const { register, formState: { errors }, setValue, watch } = form;
 
@@ -36,7 +38,7 @@ export function StepProfile() {
       const { photoUrl: url } = await res.json();
       setValue("photo", url, { shouldDirty: true });
     } catch {
-      setUploadError("Не вдалося завантажити. Перевірте інтернет і спробуйте ще раз.");
+      setUploadError(t("profile.uploadError"));
     } finally {
       setUploading(false);
     }
@@ -46,7 +48,7 @@ export function StepProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError("Файл завеликий (макс. 5 МБ).");
+      setUploadError(t("profile.fileTooLarge"));
       return;
     }
     setUploading(true);
@@ -59,7 +61,7 @@ export function StepProfile() {
       const { photoUrl: url } = await res.json();
       setValue("photo", url, { shouldDirty: true });
     } catch {
-      setUploadError("Не вдалося завантажити. Перевірте інтернет і спробуйте ще раз.");
+      setUploadError(t("profile.uploadError"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -92,7 +94,7 @@ export function StepProfile() {
             onClick={handleUseTelegramPhoto}
             disabled={uploading}
           >
-            {uploading ? "Завантажуємо…" : "Використати фото з Telegram"}
+            {uploading ? t("profile.uploading") : t("profile.usePhoto")}
           </button>
           <button
             type="button"
@@ -100,7 +102,7 @@ export function StepProfile() {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            Завантажити з пристрою
+            {t("profile.uploadDevice")}
           </button>
           {photoUrl && (
             <button
@@ -109,7 +111,7 @@ export function StepProfile() {
               onClick={() => setValue("photo", "", { shouldDirty: true })}
               disabled={uploading}
             >
-              Прибрати фото
+              {t("profile.removePhoto")}
             </button>
           )}
         </div>
@@ -127,18 +129,18 @@ export function StepProfile() {
       {/* Name */}
       <div className="wizard-field">
         <label className="wizard-label">
-          Ваше імʼя <span className="wizard-required">*</span>
+          {t("profile.nameLabel")} <span className="wizard-required">*</span>
         </label>
         <input
           className={`wizard-input${errors.name ? " wizard-input--error" : ""}`}
-          placeholder="Як вас звати?"
+          placeholder={t("profile.namePlaceholder")}
           {...register("name", {
-            required: "Обовʼязкове поле",
-            minLength: { value: 2, message: "Мінімум 2 символи" },
-            maxLength: { value: 25, message: "Максимум 25 символів" },
+            required: t("common.required"),
+            minLength: { value: 2, message: t("err.min2") },
+            maxLength: { value: 25, message: t("err.max25") },
           })}
         />
-        <p className="wizard-hint">Це побачать клієнти на вашій картці.</p>
+        <p className="wizard-hint">{t("profile.nameHint")}</p>
         {errors.name && (
           <p className="wizard-field-error">{errors.name.message}</p>
         )}

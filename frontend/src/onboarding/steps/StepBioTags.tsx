@@ -1,5 +1,6 @@
 import { useFormContext, Controller } from "react-hook-form";
 import { TagPicker } from "../ui/TagPicker";
+import { useOnbT } from "../i18n";
 import type { DraftData } from "../schema";
 import tagSuggestions from "../../data/tag-suggestions.json";
 
@@ -14,6 +15,7 @@ function bioCounterColor(len: number): string {
 }
 
 export function StepBioTags() {
+  const { t } = useOnbT();
   const { control, register, formState: { errors }, watch } = useFormContext<DraftData>();
   const professionID = watch("professionID");
   const about = watch("about") ?? "";
@@ -28,12 +30,12 @@ export function StepBioTags() {
       {/* Tags */}
       <div className="wizard-field">
         <label className="wizard-label">
-          Послуги (від 1 до 3) <span className="wizard-required">*</span>
+          {t("bio.servicesLabel")} <span className="wizard-required">*</span>
         </label>
         <Controller
           control={control}
           name="tags"
-          rules={{ validate: (v) => (v?.length >= 1 ? true : "Вкажіть хоча б одну послугу") }}
+          rules={{ validate: (v) => (v?.length >= 1 ? true : t("bio.serviceRequired")) }}
           render={({ field }) => (
             <TagPicker
               value={field.value ?? []}
@@ -50,16 +52,16 @@ export function StepBioTags() {
       {/* Bio */}
       <div className="wizard-field">
         <label className="wizard-label">
-          Про вас <span className="wizard-required">*</span>
+          {t("bio.aboutLabel")} <span className="wizard-required">*</span>
         </label>
         <textarea
           className={`wizard-input wizard-textarea${errors.about ? " wizard-input--error" : ""}`}
           rows={6}
-          placeholder="Що ви робите, в якому районі, як з вами зручно зв'язатися, як скоро ви відповідаєте."
+          placeholder={t("bio.aboutPlaceholder")}
           {...register("about", {
-            required: "Обовʼязкове поле",
-            minLength: { value: 30, message: "Мінімум 30 символів" },
-            maxLength: { value: BIO_MAX, message: `Максимум ${BIO_MAX} символів` },
+            required: t("common.required"),
+            minLength: { value: 30, message: t("err.min30") },
+            maxLength: { value: BIO_MAX, message: t("err.max600") },
           })}
         />
         <div
@@ -69,7 +71,7 @@ export function StepBioTags() {
         >
           {about.length} / {BIO_MAX}
         </div>
-        <p className="wizard-hint">Від 30 до 600 символів.</p>
+        <p className="wizard-hint">{t("bio.aboutHint")}</p>
         {errors.about && (
           <p className="wizard-field-error">{errors.about.message}</p>
         )}
