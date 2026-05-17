@@ -4,6 +4,7 @@ const createOGimageForMaster = require('../helpers/generateOpenGraph');
 const { bot } = require('../bot');
 
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
+const PUBLIC_WEB_URL = process.env.PUBLIC_WEB_URL || 'https://majstr.xyz';
 
 const DRAFT_FIELDS = [
   'name', 'professionID', 'locationID', 'countryID',
@@ -188,7 +189,7 @@ async function submitDraft(req, res) {
 
   // Non-admin: queue for review with an actionable admin keyboard.
   if (TELEGRAM_ADMIN_CHAT_ID) {
-    const cardUrl = `https://majstr.xyz/?card=${draft._id}`;
+    const cardUrl = `${PUBLIC_WEB_URL}/?card=${draft._id}`;
     bot.sendMessage(
       TELEGRAM_ADMIN_CHAT_ID,
       `🆕 Нова картка майстра на модерації\n\n` +
