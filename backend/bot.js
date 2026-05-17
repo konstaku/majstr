@@ -34,6 +34,11 @@ const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+// Mini App (onboarding wizard) host and public website host. Defaults are
+// the prod values so behaviour is unchanged if unset; staging overrides
+// both to its own domain to fully isolate the dev bot.
+const TMA_BASE_URL = process.env.TMA_BASE_URL || 'https://app.majstr.xyz';
+const PUBLIC_WEB_URL = process.env.PUBLIC_WEB_URL || 'https://majstr.xyz';
 const PORT_NUMBER = 8443;
 
 const s3 = new AWS.S3({
@@ -323,7 +328,7 @@ function buildWelcomeKeyboard(lang, token) {
       [
         {
           text: i18n.t(lang, 'btn.addMaster'),
-          web_app: { url: `https://app.majstr.xyz/onboard?lng=${lang}` },
+          web_app: { url: `${TMA_BASE_URL}/onboard?lng=${lang}` },
         },
       ],
       [
@@ -483,7 +488,7 @@ async function handleMasterCallback(queryId, message, data, from) {
       bot.sendMessage(
         master.telegramID,
         i18n.t(oLang, 'owner.approved', {
-          url: `https://majstr.xyz/?card=${master._id}`,
+          url: `${PUBLIC_WEB_URL}/?card=${master._id}`,
         })
       ).catch(() => {});
     }
@@ -573,7 +578,7 @@ async function handleClaimCallback(queryId, message, data, from) {
     // Notify claimant
     bot.sendMessage(
       claim.claimantTelegramID,
-      `✅ Your claim was approved! You are now the owner of the card:\nhttps://majstr.xyz/?card=${claim.masterID}`
+      `✅ Your claim was approved! You are now the owner of the card:\n${PUBLIC_WEB_URL}/?card=${claim.masterID}`
     ).catch(() => {});
 
   } else {
