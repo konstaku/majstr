@@ -75,6 +75,8 @@ function WizardInner() {
     const message =
       result.error === "active_master_exists"
         ? t("submit.errExists")
+        : result.error === "session"
+        ? t("draft.errSession")
         : result.error === "offline" || result.error === "network"
         ? t("submit.errOffline")
         : result.errors
