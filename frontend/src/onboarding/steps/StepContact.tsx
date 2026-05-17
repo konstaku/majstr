@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTelegramContext } from "../../surface/useTelegramContext";
+import { useOnbT } from "../i18n";
 import type { Contact, DraftData } from "../schema";
 
 function findValue(contacts: Contact[], type: string): string {
@@ -9,11 +10,11 @@ function findValue(contacts: Contact[], type: string): string {
 
 export function StepContact() {
   const form = useFormContext<DraftData>();
+  const { t } = useOnbT();
   const { isTMA, user } = useTelegramContext();
   const {
     setValue,
     getValues,
-    formState: { errors },
   } = form;
 
   const existing = getValues("contacts") || [];
@@ -41,7 +42,7 @@ export function StepContact() {
     setShareError(null);
     const wa = window.Telegram?.WebApp;
     if (!wa?.requestContact) {
-      setShareError("Введіть номер вручну нижче.");
+      setShareError(t("contact.shareManual"));
       return;
     }
     wa.requestContact((ok, response) => {
@@ -50,20 +51,19 @@ export function StepContact() {
         const normalized = shared.startsWith("+") ? shared : `+${shared}`;
         setPhone(normalized);
       } else if (!ok) {
-        setShareError("Доступ не надано. Введіть номер вручну нижче.");
+        setShareError(t("contact.shareDenied"));
       } else {
-        setShareError(
-          "Не вдалося отримати номер автоматично. Введіть його вручну нижче."
-        );
+        setShareError(t("contact.shareFailed"));
       }
     });
   };
 
+  const { formState: { errors } } = form;
   const contactError = errors.contacts?.message as string | undefined;
 
   return (
     <div className="wizard-step-content">
-      <p className="wizard-step-hint">Як з вами звʼязатися?</p>
+      <p className="wizard-step-hint">{t("contact.hint")}</p>
 
       {isTMA && (
         <button
@@ -71,14 +71,14 @@ export function StepContact() {
           className="wizard-ghost-btn"
           onClick={handleShareTelegramNumber}
         >
-          Поділитися номером з Telegram
+          {t("contact.shareNumber")}
         </button>
       )}
       {shareError && <p className="wizard-hint">{shareError}</p>}
 
       <div className="wizard-field">
         <label className="wizard-label">
-          Телефон <span className="wizard-required">*</span>
+          {t("contact.phoneLabel")} <span className="wizard-required">*</span>
         </label>
         <input
           className={`wizard-input${
@@ -86,34 +86,34 @@ export function StepContact() {
           }`}
           type="tel"
           inputMode="tel"
-          placeholder="+39 333 123 45 67"
+          placeholder={t("contact.phonePlaceholder")}
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
         />
-        <p className="wizard-hint">Клієнти телефонуватимуть на цей номер.</p>
+        <p className="wizard-hint">{t("contact.phoneHint")}</p>
         {contactError && <p className="wizard-field-error">{contactError}</p>}
       </div>
 
       <div className="wizard-field">
-        <label className="wizard-label">Telegram</label>
+        <label className="wizard-label">{t("contact.telegramLabel")}</label>
         <input
           className="wizard-input"
           placeholder="@username"
           value={telegram}
           onChange={(e) => setTelegram(e.target.value)}
         />
-        <p className="wizard-hint">Необовʼязково.</p>
+        <p className="wizard-hint">{t("common.optional")}</p>
       </div>
 
       <div className="wizard-field">
-        <label className="wizard-label">Instagram</label>
+        <label className="wizard-label">{t("contact.instagramLabel")}</label>
         <input
           className="wizard-input"
           placeholder="@username"
           value={instagram}
           onChange={(e) => setInstagram(e.target.value)}
         />
-        <p className="wizard-hint">Необовʼязково.</p>
+        <p className="wizard-hint">{t("common.optional")}</p>
       </div>
     </div>
   );

@@ -13,13 +13,14 @@ import { StepLocation } from "./steps/StepLocation";
 import { StepBioTags } from "./steps/StepBioTags";
 import { StepContact } from "./steps/StepContact";
 import { useHaptic } from "../ui/useHaptic";
+import { OnboardingI18nProvider, useOnbT } from "./i18n";
 
-const STEP_META = [
-  { title: "Профіль" },
-  { title: "Професія" },
-  { title: "Місцезнаходження" },
-  { title: "Про вас" },
-  { title: "Контакти" },
+const STEP_TITLE_KEYS = [
+  "step.profile",
+  "step.profession",
+  "step.location",
+  "step.bio",
+  "step.contact",
 ];
 
 const STEP_COMPONENTS = [
@@ -40,13 +41,14 @@ function ProgressDots({ total, current }: { total: number; current: number }) {
         />
       ))}
       <span className="wizard-step-counter">
-        {current + 1} of {total}
+        {current + 1} / {total}
       </span>
     </div>
   );
 }
 
-export default function OnboardingWizard() {
+function WizardInner() {
+  const { t } = useOnbT();
   const form = useForm<DraftData>({
     defaultValues: DRAFT_DEFAULTS,
     mode: "onBlur",
@@ -72,16 +74,18 @@ export default function OnboardingWizard() {
     haptic.notify("error");
     const message =
       result.error === "active_master_exists"
-        ? "У вас вже є активна картка майстра."
+        ? t("submit.errExists")
         : result.error === "offline" || result.error === "network"
-        ? "Немає звʼязку. Дані збережено — спробуйте надіслати ще раз."
+        ? t("submit.errOffline")
         : result.errors
-        ? "Перевірте заповнені поля: " + Object.keys(result.errors).join(", ")
-        : "Не вдалося надіслати. Спробуйте ще раз.";
+        ? t("submit.errValidation", {
+            fields: Object.keys(result.errors).join(", "),
+          })
+        : t("submit.errGeneric");
     await popup({
-      title: "Не вдалося надіслати",
+      title: t("submit.failTitle"),
       message,
-      buttons: [{ id: "ok", text: "Зрозуміло" }],
+      buttons: [{ id: "ok", text: t("submit.failOk") }],
     });
   };
 
@@ -106,11 +110,8 @@ export default function OnboardingWizard() {
       <div className="wizard">
         <div className="wizard-success">
           <div className="wizard-success-icon">✅</div>
-          <h2 className="wizard-success-title">Дякуємо!</h2>
-          <p className="wizard-success-text">
-            Вашу картку надіслано на модерацію. Ми повідомимо вас у Telegram,
-            щойно її буде схвалено.
-          </p>
+          <h2 className="wizard-success-title">{t("success.title")}</h2>
+          <p className="wizard-success-text">{t("success.text")}</p>
         </div>
       </div>
     );
@@ -120,11 +121,9 @@ export default function OnboardingWizard() {
     <FormProvider {...form}>
       <div className="wizard">
         <ProgressDots total={total} current={step} />
-        <div className="wizard-step-title">{STEP_META[step].title}</div>
+        <div className="wizard-step-title">{t(STEP_TITLE_KEYS[step])}</div>
 
-        {syncError && (
-          <div className="wizard-sync-error">{syncError}</div>
-        )}
+        {syncError && <div className="wizard-sync-error">{syncError}</div>}
 
         <div className="wizard-body">
           <StepComponent />
@@ -132,11 +131,19 @@ export default function OnboardingWizard() {
 
         <BackAffordance onBack={goPrev} visible={!isFirst} />
         <PrimaryCTA
-          label={isLast ? "Надіслати" : "Далі"}
+          label={isLast ? t("nav.submit") : t("nav.next")}
           onPress={handleNext}
           isEnabled={isStepValid && !isSyncing && !isSubmitting}
         />
       </div>
     </FormProvider>
+  );
+}
+
+export default function OnboardingWizard() {
+  return (
+    <OnboardingI18nProvider>
+      <WizardInner />
+    </OnboardingI18nProvider>
   );
 }

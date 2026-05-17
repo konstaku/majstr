@@ -5,12 +5,14 @@ import { usePopup } from "../../ui/usePopup";
 import { PickerSheet } from "../ui/PickerSheet";
 import { useReferenceData } from "../useReferenceData";
 import { LANGUAGE_OPTIONS } from "../schema";
+import { useOnbT } from "../i18n";
 import type { DraftData } from "../schema";
 
 const MAX_LANGUAGES = 5;
 
 export function StepProfession() {
   const form = useFormContext<DraftData>();
+  const { t } = useOnbT();
   const { control, formState: { errors }, setValue, watch } = form;
   const haptic = useHaptic();
   const popup = usePopup();
@@ -32,7 +34,7 @@ export function StepProfession() {
       setValue("languages", languages.filter((l) => l !== code), { shouldDirty: true, shouldValidate: true });
       haptic.selection();
     } else if (languages.length >= MAX_LANGUAGES) {
-      popup({ message: "Максимум 5 мов.", buttons: [{ id: "ok", text: "OK" }] });
+      popup({ message: t("prof.maxLangs"), buttons: [{ id: "ok", text: "OK" }] });
     } else {
       setValue("languages", [...languages, code], { shouldDirty: true, shouldValidate: true });
       haptic.selection();
@@ -54,14 +56,14 @@ export function StepProfession() {
       {/* Category picker */}
       <div className="wizard-field">
         <label className="wizard-label">
-          Категорія <span className="wizard-required">*</span>
+          {t("prof.categoryLabel")} <span className="wizard-required">*</span>
         </label>
         <button
           type="button"
           className={`wizard-picker-btn${!selectedCategory ? " wizard-picker-btn--placeholder" : ""}`}
           onClick={() => setShowCategoryPicker(true)}
         >
-          {selectedCategory?.name.ua ?? "Оберіть категорію"}
+          {selectedCategory?.name.ua ?? t("prof.chooseCategory")}
           <span className="wizard-picker-chevron">›</span>
         </button>
       </div>
@@ -69,12 +71,12 @@ export function StepProfession() {
       {/* Profession picker */}
       <div className="wizard-field">
         <label className="wizard-label">
-          Професія <span className="wizard-required">*</span>
+          {t("prof.professionLabel")} <span className="wizard-required">*</span>
         </label>
         <Controller
           control={control}
           name="professionID"
-          rules={{ required: "Обовʼязкове поле" }}
+          rules={{ required: t("common.required") }}
           render={() => (
             <button
               type="button"
@@ -82,7 +84,7 @@ export function StepProfession() {
               onClick={() => categoryID && setShowProfessionPicker(true)}
               disabled={!categoryID}
             >
-              {selectedProfession?.name.ua ?? (categoryID ? "Оберіть професію" : "Спершу оберіть категорію")}
+              {selectedProfession?.name.ua ?? (categoryID ? t("prof.chooseProfession") : t("prof.chooseCategoryFirst"))}
               <span className="wizard-picker-chevron">›</span>
             </button>
           )}
@@ -95,7 +97,7 @@ export function StepProfession() {
       {/* Language chips */}
       <div className="wizard-field">
         <label className="wizard-label">
-          Мови спілкування <span className="wizard-required">*</span>
+          {t("prof.langLabel")} <span className="wizard-required">*</span>
         </label>
         <div className="wizard-chips">
           {LANGUAGE_OPTIONS.map(({ code, label }) => (
@@ -109,16 +111,16 @@ export function StepProfession() {
             </button>
           ))}
         </div>
-        <p className="wizard-hint">Оберіть хоча б одну мову.</p>
+        <p className="wizard-hint">{t("prof.langHint")}</p>
         {errors.languages && (
-          <p className="wizard-field-error">Оберіть хоча б одну мову</p>
+          <p className="wizard-field-error">{t("prof.langRequired")}</p>
         )}
       </div>
 
       {/* Pickers */}
       {showCategoryPicker && (
         <PickerSheet
-          title="Категорія"
+          title={t("prof.categoryLabel")}
           options={profCategories.map((c) => ({ value: c.id, label: c.name.ua }))}
           selected={categoryID}
           onSelect={(id) => {
@@ -131,7 +133,7 @@ export function StepProfession() {
 
       {showProfessionPicker && (
         <PickerSheet
-          title="Професія"
+          title={t("prof.professionLabel")}
           options={filteredProfessions.map((p) => ({ value: p.id, label: p.name.ua }))}
           selected={professionID}
           onSelect={(id) => setValue("professionID", id, { shouldDirty: true, shouldValidate: true })}

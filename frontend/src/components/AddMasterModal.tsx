@@ -1,11 +1,23 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "../custom-hooks/useTranslation";
+
+// Bot/onboarding UI languages. Carry the visitor's site language into the
+// Telegram deep link so the bot + wizard open in the same language
+// (English version of the site -> English bot, etc.).
+const BOT_LANGS = ["uk", "en", "it", "ru"];
+function toBotLang(siteLang: string): string {
+  return BOT_LANGS.includes(siteLang) ? siteLang : "en";
+}
 
 type AddMasterModalProps = {
   onClose: () => void;
 };
 
 export default function AddMasterModal({ onClose }: AddMasterModalProps) {
+  const { lang } = useTranslation();
+  const botLang = toBotLang(lang);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -29,7 +41,7 @@ export default function AddMasterModal({ onClose }: AddMasterModalProps) {
             </p>
             <p className="modal-time-estimate">Займе близько 2 хвилин</p>
             <a
-              href="https://t.me/majstr_bot?startapp=onboard"
+              href={`https://t.me/majstr_bot?startapp=onboard-${botLang}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn"
