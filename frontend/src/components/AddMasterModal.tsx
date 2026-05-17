@@ -10,6 +10,10 @@ function toBotLang(siteLang: string): string {
   return BOT_LANGS.includes(siteLang) ? siteLang : "en";
 }
 
+// Which bot the site links to. Prod default; staging sets this to the dev
+// bot via a develop-scoped Vercel env var so the site opens the dev bot.
+const BOT_USERNAME = import.meta.env.VITE_TMA_BOT_USERNAME || "majstr_bot";
+
 type AddMasterModalProps = {
   onClose: () => void;
 };
@@ -41,7 +45,7 @@ export default function AddMasterModal({ onClose }: AddMasterModalProps) {
             </p>
             <p className="modal-time-estimate">Займе близько 2 хвилин</p>
             <a
-              href={`https://t.me/majstr_bot?startapp=onboard-${botLang}`}
+              href={`https://t.me/${BOT_USERNAME}?startapp=onboard-${botLang}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn"

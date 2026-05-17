@@ -64,11 +64,17 @@ function describePatchError(e: unknown, t: TFunc): string {
 async function sendPatch(payload: Partial<DraftData>, attempt = 0): Promise<void> {
   let res: Response;
   try {
-    res = await apiFetch("/api/masters/draft", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formToServerPatch(payload)),
-    });
+    res = await apiFetch(
+      "/api/masters/draft",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formToServerPatch(payload)),
+      },
+      // A background autosave must never trigger the global 401 handler
+      // (which closes the whole Mini App). Surface it as a banner instead.
+      { redirectOn401: false }
+    );
   } catch (netErr) {
     // Network failure — transient, retry then queue for next session.
     if (attempt < MAX_RETRIES - 1) {
@@ -256,14 +262,17 @@ export function useDraft(form: UseFormReturn<DraftData>): UseDraftResult {
         }
       }
 
-      const res = await apiFetch("/api/masters/draft/submit", {
-        method: "POST",
-      });
+      const res = await apiFetch(
+        "/api/masters/draft/submit",
+        { method: "POST" },
+        { redirectOn401: false }
+      );
 
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         return { ok: true, status: data.status };
       }
+      if (res.status === 401) return { ok: false, error: "session" };
       if (res.status === 422) {
         const data = await res.json().catch(() => ({}));
         return { ok: false, errors: data.errors, error: "validation" };
