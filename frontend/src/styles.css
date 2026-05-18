@@ -15,6 +15,10 @@
 
   --border: 2px solid var(--ink);
 
+  /* Mobile sticky-bar height — keep in sync with the burger overlay top
+     offset (@media max-width:640px). */
+  --bar-h: 56px;
+
   --font-display: 'Archivo Black', 'DM Sans', sans-serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -278,6 +282,15 @@ img {
   cursor: pointer;
   margin-left: 12px;
   flex-shrink: 0;
+}
+
+/* Compact wordmark + mobile bar actions — hidden by default (desktop and
+   the 641–860px tier). Only shown inside @media (max-width: 640px). */
+.header-logo-compact {
+  display: none;
+}
+.header-bar-actions {
+  display: none;
 }
 
 .menu-burger {
@@ -2111,16 +2124,84 @@ img {
    MEDIA QUERIES — Mobile
    ============================================================ */
 @media (max-width: 640px) {
-  .header-meta {
-    padding: 8px 16px;
+  /* ---- Mobile header: compact sticky bar ---- */
+  /* The .header wrapper must NOT be a sticky context, otherwise it would
+     drag the big wordmark band along. Sticky moves down to .header-meta. */
+  .header {
+    position: static;
   }
+
+  /* .header-meta becomes the only persistent element: a compact sticky
+     bar — logo (left), flex spacer, burger + CTA (right). */
+  .header-meta {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 16px;
+    min-height: var(--bar-h);
+  }
+
+  /* "EST. 2023 · WEEK …" label hidden — frees the left slot for the logo. */
+  .header-meta-label {
+    display: none;
+  }
+
+  /* Desktop CTA cluster stays hidden on mobile; the CTA is lifted into
+     .header-bar-actions instead. */
   .header-controls {
     display: none;
   }
+
+  /* Compact wordmark Link, left of the bar. Lowest priority on overflow:
+     it truncates before the CTA (which must never shrink/wrap). */
+  .header-logo-compact {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  /* Mobile-only right cluster: burger then CTA. Never shrinks. */
+  .header-bar-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+  }
+
   .burger-open {
     display: flex;
+    width: 44px;
+    height: 44px;
+    margin-left: 0;
   }
+
+  /* Tighter CTA on mobile; enforce ≥44px tap target, never wrap. */
+  .header-bar-actions .cta-header {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    font-size: 12px;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  /* Big MAJSTR. band scrolls away with the page (assert static). */
   .header-wordmark {
+    position: static;
     padding: 8px 16px 8px;
   }
 
@@ -2311,7 +2392,22 @@ img {
     display: none;
   }
 
+  /* ---- Burger overlay: viewport-fixed, anchored under the sticky bar ----
+     The inline style={{display}} in Root.tsx is the show/hide source of
+     truth; .open here only adds positioning so a scrolled-down menu no
+     longer renders off-screen at the top of the document. */
   .menu-burger.open {
     display: block;
+    position: fixed;
+    top: var(--bar-h); /* must match the bar height (--bar-h) */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 190; /* below the bar (200) so the ✕ toggle stays tappable */
+    background: var(--paper);
+    border-top: var(--border);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
