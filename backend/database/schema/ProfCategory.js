@@ -6,6 +6,11 @@ const profCategorySchema = new mongoose.Schema({
     en: String,
     ua: String,
     ru: String,
+    it: String,
+    pt: String,
+    de: String,
+    fr: String,
+    tr: String,
   },
 });
 

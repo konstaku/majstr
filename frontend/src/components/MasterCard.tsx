@@ -1,6 +1,7 @@
 import { useContext, useMemo, useRef } from "react";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
+import { localizedName } from "../i18n/lang";
 import { transliterate } from "../helpers/transliterate";
 
 import type { Master } from "../schema/master/master.schema";
@@ -46,13 +47,15 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
     return (parseInt(_id.slice(-4), 16) % 360);
   }, [_id]);
 
-  const profName = lang === "uk"
-    ? professions.find((p: Profession) => p.id === professionID)?.name.ua
-    : professions.find((p: Profession) => p.id === professionID)?.name.en;
+  const profName = localizedName(
+    professions.find((p: Profession) => p.id === professionID)?.name,
+    lang
+  );
 
-  const locName = lang === "uk"
-    ? locations.find((l: Location) => l.id === locationID)?.name.ua
-    : locations.find((l: Location) => l.id === locationID)?.name.en;
+  const locName = localizedName(
+    locations.find((l: Location) => l.id === locationID)?.name,
+    lang
+  );
 
   const initials = displayName
     .split(" ")

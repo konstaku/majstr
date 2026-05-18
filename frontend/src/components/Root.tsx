@@ -13,7 +13,8 @@ import { MasterContext } from "../context";
 import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
-import { COUNTRY_TO_LANG, LANG_LABELS } from "../i18n/translations";
+import { LANG_LABELS, LANG_FLAGS } from "../i18n/translations";
+import { localizedName, LANG_OPTIONS } from "../i18n/lang";
 import { apiFetch } from "../api/client";
 import AddMasterModal from "./AddMasterModal";
 
@@ -100,7 +101,7 @@ export default function Root() {
               dispatch={dispatch}
               lang={lang}
             />
-            <LanguageSwitcher countryID={countryID} />
+            <LanguageSwitcher />
             {AddMasterCta}
           </div>
 
@@ -140,7 +141,7 @@ export default function Root() {
               dispatch={dispatch}
               lang={lang}
             />
-            <LanguageSwitcher countryID={countryID} />
+            <LanguageSwitcher />
           </li>
         </ul>
       </div>
@@ -178,41 +179,29 @@ function CountryToggle({ countries, countryID, dispatch, lang }: CountryTogglePr
             dispatch({ type: ACTIONS.SET_COUNTRY, payload: { countryID: country.id } });
           }}
         >
-          {country.flag} {lang === "uk" ? country.name.ua : country.name.en}
+          {country.flag} {localizedName(country.name, lang, country.id)}
         </button>
       ))}
     </div>
   );
 }
 
-type LanguageSwitcherProps = { countryID: string };
-
-function LanguageSwitcher({ countryID }: LanguageSwitcherProps) {
+function LanguageSwitcher() {
   const { lang, setLang } = useTranslation();
-  const localLang = COUNTRY_TO_LANG[countryID];
-  const showLocal = localLang && localLang !== "uk" && localLang !== "en";
 
   return (
     <div className="lang-switcher">
-      {(["uk", "en"] as const).map((code) => (
+      {LANG_OPTIONS.map(({ code }) => (
         <button
           key={code}
           className={`lang-btn ${lang === code ? "active" : ""}`}
           onClick={() => setLang(code)}
           title={code.toUpperCase()}
         >
+          {LANG_FLAGS[code] ? `${LANG_FLAGS[code]} ` : ""}
           {LANG_LABELS[code]}
         </button>
       ))}
-      {showLocal && (
-        <button
-          className={`lang-btn ${lang === localLang ? "active" : ""}`}
-          onClick={() => setLang(localLang)}
-          title={localLang.toUpperCase()}
-        >
-          {LANG_LABELS[localLang]}
-        </button>
-      )}
     </div>
   );
 }

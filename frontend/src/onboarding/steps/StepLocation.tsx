@@ -3,10 +3,11 @@ import { useFormContext, Controller } from "react-hook-form";
 import { PickerSheet } from "../ui/PickerSheet";
 import { useReferenceData } from "../useReferenceData";
 import { useOnbT } from "../i18n";
+import { localizedName } from "../../i18n/lang";
 import type { DraftData } from "../schema";
 
 export function StepLocation() {
-  const { t } = useOnbT();
+  const { t, lang } = useOnbT();
   const { control, formState: { errors }, watch, setValue } = useFormContext<DraftData>();
   const { locations, loading } = useReferenceData();
   const [showPicker, setShowPicker] = useState(false);
@@ -40,7 +41,7 @@ export function StepLocation() {
               className={`wizard-picker-btn${!selected ? " wizard-picker-btn--placeholder" : ""}`}
               onClick={() => setShowPicker(true)}
             >
-              {selected ? selected.name?.ua ?? selected.id : t("loc.chooseCity")}
+              {selected ? localizedName(selected.name, lang, selected.id) : t("loc.chooseCity")}
               <span className="wizard-picker-chevron">›</span>
             </button>
           )}
@@ -63,7 +64,7 @@ export function StepLocation() {
           title={t("loc.cityLabel")}
           options={locations.map((l) => ({
             value: l.id,
-            label: l.name?.ua ?? l.id,
+            label: localizedName(l.name, lang, l.id),
           }))}
           selected={locationID}
           onSelect={(id) => {

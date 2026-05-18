@@ -356,6 +356,14 @@ export const translations: Record<string, LangTranslations> = {
   },
 };
 
+// PLACEHOLDER: ru/de/fr/tr fall back to English copy until the Content
+// Creator / Brand Guardian agents replace these with real translations
+// (Phase 2). Keeps every app language structurally present today.
+translations.ru = translations.en;
+translations.de = translations.en;
+translations.fr = translations.en;
+translations.tr = translations.en;
+
 export const COUNTRY_TO_LANG: Record<string, string> = {
   IT: "it",
   PT: "pt",
@@ -365,24 +373,25 @@ export const COUNTRY_TO_LANG: Record<string, string> = {
   PL: "pl",
 };
 
+// Canonical app languages. RU intentionally has NO flag (text label).
 export const LANG_FLAGS: Record<string, string> = {
-  uk: "🇺🇦",
   en: "🇬🇧",
+  uk: "🇺🇦",
+  ru: "",
   it: "🇮🇹",
   pt: "🇵🇹",
-  es: "🇪🇸",
   de: "🇩🇪",
   fr: "🇫🇷",
-  pl: "🇵🇱",
+  tr: "🇹🇷",
 };
 
 export const LANG_LABELS: Record<string, string> = {
-  uk: "UA",
   en: "EN",
+  uk: "UA",
+  ru: "RU",
   it: "IT",
   pt: "PT",
-  es: "ES",
   de: "DE",
   fr: "FR",
-  pl: "PL",
+  tr: "TR",
 };

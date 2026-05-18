@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { MasterContext } from "../context";
 import ContactsLayout from "./ContactsLayout";
 import { useTranslation } from "../custom-hooks/useTranslation";
+import { localizedName } from "../i18n/lang";
 import { transliterate } from "../helpers/transliterate";
 
 import type { Master } from "../schema/master/master.schema";
@@ -34,13 +35,15 @@ export default function Modal({ master, setShowModal }: ModalProps) {
 
   const displayName = lang === "uk" ? master.name : transliterate(master.name);
 
-  const profName = lang === "uk"
-    ? professions.find((p: Profession) => p.id === master.professionID)?.name.ua
-    : professions.find((p: Profession) => p.id === master.professionID)?.name.en;
+  const profName = localizedName(
+    professions.find((p: Profession) => p.id === master.professionID)?.name,
+    lang
+  );
 
-  const locName = lang === "uk"
-    ? locations.find((l: Location) => l.id === master.locationID)?.name.ua
-    : locations.find((l: Location) => l.id === master.locationID)?.name.en;
+  const locName = localizedName(
+    locations.find((l: Location) => l.id === master.locationID)?.name,
+    lang
+  );
 
   const modalTags = (lang === "uk" ? master.tags.ua : master.tags.en);
 

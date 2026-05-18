@@ -3,6 +3,7 @@ import { Profession } from "../schema/state/state.schema";
 import Avatar from "./Avatar";
 import ContactsLayout from "./ContactsLayout";
 import { apiFetch } from "../api/client";
+import { localizedName } from "../i18n/lang";
 
 type NewMasterPreviewProps = {
   master: Master;
@@ -31,7 +32,7 @@ export default function NewMasterPreview({
           </div>
           <div className="master-card-name">{name}</div>
           <div className="master-card-profession">
-            {professions?.find((p) => p.id === professionID)?.name.ua}
+            {localizedName(professions?.find((p) => p.id === professionID)?.name, "uk")}
           </div>
           <div className="mastercard-location">
             <img src="/img/icons/geopin.svg" alt="" />
