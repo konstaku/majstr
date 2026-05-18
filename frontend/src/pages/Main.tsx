@@ -65,8 +65,8 @@ export const lightSelectStyles = {
     backgroundColor: "#fffaf0",
     overflow: "hidden",
     marginTop: "2px",
-    minWidth: "220px",
-    maxWidth: "90vw",
+    minWidth: "100%",
+    maxWidth: "280px",
     width: "max-content",
   }),
   option: (
@@ -87,7 +87,19 @@ export const lightSelectStyles = {
     textTransform: "uppercase" as const,
     cursor: "pointer",
     padding: "10px 14px",
-    whiteSpace: "nowrap" as const,
+    whiteSpace: "normal" as const,
+    overflowWrap: "break-word" as const,
+  }),
+};
+
+// Right-aligned variant for selects positioned on the right side of a row.
+// The menu grows leftward from the trigger's right edge, preventing viewport overflow.
+export const lightSelectStylesRight = {
+  ...lightSelectStyles,
+  menu: (base: CSSObjectWithLabel) => ({
+    ...lightSelectStyles.menu(base),
+    left: "auto" as const,
+    right: "0" as const,
   }),
 };
 
@@ -284,8 +296,6 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
-                menuPortalTarget={document.body}
-                menuPosition="fixed"
                 value={
                   pendingCity
                     ? availableLocations.find((l) => l.value === pendingCity) ?? availableLocations[0]
@@ -317,15 +327,13 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
-                menuPortalTarget={document.body}
-                menuPosition="fixed"
                 value={
                   pendingTrade
                     ? tradeOptions.find((o) => o.value === pendingTrade) ?? tradeOptions[0]
                     : tradeOptions[0]
                 }
                 options={tradeOptions}
-                styles={lightSelectStyles}
+                styles={lightSelectStylesRight}
                 onChange={(e) => {
                   if (e && "value" in e) setPendingTrade(e.value);
                 }}
