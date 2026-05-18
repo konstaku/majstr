@@ -363,6 +363,7 @@ translations.ru = translations.en;
 translations.de = translations.en;
 translations.fr = translations.en;
 translations.tr = translations.en;
+translations.es = translations.en;
 
 export const COUNTRY_TO_LANG: Record<string, string> = {
   IT: "it",
@@ -383,6 +384,7 @@ export const LANG_FLAGS: Record<string, string> = {
   de: "🇩🇪",
   fr: "🇫🇷",
   tr: "🇹🇷",
+  es: "🇪🇸",
 };
 
 export const LANG_LABELS: Record<string, string> = {
@@ -394,4 +396,5 @@ export const LANG_LABELS: Record<string, string> = {
   de: "DE",
   fr: "FR",
   tr: "TR",
+  es: "ES",
 };

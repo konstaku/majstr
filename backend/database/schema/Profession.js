@@ -12,6 +12,7 @@ const professionSchema = new mongoose.Schema({
     de: String,
     fr: String,
     tr: String,
+    es: String,
   },
 });
 

@@ -15,6 +15,7 @@ export const ONB_LANGS = [
   "de",
   "fr",
   "tr",
+  "es",
 ] as const;
 export type OnbLang = (typeof ONB_LANGS)[number];
 const DEFAULT: OnbLang = "uk";
@@ -766,6 +767,10 @@ const TR: Dict = {
     "Bağlantı yok. Yerel olarak kaydedildi — daha sonra tekrar deneyeceğiz.",
 };
 
+// es is empty pending the Content Creator / Brand Guardian agents → it
+// resolves via the EN fallback in t() until filled (Phase 2).
+const ES: Dict = {};
+
 const DICTS: Record<OnbLang, Dict> = {
   en: EN,
   uk: UK,
@@ -775,6 +780,7 @@ const DICTS: Record<OnbLang, Dict> = {
   de: DE,
   fr: FR,
   tr: TR,
+  es: ES,
 };
 
 export type TFunc = (key: string, vars?: Record<string, string | number>) => string;
