@@ -1,0 +1,109 @@
+<!doctype html>
+<!--
+  Majstr site OG image — 1200×630, real brand typeface (Archivo Black).
+
+  HOW TO EXPORT TO PNG:
+  1. Open this file in Chrome.
+  2. DevTools (⌥⌘I) → Device Toolbar (⇧⌘M) → "Responsive" → set 1200 × 630,
+     zoom 100%.
+  3. DevTools ⋮ menu → "Capture screenshot" (or right-click the .og node →
+     Capture node screenshot).
+  4. Save as  frontend/public/og-image.png  (overwrites the generated one;
+     index.html meta already points there — no code changes needed).
+
+  Wait for the webfont to load before capturing (give it ~1s).
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@500;700&family=JetBrains+Mono:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        background: #2b2723;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .og {
+        width: 1200px;
+        height: 630px;
+        background: #f4ede0;
+        color: #0e0a06;
+        position: relative;
+        overflow: hidden;
+        font-family: "DM Sans", sans-serif;
+      }
+      .og::after {
+        content: "";
+        position: absolute;
+        inset: 20px;
+        border: 8px solid #0e0a06;
+        pointer-events: none;
+      }
+      .pad { position: absolute; inset: 70px; }
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 700;
+        font-size: 22px;
+        letter-spacing: 0.04em;
+        padding-bottom: 18px;
+        border-bottom: 3px solid #0e0a06;
+      }
+      .wordmark {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 184px;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        margin-top: 70px;
+        margin-bottom: 0;
+      }
+      .tagline {
+        font-family: "Archivo Black", sans-serif;
+        font-weight: 700;
+        font-size: 46px;
+        margin-top: 2px;
+      }
+      .stat {
+        color: #c84b31;
+        font-weight: 700;
+        font-size: 30px;
+        margin-top: 22px;
+      }
+      .url {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 34px;
+        letter-spacing: 0.02em;
+      }
+      .terra {
+        color: #c84b31;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="og">
+      <div class="pad">
+        <div class="meta">
+          <span>EST. 2024 &nbsp;·&nbsp; UA → IT / PT</span>
+          <span>★★★★★ &nbsp;·&nbsp; 24 CITIES</span>
+        </div>
+        <div class="wordmark">MAJSTR<span class="terra">.</span></div>
+        <div class="tagline">FIND A CRAFTSMAN </br><span class="terra">WHO SPEAKS YOUR LANGUAGE.</span></div>
+        </br>
+        <div class="stat">2&nbsp;400+ multi-lingual masters across Europe</div>
+        <div class="url">MAJSTR.XYZ →</div>
+      </div>
+    </div>
+  </body>
+</html>
