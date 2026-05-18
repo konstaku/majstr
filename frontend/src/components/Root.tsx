@@ -138,7 +138,7 @@ export default function Root() {
         <ul>
           <li><Link to="/">{t("nav.search")}</Link></li>
           <li>
-            <button className="nav-btn" onClick={() => { setShowBurgerMenu(false); openAddMasterModal(); }}>
+            <button type="button" className="burger-link" onClick={() => { setShowBurgerMenu(false); openAddMasterModal(); }}>
               {t("nav.addMaster")}
             </button>
           </li>
