@@ -337,7 +337,9 @@ function FooterContent({ onAddMasterClick }: { onAddMasterClick: () => void }) {
         <div className="footer-col">
           <h4>Platform</h4>
           <Link to="/">{t("nav.search")}</Link>
-          <button className="nav-btn" onClick={onAddMasterClick}>{t("nav.addMaster")}</button>
+          <button type="button" className="footer-link" onClick={onAddMasterClick}>
+            {t("nav.addMaster")}
+          </button>
           <span className="inactive">{t("nav.faq")}</span>
         </div>
         <div className="footer-col">
