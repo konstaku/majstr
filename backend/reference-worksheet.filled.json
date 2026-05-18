@@ -1311,22 +1311,6 @@
       }
     },
     {
-      "id": "uomini",
-      "name": {
-        "en": "Uomini",
-        "ua": "Уоміні",
-        "ua_alt": "Уоміні",
-        "ru": "Уомини",
-        "ru_alt": "Уомини",
-        "it": "Uomini",
-        "pt": "Uomini",
-        "de": "Uomini",
-        "fr": "Uomini",
-        "tr": "Uomini",
-        "es": "Uomini"
-      }
-    },
-    {
       "id": "lisbon",
       "name": {
         "en": "Lisbon",

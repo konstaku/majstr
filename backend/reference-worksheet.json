@@ -771,16 +771,6 @@
       }
     },
     {
-      "id": "uomini",
-      "name": {
-        "en": "Uomini",
-        "ua": "Уоміні",
-        "ua_alt": "Уоміні",
-        "ru": "Уомини",
-        "ru_alt": "Уомини"
-      }
-    },
-    {
       "id": "lisbon",
       "name": {
         "en": "Lisbon",
