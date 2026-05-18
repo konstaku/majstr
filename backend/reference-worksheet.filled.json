@@ -1,0 +1,1652 @@
+{
+  "professions": [
+    {
+      "id": "dentist",
+      "name": {
+        "en": "Dentist",
+        "ua": "Стоматолог",
+        "ru": "Стоматолог",
+        "it": "Dentista",
+        "pt": "Dentista",
+        "de": "Zahnarzt",
+        "fr": "Dentiste",
+        "tr": "Diş hekimi",
+        "es": "Dentista"
+      }
+    },
+    {
+      "id": "gynecologist",
+      "name": {
+        "en": "Gynecologist",
+        "ua": "Гінеколог",
+        "ru": "Гинеколог",
+        "it": "Ginecologo",
+        "pt": "Ginecologista",
+        "de": "Gynäkologe",
+        "fr": "Gynécologue",
+        "tr": "Jinekolog",
+        "es": "Ginecólogo"
+      }
+    },
+    {
+      "id": "psychiatrist",
+      "name": {
+        "en": "Psychiatrist",
+        "ua": "Психіатр",
+        "ru": "Психиатр",
+        "it": "Psichiatra",
+        "pt": "Psiquiatra",
+        "de": "Psychiater",
+        "fr": "Psychiatre",
+        "tr": "Psikiyatrist",
+        "es": "Psiquiatra"
+      }
+    },
+    {
+      "id": "hairdresser",
+      "name": {
+        "en": "Hairdresser",
+        "ua": "Перукар",
+        "ru": "Парикмахер",
+        "it": "Parrucchiere",
+        "pt": "Cabeleireiro",
+        "de": "Friseur",
+        "fr": "Coiffeur",
+        "tr": "Kuaför",
+        "es": "Peluquero"
+      }
+    },
+    {
+      "id": "beautician",
+      "name": {
+        "en": "Beautician",
+        "ua": "Косметолог",
+        "ru": "Косметолог",
+        "it": "Estetista",
+        "pt": "Esteticista",
+        "de": "Kosmetiker",
+        "fr": "Esthéticien",
+        "tr": "Güzellik uzmanı",
+        "es": "Esteticista"
+      }
+    },
+    {
+      "id": "makeup_artist",
+      "name": {
+        "en": "Makeup artist",
+        "ua": "Візажист",
+        "ru": "Визажист",
+        "it": "Truccatore",
+        "pt": "Maquilhador",
+        "de": "Make-up-Artist",
+        "fr": "Maquilleur",
+        "tr": "Makyaj uzmanı",
+        "es": "Maquillador"
+      }
+    },
+    {
+      "id": "piercer",
+      "name": {
+        "en": "Piercer",
+        "ua": "Майстер пірсингу",
+        "ru": "Мастер пирсинга",
+        "it": "Piercer",
+        "pt": "Body piercer",
+        "de": "Piercer",
+        "fr": "Perceur",
+        "tr": "Piercing ustası",
+        "es": "Perforador corporal"
+      }
+    },
+    {
+      "id": "housekeeper",
+      "name": {
+        "en": "Housekeeper",
+        "ua": "Покоївка",
+        "ru": "Горничная",
+        "it": "Governante",
+        "pt": "Empregada doméstica",
+        "de": "Haushaltshilfe",
+        "fr": "Gouvernante",
+        "tr": "Ev hizmetlisi",
+        "es": "Ama de llaves"
+      }
+    },
+    {
+      "id": "lawyer",
+      "name": {
+        "en": "Lawyer",
+        "ua": "Юрист",
+        "ru": "Юрист",
+        "it": "Giurista",
+        "pt": "Jurista",
+        "de": "Jurist",
+        "fr": "Juriste",
+        "tr": "Hukukçu",
+        "es": "Jurista"
+      }
+    },
+    {
+      "id": "notary",
+      "name": {
+        "en": "Notary",
+        "ua": "Нотаріус",
+        "ru": "Нотариус",
+        "it": "Notaio",
+        "pt": "Notário",
+        "de": "Notar",
+        "fr": "Notaire",
+        "tr": "Noter",
+        "es": "Notario"
+      }
+    },
+    {
+      "id": "attorney",
+      "name": {
+        "en": "Attorney",
+        "ua": "Адвокат",
+        "ru": "Адвокат",
+        "it": "Avvocato",
+        "pt": "Advogado",
+        "de": "Rechtsanwalt",
+        "fr": "Avocat",
+        "tr": "Avukat",
+        "es": "Abogado"
+      }
+    },
+    {
+      "id": "financial_advisor",
+      "name": {
+        "en": "Financial advisor",
+        "ua": "Фінансовий консультант",
+        "ru": "Финансовый консультант",
+        "it": "Consulente finanziario",
+        "pt": "Consultor financeiro",
+        "de": "Finanzberater",
+        "fr": "Conseiller financier",
+        "tr": "Finansal danışman",
+        "es": "Asesor financiero"
+      }
+    },
+    {
+      "id": "videographer",
+      "name": {
+        "en": "Videographer",
+        "ua": "Відеооператор",
+        "ru": "Видеооператор",
+        "it": "Videomaker",
+        "pt": "Videógrafo",
+        "de": "Videograf",
+        "fr": "Vidéaste",
+        "tr": "Video çekim uzmanı",
+        "es": "Videógrafo"
+      }
+    },
+    {
+      "id": "florist",
+      "name": {
+        "en": "Florist",
+        "ua": "Флорист",
+        "ru": "Флорист",
+        "it": "Fioraio",
+        "pt": "Florista",
+        "de": "Florist",
+        "fr": "Fleuriste",
+        "tr": "Çiçekçi",
+        "es": "Florista"
+      }
+    },
+    {
+      "id": "confectioner",
+      "name": {
+        "en": "Сonfectioner",
+        "ua": "Кондитер",
+        "ru": "Кондитер",
+        "it": "Pasticcere",
+        "pt": "Pasteleiro",
+        "de": "Konditor",
+        "fr": "Pâtissier",
+        "tr": "Pastacı",
+        "es": "Pastelero"
+      }
+    },
+    {
+      "id": "pet_photographer",
+      "name": {
+        "en": "Pet Photographer",
+        "ua": "Фотограф для домашніх тварин",
+        "ru": "Фотограф домашних животных",
+        "it": "Fotografo di animali domestici",
+        "pt": "Fotógrafo de animais de estimação",
+        "de": "Haustierfotograf",
+        "fr": "Photographe animalier",
+        "tr": "Evcil hayvan fotoğrafçısı",
+        "es": "Fotógrafo de mascotas"
+      }
+    },
+    {
+      "id": "pet_transporter",
+      "name": {
+        "en": "Pet Transporter",
+        "ua": "Перевізник домашніх тварин",
+        "ru": "Перевозчик домашних животных",
+        "it": "Trasportatore di animali domestici",
+        "pt": "Transportador de animais de estimação",
+        "de": "Haustiertransporteur",
+        "fr": "Transporteur d'animaux",
+        "tr": "Evcil hayvan nakliyecisi",
+        "es": "Transportista de mascotas"
+      }
+    },
+    {
+      "id": "mechanic",
+      "name": {
+        "en": "Mechanic",
+        "ua": "Автомеханік",
+        "ru": "Автомеханик",
+        "it": "Meccanico",
+        "pt": "Mecânico",
+        "de": "Kfz-Mechaniker",
+        "fr": "Mécanicien",
+        "tr": "Oto tamircisi",
+        "es": "Mecánico"
+      }
+    },
+    {
+      "id": "therapist",
+      "name": {
+        "en": "Therapist",
+        "ua": "Терапевт",
+        "ru": "Терапевт",
+        "it": "Medico internista",
+        "pt": "Clínico geral",
+        "de": "Internist",
+        "fr": "Médecin généraliste",
+        "tr": "Dahiliye uzmanı",
+        "es": "Médico internista"
+      }
+    },
+    {
+      "id": "ophtalmologist",
+      "name": {
+        "en": "Ophtalmologist",
+        "ua": "Офтальмолог",
+        "ru": "Офтальмолог",
+        "it": "Oculista",
+        "pt": "Oftalmologista",
+        "de": "Augenarzt",
+        "fr": "Ophtalmologue",
+        "tr": "Göz doktoru",
+        "es": "Oftalmólogo"
+      }
+    },
+    {
+      "id": "plumber",
+      "name": {
+        "en": "Plumber",
+        "ua": "Сантехнік",
+        "ru": "Сантехник",
+        "it": "Idraulico",
+        "pt": "Canalizador",
+        "de": "Klempner",
+        "fr": "Plombier",
+        "tr": "Tesisatçı",
+        "es": "Fontanero"
+      }
+    },
+    {
+      "id": "attorney",
+      "name": {
+        "en": "Attorney",
+        "ua": "Адвокат",
+        "ru": "Адвокат",
+        "it": "Avvocato",
+        "pt": "Advogado",
+        "de": "Rechtsanwalt",
+        "fr": "Avocat",
+        "tr": "Avukat",
+        "es": "Abogado"
+      }
+    },
+    {
+      "id": "accountant",
+      "name": {
+        "en": "Accountant",
+        "ua": "Бухгалтер",
+        "ru": "Бухгалтер",
+        "it": "Commercialista",
+        "pt": "Contabilista",
+        "de": "Buchhalter",
+        "fr": "Comptable",
+        "tr": "Muhasebeci",
+        "es": "Contable"
+      }
+    },
+    {
+      "id": "content_creator",
+      "name": {
+        "en": "Content Creator",
+        "ua": "Творець контенту",
+        "ru": "Творец контента",
+        "it": "Content creator",
+        "pt": "Criador de conteúdo",
+        "de": "Content Creator",
+        "fr": "Créateur de contenu",
+        "tr": "İçerik üreticisi",
+        "es": "Creador de contenido"
+      }
+    },
+    {
+      "id": "babysitter",
+      "name": {
+        "en": "Babysitter",
+        "ua": "Няня",
+        "ru": "Няня",
+        "it": "Babysitter",
+        "pt": "Ama",
+        "de": "Babysitter",
+        "fr": "Baby-sitter",
+        "tr": "Bebek bakıcısı",
+        "es": "Niñera"
+      }
+    },
+    {
+      "id": "veterinarian",
+      "name": {
+        "en": "Veterinarian",
+        "ua": "Ветеринар",
+        "ru": "Ветеринар",
+        "it": "Veterinario",
+        "pt": "Veterinário",
+        "de": "Tierarzt",
+        "fr": "Vétérinaire",
+        "tr": "Veteriner",
+        "es": "Veterinario"
+      }
+    },
+    {
+      "id": "pet_caretaker",
+      "name": {
+        "en": "Pet Caretaker",
+        "ua": "Доглядач для домашніх тварин",
+        "ru": "Сиделка за домашними животными",
+        "it": "Pet sitter",
+        "pt": "Cuidador de animais de estimação",
+        "de": "Tierbetreuer",
+        "fr": "Pet sitter",
+        "tr": "Evcil hayvan bakıcısı",
+        "es": "Cuidador de mascotas"
+      }
+    },
+    {
+      "id": "tire_technician",
+      "name": {
+        "en": "Tire Technician",
+        "ua": "Шиномонтаж",
+        "ru": "Шиномонтаж",
+        "it": "Gommista",
+        "pt": "Técnico de pneus",
+        "de": "Reifenmonteur",
+        "fr": "Technicien pneumatique",
+        "tr": "Lastik ustası",
+        "es": "Técnico de neumáticos"
+      }
+    },
+    {
+      "id": "dog_walker",
+      "name": {
+        "en": "Dog Walker",
+        "ua": "Вигульщик собак",
+        "ru": "Выгульщик собак",
+        "it": "Dog sitter",
+        "pt": "Passeador de cães",
+        "de": "Hundeausführer",
+        "fr": "Promeneur de chiens",
+        "tr": "Köpek gezdiricisi",
+        "es": "Paseador de perros"
+      }
+    },
+    {
+      "id": "driving_instructor",
+      "name": {
+        "en": "Driving Instructor",
+        "ua": "Інструктор з водіння",
+        "ru": "Инструктор по вождению",
+        "it": "Istruttore di guida",
+        "pt": "Instrutor de condução",
+        "de": "Fahrlehrer",
+        "fr": "Moniteur d'auto-école",
+        "tr": "Sürücü eğitmeni",
+        "es": "Profesor de autoescuela"
+      }
+    },
+    {
+      "id": "manicurist",
+      "name": {
+        "en": "Manicurist",
+        "ua": "Майстер манікюру",
+        "ru": "Мастер маникюра",
+        "it": "Onicotecnica",
+        "pt": "Manicure",
+        "de": "Maniküristin",
+        "fr": "Manucure",
+        "tr": "Manikürcü",
+        "es": "Manicurista"
+      }
+    },
+    {
+      "id": "construction_worker",
+      "name": {
+        "en": "Construction worker",
+        "ua": "Будівельник",
+        "ru": "Строитель",
+        "it": "Muratore",
+        "pt": "Trabalhador da construção",
+        "de": "Bauarbeiter",
+        "fr": "Ouvrier du bâtiment",
+        "tr": "İnşaat işçisi",
+        "es": "Obrero de la construcción"
+      }
+    },
+    {
+      "id": "financial_advisor",
+      "name": {
+        "en": "Financial advisor",
+        "ua": "Фінансовий консультант",
+        "ru": "Финансовый консультант",
+        "it": "Consulente finanziario",
+        "pt": "Consultor financeiro",
+        "de": "Finanzberater",
+        "fr": "Conseiller financier",
+        "tr": "Finansal danışman",
+        "es": "Asesor financiero"
+      }
+    },
+    {
+      "id": "choreographer",
+      "name": {
+        "en": "Choreographer",
+        "ua": "Вчитель танців",
+        "ru": "Учитель танцев",
+        "it": "Insegnante di danza",
+        "pt": "Professor de dança",
+        "de": "Tanzlehrer",
+        "fr": "Professeur de danse",
+        "tr": "Dans öğretmeni",
+        "es": "Profesor de baile"
+      }
+    },
+    {
+      "id": "translator",
+      "name": {
+        "en": "Translator",
+        "ua": "Перекладач",
+        "ru": "Переводчик",
+        "it": "Traduttore",
+        "pt": "Tradutor",
+        "de": "Übersetzer",
+        "fr": "Traducteur",
+        "tr": "Çevirmen",
+        "es": "Traductor"
+      }
+    },
+    {
+      "id": "lawyer",
+      "name": {
+        "en": "Lawyer",
+        "ua": "Юрист",
+        "ru": "Юрист",
+        "it": "Giurista",
+        "pt": "Jurista",
+        "de": "Jurist",
+        "fr": "Juriste",
+        "tr": "Hukukçu",
+        "es": "Jurista"
+      }
+    },
+    {
+      "id": "cook",
+      "name": {
+        "en": "Cook",
+        "ua": "Повар",
+        "ru": "Повар",
+        "it": "Cuoco",
+        "pt": "Cozinheiro",
+        "de": "Koch",
+        "fr": "Cuisinier",
+        "tr": "Aşçı",
+        "es": "Cocinero"
+      }
+    },
+    {
+      "id": "photographer",
+      "name": {
+        "en": "Photographer",
+        "ua": "Фотограф",
+        "ru": "Фотограф",
+        "it": "Fotografo",
+        "pt": "Fotógrafo",
+        "de": "Fotograf",
+        "fr": "Photographe",
+        "tr": "Fotoğrafçı",
+        "es": "Fotógrafo"
+      }
+    },
+    {
+      "id": "pet_groomer",
+      "name": {
+        "en": "Pet Groomer",
+        "ua": "Грумер",
+        "ru": "Грумер",
+        "it": "Toelettatore",
+        "pt": "Groomer",
+        "de": "Hundefriseur",
+        "fr": "Toiletteur",
+        "tr": "Pet kuaförü",
+        "es": "Peluquero canino"
+      }
+    },
+    {
+      "id": "pet_trainer",
+      "name": {
+        "en": "Pet Trainer",
+        "ua": "Тренер для домашніх тварин",
+        "ru": "Тренер домашних животных",
+        "it": "Addestratore di animali",
+        "pt": "Adestrador de animais",
+        "de": "Tiertrainer",
+        "fr": "Éducateur canin",
+        "tr": "Evcil hayvan eğitmeni",
+        "es": "Adiestrador de mascotas"
+      }
+    },
+    {
+      "id": "tutor",
+      "name": {
+        "en": "Tutor",
+        "ua": "Репетитор",
+        "ru": "Репетитор",
+        "it": "Insegnante privato",
+        "pt": "Explicador",
+        "de": "Nachhilfelehrer",
+        "fr": "Professeur particulier",
+        "tr": "Özel ders öğretmeni",
+        "es": "Profesor particular"
+      }
+    },
+    {
+      "id": "pediatric_nurse",
+      "name": {
+        "en": "Pediatrist",
+        "ua": "Педіатр",
+        "ru": "Педиатр",
+        "it": "Pediatra",
+        "pt": "Pediatra",
+        "de": "Kinderarzt",
+        "fr": "Pédiatre",
+        "tr": "Çocuk doktoru",
+        "es": "Pediatra"
+      }
+    },
+    {
+      "id": "auto_electrician",
+      "name": {
+        "en": "Auto Electrician",
+        "ua": "Автоелектрик",
+        "ru": "Автоэлектрик",
+        "it": "Elettrauto",
+        "pt": "Eletricista automóvel",
+        "de": "Kfz-Elektriker",
+        "fr": "Électricien automobile",
+        "tr": "Oto elektrikçisi",
+        "es": "Electricista de automóviles"
+      }
+    },
+    {
+      "id": "massage",
+      "name": {
+        "en": "Masseur",
+        "ua": "Масажист",
+        "ru": "Массажист",
+        "it": "Massaggiatore",
+        "pt": "Massagista",
+        "de": "Masseur",
+        "fr": "Masseur",
+        "tr": "Masör",
+        "es": "Masajista"
+      }
+    },
+    {
+      "id": "doctor",
+      "name": {
+        "en": "Doctor",
+        "ua": "Лікар",
+        "ru": "Врач",
+        "it": "Medico",
+        "pt": "Médico",
+        "de": "Arzt",
+        "fr": "Médecin",
+        "tr": "Doktor",
+        "es": "Médico"
+      }
+    },
+    {
+      "id": "psychotherapist",
+      "name": {
+        "en": "Psychotherapist",
+        "ua": "Психотерапевт",
+        "ru": "Психотерапевт",
+        "it": "Psicoterapeuta",
+        "pt": "Psicoterapeuta",
+        "de": "Psychotherapeut",
+        "fr": "Psychothérapeute",
+        "tr": "Psikoterapist",
+        "es": "Psicoterapeuta"
+      }
+    },
+    {
+      "id": "tattoo_artist",
+      "name": {
+        "en": "Tattoo artist",
+        "ua": "Тату-майстер",
+        "ru": "Тату-мастер",
+        "it": "Tatuatore",
+        "pt": "Tatuador",
+        "de": "Tätowierer",
+        "fr": "Tatoueur",
+        "tr": "Dövme sanatçısı",
+        "es": "Tatuador"
+      }
+    },
+    {
+      "id": "eyebrows",
+      "name": {
+        "en": "Brow master",
+        "ua": "Майстер бровей",
+        "ru": "Мастер бровей",
+        "it": "Brow artist",
+        "pt": "Especialista de sobrancelhas",
+        "de": "Brow-Stylistin",
+        "fr": "Spécialiste des sourcils",
+        "tr": "Kaş tasarım uzmanı",
+        "es": "Especialista en cejas"
+      }
+    },
+    {
+      "id": "fitness_instructor",
+      "name": {
+        "en": "Fitness Instructor",
+        "ua": "Фітнес тренер",
+        "ru": "Фитнес-тренер",
+        "it": "Istruttore di fitness",
+        "pt": "Personal trainer",
+        "de": "Fitnesstrainer",
+        "fr": "Coach de fitness",
+        "tr": "Fitness eğitmeni",
+        "es": "Entrenador personal"
+      }
+    },
+    {
+      "id": "cleaner",
+      "name": {
+        "en": "Cleaner",
+        "ua": "Прибиральник",
+        "ru": "Уборщик",
+        "it": "Addetto alle pulizie",
+        "pt": "Pessoal de limpeza",
+        "de": "Reinigungskraft",
+        "fr": "Agent d'entretien",
+        "tr": "Temizlikçi",
+        "es": "Personal de limpieza"
+      }
+    },
+    {
+      "id": "accountant",
+      "name": {
+        "en": "Accountant",
+        "ua": "Бухгалтер",
+        "ru": "Бухгалтер",
+        "it": "Commercialista",
+        "pt": "Contabilista",
+        "de": "Buchhalter",
+        "fr": "Comptable",
+        "tr": "Muhasebeci",
+        "es": "Contable"
+      }
+    },
+    {
+      "id": "electrician",
+      "name": {
+        "en": "Electrician",
+        "ua": "Електрик",
+        "ru": "Электрик",
+        "it": "Elettricista",
+        "pt": "Eletricista",
+        "de": "Elektriker",
+        "fr": "Électricien",
+        "tr": "Elektrikçi",
+        "es": "Electricista"
+      }
+    },
+    {
+      "id": "chef",
+      "name": {
+        "en": "Chef",
+        "ua": "Шеф Повар",
+        "ru": "Шеф Повар",
+        "it": "Chef",
+        "pt": "Chef de cozinha",
+        "de": "Küchenchef",
+        "fr": "Chef cuisinier",
+        "tr": "Şef",
+        "es": "Chef"
+      }
+    },
+    {
+      "id": "art_teacher",
+      "name": {
+        "en": "Art Teacher",
+        "ua": "Вчитель мистецтва",
+        "ru": "Преподаватель искусства",
+        "it": "Insegnante d'arte",
+        "pt": "Professor de artes",
+        "de": "Kunstlehrer",
+        "fr": "Professeur d'arts",
+        "tr": "Sanat öğretmeni",
+        "es": "Profesor de arte"
+      }
+    },
+    {
+      "id": "handcraft_master",
+      "name": {
+        "en": "Master of Handcrafts",
+        "ua": "Майстер рукоділля",
+        "ru": "Мастер рукоделия",
+        "it": "Artigiano",
+        "pt": "Artesão",
+        "de": "Kunsthandwerker",
+        "fr": "Artisan d'art",
+        "tr": "El sanatları ustası",
+        "es": "Artesano"
+      }
+    },
+    {
+      "id": "notary",
+      "name": {
+        "en": "Notary",
+        "ua": "Нотаріус",
+        "ru": "Нотариус",
+        "it": "Notaio",
+        "pt": "Notário",
+        "de": "Notar",
+        "fr": "Notaire",
+        "tr": "Noter",
+        "es": "Notario"
+      }
+    },
+    {
+      "id": "child_psychologist",
+      "name": {
+        "en": "Child Psychologist",
+        "ua": "Дитячий психолог",
+        "ru": "Детский психолог",
+        "it": "Psicologo infantile",
+        "pt": "Psicólogo infantil",
+        "de": "Kinderpsychologe",
+        "fr": "Psychologue pour enfants",
+        "tr": "Çocuk psikoloğu",
+        "es": "Psicólogo infantil"
+      }
+    },
+    {
+      "id": "dermatologist",
+      "name": {
+        "en": "Dermatologist",
+        "ua": "Дерматолог",
+        "ru": "Дерматолог",
+        "it": "Dermatologo",
+        "pt": "Dermatologista",
+        "de": "Hautarzt",
+        "fr": "Dermatologue",
+        "tr": "Cilt doktoru",
+        "es": "Dermatólogo"
+      }
+    }
+  ],
+  "profcategories": [
+    {
+      "id": "arts_design",
+      "name": {
+        "en": "Arts and Design",
+        "ua": "Мистецтво та дизайн",
+        "ru": "Искусство и дизайн",
+        "it": "Arte e design",
+        "pt": "Artes e design",
+        "de": "Kunst und Design",
+        "fr": "Arts et design",
+        "tr": "Sanat ve tasarım",
+        "es": "Arte y diseño"
+      }
+    },
+    {
+      "id": "household_services",
+      "name": {
+        "en": "Household Services",
+        "ua": "Побутові послуги",
+        "ru": "Бытовые услуги",
+        "it": "Servizi domestici",
+        "pt": "Serviços domésticos",
+        "de": "Haushaltsdienstleistungen",
+        "fr": "Services à domicile",
+        "tr": "Ev hizmetleri",
+        "es": "Servicios domésticos"
+      }
+    },
+    {
+      "id": "culinary",
+      "name": {
+        "en": "Culinary",
+        "ua": "Кулінарія",
+        "ru": "Кулинария",
+        "it": "Cucina",
+        "pt": "Culinária",
+        "de": "Kulinarik",
+        "fr": "Cuisine",
+        "tr": "Mutfak",
+        "es": "Gastronomía"
+      }
+    },
+    {
+      "id": "pet_services",
+      "name": {
+        "en": "Pet Services",
+        "ua": "Домашні тварини",
+        "ru": "Домашние животные",
+        "it": "Servizi per animali domestici",
+        "pt": "Serviços para animais de estimação",
+        "de": "Tierdienstleistungen",
+        "fr": "Services pour animaux",
+        "tr": "Evcil hayvan hizmetleri",
+        "es": "Servicios para mascotas"
+      }
+    },
+    {
+      "id": "health_beauty",
+      "name": {
+        "en": "Health and Beauty",
+        "ua": "Здоров'я та краса",
+        "ru": "Здоровье и красота",
+        "it": "Salute e bellezza",
+        "pt": "Saúde e beleza",
+        "de": "Gesundheit und Schönheit",
+        "fr": "Santé et beauté",
+        "tr": "Sağlık ve güzellik",
+        "es": "Salud y belleza"
+      }
+    },
+    {
+      "id": "medicine",
+      "name": {
+        "en": "Medicine",
+        "ua": "Медицина",
+        "ru": "Медицина",
+        "it": "Medicina",
+        "pt": "Medicina",
+        "de": "Medizin",
+        "fr": "Médecine",
+        "tr": "Tıp",
+        "es": "Medicina"
+      }
+    },
+    {
+      "id": "childcare_services",
+      "name": {
+        "en": "Childcare Services",
+        "ua": "Послуги для дітей",
+        "ru": "Услуги для детей",
+        "it": "Servizi per l'infanzia",
+        "pt": "Serviços para crianças",
+        "de": "Kinderbetreuung",
+        "fr": "Services de garde d'enfants",
+        "tr": "Çocuk bakım hizmetleri",
+        "es": "Servicios para niños"
+      }
+    },
+    {
+      "id": "car_services",
+      "name": {
+        "en": "Car Services",
+        "ua": "Автомобільні послуги",
+        "ru": "Автомобильные услуги",
+        "it": "Servizi auto",
+        "pt": "Serviços automóvel",
+        "de": "Autoservice",
+        "fr": "Services automobiles",
+        "tr": "Otomotiv hizmetleri",
+        "es": "Servicios para automóviles"
+      }
+    },
+    {
+      "id": "legal_finance",
+      "name": {
+        "en": "Legal and Finance",
+        "ua": "Юридичні та фінансові послуги",
+        "ru": "Юридические и финансовые услуги",
+        "it": "Servizi legali e finanziari",
+        "pt": "Serviços jurídicos e financeiros",
+        "de": "Recht und Finanzen",
+        "fr": "Services juridiques et financiers",
+        "tr": "Hukuk ve finans",
+        "es": "Servicios jurídicos y financieros"
+      }
+    }
+  ],
+  "locations": [
+    {
+      "id": "milan",
+      "name": {
+        "en": "Milan",
+        "ua": "Мілан",
+        "ua_alt": "Мілані",
+        "ru": "Милан",
+        "ru_alt": "Милане",
+        "it": "Milano",
+        "pt": "Milão",
+        "de": "Mailand",
+        "fr": "Milan",
+        "tr": "Milano",
+        "es": "Milán"
+      }
+    },
+    {
+      "id": "bari",
+      "name": {
+        "en": "Bari",
+        "ua": "Барі",
+        "ua_alt": "Барі",
+        "ru": "Бари",
+        "ru_alt": "Бари",
+        "it": "Bari",
+        "pt": "Bari",
+        "de": "Bari",
+        "fr": "Bari",
+        "tr": "Bari",
+        "es": "Bari"
+      }
+    },
+    {
+      "id": "venice",
+      "name": {
+        "en": "Venice",
+        "ua": "Венеція",
+        "ua_alt": "Венеції",
+        "ru": "Венеция",
+        "ru_alt": "Венеции",
+        "it": "Venezia",
+        "pt": "Veneza",
+        "de": "Venedig",
+        "fr": "Venise",
+        "tr": "Venedik",
+        "es": "Venecia"
+      }
+    },
+    {
+      "id": "verona",
+      "name": {
+        "en": "Verona",
+        "ua": "Верона",
+        "ua_alt": "Вероні",
+        "ru": "Верона",
+        "ru_alt": "Вероне",
+        "it": "Verona",
+        "pt": "Verona",
+        "de": "Verona",
+        "fr": "Vérone",
+        "tr": "Verona",
+        "es": "Verona"
+      }
+    },
+    {
+      "id": "messina",
+      "name": {
+        "en": "Messina",
+        "ua": "Мессіна",
+        "ua_alt": "Мессіні",
+        "ru": "Мессина",
+        "ru_alt": "Мессине",
+        "it": "Messina",
+        "pt": "Messina",
+        "de": "Messina",
+        "fr": "Messine",
+        "tr": "Messina",
+        "es": "Mesina"
+      }
+    },
+    {
+      "id": "trieste",
+      "name": {
+        "en": "Trieste",
+        "ua": "Трієст",
+        "ua_alt": "Трієсті",
+        "ru": "Триест",
+        "ru_alt": "Триесте",
+        "it": "Trieste",
+        "pt": "Trieste",
+        "de": "Triest",
+        "fr": "Trieste",
+        "tr": "Trieste",
+        "es": "Trieste"
+      }
+    },
+    {
+      "id": "bologna",
+      "name": {
+        "en": "Bologna",
+        "ua": "Болонья",
+        "ua_alt": "Болоньї",
+        "ru": "Болонья",
+        "ru_alt": "Болонье",
+        "it": "Bologna",
+        "pt": "Bolonha",
+        "de": "Bologna",
+        "fr": "Bologne",
+        "tr": "Bologna",
+        "es": "Bolonia"
+      }
+    },
+    {
+      "id": "ravenna",
+      "name": {
+        "en": "Ravenna",
+        "ua": "Равенна",
+        "ua_alt": "Равенні",
+        "ru": "Равенна",
+        "ru_alt": "Равенне",
+        "it": "Ravenna",
+        "pt": "Ravena",
+        "de": "Ravenna",
+        "fr": "Ravenne",
+        "tr": "Ravenna",
+        "es": "Rávena"
+      }
+    },
+    {
+      "id": "reggio-emilia",
+      "name": {
+        "en": "Reggio Emilia",
+        "ua": "Реджо-Емілія",
+        "ua_alt": "Реджо-Емілії",
+        "ru": "Реджо-Эмилия",
+        "ru_alt": "Реджо-Эмилии",
+        "it": "Reggio Emilia",
+        "pt": "Reggio Emilia",
+        "de": "Reggio Emilia",
+        "fr": "Reggio d'Émilie",
+        "tr": "Reggio Emilia",
+        "es": "Reggio Emilia"
+      }
+    },
+    {
+      "id": "lecce",
+      "name": {
+        "en": "Lecce",
+        "ua": "Лечче",
+        "ua_alt": "Лечче",
+        "ru": "Лечче",
+        "ru_alt": "Лечче",
+        "it": "Lecce",
+        "pt": "Lecce",
+        "de": "Lecce",
+        "fr": "Lecce",
+        "tr": "Lecce",
+        "es": "Lecce"
+      }
+    },
+    {
+      "id": "reggio-calabria",
+      "name": {
+        "en": "Reggio Calabria",
+        "ua": "Реджо-Калабрія",
+        "ua_alt": "Реджо-Калабрії",
+        "ru": "Реджо-Калабрия",
+        "ru_alt": "Реджо-Калабрие",
+        "it": "Reggio Calabria",
+        "pt": "Reggio Calabria",
+        "de": "Reggio Calabria",
+        "fr": "Reggio de Calabre",
+        "tr": "Reggio Calabria",
+        "es": "Reggio de Calabria"
+      }
+    },
+    {
+      "id": "porto",
+      "name": {
+        "en": "Porto",
+        "ua": "Порту",
+        "ua_alt": "Порто",
+        "ru": "Порту",
+        "ru_alt": "Порту",
+        "it": "Porto",
+        "pt": "Porto",
+        "de": "Porto",
+        "fr": "Porto",
+        "tr": "Porto",
+        "es": "Oporto"
+      }
+    },
+    {
+      "id": "genoa",
+      "name": {
+        "en": "Genoa",
+        "ua": "Генуя",
+        "ua_alt": "Генуї",
+        "ru": "Генуя",
+        "ru_alt": "Генуе",
+        "it": "Genova",
+        "pt": "Génova",
+        "de": "Genua",
+        "fr": "Gênes",
+        "tr": "Cenova",
+        "es": "Génova"
+      }
+    },
+    {
+      "id": "padua",
+      "name": {
+        "en": "Padua",
+        "ua": "Падуя",
+        "ua_alt": "Падуї",
+        "ru": "Падуя",
+        "ru_alt": "Падуе",
+        "it": "Padova",
+        "pt": "Pádua",
+        "de": "Padua",
+        "fr": "Padoue",
+        "tr": "Padova",
+        "es": "Padua"
+      }
+    },
+    {
+      "id": "brescia",
+      "name": {
+        "en": "Brescia",
+        "ua": "Брешия",
+        "ua_alt": "Брешиї",
+        "ru": "Брешия",
+        "ru_alt": "Брешие",
+        "it": "Brescia",
+        "pt": "Bréscia",
+        "de": "Brescia",
+        "fr": "Brescia",
+        "tr": "Brescia",
+        "es": "Brescia"
+      }
+    },
+    {
+      "id": "palermo",
+      "name": {
+        "en": "Palermo",
+        "ua": "Палермо",
+        "ua_alt": "Палермо",
+        "ru": "Палермо",
+        "ru_alt": "Палермо",
+        "it": "Palermo",
+        "pt": "Palermo",
+        "de": "Palermo",
+        "fr": "Palerme",
+        "tr": "Palermo",
+        "es": "Palermo"
+      }
+    },
+    {
+      "id": "pescara",
+      "name": {
+        "en": "Pescara",
+        "ua": "Пескара",
+        "ua_alt": "Пескарі",
+        "ru": "Пескара",
+        "ru_alt": "Пескаре",
+        "it": "Pescara",
+        "pt": "Pescara",
+        "de": "Pescara",
+        "fr": "Pescara",
+        "tr": "Pescara",
+        "es": "Pescara"
+      }
+    },
+    {
+      "id": "forlì",
+      "name": {
+        "en": "Forlì",
+        "ua": "Форлі",
+        "ua_alt": "Форлі",
+        "ru": "Форли",
+        "ru_alt": "Форли",
+        "it": "Forlì",
+        "pt": "Forlì",
+        "de": "Forlì",
+        "fr": "Forlì",
+        "tr": "Forlì",
+        "es": "Forlì"
+      }
+    },
+    {
+      "id": "bergamo",
+      "name": {
+        "en": "Bergamo",
+        "ua": "Бергамо",
+        "ua_alt": "Бергамо",
+        "ru": "Бергамо",
+        "ru_alt": "Бергамо",
+        "it": "Bergamo",
+        "pt": "Bérgamo",
+        "de": "Bergamo",
+        "fr": "Bergame",
+        "tr": "Bergamo",
+        "es": "Bérgamo"
+      }
+    },
+    {
+      "id": "modena",
+      "name": {
+        "en": "Modena",
+        "ua": "Модена",
+        "ua_alt": "Модені",
+        "ru": "Модена",
+        "ru_alt": "Модене",
+        "it": "Modena",
+        "pt": "Módena",
+        "de": "Modena",
+        "fr": "Modène",
+        "tr": "Modena",
+        "es": "Módena"
+      }
+    },
+    {
+      "id": "barletta",
+      "name": {
+        "en": "Barletta",
+        "ua": "Барлетта",
+        "ua_alt": "Барлетті",
+        "ru": "Барлетта",
+        "ru_alt": "Барлетте",
+        "it": "Barletta",
+        "pt": "Barletta",
+        "de": "Barletta",
+        "fr": "Barletta",
+        "tr": "Barletta",
+        "es": "Barletta"
+      }
+    },
+    {
+      "id": "prato",
+      "name": {
+        "en": "Prato",
+        "ua": "Прато",
+        "ua_alt": "Праті",
+        "ru": "Прато",
+        "ru_alt": "Прато",
+        "it": "Prato",
+        "pt": "Prato",
+        "de": "Prato",
+        "fr": "Prato",
+        "tr": "Prato",
+        "es": "Prato"
+      }
+    },
+    {
+      "id": "ancona",
+      "name": {
+        "en": "Ancona",
+        "ua": "Анкона",
+        "ua_alt": "Анконі",
+        "ru": "Анкона",
+        "ru_alt": "Анконе",
+        "it": "Ancona",
+        "pt": "Ancona",
+        "de": "Ancona",
+        "fr": "Ancône",
+        "tr": "Ancona",
+        "es": "Ancona"
+      }
+    },
+    {
+      "id": "uomini",
+      "name": {
+        "en": "Uomini",
+        "ua": "Уоміні",
+        "ua_alt": "Уоміні",
+        "ru": "Уомини",
+        "ru_alt": "Уомини",
+        "it": "Uomini",
+        "pt": "Uomini",
+        "de": "Uomini",
+        "fr": "Uomini",
+        "tr": "Uomini",
+        "es": "Uomini"
+      }
+    },
+    {
+      "id": "lisbon",
+      "name": {
+        "en": "Lisbon",
+        "ua": "Лісабон",
+        "ua_alt": "Лісабоні",
+        "ru": "Лиссабон",
+        "ru_alt": "Лиссабоне",
+        "it": "Lisbona",
+        "pt": "Lisboa",
+        "de": "Lissabon",
+        "fr": "Lisbonne",
+        "tr": "Lizbon",
+        "es": "Lisboa"
+      }
+    },
+    {
+      "id": "turin",
+      "name": {
+        "en": "Turin",
+        "ua": "Турин",
+        "ua_alt": "Турині",
+        "ru": "Турин",
+        "ru_alt": "Турине",
+        "it": "Torino",
+        "pt": "Turim",
+        "de": "Turin",
+        "fr": "Turin",
+        "tr": "Torino",
+        "es": "Turín"
+      }
+    },
+    {
+      "id": "terni",
+      "name": {
+        "en": "Terni",
+        "ua": "Терні",
+        "ua_alt": "Терні",
+        "ru": "Терни",
+        "ru_alt": "Терни",
+        "it": "Terni",
+        "pt": "Terni",
+        "de": "Terni",
+        "fr": "Terni",
+        "tr": "Terni",
+        "es": "Terni"
+      }
+    },
+    {
+      "id": "salerno",
+      "name": {
+        "en": "Salerno",
+        "ua": "Салерно",
+        "ua_alt": "Салерно",
+        "ru": "Салерно",
+        "ru_alt": "Салерно",
+        "it": "Salerno",
+        "pt": "Salerno",
+        "de": "Salerno",
+        "fr": "Salerne",
+        "tr": "Salerno",
+        "es": "Salerno"
+      }
+    },
+    {
+      "id": "benevento",
+      "name": {
+        "en": "Benevento",
+        "ua": "Беневенто",
+        "ua_alt": "Беневенто",
+        "ru": "Беневенто",
+        "ru_alt": "Беневенто",
+        "it": "Benevento",
+        "pt": "Benevento",
+        "de": "Benevent",
+        "fr": "Bénévent",
+        "tr": "Benevento",
+        "es": "Benevento"
+      }
+    },
+    {
+      "id": "rimini",
+      "name": {
+        "en": "Rimini",
+        "ua": "Ріміні",
+        "ua_alt": "Ріміні",
+        "ru": "Римини",
+        "ru_alt": "Римини",
+        "it": "Rimini",
+        "pt": "Rimini",
+        "de": "Rimini",
+        "fr": "Rimini",
+        "tr": "Rimini",
+        "es": "Rímini"
+      }
+    },
+    {
+      "id": "ferrara",
+      "name": {
+        "en": "Ferrara",
+        "ua": "Феррара",
+        "ua_alt": "Феррарі",
+        "ru": "Феррара",
+        "ru_alt": "Ферраре",
+        "it": "Ferrara",
+        "pt": "Ferrara",
+        "de": "Ferrara",
+        "fr": "Ferrare",
+        "tr": "Ferrara",
+        "es": "Ferrara"
+      }
+    },
+    {
+      "id": "andria",
+      "name": {
+        "en": "Andria",
+        "ua": "Андрія",
+        "ua_alt": "Андрії",
+        "ru": "Андрия",
+        "ru_alt": "Андрии",
+        "it": "Andria",
+        "pt": "Andria",
+        "de": "Andria",
+        "fr": "Andria",
+        "tr": "Andria",
+        "es": "Andria"
+      }
+    },
+    {
+      "id": "florence",
+      "name": {
+        "en": "Florence",
+        "ua": "Флоренція",
+        "ua_alt": "Флоренції",
+        "ru": "Флоренция",
+        "ru_alt": "Флоренции",
+        "it": "Firenze",
+        "pt": "Florença",
+        "de": "Florenz",
+        "fr": "Florence",
+        "tr": "Floransa",
+        "es": "Florencia"
+      }
+    },
+    {
+      "id": "catania",
+      "name": {
+        "en": "Catania",
+        "ua": "Катанія",
+        "ua_alt": "Катанії",
+        "ru": "Катания",
+        "ru_alt": "Катании",
+        "it": "Catania",
+        "pt": "Catânia",
+        "de": "Catania",
+        "fr": "Catane",
+        "tr": "Catania",
+        "es": "Catania"
+      }
+    },
+    {
+      "id": "taranto",
+      "name": {
+        "en": "Taranto",
+        "ua": "Таранто",
+        "ua_alt": "Таранті",
+        "ru": "Таранто",
+        "ru_alt": "Таранто",
+        "it": "Taranto",
+        "pt": "Tarento",
+        "de": "Tarent",
+        "fr": "Tarente",
+        "tr": "Taranto",
+        "es": "Tarento"
+      }
+    },
+    {
+      "id": "cagliari",
+      "name": {
+        "en": "Cagliari",
+        "ua": "Кальярі",
+        "ua_alt": "Кальярі",
+        "ru": "Кальяри",
+        "ru_alt": "Кальяри",
+        "it": "Cagliari",
+        "pt": "Cagliari",
+        "de": "Cagliari",
+        "fr": "Cagliari",
+        "tr": "Cagliari",
+        "es": "Cagliari"
+      }
+    },
+    {
+      "id": "livorno",
+      "name": {
+        "en": "Livorno",
+        "ua": "Ліворно",
+        "ua_alt": "Ліворно",
+        "ru": "Ливорно",
+        "ru_alt": "Ливорно",
+        "it": "Livorno",
+        "pt": "Livorno",
+        "de": "Livorno",
+        "fr": "Livourne",
+        "tr": "Livorno",
+        "es": "Livorno"
+      }
+    },
+    {
+      "id": "vicenza",
+      "name": {
+        "en": "Vicenza",
+        "ua": "Віченца",
+        "ua_alt": "Віченці",
+        "ru": "Виченца",
+        "ru_alt": "Виченце",
+        "it": "Vicenza",
+        "pt": "Vicenza",
+        "de": "Vicenza",
+        "fr": "Vicence",
+        "tr": "Vicenza",
+        "es": "Vicenza"
+      }
+    },
+    {
+      "id": "treviso",
+      "name": {
+        "en": "Treviso",
+        "ua": "Тревізо",
+        "ua_alt": "Тревізо",
+        "ru": "Тревизо",
+        "ru_alt": "Тревизо",
+        "it": "Treviso",
+        "pt": "Treviso",
+        "de": "Treviso",
+        "fr": "Trévise",
+        "tr": "Treviso",
+        "es": "Treviso"
+      }
+    },
+    {
+      "id": "pisa",
+      "name": {
+        "en": "Pisa",
+        "ua": "Піза",
+        "ua_alt": "Пізі",
+        "ru": "Пиза",
+        "ru_alt": "Пизе",
+        "it": "Pisa",
+        "pt": "Pisa",
+        "de": "Pisa",
+        "fr": "Pise",
+        "tr": "Pisa",
+        "es": "Pisa"
+      }
+    },
+    {
+      "id": "rome",
+      "name": {
+        "en": "Rome",
+        "ua": "Рим",
+        "ua_alt": "Римі",
+        "ru": "Рим",
+        "ru_alt": "Риме",
+        "it": "Roma",
+        "pt": "Roma",
+        "de": "Rom",
+        "fr": "Rome",
+        "tr": "Roma",
+        "es": "Roma"
+      }
+    },
+    {
+      "id": "naples",
+      "name": {
+        "en": "Naples",
+        "ua": "Неаполь",
+        "ua_alt": "Неаполі",
+        "ru": "Неаполь",
+        "ru_alt": "Неаполе",
+        "it": "Napoli",
+        "pt": "Nápoles",
+        "de": "Neapel",
+        "fr": "Naples",
+        "tr": "Napoli",
+        "es": "Nápoles"
+      }
+    }
+  ],
+  "countries": [
+    {
+      "id": "IT",
+      "name": {
+        "en": "Italy",
+        "ua": "Італія",
+        "ua_alt": "Італії",
+        "ru": "Италия",
+        "ru_alt": "Италии",
+        "it": "Italia",
+        "pt": "Itália",
+        "de": "Italien",
+        "fr": "Italie",
+        "tr": "İtalya",
+        "es": "Italia"
+      }
+    },
+    {
+      "id": "PT",
+      "name": {
+        "en": "Portugal",
+        "ua": "Португалія",
+        "ua_alt": "Португалії",
+        "ru": "Португалия",
+        "ru_alt": "Португалии",
+        "it": "Portogallo",
+        "pt": "Portugal",
+        "de": "Portugal",
+        "fr": "Portugal",
+        "tr": "Portekiz",
+        "es": "Portugal"
+      }
+    }
+  ]
+}
