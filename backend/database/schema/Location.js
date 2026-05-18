@@ -14,6 +14,7 @@ const locationSchema = new mongoose.Schema({
     de: String,
     fr: String,
     tr: String,
+    es: String,
   },
 });
 

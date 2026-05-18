@@ -1,7 +1,7 @@
 // Backend mirror of the frontend localizedName resolver. Used where the
 // server renders reference-entity names (OG card image, bot messages).
 
-const APP_LANGS = ['en', 'uk', 'ru', 'it', 'pt', 'de', 'fr', 'tr'];
+const APP_LANGS = ['en', 'uk', 'ru', 'it', 'pt', 'de', 'fr', 'tr', 'es'];
 
 function readKey(name, key) {
   const direct = name[key];
@@ -15,7 +15,7 @@ function readKey(name, key) {
 // when any name exists, so missing translations degrade gracefully.
 function localizedName(name, lang, fallbackId) {
   if (!name || typeof name !== 'object') return fallbackId || '';
-  const chain = [lang, 'en', 'uk', 'ru', 'it', 'pt', 'de', 'fr', 'tr'];
+  const chain = [lang, 'en', 'uk', 'ru', 'it', 'pt', 'de', 'fr', 'tr', 'es'];
   for (const l of chain) {
     const v = readKey(name, l);
     if (v) return v;

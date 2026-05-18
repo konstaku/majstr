@@ -8,7 +8,7 @@ function getInitialLang(): string {
   const saved = localStorage.getItem("lang");
   if (saved) return saved;
   const browser = navigator.language.split("-")[0].toLowerCase();
-  const known = ["en", "uk", "ru", "it", "pt", "de", "fr", "tr"];
+  const known = ["en", "uk", "ru", "it", "pt", "de", "fr", "tr", "es"];
   return known.includes(browser) ? browser : "uk";
 }
 

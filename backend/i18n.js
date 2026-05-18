@@ -3,7 +3,7 @@
 // Content Creator / Brand Guardian agents (Phase 2) — missing keys resolve
 // via the EN fallback in t().
 
-const UI_LANGS = ['en', 'uk', 'ru', 'it', 'pt', 'de', 'fr', 'tr'];
+const UI_LANGS = ['en', 'uk', 'ru', 'it', 'pt', 'de', 'fr', 'tr', 'es'];
 const DEFAULT_LANG = 'uk';
 
 // Telegram language_code (ISO-639-1, e.g. "uk", "it", "ru-RU") -> our set.
@@ -202,6 +202,9 @@ const DICT = {
     'owner.declined':
       '❌ Maalesef profil kartınız onaylanmadı. Bilgileri düzenleyip bot üzerinden tekrar gönderebilirsiniz.',
   },
+  // es filled by the Content Creator / Brand Guardian agents (Phase 2);
+  // resolves via the EN fallback in t() until then.
+  es: {},
 };
 
 function t(lang, key, vars) {
@@ -226,6 +229,7 @@ const LANG_BUTTONS = [
   { code: 'de', label: '🇩🇪' },
   { code: 'fr', label: '🇫🇷' },
   { code: 'tr', label: '🇹🇷' },
+  { code: 'es', label: '🇪🇸' },
 ];
 
 function langButtonsRows(activeLang) {

@@ -10,6 +10,7 @@ export const APP_LANGS = [
   "de",
   "fr",
   "tr",
+  "es",
 ] as const;
 export type AppLang = (typeof APP_LANGS)[number];
 
@@ -23,6 +24,7 @@ export const LANG_OPTIONS: { code: AppLang; label: string }[] = [
   { code: "de", label: "🇩🇪 DE" },
   { code: "fr", label: "🇫🇷 FR" },
   { code: "tr", label: "🇹🇷 TR" },
+  { code: "es", label: "🇪🇸 ES" },
 ];
 
 // Legacy data uses "ua"; the app uses "uk". Treat them as the same key.
@@ -46,7 +48,7 @@ export function localizedName(
 ): string {
   if (!name || typeof name !== "object") return fallbackId ?? "";
   const obj = name as Record<string, unknown>;
-  const chain = [lang, "en", "uk", "ru", "it", "pt", "de", "fr", "tr"];
+  const chain = [lang, "en", "uk", "ru", "it", "pt", "de", "fr", "tr", "es"];
   for (const l of chain) {
     const v = readKey(obj, l);
     if (v) return v;
