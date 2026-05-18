@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -14,7 +15,13 @@ import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { LANG_LABELS, LANG_FLAGS } from "../i18n/translations";
-import { localizedName, LANG_OPTIONS } from "../i18n/lang";
+import {
+  localizedName,
+  primaryLangs,
+  hiddenLangs,
+  LANG_ENDONYM,
+  type AppLang,
+} from "../i18n/lang";
 import { apiFetch } from "../api/client";
 import AddMasterModal from "./AddMasterModal";
 
@@ -188,21 +195,95 @@ function CountryToggle({ countries, countryID, dispatch, lang }: CountryTogglePr
 
 function LanguageSwitcher() {
   const { lang, setLang } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const sys = typeof navigator !== "undefined" ? navigator.language : "";
+  const primary = useMemo(() => primaryLangs(sys), [sys]);
+  const hidden = useMemo(() => hiddenLangs(sys), [sys]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const pick = (code: AppLang) => {
+    setLang(code);
+    setOpen(false);
+  };
+
+  const ariaName = (code: AppLang) =>
+    code === "ru" ? "RU — Русский" : LANG_ENDONYM[code];
 
   return (
-    <div className="lang-switcher">
-      {LANG_OPTIONS.map(({ code }) => (
+    <nav className="lang-switcher" aria-label="Language" ref={wrapRef}>
+      {primary.map((code) => (
         <button
           key={code}
           className={`lang-btn ${lang === code ? "active" : ""}`}
-          onClick={() => setLang(code)}
-          title={code.toUpperCase()}
+          onClick={() => pick(code)}
+          aria-current={lang === code ? "true" : undefined}
+          aria-label={ariaName(code)}
+          title={LANG_ENDONYM[code]}
         >
-          {LANG_FLAGS[code] ? `${LANG_FLAGS[code]} ` : ""}
+          {LANG_FLAGS[code] ? (
+            <span aria-hidden="true">{LANG_FLAGS[code]} </span>
+          ) : null}
           {LANG_LABELS[code]}
         </button>
       ))}
-    </div>
+
+      <div className="lang-more">
+        <button
+          className={`lang-btn lang-more-trigger ${
+            hidden.includes(lang as AppLang) ? "active" : ""
+          }`}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-controls="lang-more-menu"
+          aria-label="More languages"
+          onClick={() => setOpen((o) => !o)}
+        >
+          🌐 ▾
+        </button>
+        {open && (
+          <div className="lang-popover" id="lang-more-menu" role="menu">
+            {[...hidden]
+              .sort((a, b) => (a === lang ? -1 : b === lang ? 1 : 0))
+              .map((code) => (
+                <button
+                  key={code}
+                  role="menuitem"
+                  className={`lang-popover-item ${
+                    lang === code ? "active" : ""
+                  }`}
+                  onClick={() => pick(code)}
+                  aria-current={lang === code ? "true" : undefined}
+                  aria-label={ariaName(code)}
+                >
+                  {LANG_FLAGS[code] ? (
+                    <span aria-hidden="true">{LANG_FLAGS[code]} </span>
+                  ) : null}
+                  {LANG_LABELS[code]}
+                  <span className="lang-endo">{LANG_ENDONYM[code]}</span>
+                </button>
+              ))}
+          </div>
+        )}
+      </div>
+    </nav>
   );
 }
 

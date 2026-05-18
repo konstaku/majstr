@@ -14,6 +14,46 @@ export const APP_LANGS = [
 ] as const;
 export type AppLang = (typeof APP_LANGS)[number];
 
+// Self-name per language (for accessible labels / screen readers).
+export const LANG_ENDONYM: Record<AppLang, string> = {
+  en: "English",
+  uk: "Українська",
+  ru: "Русский",
+  it: "Italiano",
+  pt: "Português",
+  de: "Deutsch",
+  fr: "Français",
+  tr: "Türkçe",
+  es: "Español",
+};
+
+// Always-present languages; ru is rendered label-only, last.
+const PERMANENT: readonly string[] = ["en", "uk", "ru"];
+
+// The one contextual slot: the user's system language iff it is one of
+// ours and not already permanent. null collapses the slot (no filler).
+export function contextualLang(sysRaw?: string | null): AppLang | null {
+  if (!sysRaw) return null;
+  const sys = sysRaw.toLowerCase().split(/[-_]/)[0];
+  if (!(APP_LANGS as readonly string[]).includes(sys)) return null;
+  if (PERMANENT.includes(sys)) return null;
+  return sys as AppLang;
+}
+
+// Primary visible set (3 or 4): en, uk, [contextual], ru.
+export function primaryLangs(sysRaw?: string | null): AppLang[] {
+  const c = contextualLang(sysRaw);
+  return (["en", "uk", c, "ru"] as (AppLang | null)[]).filter(
+    (x): x is AppLang => x != null
+  );
+}
+
+// Everything else, reachable via the disclosure.
+export function hiddenLangs(sysRaw?: string | null): AppLang[] {
+  const p = new Set(primaryLangs(sysRaw));
+  return APP_LANGS.filter((x) => !p.has(x));
+}
+
 // Per the project decision, Russian is shown WITHOUT a flag (text label).
 export const LANG_OPTIONS: { code: AppLang; label: string }[] = [
   { code: "en", label: "🇬🇧 EN" },

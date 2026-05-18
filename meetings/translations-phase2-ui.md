@@ -730,3 +730,136 @@ never standardized across languages.*
 **Date**: 2026-05-18
 **Status**: All four languages → Revise (minor); none rejected. Safe to
 launch after P1 fixes + TR-native confirmation on "profil kartı".
+
+---
+
+## Brand Guardian review — es UI + website 2c (2026-05-18)
+
+Scope: (1) new **Spanish (es)** wizard `ES` dict in
+`frontend/src/onboarding/i18n.tsx` + `es` bot block in `backend/i18n.js`;
+(2) the five website blocks `translations.ru/.de/.fr/.tr/.es` in
+`frontend/src/i18n/translations.ts`. Reviewed against the same brand voice
+(warm, trustworthy, plain, community-first, peer-to-peer) and the locked
+2026-05-18 glossary.
+
+### Spanish "card" term + register — CONFIRMED
+
+- **"ficha" is the correct Spanish card noun. Approved and locked.** It is
+  the natural Spanish word for a directory/profile listing (cf. fr "fiche",
+  it "scheda"); "tarjeta" would be the ambiguous payment/business-card trap
+  the translator correctly avoided, exactly parallel to the de/fr reasoning.
+- **Consistency: PASS.** "ficha" is used in *every* es surface — wizard
+  (`success.text`, `submit.errExists`, `loc.cityHint`, `profile.nameHint`,
+  `draft.errExists`) and bot (`btn.addMaster` "Añadir mi ficha",
+  `avail.none`, `owner.approved`, `owner.declined`). No bare "tarjeta"
+  anywhere. This is the cleanest card-noun execution of any language.
+- **Register: "tú" is the right call. Approved.** Spanish service/community
+  products overwhelmingly use "tú"; "usted" would read corporate-cold and
+  distancing — the opposite of brand. Internally consistent across wizard +
+  bot + website (no tú/usted switching found). Mirrors the de "du" rationale:
+  warm peer address realized per language, not standardized across languages.
+
+Add to the final glossary table: **es → ficha · profesional · servicio · tú
+(informal)**.
+
+### Website card-noun finding (applies to ALL languages)
+
+The website `LangTranslations` schema has **no card-noun surface**. The only
+"card" token is the internal `masterCard.*` UI labels (`details`,
+`noReviews`, `verified`, `memberSince`) — none renders the word
+card/ficha/fiche/Profilkarte to the user. **Therefore the card-glossary risk
+does not exist on the website**; ru/de/fr/tr/es website copy uses the
+"master/worker" noun only, consistent with the uk/en/it source. No action.
+
+### Per-language verdict
+
+| Surface | Verdict | Rationale |
+|---|---|---|
+| es wizard (`i18n.tsx`) | **Approve** | Idiomatic, warm, "ficha"/"tú" consistent; no defects. |
+| es bot (`backend/i18n.js`) | **Approve** | "ficha" everywhere; tone matches pt/it siblings. |
+| website es | **Approve** | Clean "tú", on-brand, parallels es wizard. |
+| website de | **Approve** | "du" consistent; matches locked de register and Fachkraft. |
+| website fr | **Approve** | "vous" consistent; warm-respectful, no drift. |
+| website ru | **Revise-minor** | Quality good; one slogan/body register split (source-matched, low risk). |
+| website tr | **Revise-minor** | Quality good; punchy-CTA vs siz-body split; one stiff string. |
+
+No surface rejected. The es work is the strongest in the set.
+
+### Tone assessment
+
+- **es** — Warm and plainspoken throughout. `submit.failOk` "Entendido"
+  matches EN "Got it" register (good). `success.text` review wording
+  ("enviado para revisión … en cuanto sea aprobada") is accurate to the real
+  admin-approval flow and does not over-promise. `owner.declined` correctly
+  tells the user they can edit and resubmit — trust-positive, matches the
+  other languages. No corporate or playful drift.
+- **website ru/de/fr/tr/es** — All read as natural marketing copy, not
+  machine-translated. No trust-eroding mistranslations. The hero/testimonial
+  text is faithful to the source and culturally fine.
+
+### Prioritized fixes
+
+**P1 — none.** No trust/consistency blocker found in es or website. The es
+card-noun + register are correct and locked.
+
+**P2 — tone polish (recommended, not launch-blocking)**
+
+1. `translations.ts` website **tr** `cannotSearch` "Arama yapılamadı" and
+   `main.searching` are fine, but `login.error` "Giriş hatası: jeton yok"
+   — "jeton" (token) is systems-speak surfaced to users. Suggest
+   "Giriş bağlantısı geçersiz" (the login link is invalid). Same applies to
+   `fr` "aucun jeton", `de` "kein Token", `es` "sin token", `ru` "токен
+   отсутствует" — all expose "token" to a non-technical tradesperson.
+   Brand-consistent fix across all langs: replace the literal token wording
+   with "el enlace de acceso no es válido" / "le lien de connexion est
+   invalide" / "der Anmeldelink ist ungültig" / "ссылка для входа
+   недействительна" / "giriş bağlantısı geçersiz". Low risk, improves trust.
+2. `translations.ts` website **tr** register split: punchy informal CTAs
+   (`how.step1Title` "Bul", `step3Title` "Anlaş", `step2Desc`
+   "Telegram'dan yaz") sit beside formal-siz body (`tryChanging`
+   "...deneyin"). This mirrors the uk/en source's punchy-verb slogan style,
+   so it is **acceptable as a deliberate voice device** — but document it so
+   it is not "fixed" inconsistently later. If the founder wants strict
+   harmony, make CTAs siz: "Bulun" / "Anlaşın" / "Telegram'dan yazın".
+3. `translations.ts` website **ru** same pattern: `appTitle`
+   "Найди украинских мастеров" (informal ты slogan) vs `hero`/`how`
+   formal "вы". Source-matched (uk uses "Знаходь"); acceptable as slogan
+   voice. Document, don't silently standardize.
+
+**P3 — clarity (low risk)**
+
+4. es wizard `tag.noHash` "Sin # al principio" — terse but acceptable as
+   validation microcopy (same call as the pt/tr equivalents). If polishing,
+   "No empieces con #" is a warmer imperative. Leave unless touching siblings.
+5. es `step.bio` / `bio.aboutLabel` both "Sobre ti" — intentional EN-source
+   duplication, OK (same resolution as pt/de).
+
+### Cross-language consistency checks
+
+- es card noun "ficha" ↔ locked glossary: **MATCH** (es = ficha). ✅
+- es register "tú" ↔ es wizard/bot/website: **internally consistent**. ✅
+- website de "du", fr "vous", es "tú": each matches its locked wizard/bot
+  register; no cross-surface contradiction within a language. ✅
+- website ru/tr slogan-vs-body register split: source-matched voice device,
+  not a defect; flagged for documentation only. ✅
+- "token" leak (P2#1) is the only genuine brand/clarity issue and it is
+  pre-existing across ALL website languages, not introduced by the es work.
+
+### Founder decisions required
+
+1. **Lock es glossary**: ficha · profesional · servicio · tú (informal).
+   (Recommended: approve as-is — strongest execution in the set.)
+2. **"token" in `login.error` across all 9 website languages** — approve the
+   plain-language rewrite (P2#1)? Brand-recommended yes; it is a pre-existing
+   trust/clarity wart, not es-specific.
+3. **Slogan register device** (ru/tr informal punchy CTAs over formal body) —
+   confirm this is an intentional voice device to be preserved (recommended)
+   vs. harmonized to the formal register.
+
+---
+
+**Brand Guardian**: es + website review complete
+**Date**: 2026-05-18
+**Status**: es (wizard+bot) and website de/fr/es → **Approve**. website
+ru/tr → Revise-minor (non-blocking). Spanish "ficha" + "tú" confirmed and
+recommended for lock.
