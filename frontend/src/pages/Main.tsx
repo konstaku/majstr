@@ -69,6 +69,12 @@ export const lightSelectStyles = {
     maxWidth: "280px",
     width: "max-content",
   }),
+  // Portaled menu: clamp right edge so it never exits the viewport
+  menuPortal: (base: CSSObjectWithLabel) => {
+    const left = typeof base.left === "number" ? (base.left as number) : 0;
+    const maxW = Math.min(280, window.innerWidth - left - 12);
+    return { ...base, zIndex: 9999, maxWidth: `${maxW}px` };
+  },
   option: (
     base: CSSObjectWithLabel,
     state: OptionProps<
@@ -89,17 +95,6 @@ export const lightSelectStyles = {
     padding: "10px 14px",
     whiteSpace: "normal" as const,
     overflowWrap: "break-word" as const,
-  }),
-};
-
-// Right-aligned variant for selects positioned on the right side of a row.
-// The menu grows leftward from the trigger's right edge, preventing viewport overflow.
-export const lightSelectStylesRight = {
-  ...lightSelectStyles,
-  menu: (base: CSSObjectWithLabel) => ({
-    ...lightSelectStyles.menu(base),
-    left: "auto" as const,
-    right: "0" as const,
   }),
 };
 
@@ -296,6 +291,8 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
                 value={
                   pendingCity
                     ? availableLocations.find((l) => l.value === pendingCity) ?? availableLocations[0]
@@ -327,13 +324,15 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
                 value={
                   pendingTrade
                     ? tradeOptions.find((o) => o.value === pendingTrade) ?? tradeOptions[0]
                     : tradeOptions[0]
                 }
                 options={tradeOptions}
-                styles={lightSelectStylesRight}
+                styles={lightSelectStyles}
                 onChange={(e) => {
                   if (e && "value" in e) setPendingTrade(e.value);
                 }}

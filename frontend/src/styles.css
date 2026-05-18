@@ -2067,7 +2067,9 @@ img {
   width: 100%;
 }
 .burger-controls .lang-btn {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
   padding: 16px 24px;
   font-family: var(--font-mono);
@@ -2081,7 +2083,7 @@ img {
   border-top: var(--border);
   text-align: left;
   cursor: pointer;
-  white-space: normal;
+  white-space: nowrap;
 }
 .burger-controls .lang-btn.active {
   background: transparent;
