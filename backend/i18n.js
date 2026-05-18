@@ -202,9 +202,29 @@ const DICT = {
     'owner.declined':
       '❌ Maalesef profil kartınız onaylanmadı. Bilgileri düzenleyip bot üzerinden tekrar gönderebilirsiniz.',
   },
-  // es filled by the Content Creator / Brand Guardian agents (Phase 2);
-  // resolves via the EN fallback in t() until then.
-  es: {},
+  es: {
+    'welcome.body':
+      '¡Bienvenido a Majstr! 🛠\n\nEncuentra a un profesional o regístrate como uno.\n\n👇 Elige idioma / Choose language / Scegli la lingua',
+    'btn.addMaster': '➕ Añadir mi ficha',
+    'btn.loginSite': '🌐 Abrir el sitio',
+    'lang.switched': '✅ Idioma cambiado',
+    'unknownCommand':
+      'Comando desconocido. Disponibles:\n/start — empezar\n/available — disponible ahora\n/nextweek — a partir de la próxima semana\n/busy — ocupado\n/status — ver estado\n/languages — idiomas que hablas',
+    'avail.none': 'No se encontró ninguna ficha profesional aprobada.',
+    'avail.updated': 'Estado actualizado: {label}',
+    'avail.available': '🟢 Disponible ahora',
+    'avail.next_week': '🟡 A partir de la próxima semana',
+    'avail.busy': '🔴 Ocupado',
+    'status.line': '📋 Tu perfil:\nEstado: {avail}\nIdiomas: {langs}\n\nComandos:\n/available /nextweek /busy /languages',
+    'status.notset': 'sin definir',
+    'langs.prompt': 'Elige los idiomas que hablas (puedes elegir varios):',
+    'langs.save': '💾 Guardar',
+    'langs.saved': 'Idiomas guardados: {labels}',
+    'owner.approved':
+      '✅ ¡Tu ficha ha sido aprobada y publicada!\n\nVerla: {url}',
+    'owner.declined':
+      '❌ Lamentablemente tu ficha no fue aprobada. Puedes editar los datos y volver a enviarla a través del bot.',
+  },
 };
 
 function t(lang, key, vars) {

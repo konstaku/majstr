@@ -1,0 +1,986 @@
+{
+  "professions": [
+    {
+      "id": "dentist",
+      "name": {
+        "en": "Dentist",
+        "ua": "Стоматолог",
+        "ru": "Стоматолог"
+      }
+    },
+    {
+      "id": "gynecologist",
+      "name": {
+        "en": "Gynecologist",
+        "ua": "Гінеколог",
+        "ru": "Гинеколог"
+      }
+    },
+    {
+      "id": "psychiatrist",
+      "name": {
+        "en": "Psychiatrist",
+        "ua": "Психіатр",
+        "ru": "Психиатр"
+      }
+    },
+    {
+      "id": "hairdresser",
+      "name": {
+        "en": "Hairdresser",
+        "ua": "Перукар",
+        "ru": "Парикмахер"
+      }
+    },
+    {
+      "id": "beautician",
+      "name": {
+        "en": "Beautician",
+        "ua": "Косметолог",
+        "ru": "Косметолог"
+      }
+    },
+    {
+      "id": "makeup_artist",
+      "name": {
+        "en": "Makeup artist",
+        "ua": "Візажист",
+        "ru": "Визажист"
+      }
+    },
+    {
+      "id": "piercer",
+      "name": {
+        "en": "Piercer",
+        "ua": "Майстер пірсингу",
+        "ru": "Мастер пирсинга"
+      }
+    },
+    {
+      "id": "housekeeper",
+      "name": {
+        "en": "Housekeeper",
+        "ua": "Покоївка",
+        "ru": "Горничная"
+      }
+    },
+    {
+      "id": "lawyer",
+      "name": {
+        "en": "Lawyer",
+        "ua": "Юрист",
+        "ru": "Юрист"
+      }
+    },
+    {
+      "id": "notary",
+      "name": {
+        "en": "Notary",
+        "ua": "Нотаріус",
+        "ru": "Нотариус"
+      }
+    },
+    {
+      "id": "attorney",
+      "name": {
+        "en": "Attorney",
+        "ua": "Адвокат",
+        "ru": "Адвокат"
+      }
+    },
+    {
+      "id": "financial_advisor",
+      "name": {
+        "en": "Financial advisor",
+        "ua": "Фінансовий консультант",
+        "ru": "Финансовый консультант"
+      }
+    },
+    {
+      "id": "videographer",
+      "name": {
+        "en": "Videographer",
+        "ua": "Відеооператор",
+        "ru": "Видеооператор"
+      }
+    },
+    {
+      "id": "florist",
+      "name": {
+        "en": "Florist",
+        "ua": "Флорист",
+        "ru": "Флорист"
+      }
+    },
+    {
+      "id": "confectioner",
+      "name": {
+        "en": "Сonfectioner",
+        "ua": "Кондитер",
+        "ru": "Кондитер"
+      }
+    },
+    {
+      "id": "pet_photographer",
+      "name": {
+        "en": "Pet Photographer",
+        "ua": "Фотограф для домашніх тварин",
+        "ru": "Фотограф домашних животных"
+      }
+    },
+    {
+      "id": "pet_transporter",
+      "name": {
+        "en": "Pet Transporter",
+        "ua": "Перевізник домашніх тварин",
+        "ru": "Перевозчик домашних животных"
+      }
+    },
+    {
+      "id": "mechanic",
+      "name": {
+        "en": "Mechanic",
+        "ua": "Автомеханік",
+        "ru": "Автомеханик"
+      }
+    },
+    {
+      "id": "therapist",
+      "name": {
+        "en": "Therapist",
+        "ua": "Терапевт",
+        "ru": "Терапевт"
+      }
+    },
+    {
+      "id": "ophtalmologist",
+      "name": {
+        "en": "Ophtalmologist",
+        "ua": "Офтальмолог",
+        "ru": "Офтальмолог"
+      }
+    },
+    {
+      "id": "plumber",
+      "name": {
+        "en": "Plumber",
+        "ua": "Сантехнік",
+        "ru": "Сантехник"
+      }
+    },
+    {
+      "id": "attorney",
+      "name": {
+        "en": "Attorney",
+        "ua": "Адвокат",
+        "ru": "Адвокат"
+      }
+    },
+    {
+      "id": "accountant",
+      "name": {
+        "en": "Accountant",
+        "ua": "Бухгалтер",
+        "ru": "Бухгалтер"
+      }
+    },
+    {
+      "id": "content_creator",
+      "name": {
+        "en": "Content Creator",
+        "ua": "Творець контенту",
+        "ru": "Творец контента"
+      }
+    },
+    {
+      "id": "babysitter",
+      "name": {
+        "en": "Babysitter",
+        "ua": "Няня",
+        "ru": "Няня"
+      }
+    },
+    {
+      "id": "veterinarian",
+      "name": {
+        "en": "Veterinarian",
+        "ua": "Ветеринар",
+        "ru": "Ветеринар"
+      }
+    },
+    {
+      "id": "pet_caretaker",
+      "name": {
+        "en": "Pet Caretaker",
+        "ua": "Доглядач для домашніх тварин",
+        "ru": "Сиделка за домашними животными"
+      }
+    },
+    {
+      "id": "tire_technician",
+      "name": {
+        "en": "Tire Technician",
+        "ua": "Шиномонтаж",
+        "ru": "Шиномонтаж"
+      }
+    },
+    {
+      "id": "dog_walker",
+      "name": {
+        "en": "Dog Walker",
+        "ua": "Вигульщик собак",
+        "ru": "Выгульщик собак"
+      }
+    },
+    {
+      "id": "driving_instructor",
+      "name": {
+        "en": "Driving Instructor",
+        "ua": "Інструктор з водіння",
+        "ru": "Инструктор по вождению"
+      }
+    },
+    {
+      "id": "manicurist",
+      "name": {
+        "en": "Manicurist",
+        "ua": "Майстер манікюру",
+        "ru": "Мастер маникюра"
+      }
+    },
+    {
+      "id": "construction_worker",
+      "name": {
+        "en": "Construction worker",
+        "ua": "Будівельник",
+        "ru": "Строитель"
+      }
+    },
+    {
+      "id": "financial_advisor",
+      "name": {
+        "en": "Financial advisor",
+        "ua": "Фінансовий консультант",
+        "ru": "Финансовый консультант"
+      }
+    },
+    {
+      "id": "choreographer",
+      "name": {
+        "en": "Choreographer",
+        "ua": "Вчитель танців",
+        "ru": "Учитель танцев"
+      }
+    },
+    {
+      "id": "translator",
+      "name": {
+        "en": "Translator",
+        "ua": "Перекладач",
+        "ru": "Переводчик"
+      }
+    },
+    {
+      "id": "lawyer",
+      "name": {
+        "en": "Lawyer",
+        "ua": "Юрист",
+        "ru": "Юрист"
+      }
+    },
+    {
+      "id": "cook",
+      "name": {
+        "en": "Cook",
+        "ua": "Повар",
+        "ru": "Повар"
+      }
+    },
+    {
+      "id": "photographer",
+      "name": {
+        "en": "Photographer",
+        "ua": "Фотограф",
+        "ru": "Фотограф"
+      }
+    },
+    {
+      "id": "pet_groomer",
+      "name": {
+        "en": "Pet Groomer",
+        "ua": "Грумер",
+        "ru": "Грумер"
+      }
+    },
+    {
+      "id": "pet_trainer",
+      "name": {
+        "en": "Pet Trainer",
+        "ua": "Тренер для домашніх тварин",
+        "ru": "Тренер домашних животных"
+      }
+    },
+    {
+      "id": "tutor",
+      "name": {
+        "en": "Tutor",
+        "ua": "Репетитор",
+        "ru": "Репетитор"
+      }
+    },
+    {
+      "id": "pediatric_nurse",
+      "name": {
+        "en": "Pediatrist",
+        "ua": "Педіатр",
+        "ru": "Педиатр"
+      }
+    },
+    {
+      "id": "auto_electrician",
+      "name": {
+        "en": "Auto Electrician",
+        "ua": "Автоелектрик",
+        "ru": "Автоэлектрик"
+      }
+    },
+    {
+      "id": "massage",
+      "name": {
+        "en": "Masseur",
+        "ua": "Масажист",
+        "ru": "Массажист"
+      }
+    },
+    {
+      "id": "doctor",
+      "name": {
+        "en": "Doctor",
+        "ua": "Лікар",
+        "ru": "Врач"
+      }
+    },
+    {
+      "id": "psychotherapist",
+      "name": {
+        "en": "Psychotherapist",
+        "ua": "Психотерапевт",
+        "ru": "Психотерапевт"
+      }
+    },
+    {
+      "id": "tattoo_artist",
+      "name": {
+        "en": "Tattoo artist",
+        "ua": "Тату-майстер",
+        "ru": "Тату-мастер"
+      }
+    },
+    {
+      "id": "eyebrows",
+      "name": {
+        "en": "Brow master",
+        "ua": "Майстер бровей",
+        "ru": "Мастер бровей"
+      }
+    },
+    {
+      "id": "fitness_instructor",
+      "name": {
+        "en": "Fitness Instructor",
+        "ua": "Фітнес тренер",
+        "ru": "Фитнес-тренер"
+      }
+    },
+    {
+      "id": "cleaner",
+      "name": {
+        "en": "Cleaner",
+        "ua": "Прибиральник",
+        "ru": "Уборщик"
+      }
+    },
+    {
+      "id": "accountant",
+      "name": {
+        "en": "Accountant",
+        "ua": "Бухгалтер",
+        "ru": "Бухгалтер"
+      }
+    },
+    {
+      "id": "electrician",
+      "name": {
+        "en": "Electrician",
+        "ua": "Електрик",
+        "ru": "Электрик"
+      }
+    },
+    {
+      "id": "chef",
+      "name": {
+        "en": "Chef",
+        "ua": "Шеф Повар",
+        "ru": "Шеф Повар"
+      }
+    },
+    {
+      "id": "art_teacher",
+      "name": {
+        "en": "Art Teacher",
+        "ua": "Вчитель мистецтва",
+        "ru": "Преподаватель искусства"
+      }
+    },
+    {
+      "id": "handcraft_master",
+      "name": {
+        "en": "Master of Handcrafts",
+        "ua": "Майстер рукоділля",
+        "ru": "Мастер рукоделия"
+      }
+    },
+    {
+      "id": "notary",
+      "name": {
+        "en": "Notary",
+        "ua": "Нотаріус",
+        "ru": "Нотариус"
+      }
+    },
+    {
+      "id": "child_psychologist",
+      "name": {
+        "en": "Child Psychologist",
+        "ua": "Дитячий психолог",
+        "ru": "Детский психолог"
+      }
+    },
+    {
+      "id": "dermatologist",
+      "name": {
+        "en": "Dermatologist",
+        "ua": "Дерматолог",
+        "ru": "Дерматолог"
+      }
+    }
+  ],
+  "profcategories": [
+    {
+      "id": "arts_design",
+      "name": {
+        "en": "Arts and Design",
+        "ua": "Мистецтво та дизайн",
+        "ru": "Искусство и дизайн"
+      }
+    },
+    {
+      "id": "household_services",
+      "name": {
+        "en": "Household Services",
+        "ua": "Побутові послуги",
+        "ru": "Бытовые услуги"
+      }
+    },
+    {
+      "id": "culinary",
+      "name": {
+        "en": "Culinary",
+        "ua": "Кулінарія",
+        "ru": "Кулинария"
+      }
+    },
+    {
+      "id": "pet_services",
+      "name": {
+        "en": "Pet Services",
+        "ua": "Домашні тварини",
+        "ru": "Домашние животные"
+      }
+    },
+    {
+      "id": "health_beauty",
+      "name": {
+        "en": "Health and Beauty",
+        "ua": "Здоров'я та краса",
+        "ru": "Здоровье и красота"
+      }
+    },
+    {
+      "id": "medicine",
+      "name": {
+        "en": "Medicine",
+        "ua": "Медицина",
+        "ru": "Медицина"
+      }
+    },
+    {
+      "id": "childcare_services",
+      "name": {
+        "en": "Childcare Services",
+        "ua": "Послуги для дітей",
+        "ru": "Услуги для детей"
+      }
+    },
+    {
+      "id": "car_services",
+      "name": {
+        "en": "Car Services",
+        "ua": "Автомобільні послуги",
+        "ru": "Автомобильные услуги"
+      }
+    },
+    {
+      "id": "legal_finance",
+      "name": {
+        "en": "Legal and Finance",
+        "ua": "Юридичні та фінансові послуги",
+        "ru": "Юридические и финансовые услуги"
+      }
+    }
+  ],
+  "locations": [
+    {
+      "id": "milan",
+      "name": {
+        "en": "Milan",
+        "ua": "Мілан",
+        "ua_alt": "Мілані",
+        "ru": "Милан",
+        "ru_alt": "Милане"
+      }
+    },
+    {
+      "id": "bari",
+      "name": {
+        "en": "Bari",
+        "ua": "Барі",
+        "ua_alt": "Барі",
+        "ru": "Бари",
+        "ru_alt": "Бари"
+      }
+    },
+    {
+      "id": "venice",
+      "name": {
+        "en": "Venice",
+        "ua": "Венеція",
+        "ua_alt": "Венеції",
+        "ru": "Венеция",
+        "ru_alt": "Венеции"
+      }
+    },
+    {
+      "id": "verona",
+      "name": {
+        "en": "Verona",
+        "ua": "Верона",
+        "ua_alt": "Вероні",
+        "ru": "Верона",
+        "ru_alt": "Вероне"
+      }
+    },
+    {
+      "id": "messina",
+      "name": {
+        "en": "Messina",
+        "ua": "Мессіна",
+        "ua_alt": "Мессіні",
+        "ru": "Мессина",
+        "ru_alt": "Мессине"
+      }
+    },
+    {
+      "id": "trieste",
+      "name": {
+        "en": "Trieste",
+        "ua": "Трієст",
+        "ua_alt": "Трієсті",
+        "ru": "Триест",
+        "ru_alt": "Триесте"
+      }
+    },
+    {
+      "id": "bologna",
+      "name": {
+        "en": "Bologna",
+        "ua": "Болонья",
+        "ua_alt": "Болоньї",
+        "ru": "Болонья",
+        "ru_alt": "Болонье"
+      }
+    },
+    {
+      "id": "ravenna",
+      "name": {
+        "en": "Ravenna",
+        "ua": "Равенна",
+        "ua_alt": "Равенні",
+        "ru": "Равенна",
+        "ru_alt": "Равенне"
+      }
+    },
+    {
+      "id": "reggio-emilia",
+      "name": {
+        "en": "Reggio Emilia",
+        "ua": "Реджо-Емілія",
+        "ua_alt": "Реджо-Емілії",
+        "ru": "Реджо-Эмилия",
+        "ru_alt": "Реджо-Эмилии"
+      }
+    },
+    {
+      "id": "lecce",
+      "name": {
+        "en": "Lecce",
+        "ua": "Лечче",
+        "ua_alt": "Лечче",
+        "ru": "Лечче",
+        "ru_alt": "Лечче"
+      }
+    },
+    {
+      "id": "reggio-calabria",
+      "name": {
+        "en": "Reggio Calabria",
+        "ua": "Реджо-Калабрія",
+        "ua_alt": "Реджо-Калабрії",
+        "ru": "Реджо-Калабрия",
+        "ru_alt": "Реджо-Калабрие"
+      }
+    },
+    {
+      "id": "porto",
+      "name": {
+        "en": "Porto",
+        "ua": "Порту",
+        "ua_alt": "Порто",
+        "ru": "Порту",
+        "ru_alt": "Порту"
+      }
+    },
+    {
+      "id": "genoa",
+      "name": {
+        "en": "Genoa",
+        "ua": "Генуя",
+        "ua_alt": "Генуї",
+        "ru": "Генуя",
+        "ru_alt": "Генуе"
+      }
+    },
+    {
+      "id": "padua",
+      "name": {
+        "en": "Padua",
+        "ua": "Падуя",
+        "ua_alt": "Падуї",
+        "ru": "Падуя",
+        "ru_alt": "Падуе"
+      }
+    },
+    {
+      "id": "brescia",
+      "name": {
+        "en": "Brescia",
+        "ua": "Брешия",
+        "ua_alt": "Брешиї",
+        "ru": "Брешия",
+        "ru_alt": "Брешие"
+      }
+    },
+    {
+      "id": "palermo",
+      "name": {
+        "en": "Palermo",
+        "ua": "Палермо",
+        "ua_alt": "Палермо",
+        "ru": "Палермо",
+        "ru_alt": "Палермо"
+      }
+    },
+    {
+      "id": "pescara",
+      "name": {
+        "en": "Pescara",
+        "ua": "Пескара",
+        "ua_alt": "Пескарі",
+        "ru": "Пескара",
+        "ru_alt": "Пескаре"
+      }
+    },
+    {
+      "id": "forlì",
+      "name": {
+        "en": "Forlì",
+        "ua": "Форлі",
+        "ua_alt": "Форлі",
+        "ru": "Форли",
+        "ru_alt": "Форли"
+      }
+    },
+    {
+      "id": "bergamo",
+      "name": {
+        "en": "Bergamo",
+        "ua": "Бергамо",
+        "ua_alt": "Бергамо",
+        "ru": "Бергамо",
+        "ru_alt": "Бергамо"
+      }
+    },
+    {
+      "id": "modena",
+      "name": {
+        "en": "Modena",
+        "ua": "Модена",
+        "ua_alt": "Модені",
+        "ru": "Модена",
+        "ru_alt": "Модене"
+      }
+    },
+    {
+      "id": "barletta",
+      "name": {
+        "en": "Barletta",
+        "ua": "Барлетта",
+        "ua_alt": "Барлетті",
+        "ru": "Барлетта",
+        "ru_alt": "Барлетте"
+      }
+    },
+    {
+      "id": "prato",
+      "name": {
+        "en": "Prato",
+        "ua": "Прато",
+        "ua_alt": "Праті",
+        "ru": "Прато",
+        "ru_alt": "Прато"
+      }
+    },
+    {
+      "id": "ancona",
+      "name": {
+        "en": "Ancona",
+        "ua": "Анкона",
+        "ua_alt": "Анконі",
+        "ru": "Анкона",
+        "ru_alt": "Анконе"
+      }
+    },
+    {
+      "id": "uomini",
+      "name": {
+        "en": "Uomini",
+        "ua": "Уоміні",
+        "ua_alt": "Уоміні",
+        "ru": "Уомини",
+        "ru_alt": "Уомини"
+      }
+    },
+    {
+      "id": "lisbon",
+      "name": {
+        "en": "Lisbon",
+        "ua": "Лісабон",
+        "ua_alt": "Лісабоні",
+        "ru": "Лиссабон",
+        "ru_alt": "Лиссабоне"
+      }
+    },
+    {
+      "id": "turin",
+      "name": {
+        "en": "Turin",
+        "ua": "Турин",
+        "ua_alt": "Турині",
+        "ru": "Турин",
+        "ru_alt": "Турине"
+      }
+    },
+    {
+      "id": "terni",
+      "name": {
+        "en": "Terni",
+        "ua": "Терні",
+        "ua_alt": "Терні",
+        "ru": "Терни",
+        "ru_alt": "Терни"
+      }
+    },
+    {
+      "id": "salerno",
+      "name": {
+        "en": "Salerno",
+        "ua": "Салерно",
+        "ua_alt": "Салерно",
+        "ru": "Салерно",
+        "ru_alt": "Салерно"
+      }
+    },
+    {
+      "id": "benevento",
+      "name": {
+        "en": "Benevento",
+        "ua": "Беневенто",
+        "ua_alt": "Беневенто",
+        "ru": "Беневенто",
+        "ru_alt": "Беневенто"
+      }
+    },
+    {
+      "id": "rimini",
+      "name": {
+        "en": "Rimini",
+        "ua": "Ріміні",
+        "ua_alt": "Ріміні",
+        "ru": "Римини",
+        "ru_alt": "Римини"
+      }
+    },
+    {
+      "id": "ferrara",
+      "name": {
+        "en": "Ferrara",
+        "ua": "Феррара",
+        "ua_alt": "Феррарі",
+        "ru": "Феррара",
+        "ru_alt": "Ферраре"
+      }
+    },
+    {
+      "id": "andria",
+      "name": {
+        "en": "Andria",
+        "ua": "Андрія",
+        "ua_alt": "Андрії",
+        "ru": "Андрия",
+        "ru_alt": "Андрии"
+      }
+    },
+    {
+      "id": "florence",
+      "name": {
+        "en": "Florence",
+        "ua": "Флоренція",
+        "ua_alt": "Флоренції",
+        "ru": "Флоренция",
+        "ru_alt": "Флоренции"
+      }
+    },
+    {
+      "id": "catania",
+      "name": {
+        "en": "Catania",
+        "ua": "Катанія",
+        "ua_alt": "Катанії",
+        "ru": "Катания",
+        "ru_alt": "Катании"
+      }
+    },
+    {
+      "id": "taranto",
+      "name": {
+        "en": "Taranto",
+        "ua": "Таранто",
+        "ua_alt": "Таранті",
+        "ru": "Таранто",
+        "ru_alt": "Таранто"
+      }
+    },
+    {
+      "id": "cagliari",
+      "name": {
+        "en": "Cagliari",
+        "ua": "Кальярі",
+        "ua_alt": "Кальярі",
+        "ru": "Кальяри",
+        "ru_alt": "Кальяри"
+      }
+    },
+    {
+      "id": "livorno",
+      "name": {
+        "en": "Livorno",
+        "ua": "Ліворно",
+        "ua_alt": "Ліворно",
+        "ru": "Ливорно",
+        "ru_alt": "Ливорно"
+      }
+    },
+    {
+      "id": "vicenza",
+      "name": {
+        "en": "Vicenza",
+        "ua": "Віченца",
+        "ua_alt": "Віченці",
+        "ru": "Виченца",
+        "ru_alt": "Виченце"
+      }
+    },
+    {
+      "id": "treviso",
+      "name": {
+        "en": "Treviso",
+        "ua": "Тревізо",
+        "ua_alt": "Тревізо",
+        "ru": "Тревизо",
+        "ru_alt": "Тревизо"
+      }
+    },
+    {
+      "id": "pisa",
+      "name": {
+        "en": "Pisa",
+        "ua": "Піза",
+        "ua_alt": "Пізі",
+        "ru": "Пиза",
+        "ru_alt": "Пизе"
+      }
+    },
+    {
+      "id": "rome",
+      "name": {
+        "en": "Rome",
+        "ua": "Рим",
+        "ua_alt": "Римі",
+        "ru": "Рим",
+        "ru_alt": "Риме"
+      }
+    },
+    {
+      "id": "naples",
+      "name": {
+        "en": "Naples",
+        "ua": "Неаполь",
+        "ua_alt": "Неаполі",
+        "ru": "Неаполь",
+        "ru_alt": "Неаполе"
+      }
+    }
+  ],
+  "countries": [
+    {
+      "id": "IT",
+      "name": {
+        "en": "Italy",
+        "ua": "Італія",
+        "ua_alt": "Італії",
+        "ru": "Италия",
+        "ru_alt": "Италии"
+      }
+    },
+    {
+      "id": "PT",
+      "name": {
+        "en": "Portugal",
+        "ua": "Португалія",
+        "ua_alt": "Португалії",
+        "ru": "Португалия",
+        "ru_alt": "Португалии"
+      }
+    }
+  ]
+}
