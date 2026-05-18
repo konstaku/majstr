@@ -2,7 +2,7 @@ import { useFormContext, Controller } from "react-hook-form";
 import { TagPicker } from "../ui/TagPicker";
 import { useOnbT } from "../i18n";
 import type { DraftData } from "../schema";
-import tagSuggestions from "../../data/tag-suggestions.json";
+import tagSuggestions from "../../data/tag-suggestions.i18n.json";
 
 const BIO_MAX = 600;
 const BIO_WARN_AMBER = Math.round(BIO_MAX * 0.8);  // 480
@@ -15,15 +15,18 @@ function bioCounterColor(len: number): string {
 }
 
 export function StepBioTags() {
-  const { t } = useOnbT();
+  const { t, lang } = useOnbT();
   const { control, register, formState: { errors }, watch } = useFormContext<DraftData>();
   const professionID = watch("professionID");
   const about = watch("about") ?? "";
 
+  const tagData = tagSuggestions as Record<
+    string,
+    Record<string, string[]>
+  >;
+  const byProf = tagData[professionID] ?? tagData["_default"];
   const suggestions: string[] =
-    (tagSuggestions as Record<string, string[]>)[professionID] ??
-    (tagSuggestions as Record<string, string[]>)["_default"] ??
-    [];
+    byProf?.[lang] ?? byProf?.uk ?? byProf?.en ?? [];
 
   return (
     <div className="wizard-step-content">
