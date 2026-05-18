@@ -27,23 +27,24 @@ export const LANG_ENDONYM: Record<AppLang, string> = {
   es: "Español",
 };
 
-// Always-present languages; ru is rendered label-only, last.
-const PERMANENT: readonly string[] = ["en", "uk", "ru"];
+// Always-present primary languages. RU is intentionally NOT primary —
+// it lives in the "other languages" disclosure (still label-only there).
+const PERMANENT: readonly string[] = ["en", "uk"];
 
 // The one contextual slot: the user's system language iff it is one of
-// ours and not already permanent. null collapses the slot (no filler).
+// ours and not already primary, and never RU (RU stays in "other").
 export function contextualLang(sysRaw?: string | null): AppLang | null {
   if (!sysRaw) return null;
   const sys = sysRaw.toLowerCase().split(/[-_]/)[0];
   if (!(APP_LANGS as readonly string[]).includes(sys)) return null;
-  if (PERMANENT.includes(sys)) return null;
+  if (PERMANENT.includes(sys) || sys === "ru") return null;
   return sys as AppLang;
 }
 
-// Primary visible set (3 or 4): en, uk, [contextual], ru.
+// Primary visible set (2 or 3): en, uk, [contextual].
 export function primaryLangs(sysRaw?: string | null): AppLang[] {
   const c = contextualLang(sysRaw);
-  return (["en", "uk", c, "ru"] as (AppLang | null)[]).filter(
+  return (["en", "uk", c] as (AppLang | null)[]).filter(
     (x): x is AppLang => x != null
   );
 }

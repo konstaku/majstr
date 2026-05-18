@@ -190,12 +190,7 @@ async function handleStart(message, payload) {
       registeredUser.uiLanguage = lang;
       await registeredUser.save().catch(() => {});
     }
-    return sendLoginLink(
-      message.chat.id,
-      registeredUser.token,
-      lang,
-      message.from?.language_code
-    );
+    return sendLoginLink(message.chat.id, registeredUser.token, lang);
   }
 
   console.log('Welcome new user!, ID:', message.chat.id);
@@ -203,7 +198,7 @@ async function handleStart(message, payload) {
   const token = createTokenForUser(message);
   const userPhoto = await fetchUserTelegramPhoto(message);
   await addUserToDatabase(message, userPhoto, token, lang);
-  sendLoginLink(message.chat.id, token, lang, message.from?.language_code);
+  sendLoginLink(message.chat.id, token, lang);
 }
 
 async function setAvailability(chatId, availability) {
@@ -330,20 +325,20 @@ async function handleCallbackQuery(callbackQuery) {
   });
 }
 
-// Compact welcome keyboard: language switch (max 4 + More) then actions.
-function buildWelcomeKeyboard(lang, token, sysLang) {
+// Welcome keyboard. "Add master" is the primary CTA — first and alone on
+// its own full-width row so it's the biggest/most prominent control. Then
+// the uk/en/ru language switch, then the website link.
+function buildWelcomeKeyboard(lang, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
   return {
     inline_keyboard: [
-      // Language switch first, so it is the most apparent control —
-      // flags/RU label are understandable without reading any language.
-      ...i18n.langKeyboardRows(lang, sysLang, 'compact'),
       [
         {
           text: i18n.t(lang, 'btn.addMaster'),
           web_app: { url: `${TMA_BASE_URL}/onboard?lng=${lang}` },
         },
       ],
+      ...i18n.langKeyboardRows(lang),
       [
         {
           text: i18n.t(lang, 'btn.loginSite'),
@@ -354,16 +349,10 @@ function buildWelcomeKeyboard(lang, token, sysLang) {
   };
 }
 
-// Full 9-language grid (the "More languages" view). Action rows are
-// intentionally hidden here to keep the grid scannable.
-function buildLangGridKeyboard(lang, sysLang) {
-  return { inline_keyboard: i18n.langKeyboardRows(lang, sysLang, 'grid') };
-}
-
-function sendLoginLink(id, token, lang, sysLang) {
+function sendLoginLink(id, token, lang) {
   const L = i18n.normalizeLang(lang);
   bot.sendMessage(id, i18n.t(L, 'welcome.body'), {
-    reply_markup: buildWelcomeKeyboard(L, token, sysLang),
+    reply_markup: buildWelcomeKeyboard(L, token),
   }).catch((err) => console.error('[sendLoginLink] failed:', err.message));
 }
 
@@ -443,37 +432,10 @@ async function fetchUserTelegramPhoto(message) {
 }
 
 async function handleUiLangCallback(queryId, message, data, from) {
-  const arg = data.slice('uilang:'.length);
-  const sysLang = from.language_code;
+  const code = i18n.normalizeLang(data.slice('uilang:'.length));
   const chat_id = message.chat.id;
   const message_id = message.message_id;
 
-  // Expand to the full 9-language grid (keyboard swap, same message).
-  if (arg === 'more') {
-    const u = await User.findOne({ telegramID: from.id }).select('uiLanguage').lean();
-    const lang = i18n.normalizeLang(u && u.uiLanguage);
-    await bot.answerCallbackQuery(queryId, {});
-    return bot
-      .editMessageReplyMarkup(buildLangGridKeyboard(lang, sysLang), { chat_id, message_id })
-      .catch((err) => console.error('[uilang:more] edit failed:', err.message));
-  }
-
-  // Collapse back to the compact welcome keyboard (no language change).
-  if (arg === 'back') {
-    const u = await User.findOne({ telegramID: from.id });
-    const lang = i18n.normalizeLang(u && u.uiLanguage);
-    await bot.answerCallbackQuery(queryId, {});
-    return bot
-      .editMessageReplyMarkup(buildWelcomeKeyboard(lang, u && u.token, sysLang), {
-        chat_id,
-        message_id,
-      })
-      .catch((err) => console.error('[uilang:back] edit failed:', err.message));
-  }
-
-  // A concrete language pick: persist + re-render welcome in that language,
-  // auto-collapsing to the compact keyboard.
-  const code = i18n.normalizeLang(arg);
   const user = await User.findOneAndUpdate(
     { telegramID: from.id },
     { $set: { uiLanguage: code } },
@@ -485,7 +447,7 @@ async function handleUiLangCallback(queryId, message, data, from) {
   await bot.editMessageText(i18n.t(code, 'welcome.body'), {
     chat_id,
     message_id,
-    reply_markup: buildWelcomeKeyboard(code, user && user.token, sysLang),
+    reply_markup: buildWelcomeKeyboard(code, user && user.token),
   }).catch((err) => console.error('[uilang] edit failed:', err.message));
 }
 

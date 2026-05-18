@@ -119,7 +119,7 @@ export const translations: Record<string, LangTranslations> = {
     cta: { microcopy: "3 хв · Безкоштовно · Telegram" },
     login: {
       loading: "Вхід в систему...",
-      error: "Помилка входу: токен відсутній",
+      error: "Посилання для входу недійсне або застаріле. Відкрийте бота ще раз.",
       home: "На головну",
     },
     availability: {
@@ -194,7 +194,7 @@ export const translations: Record<string, LangTranslations> = {
     cta: { microcopy: "3 min · Free · Via Telegram" },
     login: {
       loading: "Logging in...",
-      error: "Login error: no token",
+      error: "This login link is invalid or has expired. Please open the bot again.",
       home: "Go home",
     },
     availability: {
@@ -269,7 +269,7 @@ export const translations: Record<string, LangTranslations> = {
     cta: { microcopy: "3 min · Gratis · Via Telegram" },
     login: {
       loading: "Accesso in corso...",
-      error: "Errore di accesso: nessun token",
+      error: "Il link di accesso non è valido o è scaduto. Riapri il bot.",
       home: "Vai alla home",
     },
     availability: {
@@ -344,7 +344,7 @@ export const translations: Record<string, LangTranslations> = {
     cta: { microcopy: "3 min · Grátis · Via Telegram" },
     login: {
       loading: "A iniciar sessão...",
-      error: "Erro de login: sem token",
+      error: "O link de acesso é inválido ou expirou. Abre o bot novamente.",
       home: "Ir para o início",
     },
     availability: {
@@ -420,7 +420,7 @@ translations.ru = {
   cta: { microcopy: "3 мин · Бесплатно · Через Telegram" },
   login: {
     loading: "Вход в систему...",
-    error: "Ошибка входа: токен отсутствует",
+    error: "Ссылка для входа недействительна или устарела. Откройте бота снова.",
     home: "На главную",
   },
   availability: {
@@ -495,7 +495,7 @@ translations.de = {
   cta: { microcopy: "3 Min · Kostenlos · Über Telegram" },
   login: {
     loading: "Anmeldung läuft...",
-    error: "Anmeldefehler: kein Token",
+    error: "Der Login-Link ist ungültig oder abgelaufen. Bitte öffne den Bot erneut.",
     home: "Zur Startseite",
   },
   availability: {
@@ -570,7 +570,7 @@ translations.fr = {
   cta: { microcopy: "3 min · Gratuit · Via Telegram" },
   login: {
     loading: "Connexion en cours...",
-    error: "Erreur de connexion : aucun jeton",
+    error: "Le lien de connexion est invalide ou a expiré. Rouvre le bot.",
     home: "Accueil",
   },
   availability: {
@@ -645,7 +645,7 @@ translations.tr = {
   cta: { microcopy: "3 dk · Ücretsiz · Telegram üzerinden" },
   login: {
     loading: "Giriş yapılıyor...",
-    error: "Giriş hatası: jeton yok",
+    error: "Giriş bağlantısı geçersiz veya süresi dolmuş. Lütfen botu tekrar aç.",
     home: "Ana sayfa",
   },
   availability: {
@@ -720,7 +720,7 @@ translations.es = {
   cta: { microcopy: "3 min · Gratis · Vía Telegram" },
   login: {
     loading: "Iniciando sesión...",
-    error: "Error de inicio de sesión: sin token",
+    error: "El enlace de acceso no es válido o ha caducado. Abre el bot de nuevo.",
     home: "Ir al inicio",
   },
   availability: {

@@ -238,54 +238,22 @@ function t(lang, key, vars) {
   return s;
 }
 
-// Language switch keyboard, chunked into rows of 4. RU intentionally has
-// NO flag (text label), per project decision.
-const LANG_BUTTONS = [
-  { code: 'en', label: '🇬🇧' },
+// The bot offers only these three (project decision). RU is text "RU",
+// never a flag. The full 9 languages remain available in the Mini App /
+// website switcher, not in the bot chat.
+const BOT_LANGS = [
   { code: 'uk', label: '🇺🇦' },
+  { code: 'en', label: '🇬🇧' },
   { code: 'ru', label: 'RU' },
-  { code: 'it', label: '🇮🇹' },
-  { code: 'pt', label: '🇵🇹' },
-  { code: 'de', label: '🇩🇪' },
-  { code: 'fr', label: '🇫🇷' },
-  { code: 'tr', label: '🇹🇷' },
-  { code: 'es', label: '🇪🇸' },
 ];
 
-const PERMANENT = ['en', 'uk', 'ru'];
-
-// The one contextual slot: user's Telegram language iff one of ours and
-// not already permanent. null collapses the slot.
-function contextualLang(sysRaw) {
-  const base = mapTgLang(sysRaw); // null if unsupported
-  if (!base || PERMANENT.includes(base)) return null;
-  return base;
-}
-
-function btn(code, activeLang) {
-  const o = LANG_BUTTONS.find((x) => x.code === code) || { code, label: code };
-  return {
-    text: code === activeLang ? `· ${o.label} ·` : o.label,
-    callback_data: `uilang:${code}`,
-  };
-}
-
-// Build the language keyboard rows.
-//   mode 'compact' → [en,uk,(contextual),ru] + [🌐 More languages]
-//   mode 'grid'    → all 9 in rows of 3 + [◀ Back]
-function langKeyboardRows(activeLang, sysRaw, mode) {
-  if (mode === 'grid') {
-    const all = LANG_BUTTONS.map((o) => btn(o.code, activeLang));
-    const rows = [];
-    for (let i = 0; i < all.length; i += 3) rows.push(all.slice(i, i + 3));
-    rows.push([{ text: '◀ Back', callback_data: 'uilang:back' }]);
-    return rows;
-  }
-  const c = contextualLang(sysRaw);
-  const primary = ['en', 'uk', c, 'ru'].filter((x) => x != null);
+// Single language-switch row for the bot welcome / /languages keyboard.
+function langKeyboardRows(activeLang) {
   return [
-    primary.map((code) => btn(code, activeLang)),
-    [{ text: '🌐 More languages', callback_data: 'uilang:more' }],
+    BOT_LANGS.map((o) => ({
+      text: o.code === activeLang ? `· ${o.label} ·` : o.label,
+      callback_data: `uilang:${o.code}`,
+    })),
   ];
 }
 
@@ -294,7 +262,6 @@ module.exports = {
   DEFAULT_LANG,
   mapTgLang,
   normalizeLang,
-  contextualLang,
   t,
   langKeyboardRows,
 };
