@@ -965,6 +965,94 @@ img {
   overflow: hidden;
 }
 
+/* "Join as a master" modal — tidy, brutalist, on-brand */
+.join-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 10vh auto 24px;
+  background: var(--paper);
+  border: var(--border);
+  padding: 32px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.join-modal-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-left: var(--border);
+  border-bottom: var(--border);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  cursor: pointer;
+}
+.join-modal-close:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+.join-modal-title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.join-modal-intro {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.join-modal-time {
+  margin: 0;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border: var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.join-modal-cta {
+  display: block;
+  text-align: center;
+  padding: 15px 18px;
+  background: var(--terra);
+  color: var(--paper);
+  border: var(--border);
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.join-modal-cta:hover {
+  background: var(--ink);
+}
+.join-modal-fallback {
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  text-decoration: underline;
+}
+.join-modal-fallback:hover {
+  color: var(--terra);
+}
+
 /* modal header band */
 .modal-top-band {
   background: var(--terra);

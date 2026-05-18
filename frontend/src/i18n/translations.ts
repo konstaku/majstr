@@ -764,3 +764,91 @@ export const LANG_LABELS: Record<string, string> = {
   tr: "TR",
   es: "ES",
 };
+
+export interface JoinModalCopy {
+  title: string;
+  intro: string;
+  time: string;
+  openTg: string;
+  noTg: string;
+}
+
+// "Join as a master" modal copy, localized for all 9 app languages.
+export const JOIN_MODAL: Record<string, JoinModalCopy> = {
+  en: {
+    title: "Join as a master",
+    intro:
+      "Registration goes through Telegram — it confirms who you are and collects your details.",
+    time: "Takes about 2 minutes",
+    openTg: "Open in Telegram →",
+    noTg: "No Telegram? Fill in the form here →",
+  },
+  uk: {
+    title: "Зареєструватися як майстер",
+    intro:
+      "Реєстрація відбувається через Telegram — він підтверджує вашу особу та збирає інформацію про вас.",
+    time: "Займе близько 2 хвилин",
+    openTg: "Відкрити в Telegram →",
+    noTg: "Немає Telegram? Заповніть форму тут →",
+  },
+  ru: {
+    title: "Стать мастером",
+    intro:
+      "Регистрация проходит через Telegram — он подтверждает вашу личность и собирает данные о вас.",
+    time: "Займёт около 2 минут",
+    openTg: "Открыть в Telegram →",
+    noTg: "Нет Telegram? Заполните форму здесь →",
+  },
+  it: {
+    title: "Registrati come professionista",
+    intro:
+      "La registrazione avviene tramite Telegram: verifica la tua identità e raccoglie i tuoi dati.",
+    time: "Bastano circa 2 minuti",
+    openTg: "Apri in Telegram →",
+    noTg: "Niente Telegram? Compila il modulo qui →",
+  },
+  pt: {
+    title: "Registe-se como profissional",
+    intro:
+      "O registo é feito via Telegram — confirma a sua identidade e recolhe os seus dados.",
+    time: "Demora cerca de 2 minutos",
+    openTg: "Abrir no Telegram →",
+    noTg: "Sem Telegram? Preencha o formulário aqui →",
+  },
+  de: {
+    title: "Als Fachkraft registrieren",
+    intro:
+      "Die Registrierung läuft über Telegram — es bestätigt deine Identität und erfasst deine Angaben.",
+    time: "Dauert etwa 2 Minuten",
+    openTg: "In Telegram öffnen →",
+    noTg: "Kein Telegram? Fülle hier das Formular aus →",
+  },
+  fr: {
+    title: "Devenir artisan",
+    intro:
+      "L'inscription se fait via Telegram : elle vérifie votre identité et recueille vos informations.",
+    time: "Environ 2 minutes",
+    openTg: "Ouvrir dans Telegram →",
+    noTg: "Pas de Telegram ? Remplissez le formulaire ici →",
+  },
+  tr: {
+    title: "Usta olarak kaydolun",
+    intro:
+      "Kayıt Telegram üzerinden yapılır — kimliğinizi doğrular ve bilgilerinizi toplar.",
+    time: "Yaklaşık 2 dakika sürer",
+    openTg: "Telegram'da aç →",
+    noTg: "Telegram yok mu? Formu buradan doldurun →",
+  },
+  es: {
+    title: "Únete como profesional",
+    intro:
+      "El registro se hace por Telegram: verifica tu identidad y recoge tus datos.",
+    time: "Tarda unos 2 minutos",
+    openTg: "Abrir en Telegram →",
+    noTg: "¿Sin Telegram? Rellena el formulario aquí →",
+  },
+};
+
+export function joinModal(lang: string): JoinModalCopy {
+  return JOIN_MODAL[lang] ?? JOIN_MODAL.en;
+}
