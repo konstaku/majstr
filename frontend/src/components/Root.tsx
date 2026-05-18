@@ -40,6 +40,8 @@ export default function Root() {
   const [showAddMasterModal, setShowAddMasterModal] = useState(false);
   const { t, lang } = useTranslation();
   const location = useLocation();
+  const burgerToggleRef = useRef<HTMLButtonElement>(null);
+  const burgerMenuRef = useRef<HTMLDivElement>(null);
 
   const now = new Date();
   const weekNum = getISOWeek(now);
@@ -74,6 +76,36 @@ export default function Root() {
     dispatch({ type: ACTIONS.LOGIN, payload: { user } });
   }, [dispatch]);
 
+  // Burger overlay: lock background scroll, close on Escape, and manage
+  // focus (move into the overlay on open, return to the toggle on close).
+  useEffect(() => {
+    if (!showBurgerMenu) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    // Capture the toggle node now; the burger toggle stays mounted, so
+    // this is the element we want to restore focus to on close.
+    const toggleEl = burgerToggleRef.current;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowBurgerMenu(false);
+    };
+    document.addEventListener("keydown", onKey);
+
+    // Move focus to the first focusable element inside the overlay.
+    const firstFocusable = burgerMenuRef.current?.querySelector<HTMLElement>(
+      'a, button, [tabindex]:not([tabindex="-1"])',
+    );
+    firstFocusable?.focus();
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKey);
+      // Return focus to the burger toggle after the menu closes.
+      toggleEl?.focus();
+    };
+  }, [showBurgerMenu]);
+
   const openAddMasterModal = () => setShowAddMasterModal(true);
 
   const AddMasterLink = (
@@ -82,9 +114,14 @@ export default function Root() {
     </button>
   );
 
-  const AddMasterCta = (
-    <button className="cta-header" onClick={openAddMasterModal}>
-      {t("nav.addMaster")} →
+  const renderAddMasterCta = () => (
+    <button
+      type="button"
+      className="cta-header"
+      onClick={openAddMasterModal}
+      aria-label={t("nav.joinAsMaster")}
+    >
+      {t("nav.joinAsMaster")}
     </button>
   );
 
@@ -92,9 +129,18 @@ export default function Root() {
     <>
       {IS_DEV && <DevBanner />}
       <header className="header">
-        {/* Top meta strip */}
+        {/* Top meta strip — repurposed as the sticky compact bar on mobile */}
         <div className="header-meta">
           <span className="header-meta-label">EST. 2023 · WEEK {weekNum}/{yearSuffix}</span>
+
+          {/* Compact wordmark — mobile-only (CSS-gated), left of the bar */}
+          <Link
+            to="/"
+            className="header-logo-compact"
+            onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}
+          >
+            MAJSTR<span className="wordmark-dot">.</span>
+          </Link>
 
           <nav className="header-nav">
             <Link to="/" className={location.pathname === "/" ? "active" : ""}>{t("nav.search")}</Link>
@@ -111,14 +157,23 @@ export default function Root() {
               lang={lang}
             />
             <LanguageSwitcher />
-            {AddMasterCta}
+            {renderAddMasterCta()}
           </div>
 
-          <button
-            className="burger-open"
-            onClick={() => setShowBurgerMenu(!showBurgerMenu)}
-            aria-label="Menu"
-          >≡</button>
+          {/* Mobile-only bar actions (burger + CTA). Desktop hides this and
+              shows the CTA inside .header-controls instead. */}
+          <div className="header-bar-actions">
+            <button
+              ref={burgerToggleRef}
+              type="button"
+              className="burger-open"
+              onClick={() => setShowBurgerMenu((v) => !v)}
+              aria-expanded={showBurgerMenu}
+              aria-controls="mobile-menu"
+              aria-label={showBurgerMenu ? "Close menu" : "Open menu"}
+            >{showBurgerMenu ? "✕" : "≡"}</button>
+            {renderAddMasterCta()}
+          </div>
         </div>
 
         {/* Wordmark */}
@@ -131,6 +186,8 @@ export default function Root() {
 
       {/* Mobile burger menu */}
       <div
+        id="mobile-menu"
+        ref={burgerMenuRef}
         className={`menu-burger ${showBurgerMenu ? "open" : ""}`}
         style={{ display: showBurgerMenu ? "block" : "none" }}
         onClick={() => setShowBurgerMenu(false)}
