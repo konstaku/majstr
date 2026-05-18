@@ -411,8 +411,36 @@ img {
   flex: 1;
   min-height: 64px;
 }
-.hero-filter-row .filter-toggle-wrap.dark {
+.hero-filter-row .filter-toggle-wrap.filter-toggle-noright {
   border-right: none;
+}
+
+/* Search button — ink-colored, last element in filter row */
+.filter-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 22px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: none;
+  border-left: var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.filter-search-btn:hover {
+  background: var(--terra);
+}
+
+/* How-it-works compact strip — mobile only */
+.how-compact-mobile {
+  display: none;
 }
 
 /* Right: "What clients say" — ink panel, shown only at ≥1540 */
@@ -2235,9 +2263,6 @@ img {
     border-bottom: none;
     min-height: 56px;
   }
-  .hero-filter-row .filter-toggle-wrap.dark {
-    border-right: none;
-  }
   .hero-main-panel {
     padding: 16px;
   }
@@ -2253,8 +2278,7 @@ img {
     grid-template-columns: 1fr;
   }
   .quote-card {
-    max-width: 100%;
-    width: 100%;
+    display: none;
   }
   .quote-card-mark {
     font-size: 56px;
@@ -2263,78 +2287,49 @@ img {
     padding: 32px 16px;
   }
 
-  /* HowItWorks — stacked (mobile) */
-  .how-works-inner {
-    flex-direction: column;
+  /* HowItWorks — replace stacked layout with compact strip on mobile */
+  .how-works-full {
+    display: none;
+  }
+  .how-compact-mobile {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 10px 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+    opacity: 0.45;
+    background: var(--paper);
+  }
+  .how-compact-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .how-compact-n {
+    color: var(--terra);
+    opacity: 1;
+  }
+  .how-compact-sep {
+    margin: 0 4px;
+    opacity: 0.5;
   }
 
   /* Mobile filter select — slightly smaller values */
   .filter-toggle-wrap .headline-select .majstr-select__single-value {
     font-size: 17px !important;
   }
-  .how-works-label {
-    padding: 10px 14px;
-    border-bottom: var(--border);
+  .hero-filter-row .filter-toggle-wrap.filter-toggle-noright {
+    border-right: none;
   }
-  .how-works-steps {
-    grid-template-columns: 1fr;
-  }
-  .how-step {
-    border-left: none;
-    border-top: var(--border);
-    flex-direction: row;
-    padding: 0;
-    gap: 0;
-    align-items: stretch;
-  }
-  .how-step-mid {
-    background: var(--paper);
-  }
-  /* Show separate number column on left */
-  .how-step-num-col {
-    display: flex;
-    width: 72px;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    border-right: var(--border);
-    font-family: var(--font-display);
-    font-size: 34px;
-    font-weight: 900;
-    letter-spacing: -0.05em;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-  }
-  /* Alternating backgrounds: 01=cream, 02=ink, 03=cream */
-  .how-step:nth-child(1) .how-step-num-col {
-    background: var(--cream);
-    color: var(--ink);
-  }
-  .how-step:nth-child(2) .how-step-num-col {
-    background: var(--ink);
-    color: var(--terra);
-  }
-  .how-step:nth-child(3) .how-step-num-col {
-    background: var(--cream);
-    color: var(--ink);
-  }
-  .how-step-num-col .how-step-num {
-    color: inherit;
-  }
-  /* Hide inline num on mobile */
-  .how-step-num-inline {
-    display: none;
-  }
-  .how-step-header {
-    margin-bottom: 4px;
-  }
-  .how-step-body {
-    padding: 12px 14px;
-  }
-  .how-step-title {
-    font-size: 17px;
-  }
-  .how-step-desc {
+  .filter-search-btn {
+    padding: 0 14px;
     font-size: 12px;
   }
 

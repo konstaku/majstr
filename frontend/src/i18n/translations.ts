@@ -206,7 +206,7 @@ export const translations: Record<string, LangTranslations> = {
   },
 
   it: {
-    nav: { search: "Cerca", addMaster: "Aggiungi artigiano", joinAsMaster: "Unisciti come professionista", faq: "FAQ", howItWorks: "Come funziona", forBusiness: "Per le aziende" },
+    nav: { search: "Cerca", addMaster: "Aggiungi artigiano", joinAsMaster: "Crea il tuo profilo", faq: "FAQ", howItWorks: "Come funziona", forBusiness: "Per le aziende" },
     footer: {
       terms: "Termini di utilizzo",
       faq: "Domande frequenti",

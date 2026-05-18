@@ -107,6 +107,14 @@ function Main() {
   } = state;
   const { selectedCity, selectedProfessionCategory } = searchParams;
   const [showModal, setShowModal] = useState<string | null | boolean>(null);
+  const [pendingCity, setPendingCity] = useState(selectedCity);
+  const [pendingTrade, setPendingTrade] = useState(selectedProfessionCategory);
+
+  // Sync pending state when external reset/navigation changes applied filters
+  useEffect(() => {
+    setPendingCity(selectedCity);
+    setPendingTrade(selectedProfessionCategory);
+  }, [selectedCity, selectedProfessionCategory]);
   const { state: loadingState } = useNavigation();
   const isNavigating = loadingState === "loading";
   const { t, lang } = useTranslation();
@@ -176,12 +184,12 @@ function Main() {
 
   // ── Trade select options — must be before any early return ──
   const availableCategoryIDs = useMemo(() => {
-    const pool = selectedCity
-      ? masters.filter((m) => m.countryID === countryID && m.locationID === selectedCity)
+    const pool = pendingCity
+      ? masters.filter((m) => m.countryID === countryID && m.locationID === pendingCity)
       : masters.filter((m) => m.countryID === countryID);
     const profIDs = new Set(pool.map((m) => m.professionID));
     return new Set(professions.filter((p) => profIDs.has(p.id)).map((p) => p.categoryID));
-  }, [masters, professions, countryID, selectedCity]);
+  }, [masters, professions, countryID, pendingCity]);
 
   if (error) return (
     <div className="hero-section" style={{ minHeight: 200 }}>
@@ -264,7 +272,7 @@ function Main() {
             <span className="hero-headline-terra">{t("hero.titleAccent")}</span>
           </div>
           <div className="hero-filter-row">
-            {/* City toggle — paper bg */}
+            {/* City toggle */}
             <div className="filter-toggle-wrap">
               <span className="filter-kicker">{t("main.cityKicker")}</span>
               <Select
@@ -273,8 +281,8 @@ function Main() {
                 unstyled
                 isSearchable={false}
                 value={
-                  selectedCity
-                    ? availableLocations.find((l) => l.value === selectedCity) ?? availableLocations[0]
+                  pendingCity
+                    ? availableLocations.find((l) => l.value === pendingCity) ?? availableLocations[0]
                     : availableLocations[0]
                 }
                 options={availableLocations}
@@ -282,23 +290,21 @@ function Main() {
                 onChange={(e) => {
                   if (e && "value" in e) {
                     const newCity = e.value;
-                    dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: newCity } });
-                    if (selectedProfessionCategory) {
+                    setPendingCity(newCity);
+                    if (pendingTrade) {
                       const pool = newCity
                         ? masters.filter((m) => m.countryID === countryID && m.locationID === newCity)
                         : masters.filter((m) => m.countryID === countryID);
                       const profIDs = new Set(pool.map((m) => m.professionID));
                       const catIDs = new Set(professions.filter((p) => profIDs.has(p.id)).map((p) => p.categoryID));
-                      if (!catIDs.has(selectedProfessionCategory)) {
-                        dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: "" } });
-                      }
+                      if (!catIDs.has(pendingTrade)) setPendingTrade("");
                     }
                   }
                 }}
               />
             </div>
-            {/* Trade toggle — ink bg */}
-            <div className="filter-toggle-wrap dark">
+            {/* Trade toggle — same style as city */}
+            <div className="filter-toggle-wrap filter-toggle-noright">
               <span className="filter-kicker">{t("main.tradeKicker")}</span>
               <Select
                 className="headline-select"
@@ -306,19 +312,28 @@ function Main() {
                 unstyled
                 isSearchable={false}
                 value={
-                  selectedProfessionCategory
-                    ? tradeOptions.find((o) => o.value === selectedProfessionCategory) ?? tradeOptions[0]
+                  pendingTrade
+                    ? tradeOptions.find((o) => o.value === pendingTrade) ?? tradeOptions[0]
                     : tradeOptions[0]
                 }
                 options={tradeOptions}
                 styles={lightSelectStyles}
                 onChange={(e) => {
-                  if (e && "value" in e) {
-                    dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: e.value } });
-                  }
+                  if (e && "value" in e) setPendingTrade(e.value);
                 }}
               />
             </div>
+            {/* Search button */}
+            <button
+              type="button"
+              className="filter-search-btn"
+              onClick={() => {
+                dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: pendingCity } });
+                dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: pendingTrade } });
+              }}
+            >
+              {t("hero.searchBtn")}
+            </button>
           </div>
         </div>
 
@@ -401,16 +416,15 @@ const HOW_STEPS = [
 function HowItWorks({ t }: { t: (key: string) => string }) {
   return (
     <div className="how-it-works">
-      <div className="how-works-inner">
+      {/* Desktop/tablet: full 3-column layout */}
+      <div className="how-works-inner how-works-full">
         <div className="how-works-label">{t("how.label")}</div>
         <div className="how-works-steps">
           {HOW_STEPS.map((s, i) => (
             <div key={s.n} className={`how-step${i === 1 ? " how-step-mid" : ""}`}>
-              {/* Mobile: separate left number column */}
               <div className="how-step-num-col">
                 <span className="how-step-num">{s.n}</span>
               </div>
-              {/* Desktop+tablet: num + title inline, desc below */}
               <div className="how-step-body">
                 <div className="how-step-header">
                   <span className="how-step-num how-step-num-inline">{s.n}</span>
@@ -421,6 +435,16 @@ function HowItWorks({ t }: { t: (key: string) => string }) {
             </div>
           ))}
         </div>
+      </div>
+      {/* Mobile: compact single-line strip */}
+      <div className="how-compact-mobile">
+        {HOW_STEPS.map((s, i) => (
+          <span key={s.n} className="how-compact-item">
+            <span className="how-compact-n">{s.n}</span>
+            {t(s.titleKey)}
+            {i < HOW_STEPS.length - 1 && <span className="how-compact-sep"> · </span>}
+          </span>
+        ))}
       </div>
     </div>
   );
