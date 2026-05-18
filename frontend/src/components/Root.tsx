@@ -3,7 +3,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -17,8 +16,7 @@ import { useTranslation } from "../custom-hooks/useTranslation";
 import { LANG_LABELS, LANG_FLAGS } from "../i18n/translations";
 import {
   localizedName,
-  primaryLangs,
-  hiddenLangs,
+  APP_LANGS,
   LANG_ENDONYM,
   type AppLang,
 } from "../i18n/lang";
@@ -79,12 +77,14 @@ export default function Root() {
   const openAddMasterModal = () => setShowAddMasterModal(true);
 
   const AddMasterLink = (
-    <button className="nav-btn" onClick={openAddMasterModal}>{t("nav.addMaster")}</button>
+    <button type="button" className="nav-item" onClick={openAddMasterModal}>
+      {t("nav.addMaster")}
+    </button>
   );
 
   const AddMasterCta = (
-    <button className="nav-btn" onClick={openAddMasterModal}>
-      {t("nav.addMaster")}
+    <button className="cta-header" onClick={openAddMasterModal}>
+      {t("nav.addMaster")} →
     </button>
   );
 
@@ -204,9 +204,9 @@ function LanguageSwitcher() {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const sys = typeof navigator !== "undefined" ? navigator.language : "";
-  const primary = useMemo(() => primaryLangs(sys), [sys]);
-  const hidden = useMemo(() => hiddenLangs(sys), [sys]);
+  const cur: AppLang = (APP_LANGS as readonly string[]).includes(lang)
+    ? (lang as AppLang)
+    : "en";
 
   useEffect(() => {
     if (!open) return;
@@ -225,67 +225,47 @@ function LanguageSwitcher() {
     };
   }, [open]);
 
-  const pick = (code: AppLang) => {
-    setLang(code);
-    setOpen(false);
-  };
-
   const ariaName = (code: AppLang) =>
     code === "ru" ? "RU — Русский" : LANG_ENDONYM[code];
 
   return (
     <nav className="lang-switcher" aria-label="Language" ref={wrapRef}>
-      {primary.map((code) => (
-        <button
-          key={code}
-          className={`lang-btn ${lang === code ? "active" : ""}`}
-          onClick={() => pick(code)}
-          aria-current={lang === code ? "true" : undefined}
-          aria-label={ariaName(code)}
-          title={LANG_ENDONYM[code]}
-        >
-          {LANG_FLAGS[code] ? (
-            <span aria-hidden="true">{LANG_FLAGS[code]} </span>
-          ) : null}
-          {LANG_LABELS[code]}
-        </button>
-      ))}
-
       <div className="lang-more">
+        {/* Only the active language is shown; clicking opens the full menu */}
         <button
-          className={`lang-btn lang-more-trigger ${
-            hidden.includes(lang as AppLang) ? "active" : ""
-          }`}
+          className="lang-btn active lang-current"
           aria-haspopup="menu"
           aria-expanded={open}
-          aria-controls="lang-more-menu"
-          aria-label="More languages"
+          aria-controls="lang-menu"
+          aria-label={`Language: ${LANG_ENDONYM[cur]}`}
           onClick={() => setOpen((o) => !o)}
         >
-          🌐 ▾
+          {LANG_FLAGS[cur] ? (
+            <span aria-hidden="true">{LANG_FLAGS[cur]} </span>
+          ) : null}
+          {LANG_LABELS[cur]} ▾
         </button>
         {open && (
-          <div className="lang-popover" id="lang-more-menu" role="menu">
-            {[...hidden]
-              .sort((a, b) => (a === lang ? -1 : b === lang ? 1 : 0))
-              .map((code) => (
-                <button
-                  key={code}
-                  role="menuitem"
-                  className={`lang-popover-item ${
-                    lang === code ? "active" : ""
-                  }`}
-                  onClick={() => pick(code)}
-                  aria-current={lang === code ? "true" : undefined}
-                  aria-label={ariaName(code)}
-                >
-                  {LANG_FLAGS[code] ? (
-                    <span aria-hidden="true">{LANG_FLAGS[code]} </span>
-                  ) : null}
-                  {LANG_LABELS[code]}
-                  <span className="lang-endo">{LANG_ENDONYM[code]}</span>
-                </button>
-              ))}
+          <div className="lang-popover" id="lang-menu" role="menu">
+            {APP_LANGS.map((code) => (
+              <button
+                key={code}
+                role="menuitem"
+                className={`lang-popover-item ${lang === code ? "active" : ""}`}
+                onClick={() => {
+                  setLang(code);
+                  setOpen(false);
+                }}
+                aria-current={lang === code ? "true" : undefined}
+                aria-label={ariaName(code)}
+              >
+                {LANG_FLAGS[code] ? (
+                  <span aria-hidden="true">{LANG_FLAGS[code]} </span>
+                ) : null}
+                {LANG_LABELS[code]}
+                <span className="lang-endo">{LANG_ENDONYM[code]}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>

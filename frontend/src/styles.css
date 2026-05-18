@@ -118,6 +118,15 @@ img {
   opacity: 0.38;
   cursor: default;
 }
+/* "Add master" is a <button> styled identically to the <span> nav items
+   (uppercase via the shared rule); strip default button chrome, keep the
+   shared border-left divider. */
+.header-nav button.nav-item {
+  appearance: none;
+  border: none;
+  border-left: var(--border);
+  margin: 0;
+}
 
 /* controls (country + lang + cta) */
 .header-controls {
