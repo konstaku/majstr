@@ -83,7 +83,9 @@ export default function Root() {
   );
 
   const AddMasterCta = (
-    <button className="cta-header" onClick={openAddMasterModal}>JOIN AS MASTER →</button>
+    <button className="nav-btn" onClick={openAddMasterModal}>
+      {t("nav.addMaster")}
+    </button>
   );
 
   return (
