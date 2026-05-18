@@ -2058,6 +2058,10 @@ img {
   flex-wrap: wrap;
   border-bottom: var(--border);
 }
+.burger-controls .lang-btn {
+  min-width: 62px;
+  justify-content: center;
+}
 
 /* ============================================================
    MEDIA QUERIES — Wide desktop (≥1540): 3-col hero + testimonial

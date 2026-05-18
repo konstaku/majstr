@@ -65,6 +65,9 @@ export const lightSelectStyles = {
     backgroundColor: "#fffaf0",
     overflow: "hidden",
     marginTop: "2px",
+    minWidth: "220px",
+    maxWidth: "90vw",
+    width: "max-content",
   }),
   option: (
     base: CSSObjectWithLabel,
@@ -84,6 +87,7 @@ export const lightSelectStyles = {
     textTransform: "uppercase" as const,
     cursor: "pointer",
     padding: "10px 14px",
+    whiteSpace: "nowrap" as const,
   }),
 };
 
@@ -280,6 +284,8 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
                 value={
                   pendingCity
                     ? availableLocations.find((l) => l.value === pendingCity) ?? availableLocations[0]
@@ -311,6 +317,8 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
                 value={
                   pendingTrade
                     ? tradeOptions.find((o) => o.value === pendingTrade) ?? tradeOptions[0]

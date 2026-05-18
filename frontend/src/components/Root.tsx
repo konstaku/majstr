@@ -207,7 +207,7 @@ export default function Root() {
               dispatch={dispatch}
               lang={lang}
             />
-            <LanguageSwitcher />
+            <LanguageSwitcher onClose={() => setShowBurgerMenu(false)} />
           </li>
         </ul>
       </div>
@@ -256,7 +256,7 @@ function CountryToggle({ countries, countryID, dispatch, lang }: CountryTogglePr
   );
 }
 
-function LanguageSwitcher() {
+function LanguageSwitcher({ onClose }: { onClose?: () => void }) {
   const { lang, setLang } = useTranslation();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -312,6 +312,7 @@ function LanguageSwitcher() {
                 onClick={() => {
                   setLang(code);
                   setOpen(false);
+                  onClose?.();
                 }}
                 aria-current={lang === code ? "true" : undefined}
                 aria-label={ariaName(code)}
