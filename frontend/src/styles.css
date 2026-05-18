@@ -2124,25 +2124,29 @@ img {
    MEDIA QUERIES — Mobile
    ============================================================ */
 @media (max-width: 640px) {
-  /* ---- Mobile header: compact sticky bar ---- */
-  /* The .header wrapper must NOT be a sticky context, otherwise it would
-     drag the big wordmark band along. Sticky moves down to .header-meta. */
+  /* ---- Mobile header: compact FIXED bar (always on screen) ---- */
+  /* A sticky child un-sticks once its parent scrolls past, so the whole
+     header is viewport-fixed and page content is offset by its height.
+     The big wordmark band is dropped on mobile (the logo is in the bar). */
   .header {
-    position: static;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+  }
+  body {
+    padding-top: var(--bar-h);
   }
 
-  /* .header-meta becomes the only persistent element: a compact sticky
-     bar — logo (left), flex spacer, burger + CTA (right). */
   .header-meta {
-    position: sticky;
-    top: 0;
-    z-index: 200;
+    position: static;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 8px 16px;
-    min-height: var(--bar-h);
+    height: var(--bar-h);
+    padding: 0 14px;
   }
 
   /* "EST. 2023 · WEEK …" label hidden — frees the left slot for the logo. */
@@ -2199,10 +2203,9 @@ img {
     white-space: nowrap;
   }
 
-  /* Big MAJSTR. band scrolls away with the page (assert static). */
+  /* Big MAJSTR. band removed on mobile — the logo is in the fixed bar. */
   .header-wordmark {
-    position: static;
-    padding: 8px 16px 8px;
+    display: none;
   }
 
   /* Mobile: single column hero */

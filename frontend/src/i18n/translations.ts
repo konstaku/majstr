@@ -56,7 +56,7 @@ export type LangTranslations = {
 
 export const translations: Record<string, LangTranslations> = {
   uk: {
-    nav: { search: "Пошук", addMaster: "Додати майстра", joinAsMaster: "Стати майстром", faq: "FAQ", howItWorks: "Як це працює", forBusiness: "Для бізнесу" },
+    nav: { search: "Пошук", addMaster: "Додати майстра", joinAsMaster: "Доєднатися", faq: "FAQ", howItWorks: "Як це працює", forBusiness: "Для бізнесу" },
     footer: {
       terms: "Умови використання",
       faq: "Питання та відповіді",
@@ -432,7 +432,7 @@ translations.ru = {
 };
 
 translations.de = {
-  nav: { search: "Suchen", addMaster: "Fachkraft hinzufügen", joinAsMaster: "Als Fachkraft beitreten", faq: "FAQ", howItWorks: "So funktioniert's", forBusiness: "Für Unternehmen" },
+  nav: { search: "Suchen", addMaster: "Fachkraft hinzufügen", joinAsMaster: "Mitmachen", faq: "FAQ", howItWorks: "So funktioniert's", forBusiness: "Für Unternehmen" },
   footer: {
     terms: "Nutzungsbedingungen",
     faq: "Häufige Fragen",
