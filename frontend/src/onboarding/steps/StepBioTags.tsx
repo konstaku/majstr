@@ -2,7 +2,9 @@ import { useEffect } from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { TagPicker } from "../ui/TagPicker";
 import { useOnbT } from "../i18n";
-import { pickBioTemplate } from "../bioTemplates";
+import { useReferenceData } from "../useReferenceData";
+import { buildBioTemplate } from "../bioTemplates";
+import { localizedName } from "../../i18n/lang";
 import type { DraftData } from "../schema";
 import tagSuggestions from "../../data/tag-suggestions.i18n.json";
 
@@ -19,36 +21,53 @@ function bioCounterColor(len: number): string {
 export function StepBioTags() {
   const { t, lang } = useOnbT();
   const { control, register, formState: { errors }, watch, setValue, getValues } = useFormContext<DraftData>();
+  const { professions, locations, loading } = useReferenceData();
+
   const professionID = watch("professionID");
   const about = watch("about") ?? "";
 
-  // Pre-fill with a template on first visit so users aren't stuck on a blank field.
+  // Pre-fill bio with a structured template once reference data is loaded,
+  // but only when the field is still empty (don't overwrite user's text).
   useEffect(() => {
-    if (!getValues("about")) {
-      setValue("about", pickBioTemplate(lang), { shouldDirty: false, shouldValidate: false });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (loading) return;
+    if (getValues("about")) return;
 
-  const tagData = tagSuggestions as Record<
-    string,
-    Record<string, string[]>
-  >;
+    const profession = professions.find((p) => p.id === professionID);
+    const locationID = getValues("locationID");
+    const location = locations.find((l) => l.id === locationID);
+    const languages = getValues("languages") ?? [];
+
+    if (!profession || !location) return;
+
+    const profName = localizedName(profession.name, lang);
+    const cityName =
+      lang === "uk"
+        ? (location.name.ua_alt ?? localizedName(location.name, "uk"))
+        : localizedName(location.name, lang);
+
+    setValue("about", buildBioTemplate(lang, profName, cityName, languages), {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  // Run once on mount and again if reference data finishes loading after mount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const tagData = tagSuggestions as Record<string, Record<string, string[]>>;
   const byProf = tagData[professionID] ?? tagData["_default"];
   const suggestions: string[] =
     byProf?.[lang] ?? byProf?.uk ?? byProf?.en ?? [];
 
   return (
     <div className="wizard-step-content">
-      {/* Tags */}
+      {/* Tags — optional */}
       <div className="wizard-field">
         <label className="wizard-label">
-          {t("bio.servicesLabel")} <span className="wizard-required">*</span>
+          {t("bio.servicesLabel")}
         </label>
         <Controller
           control={control}
           name="tags"
-          rules={{ validate: (v) => (v?.length >= 1 ? true : t("bio.serviceRequired")) }}
           render={({ field }) => (
             <TagPicker
               value={field.value ?? []}
@@ -57,9 +76,6 @@ export function StepBioTags() {
             />
           )}
         />
-        {errors.tags && (
-          <p className="wizard-field-error">{String(errors.tags.message)}</p>
-        )}
       </div>
 
       {/* Bio */}

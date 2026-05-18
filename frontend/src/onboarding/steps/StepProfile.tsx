@@ -16,6 +16,21 @@ export function StepProfile() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // null = still probing, true = loadable TG photo, false = no usable TG photo
+  const [hasTgPhoto, setHasTgPhoto] = useState<boolean | null>(
+    user?.photo_url ? null : false
+  );
+
+  // Probe whether the Telegram photo URL is actually loadable.
+  // Telegram can include photo_url in initData even when no real profile photo is set.
+  useEffect(() => {
+    if (!user?.photo_url) { setHasTgPhoto(false); return; }
+    const img = new Image();
+    img.onload = () => setHasTgPhoto(true);
+    img.onerror = () => setHasTgPhoto(false);
+    img.src = user.photo_url;
+  }, [user?.photo_url]);
+
   // Prefill name from Telegram initData if form is still empty.
   useEffect(() => {
     const current = form.getValues("name");
@@ -34,7 +49,15 @@ export function StepProfile() {
       const res = await apiFetch("/api/masters/draft/photo/from-telegram", {
         method: "POST",
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        // If the backend confirms there is no photo, hide the button silently.
+        if (["no_telegram_photo", "telegram_photo_fetch_failed"].includes(body.error)) {
+          setHasTgPhoto(false);
+          return;
+        }
+        throw new Error();
+      }
       const { photoUrl: url } = await res.json();
       setValue("photo", url, { shouldDirty: true });
     } catch {
@@ -77,7 +100,7 @@ export function StepProfile() {
           style={{
             backgroundImage: photoUrl
               ? `url(${photoUrl})`
-              : user?.photo_url
+              : hasTgPhoto && user?.photo_url
               ? `url(${user.photo_url})`
               : undefined,
           }}
@@ -88,7 +111,7 @@ export function StepProfile() {
         </div>
 
         <div className="step-photo-actions">
-          {user?.photo_url && (
+          {hasTgPhoto && (
             <button
               type="button"
               className="wizard-ghost-btn"
@@ -116,7 +139,7 @@ export function StepProfile() {
               {t("profile.removePhoto")}
             </button>
           )}
-          {!user?.photo_url && !photoUrl && (
+          {hasTgPhoto === false && !photoUrl && (
             <p className="wizard-hint">{t("profile.skipPhoto")}</p>
           )}
         </div>

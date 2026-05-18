@@ -12,13 +12,13 @@ export function StepContact() {
   const form = useFormContext<DraftData>();
   const { t } = useOnbT();
   const { isTMA, user } = useTelegramContext();
-  const {
-    setValue,
-    getValues,
-  } = form;
+  const { setValue, getValues } = form;
 
   const existing = getValues("contacts") || [];
   const [phone, setPhone] = useState(() => findValue(existing, "phone"));
+  const [whatsapp, setWhatsapp] = useState(() =>
+    existing.some((c) => c.contactType === "whatsapp")
+  );
   const [instagram, setInstagram] = useState(() =>
     findValue(existing, "instagram")
   );
@@ -31,12 +31,13 @@ export function StepContact() {
   useEffect(() => {
     const next: Contact[] = [];
     if (phone.trim()) next.push({ contactType: "phone", value: phone.trim() });
+    if (whatsapp && phone.trim()) next.push({ contactType: "whatsapp", value: phone.trim() });
     if (telegram.trim())
       next.push({ contactType: "telegram", value: telegram.trim() });
     if (instagram.trim())
       next.push({ contactType: "instagram", value: instagram.trim() });
     setValue("contacts", next, { shouldDirty: true, shouldValidate: true });
-  }, [phone, telegram, instagram, setValue]);
+  }, [phone, telegram, instagram, whatsapp, setValue]);
 
   const handleShareTelegramNumber = () => {
     setShareError(null);
@@ -92,6 +93,17 @@ export function StepContact() {
         />
         <p className="wizard-hint">{t("contact.phoneHint")}</p>
         {contactError && <p className="wizard-field-error">{contactError}</p>}
+
+        {/* WhatsApp checkbox — shown below phone field */}
+        <label className="wizard-checkbox-label">
+          <input
+            type="checkbox"
+            className="wizard-checkbox"
+            checked={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.checked)}
+          />
+          {t("contact.whatsapp")}
+        </label>
       </div>
 
       <div className="wizard-field">

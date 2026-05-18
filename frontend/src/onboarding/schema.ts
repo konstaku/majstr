@@ -53,12 +53,10 @@ export const STEP_SCHEMAS = [
   z.object({
     locationID: z.string().min(1, "Обовʼязкове поле"),
   }),
-  // Step 4 — Bio & Tags (B4 fills in)
+  // Step 4 — Bio & Tags (tags optional)
   z.object({
     about: z.string().min(30, "Мінімум 30 символів").max(600, "Максимум 600 символів"),
-    tags: z
-      .array(z.object({ value: z.string(), label: z.string() }))
-      .min(1, "Вкажіть хоча б одну послугу"),
+    tags: z.array(z.object({ value: z.string(), label: z.string() })),
   }),
   // Step 5 — Contact
   z.object({
