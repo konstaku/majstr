@@ -173,8 +173,12 @@ type CountryToggleProps = {
   lang: string;
 };
 
+// TEMPORARILY DISABLED: Italy is the only/default country, so the country
+// selector is hidden. Flip to true to restore the toggle.
+const COUNTRY_SELECTOR_ENABLED = false;
+
 function CountryToggle({ countries, countryID, dispatch, lang }: CountryToggleProps) {
-  if (!countries.length) return null;
+  if (!COUNTRY_SELECTOR_ENABLED || !countries.length) return null;
   return (
     <div className="country-toggle">
       {countries.map((country) => (
