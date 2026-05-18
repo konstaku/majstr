@@ -31,7 +31,6 @@ export function PickerSheet({
   const haptic = useHaptic();
 
   useEffect(() => {
-    searchRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };

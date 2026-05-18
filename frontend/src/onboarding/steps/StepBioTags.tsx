@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { TagPicker } from "../ui/TagPicker";
 import { useOnbT } from "../i18n";
+import { pickBioTemplate } from "../bioTemplates";
 import type { DraftData } from "../schema";
 import tagSuggestions from "../../data/tag-suggestions.i18n.json";
 
@@ -16,9 +18,17 @@ function bioCounterColor(len: number): string {
 
 export function StepBioTags() {
   const { t, lang } = useOnbT();
-  const { control, register, formState: { errors }, watch } = useFormContext<DraftData>();
+  const { control, register, formState: { errors }, watch, setValue, getValues } = useFormContext<DraftData>();
   const professionID = watch("professionID");
   const about = watch("about") ?? "";
+
+  // Pre-fill with a template on first visit so users aren't stuck on a blank field.
+  useEffect(() => {
+    if (!getValues("about")) {
+      setValue("about", pickBioTemplate(lang), { shouldDirty: false, shouldValidate: false });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const tagData = tagSuggestions as Record<
     string,
@@ -74,7 +84,7 @@ export function StepBioTags() {
         >
           {about.length} / {BIO_MAX}
         </div>
-        <p className="wizard-hint">{t("bio.aboutHint")}</p>
+        <p className="wizard-hint">{t("bio.aboutHint")} {t("bio.editLater")}</p>
         {errors.about && (
           <p className="wizard-field-error">{errors.about.message}</p>
         )}

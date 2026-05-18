@@ -88,14 +88,16 @@ export function StepProfile() {
         </div>
 
         <div className="step-photo-actions">
-          <button
-            type="button"
-            className="wizard-ghost-btn"
-            onClick={handleUseTelegramPhoto}
-            disabled={uploading}
-          >
-            {uploading ? t("profile.uploading") : t("profile.usePhoto")}
-          </button>
+          {user?.photo_url && (
+            <button
+              type="button"
+              className="wizard-ghost-btn"
+              onClick={handleUseTelegramPhoto}
+              disabled={uploading}
+            >
+              {uploading ? t("profile.uploading") : t("profile.usePhoto")}
+            </button>
+          )}
           <button
             type="button"
             className="wizard-ghost-btn"
@@ -113,6 +115,9 @@ export function StepProfile() {
             >
               {t("profile.removePhoto")}
             </button>
+          )}
+          {!user?.photo_url && !photoUrl && (
+            <p className="wizard-hint">{t("profile.skipPhoto")}</p>
           )}
         </div>
         <input
