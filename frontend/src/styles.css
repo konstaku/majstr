@@ -294,7 +294,8 @@ img {
   border-bottom: var(--border);
 }
 .menu-burger li a,
-.menu-burger li span {
+.menu-burger li span,
+.menu-burger li .burger-link {
   display: block;
   padding: 16px 24px;
   font-family: var(--font-mono);
@@ -303,6 +304,16 @@ img {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink);
+}
+/* "Add master" is a <button> styled identically to the burger links
+   (e.g. "Search") — strip default button chrome. */
+.menu-burger li .burger-link {
+  appearance: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 .menu-burger li .inactive {
   opacity: 0.4;
