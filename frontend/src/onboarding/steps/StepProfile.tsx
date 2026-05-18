@@ -16,20 +16,18 @@ export function StepProfile() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // null = still probing, true = loadable TG photo, false = no usable TG photo
-  const [hasTgPhoto, setHasTgPhoto] = useState<boolean | null>(
-    user?.photo_url ? null : false
-  );
+  // null = checking, true = real TG photo available, false = no real photo
+  const [hasTgPhoto, setHasTgPhoto] = useState<boolean | null>(null);
 
-  // Probe whether the Telegram photo URL is actually loadable.
-  // Telegram can include photo_url in initData even when no real profile photo is set.
+  // Ask the backend (via Bot API getUserProfilePhotos) whether this user has a
+  // real profile photo. Telegram supplies photo_url in initData for ALL users
+  // (auto-generated colored-circle avatars), so client-side checks are unreliable.
   useEffect(() => {
-    if (!user?.photo_url) { setHasTgPhoto(false); return; }
-    const img = new Image();
-    img.onload = () => setHasTgPhoto(true);
-    img.onerror = () => setHasTgPhoto(false);
-    img.src = user.photo_url;
-  }, [user?.photo_url]);
+    apiFetch("/api/masters/draft/photo/telegram-check")
+      .then((r) => r.json())
+      .then((data) => setHasTgPhoto(data.available === true))
+      .catch(() => setHasTgPhoto(false));
+  }, []);
 
   // Prefill name from Telegram initData if form is still empty.
   useEffect(() => {
@@ -101,11 +99,11 @@ export function StepProfile() {
             backgroundImage: photoUrl
               ? `url(${photoUrl})`
               : hasTgPhoto && user?.photo_url
-              ? `url(${user.photo_url})`
-              : undefined,
+                ? `url(${user.photo_url})`
+                : undefined,
           }}
         >
-          {!photoUrl && !user?.photo_url && (
+          {!photoUrl && !hasTgPhoto && (
             <span className="step-avatar-placeholder">?</span>
           )}
         </div>

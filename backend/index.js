@@ -75,6 +75,15 @@ async function main() {
   app.post('/api/masters/draft/submit', requireUser, submitDraftLimiter, submitDraft);
   app.post('/api/masters/draft/photo', requireUser, photoUploadLimiter, uploadDraftPhoto);
   app.post('/api/masters/draft/photo/from-telegram', requireUser, photoUploadLimiter, uploadDraftPhotoFromTelegram);
+  app.get('/api/masters/draft/photo/telegram-check', requireUser, async (req, res) => {
+    try {
+      const result = await bot.getUserProfilePhotos(req.user.telegramID, { limit: 1 });
+      return res.json({ available: result.total_count > 0 });
+    } catch (err) {
+      console.error('[telegram-check] getUserProfilePhotos failed:', err.message);
+      return res.status(502).json({ error: 'telegram_check_failed' });
+    }
+  });
   app.delete('/api/masters/draft', requireUser, deleteDraft);
   app.get('/api/masters/mine', requireUser, getMine);
 
