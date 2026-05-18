@@ -110,12 +110,98 @@ const DICT = {
     'owner.declined':
       '❌ К сожалению, ваша карточка не одобрена. Вы можете отредактировать данные и отправить её повторно через бота.',
   },
-  // Filled by the Content Creator / Brand Guardian agents (Phase 2);
-  // until then these resolve via the EN fallback in t().
-  pt: {},
-  de: {},
-  fr: {},
-  tr: {},
+  pt: {
+    'welcome.body':
+      'Bem-vindo à Majstr! 🛠\n\nEncontre um profissional ou registe-se como um.\n\n👇 Escolha o idioma / Choose language / Scegli la lingua',
+    'btn.addMaster': '➕ Adicionar o meu cartão',
+    'btn.loginSite': '🌐 Abrir o site',
+    'lang.switched': '✅ Idioma alterado',
+    'unknownCommand':
+      'Comando desconhecido. Disponíveis:\n/start — começar\n/available — disponível agora\n/nextweek — a partir da próxima semana\n/busy — ocupado\n/status — ver estado\n/languages — línguas faladas',
+    'avail.none': 'Nenhum cartão de profissional aprovado encontrado.',
+    'avail.updated': 'Estado atualizado: {label}',
+    'avail.available': '🟢 Disponível agora',
+    'avail.next_week': '🟡 A partir da próxima semana',
+    'avail.busy': '🔴 Ocupado',
+    'status.line': '📋 O seu perfil:\nEstado: {avail}\nLínguas: {langs}\n\nComandos:\n/available /nextweek /busy /languages',
+    'status.notset': 'não definido',
+    'langs.prompt': 'Escolha as línguas que fala (pode escolher várias):',
+    'langs.save': '💾 Guardar',
+    'langs.saved': 'Línguas guardadas: {labels}',
+    'owner.approved':
+      '✅ O seu cartão foi aprovado e publicado!\n\nVer: {url}',
+    'owner.declined':
+      '❌ Infelizmente o seu cartão não foi aprovado. Pode editar os dados e enviá-lo de novo através do bot.',
+  },
+  de: {
+    'welcome.body':
+      'Willkommen bei Majstr! 🛠\n\nFinde eine Fachkraft oder registriere dich selbst als eine.\n\n👇 Sprache wählen / Choose language / Scegli la lingua',
+    'btn.addMaster': '➕ Meine Profilkarte hinzufügen',
+    'btn.loginSite': '🌐 Website öffnen',
+    'lang.switched': '✅ Sprache geändert',
+    'unknownCommand':
+      'Unbekannter Befehl. Verfügbar:\n/start — starten\n/available — jetzt verfügbar\n/nextweek — ab nächster Woche\n/busy — ausgelastet\n/status — Status ansehen\n/languages — gesprochene Sprachen',
+    'avail.none': 'Keine freigegebene Profilkarte gefunden.',
+    'avail.updated': 'Status aktualisiert: {label}',
+    'avail.available': '🟢 Jetzt verfügbar',
+    'avail.next_week': '🟡 Ab nächster Woche',
+    'avail.busy': '🔴 Ausgelastet',
+    'status.line': '📋 Dein Profil:\nStatus: {avail}\nSprachen: {langs}\n\nBefehle:\n/available /nextweek /busy /languages',
+    'status.notset': 'nicht festgelegt',
+    'langs.prompt': 'Wähle die Sprachen, die du sprichst (mehrere möglich):',
+    'langs.save': '💾 Speichern',
+    'langs.saved': 'Sprachen gespeichert: {labels}',
+    'owner.approved':
+      '✅ Deine Profilkarte wurde freigegeben und veröffentlicht!\n\nAnsehen: {url}',
+    'owner.declined':
+      '❌ Leider wurde deine Profilkarte nicht freigegeben. Du kannst die Angaben bearbeiten und sie über den Bot erneut einreichen.',
+  },
+  fr: {
+    'welcome.body':
+      'Bienvenue sur Majstr ! 🛠\n\nTrouvez un artisan ou inscrivez-vous comme professionnel.\n\n👇 Choisissez la langue / Choose language / Scegli la lingua',
+    'btn.addMaster': '➕ Ajouter ma fiche',
+    'btn.loginSite': '🌐 Ouvrir le site',
+    'lang.switched': '✅ Langue modifiée',
+    'unknownCommand':
+      'Commande inconnue. Disponibles :\n/start — démarrer\n/available — disponible maintenant\n/nextweek — à partir de la semaine prochaine\n/busy — occupé\n/status — voir le statut\n/languages — langues parlées',
+    'avail.none': 'Aucune fiche professionnelle approuvée trouvée.',
+    'avail.updated': 'Statut mis à jour : {label}',
+    'avail.available': '🟢 Disponible maintenant',
+    'avail.next_week': '🟡 À partir de la semaine prochaine',
+    'avail.busy': '🔴 Occupé',
+    'status.line': '📋 Votre profil :\nStatut : {avail}\nLangues : {langs}\n\nCommandes :\n/available /nextweek /busy /languages',
+    'status.notset': 'non défini',
+    'langs.prompt': 'Choisissez les langues que vous parlez (plusieurs possibles) :',
+    'langs.save': '💾 Enregistrer',
+    'langs.saved': 'Langues enregistrées : {labels}',
+    'owner.approved':
+      '✅ Votre fiche a été approuvée et publiée !\n\nLa voir : {url}',
+    'owner.declined':
+      "❌ Malheureusement, votre fiche n'a pas été approuvée. Vous pouvez modifier les informations et la renvoyer via le bot.",
+  },
+  tr: {
+    'welcome.body':
+      "Majstr'a hoş geldiniz! 🛠\n\nBir usta bulun ya da kendinizi usta olarak kaydedin.\n\n👇 Dil seçin / Choose language / Scegli la lingua",
+    'btn.addMaster': '➕ Profil kartımı ekle',
+    'btn.loginSite': '🌐 Siteyi aç',
+    'lang.switched': '✅ Dil değiştirildi',
+    'unknownCommand':
+      'Bilinmeyen komut. Kullanılabilir:\n/start — başla\n/available — şu an müsait\n/nextweek — gelecek haftadan itibaren\n/busy — meşgul\n/status — durumu gör\n/languages — konuşulan diller',
+    'avail.none': 'Onaylanmış profil kartı bulunamadı.',
+    'avail.updated': 'Durum güncellendi: {label}',
+    'avail.available': '🟢 Şu an müsait',
+    'avail.next_week': '🟡 Gelecek haftadan itibaren',
+    'avail.busy': '🔴 Meşgul',
+    'status.line': '📋 Profiliniz:\nDurum: {avail}\nDiller: {langs}\n\nKomutlar:\n/available /nextweek /busy /languages',
+    'status.notset': 'belirtilmemiş',
+    'langs.prompt': 'Konuştuğunuz dilleri seçin (birden fazla seçilebilir):',
+    'langs.save': '💾 Kaydet',
+    'langs.saved': 'Diller kaydedildi: {labels}',
+    'owner.approved':
+      '✅ Profil kartınız onaylandı ve yayınlandı!\n\nGörüntüle: {url}',
+    'owner.declined':
+      '❌ Maalesef profil kartınız onaylanmadı. Bilgileri düzenleyip bot üzerinden tekrar gönderebilirsiniz.',
+  },
 };
 
 function t(lang, key, vars) {
