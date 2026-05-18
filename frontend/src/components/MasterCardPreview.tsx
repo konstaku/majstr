@@ -3,6 +3,7 @@ import { useContext } from "react";
 import { MasterContext } from "../context";
 import { MasterPreviewType } from "../schema/form/form.schema";
 import { Location, Profession } from "../schema/state/state.schema";
+import { localizedName } from "../i18n/lang";
 
 type MasterCardPreviewProps = {
   className?: string;
@@ -13,16 +14,22 @@ export default function MasterCardPreview({ masterPreview }: MasterCardPreviewPr
   const { photo, watcher } = masterPreview;
   const { name, locationID, professionID, tags, useThisPhoto } = watcher;
   const {
-    state: { locations, professions },
+    state: { locations, professions, lang },
   } = useContext(MasterContext);
 
   const profName = professionID
-    ? professions.find((p: Profession) => p.id === professionID)?.name.ua
-    : "Професія невідома";
+    ? localizedName(
+        professions.find((p: Profession) => p.id === professionID)?.name,
+        lang
+      )
+    : "";
 
   const locName = locationID
-    ? locations.find((l: Location) => l.id === locationID)?.name.ua
-    : "Локація невідома";
+    ? localizedName(
+        locations.find((l: Location) => l.id === locationID)?.name,
+        lang
+      )
+    : "";
 
   const previewTags = Array.isArray(tags)
     ? tags.sort((a, b) => a.value.length - b.value.length).slice(0, 4)

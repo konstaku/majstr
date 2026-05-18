@@ -4,6 +4,7 @@ import Select from "react-select";
 import { Link, Navigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { MasterContext } from "../context";
+import { localizedName } from "../i18n/lang";
 import {
   Control,
   Controller,
@@ -347,7 +348,7 @@ function ProfCategoryInput({
               }}
               options={profCategories?.map((profCategory) => ({
                 value: profCategory.id,
-                label: profCategory.name.ua,
+                label: localizedName(profCategory.name, "uk", profCategory.id),
               }))}
             />
           )}
@@ -387,7 +388,7 @@ function ProfessionInput({
         .filter((profession) => profession.categoryID === profCategoryID)
         .map((profession) => ({
           value: profession.id,
-          label: profession.name.ua,
+          label: localizedName(profession.name, "uk", profession.id),
         }))
     );
   }, [profCategoryID, professions]);
@@ -478,7 +479,7 @@ function LocationInput({ control, locations, errors }: LocationInputProps) {
               }}
               options={locations?.map((location) => ({
                 value: location.id,
-                label: location.name.ua,
+                label: localizedName(location.name, "uk", location.id),
               }))}
             />
           )}

@@ -6,18 +6,25 @@ import {
 } from "react";
 import { useTelegramContext } from "../surface/useTelegramContext";
 
-export const ONB_LANGS = ["uk", "en", "it", "ru"] as const;
+export const ONB_LANGS = [
+  "en",
+  "uk",
+  "ru",
+  "it",
+  "pt",
+  "de",
+  "fr",
+  "tr",
+] as const;
 export type OnbLang = (typeof ONB_LANGS)[number];
 const DEFAULT: OnbLang = "uk";
 
 function mapTg(code?: string | null): OnbLang | null {
   if (!code) return null;
   const b = code.toLowerCase().split("-")[0];
-  if (b === "uk") return "uk";
-  if (b === "it") return "it";
-  if (b === "ru") return "ru";
-  if (b === "en") return "en";
-  return null;
+  return (ONB_LANGS as readonly string[]).includes(b)
+    ? (b as OnbLang)
+    : null;
 }
 
 function tokenLang(s?: string | null): OnbLang | null {
@@ -395,7 +402,23 @@ const RU: Dict = {
   "draft.errOffline": "Нет связи. Сохранено локально — повторим позже.",
 };
 
-const DICTS: Record<OnbLang, Dict> = { uk: UK, en: EN, it: IT, ru: RU };
+// pt/de/fr/tr are empty for now → resolve via the EN fallback in t()
+// until the Content Creator / Brand Guardian agents fill them (Phase 2).
+const PT: Dict = {};
+const DE: Dict = {};
+const FR: Dict = {};
+const TR: Dict = {};
+
+const DICTS: Record<OnbLang, Dict> = {
+  en: EN,
+  uk: UK,
+  ru: RU,
+  it: IT,
+  pt: PT,
+  de: DE,
+  fr: FR,
+  tr: TR,
+};
 
 export type TFunc = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -417,7 +440,7 @@ export function OnboardingI18nProvider({ children }: { children: ReactNode }) {
     );
     const dict = DICTS[lang];
     const t: TFunc = (key, vars) => {
-      let s = dict[key] ?? UK[key] ?? key;
+      let s = dict[key] ?? EN[key] ?? UK[key] ?? key;
       if (vars)
         s = s.replace(/\{(\w+)\}/g, (_, k) =>
           vars[k] != null ? String(vars[k]) : `{${k}}`

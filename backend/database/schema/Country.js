@@ -8,6 +8,11 @@ const countrySchema = new mongoose.Schema({
     ua_alt: String,
     ru: String,
     ru_alt: String,
+    it: String,
+    pt: String,
+    de: String,
+    fr: String,
+    tr: String,
   },
   flag: String,
 });

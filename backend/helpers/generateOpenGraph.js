@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const AWS = require('aws-sdk');
 require('dotenv').config();
 const Master = require('./../database/schema/Master');
+const { localizedName } = require('./../lang');
 
 const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
 // const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
@@ -70,9 +71,10 @@ async function createOGimageForMaster(master) {
 
   // Put a profession on a picture
   context.font = `${h2.weight} ${h2.size}px ${fontName}`;
-  const profession = professions.find(
+  const profEntry = professions.find(
     (profession) => profession.id === master.professionID
-  ).name.ua;
+  );
+  const profession = localizedName(profEntry?.name, 'uk', master.professionID);
   context.fillText(profession, textMarginLeft, h2.marginTop);
 
   // Put contacts names on a picture

@@ -6,13 +6,14 @@ import { PickerSheet } from "../ui/PickerSheet";
 import { useReferenceData } from "../useReferenceData";
 import { LANGUAGE_OPTIONS } from "../schema";
 import { useOnbT } from "../i18n";
+import { localizedName } from "../../i18n/lang";
 import type { DraftData } from "../schema";
 
 const MAX_LANGUAGES = 5;
 
 export function StepProfession() {
   const form = useFormContext<DraftData>();
-  const { t } = useOnbT();
+  const { t, lang } = useOnbT();
   const { control, formState: { errors }, setValue, watch } = form;
   const haptic = useHaptic();
   const popup = usePopup();
@@ -63,7 +64,7 @@ export function StepProfession() {
           className={`wizard-picker-btn${!selectedCategory ? " wizard-picker-btn--placeholder" : ""}`}
           onClick={() => setShowCategoryPicker(true)}
         >
-          {selectedCategory?.name.ua ?? t("prof.chooseCategory")}
+          {selectedCategory ? localizedName(selectedCategory.name, lang) : t("prof.chooseCategory")}
           <span className="wizard-picker-chevron">›</span>
         </button>
       </div>
@@ -84,7 +85,7 @@ export function StepProfession() {
               onClick={() => categoryID && setShowProfessionPicker(true)}
               disabled={!categoryID}
             >
-              {selectedProfession?.name.ua ?? (categoryID ? t("prof.chooseProfession") : t("prof.chooseCategoryFirst"))}
+              {selectedProfession ? localizedName(selectedProfession.name, lang) : (categoryID ? t("prof.chooseProfession") : t("prof.chooseCategoryFirst"))}
               <span className="wizard-picker-chevron">›</span>
             </button>
           )}
@@ -121,7 +122,7 @@ export function StepProfession() {
       {showCategoryPicker && (
         <PickerSheet
           title={t("prof.categoryLabel")}
-          options={profCategories.map((c) => ({ value: c.id, label: c.name.ua }))}
+          options={profCategories.map((c) => ({ value: c.id, label: localizedName(c.name, lang, c.id) }))}
           selected={categoryID}
           onSelect={(id) => {
             setCategoryID(id);
@@ -134,7 +135,7 @@ export function StepProfession() {
       {showProfessionPicker && (
         <PickerSheet
           title={t("prof.professionLabel")}
-          options={filteredProfessions.map((p) => ({ value: p.id, label: p.name.ua }))}
+          options={filteredProfessions.map((p) => ({ value: p.id, label: localizedName(p.name, lang, p.id) }))}
           selected={professionID}
           onSelect={(id) => setValue("professionID", id, { shouldDirty: true, shouldValidate: true })}
           onClose={() => setShowProfessionPicker(false)}

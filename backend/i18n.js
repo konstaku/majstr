@@ -1,19 +1,16 @@
-// Bot/owner-facing i18n. UI languages: uk (primary), en, it, ru.
-// uk copy mirrors the original hardcoded strings; en/it/ru are first-pass
-// drafts pending native review (tracked as a follow-up issue).
+// Bot/owner-facing i18n. UI languages: en, uk, ru, it, pt, de, fr, tr.
+// uk/en/it/ru copy is a first-pass draft; pt/de/fr/tr are filled by the
+// Content Creator / Brand Guardian agents (Phase 2) — missing keys resolve
+// via the EN fallback in t().
 
-const UI_LANGS = ['uk', 'en', 'it', 'ru'];
+const UI_LANGS = ['en', 'uk', 'ru', 'it', 'pt', 'de', 'fr', 'tr'];
 const DEFAULT_LANG = 'uk';
 
 // Telegram language_code (ISO-639-1, e.g. "uk", "it", "ru-RU") -> our set.
 function mapTgLang(code) {
   if (!code) return null;
   const base = String(code).toLowerCase().split('-')[0];
-  if (base === 'uk') return 'uk';
-  if (base === 'it') return 'it';
-  if (base === 'ru') return 'ru';
-  if (base === 'en') return 'en';
-  return null;
+  return UI_LANGS.includes(base) ? base : null;
 }
 
 function normalizeLang(code) {
@@ -113,27 +110,53 @@ const DICT = {
     'owner.declined':
       '❌ К сожалению, ваша карточка не одобрена. Вы можете отредактировать данные и отправить её повторно через бота.',
   },
+  // Filled by the Content Creator / Brand Guardian agents (Phase 2);
+  // until then these resolve via the EN fallback in t().
+  pt: {},
+  de: {},
+  fr: {},
+  tr: {},
 };
 
 function t(lang, key, vars) {
   const l = normalizeLang(lang);
-  let s = (DICT[l] && DICT[l][key]) || (DICT[DEFAULT_LANG] && DICT[DEFAULT_LANG][key]) || key;
+  let s =
+    (DICT[l] && DICT[l][key]) ||
+    (DICT.en && DICT.en[key]) ||
+    (DICT[DEFAULT_LANG] && DICT[DEFAULT_LANG][key]) ||
+    key;
   if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : `{${k}}`));
   return s;
 }
 
-// Language switch keyboard row. RU intentionally has NO flag (text label).
-function langButtonsRow(activeLang) {
-  const opts = [
-    { code: 'uk', label: '🇺🇦' },
-    { code: 'en', label: '🇬🇧' },
-    { code: 'it', label: '🇮🇹' },
-    { code: 'ru', label: 'RU' },
-  ];
-  return opts.map((o) => ({
+// Language switch keyboard, chunked into rows of 4. RU intentionally has
+// NO flag (text label), per project decision.
+const LANG_BUTTONS = [
+  { code: 'en', label: '🇬🇧' },
+  { code: 'uk', label: '🇺🇦' },
+  { code: 'ru', label: 'RU' },
+  { code: 'it', label: '🇮🇹' },
+  { code: 'pt', label: '🇵🇹' },
+  { code: 'de', label: '🇩🇪' },
+  { code: 'fr', label: '🇫🇷' },
+  { code: 'tr', label: '🇹🇷' },
+];
+
+function langButtonsRows(activeLang) {
+  const btns = LANG_BUTTONS.map((o) => ({
     text: o.code === activeLang ? `· ${o.label} ·` : o.label,
     callback_data: `uilang:${o.code}`,
   }));
+  const rows = [];
+  for (let i = 0; i < btns.length; i += 4) rows.push(btns.slice(i, i + 4));
+  return rows;
 }
 
-module.exports = { UI_LANGS, DEFAULT_LANG, mapTgLang, normalizeLang, t, langButtonsRow };
+module.exports = {
+  UI_LANGS,
+  DEFAULT_LANG,
+  mapTgLang,
+  normalizeLang,
+  t,
+  langButtonsRows,
+};

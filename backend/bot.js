@@ -329,9 +329,9 @@ function buildWelcomeKeyboard(lang, token) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
   return {
     inline_keyboard: [
-      // Language switch row first, so it is the most apparent control —
+      // Language switch rows first, so it is the most apparent control —
       // flags/RU label are understandable without reading any language.
-      i18n.langButtonsRow(lang),
+      ...i18n.langButtonsRows(lang),
       [
         {
           text: i18n.t(lang, 'btn.addMaster'),

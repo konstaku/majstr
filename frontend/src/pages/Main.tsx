@@ -10,6 +10,7 @@ import { MasterContext } from "../context";
 import { ACTIONS } from "../data/actions";
 import { useNavigation } from "react-router-dom";
 import { useTranslation } from "../custom-hooks/useTranslation";
+import { localizedName } from "../i18n/lang";
 
 import SearchResults from "../components/SearchResults";
 import Modal from "../components/Modal";
@@ -112,7 +113,7 @@ function Main() {
 
   const currentCountry = countries.find((c) => c.id === countryID);
   const countryDisplayName = currentCountry
-    ? lang === "uk" ? currentCountry.name.ua : currentCountry.name.en
+    ? localizedName(currentCountry.name, lang, currentCountry.id)
     : "";
 
   const heroCount = loading ? null : masters.filter((m) => {
@@ -127,7 +128,7 @@ function Main() {
 
   const selectedCityData = selectedCity ? locations.find((l) => l.id === selectedCity) : null;
   const statLocationName = selectedCityData
-    ? (lang === "uk" ? selectedCityData.name.ua : selectedCityData.name.en)
+    ? localizedName(selectedCityData.name, lang)
     : countryDisplayName;
 
   useEffect(() => {
@@ -152,9 +153,12 @@ function Main() {
       document.addEventListener("keyup", keyUpListener);
 
       const profEntry = professions.find((p) => p.id === currentMaster.professionID);
-      const professionName = lang === "uk" ? profEntry?.name.ua : profEntry?.name.en;
+      const professionName = localizedName(profEntry?.name, lang);
       const cityData = locations.find((l) => l.id === currentMaster.locationID);
-      const cityName = lang === "uk" ? cityData?.name.ua_alt : cityData?.name.en;
+      const cityName =
+        lang === "uk"
+          ? cityData?.name.ua_alt ?? localizedName(cityData?.name, "uk")
+          : localizedName(cityData?.name, lang);
 
       document.title = `${currentMaster.name} | ${professionName} ${t("main.inCity")} ${cityName}`;
     }
@@ -210,7 +214,10 @@ function Main() {
       const loc = locations.find((l) => l.id === locId);
       return {
         value: locId,
-        label: lang === "uk" ? loc?.name.ua_alt ?? "" : loc?.name.en ?? "",
+        label:
+          lang === "uk"
+            ? loc?.name.ua_alt ?? localizedName(loc?.name, "uk", locId)
+            : localizedName(loc?.name, lang, locId),
       };
     })
   );
@@ -221,7 +228,7 @@ function Main() {
       .filter((cat: ProfCategory) => availableCategoryIDs.has(cat.id))
       .map((cat: ProfCategory) => ({
         value: cat.id,
-        label: lang === "uk" ? cat.name.ua : cat.name.en,
+        label: localizedName(cat.name, lang, cat.id),
       }))
   );
 
