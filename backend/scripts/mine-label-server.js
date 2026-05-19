@@ -1,131 +1,156 @@
 /**
- * Super-basic local labeling UI for the pre-filter sample (issue #92).
- * Zero dependencies (Node http+fs). Reads/writes the sample JSON in place —
- * autosaves on every keypress, nothing leaves your machine.
+ * Super-basic local labeling UI (issue #92, v2 — thread-aware).
+ * Zero deps. Autosaves into the gitignored sample JSON in place.
+ *
+ * Each screen is ONE atom:
+ *   answer       — the QUESTION (pinned on top) + ONE responder's bundled
+ *                  reply below. Mark whether the reply is useful master data.
+ *   announcement — a standalone specialist advert.
  *
  * Usage (from backend/):
- *   node scripts/mine-label-server.js
- *   node scripts/mine-label-server.js --file ../chat-history/italy/veneto/label-sample.json --port 4100
- *
- * Keys:  ← = NOT relevant (0)   → = relevant (1)   Space = skip
- *        Backspace = previous   (autosaves; just close the tab when done)
+ *   node scripts/mine-label-server.js [--file ..] [--port 4100]
+ * Keys: ← not useful/relevant (0)  → useful/relevant (1)  Space skip  ⌫ back
  */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-function arg(name, def) {
-  const i = process.argv.indexOf(name);
-  return i !== -1 ? process.argv[i + 1] : def;
-}
-
-const FILE = path.resolve(
-  arg('--file', '../chat-history/italy/veneto/label-sample.json')
-);
+const arg = (n, d) => {
+  const i = process.argv.indexOf(n);
+  return i !== -1 ? process.argv[i + 1] : d;
+};
+const FILE = path.resolve(arg('--file', '../chat-history/italy/veneto/label-sample.json'));
 const PORT = parseInt(arg('--port', '4100'), 10);
-
 if (!fs.existsSync(FILE)) {
-  console.error(`Sample file not found: ${FILE}\nRun mine-sample.js first.`);
+  console.error(`Sample not found: ${FILE}\nRun mine-sample.js first.`);
   process.exit(1);
 }
-
 const load = () => JSON.parse(fs.readFileSync(FILE, 'utf8'));
 const save = (d) => fs.writeFileSync(FILE, JSON.stringify(d, null, 2));
 
-const HTML = `<!doctype html><html><head><meta charset="utf-8">
-<title>Label sample</title><style>
-*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;
-background:#0d1117;color:#e6edf3;height:100vh;display:flex;flex-direction:column}
-header{padding:12px 20px;border-bottom:1px solid #30363d;display:flex;
-gap:24px;align-items:center;flex-wrap:wrap;font-size:14px;color:#8b949e}
-header b{color:#e6edf3}.bar{flex:1;min-width:120px;height:8px;background:#21262d;
-border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:#2f81f7}
-main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
-.card{max-width:760px;width:100%;background:#161b22;border:1px solid #30363d;
-border-radius:12px;padding:28px}.meta{font-size:13px;color:#8b949e;margin-bottom:14px}
-.msg{font-size:21px;white-space:pre-wrap;word-break:break-word;min-height:120px}
-.flash{transition:background .15s}.y{background:#1f3a23!important}
-.n{background:#3a1f1f!important}footer{padding:14px 20px;border-top:1px solid #30363d;
-text-align:center;color:#8b949e;font-size:14px}kbd{background:#21262d;border:1px solid
-#30363d;border-radius:4px;padding:2px 7px;color:#e6edf3}.done{font-size:22px;text-align:center}
+const HTML = `<!doctype html><html><head><meta charset="utf-8"><title>Label</title><style>
+*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#0d1117;
+color:#e6edf3;height:100vh;display:flex;flex-direction:column}
+header{padding:10px 18px;border-bottom:1px solid #30363d;display:flex;gap:20px;align-items:center;
+flex-wrap:wrap;font-size:13px;color:#8b949e}header b{color:#e6edf3}
+.bar{flex:1;min-width:120px;height:7px;background:#21262d;border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:#2f81f7}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:22px;overflow:auto}
+.card{max-width:780px;width:100%}.tag{display:inline-block;font-size:12px;padding:2px 9px;
+border-radius:99px;margin-bottom:10px}.tg-a{background:#1f6feb33;color:#79c0ff}
+.tg-n{background:#bb800933;color:#e3b341}
+.q{background:#161b22;border:1px solid #30363d;border-left:3px solid #2f81f7;border-radius:10px;
+padding:16px 18px;margin-bottom:14px}.q .lbl{font-size:12px;color:#8b949e;margin-bottom:5px}
+.q .t{font-size:17px;white-space:pre-wrap;word-break:break-word}
+.ans{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:18px}
+.ans .lbl{font-size:12px;color:#8b949e;margin-bottom:8px}
+.m{white-space:pre-wrap;word-break:break-word;font-size:18px;padding:6px 0;border-bottom:1px dashed #21262d}
+.m:last-child{border:0}.ex{margin-top:12px;font-size:13px;color:#8b949e}
+.ex code{background:#21262d;padding:2px 6px;border-radius:4px;color:#e6edf3}
+.flash{transition:background .15s}.y .ans,.y .card>.solo{background:#16301b!important}
+.n .ans,.n .card>.solo{background:#301717!important}
+footer{padding:12px 18px;border-top:1px solid #30363d;text-align:center;color:#8b949e;font-size:13px}
+kbd{background:#21262d;border:1px solid #30363d;border-radius:4px;padding:2px 7px;color:#e6edf3}
+.done{font-size:21px;text-align:center;padding:40px}
 </style></head><body>
-<header>
-<div>Item <b id="idx">–</b>/<b id="tot">–</b></div>
-<div class="bar"><i id="prog" style="width:0"></i></div>
-<div>relevant <b id="c1">0</b> · not <b id="c0">0</b> · skipped <b id="cs">0</b> · left <b id="cl">0</b></div>
+<header><div>#<b id="ix">–</b>/<b id="tot">–</b></div>
+<div class="bar"><i id="pg" style="width:0"></i></div>
+<div>useful/yes <b id="c1">0</b> · no <b id="c0">0</b> · skip <b id="cs">0</b> · left <b id="cl">0</b></div>
 </header>
-<main><div class="card flash" id="card">
-<div class="meta" id="mt"></div><div class="msg" id="tx"></div></div></main>
-<footer><kbd>←</kbd> not relevant &nbsp; <kbd>→</kbd> relevant &nbsp;
-<kbd>Space</kbd> skip &nbsp; <kbd>⌫</kbd> back &nbsp;— autosaves</footer>
+<main><div class="card flash" id="card"></div></main>
+<footer><kbd>←</kbd> not useful &nbsp;<kbd>→</kbd> useful &nbsp;<kbd>Space</kbd> skip
+&nbsp;<kbd>⌫</kbd> back &nbsp;— autosaves</footer>
 <script>
-let rows=[],i=0;
-const $=id=>document.getElementById(id);
-function counts(){let c1=0,c0=0,cs=0,cl=0;for(const r of rows){
- if(r.label===1)c1++;else if(r.label===0)c0++;else if(r._seen)cs++;else cl++;}
- $('c1').textContent=c1;$('c0').textContent=c0;$('cs').textContent=cs;$('cl').textContent=cl;}
+let U=[],i=0;
+const $=x=>document.getElementById(x);
+const esc=s=>{const d=document.createElement('div');d.textContent=s==null?'':s;return d.innerHTML;};
+function val(u){return u.type==='answer'?u.useful:u.label;}
+function counts(){let a=0,b=0,s=0,l=0;for(const u of U){const v=val(u);
+ if(v===1)a++;else if(v===0)b++;else if(u._seen)s++;else l++;}
+ $('c1').textContent=a;$('c0').textContent=b;$('cs').textContent=s;$('cl').textContent=l;}
+function exHtml(e){if(!e)return'';const p=[];
+ if(e.profession)p.push('prof <code>'+esc(e.profession)+'</code>');
+ if(e.name)p.push('name <code>'+esc(e.name)+'</code>');
+ if(e.contacts)p.push('contact <code>'+e.contacts.map(c=>esc(c.value)).join(', ')+'</code>');
+ if(e.description)p.push('desc “'+esc(e.description.slice(0,90))+'”');
+ return p.length?'<div class="ex">heuristic guess: '+p.join(' · ')+'</div>':'';}
 function render(){
- if(i>=rows.length){$('card').innerHTML='<div class="done">All '+rows.length+
-  ' items reviewed. Autosaved — tell Claude to run mine-eval.</div>';return;}
- const r=rows[i];
- $('idx').textContent=i+1;$('tot').textContent=rows.length;
- $('prog').style.width=(100*(i)/rows.length)+'%';
- $('mt').textContent='#'+r.messageID+'  ['+(r.lang||'?')+']'+
-   (r.label===1?'  ▶ relevant':r.label===0?'  ▶ not relevant':'');
- $('tx').textContent=r.text;counts();}
-function flash(c){const e=$('card');e.classList.add(c);
- setTimeout(()=>e.classList.remove(c),150);}
-async function set(label){
- const r=rows[i];r.label=label;r._seen=true;
+ if(i>=U.length){$('card').innerHTML='<div class="done">All '+U.length+
+  ' reviewed. Autosaved — tell Claude to run mine-eval.</div>';counts();return;}
+ const u=U[i];$('ix').textContent=i+1;$('tot').textContent=U.length;
+ $('pg').style.width=(100*i/U.length)+'%';
+ let h='';
+ if(u.type==='answer'){
+  h+='<span class="tag tg-a">inquiry + reply</span>';
+  h+='<div class="q"><div class="lbl">QUESTION  #'+u.inquiryID+'  ['+(u.inquiryLang||'?')+
+     ']'+(u.profession?'  · prof '+esc(u.profession):'')+'</div><div class="t">'+
+     esc(u.inquiryText)+'</div></div>';
+  h+='<div class="ans"><div class="lbl">REPLY by '+esc(u.responderHash)+
+     '  (answer '+(u.answerIndex+1)+'/'+u.answerCount+', '+u.messages.length+' msg)</div>';
+  for(const m of u.messages)h+='<div class="m">'+esc(m.text)+'</div>';
+  h+=exHtml(u.extracted)+'</div>';
+ }else{
+  h+='<span class="tag tg-n">announcement</span>';
+  h+='<div class="ans solo"><div class="lbl">MESSAGE #'+u.messageID+'  ['+(u.lang||'?')+
+     ']</div><div class="m">'+esc(u.text)+'</div>'+exHtml(u.extracted)+'</div>';
+ }
+ $('card').innerHTML=h;counts();
+}
+function flash(c){const e=$('card');e.classList.add(c);setTimeout(()=>e.classList.remove(c),150);}
+async function set(v){const u=U[i];if(u.type==='answer')u.useful=v;else u.label=v;u._seen=true;
  await fetch('/api/label',{method:'POST',headers:{'content-type':'application/json'},
-  body:JSON.stringify({messageID:r.messageID,label})});
- flash(label===1?'y':label===0?'n':'');i++;render();}
-function skip(){rows[i]._seen=true;i++;render();}
-function back(){if(i>0)i--;render();}
+  body:JSON.stringify({uid:u.uid,value:v})});
+ flash(v===1?'y':'n');i++;render();}
 addEventListener('keydown',e=>{
  if(e.key==='ArrowLeft'){e.preventDefault();set(0);}
  else if(e.key==='ArrowRight'){e.preventDefault();set(1);}
- else if(e.key===' '){e.preventDefault();skip();}
- else if(e.key==='Backspace'){e.preventDefault();back();}});
-fetch('/api/data').then(r=>r.json()).then(d=>{rows=d.rows;
- i=rows.findIndex(r=>r.label!==0&&r.label!==1);if(i<0)i=rows.length;render();});
+ else if(e.key===' '){e.preventDefault();U[i]._seen=true;i++;render();}
+ else if(e.key==='Backspace'){e.preventDefault();if(i>0)i--;render();}});
+fetch('/api/data').then(r=>r.json()).then(d=>{U=d.units;
+ i=U.findIndex(u=>{const v=u.type==='answer'?u.useful:u.label;return v!==0&&v!==1;});
+ if(i<0)i=U.length;render();});
 </script></body></html>`;
 
-const server = http.createServer((req, res) => {
-  if (req.url === '/' ) {
-    res.writeHead(200, { 'content-type': 'text/html' });
-    return res.end(HTML);
-  }
-  if (req.url === '/api/data') {
-    res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end(JSON.stringify(load()));
-  }
-  if (req.url === '/api/label' && req.method === 'POST') {
-    let body = '';
-    req.on('data', (c) => (body += c));
-    req.on('end', () => {
-      try {
-        const { messageID, label } = JSON.parse(body);
-        const d = load();
-        const row = d.rows.find((r) => r.messageID === messageID);
-        if (row) row.label = label;
-        save(d);
-        res.writeHead(200, { 'content-type': 'application/json' });
-        res.end('{"ok":true}');
-      } catch (e) {
-        res.writeHead(400);
-        res.end('{"ok":false}');
-      }
-    });
-    return;
-  }
-  res.writeHead(404);
-  res.end();
-});
-
-server.listen(PORT, () => {
-  const labeled = load().rows.filter((r) => r.label === 0 || r.label === 1).length;
-  console.log(`Labeling UI: http://localhost:${PORT}`);
-  console.log(`File: ${FILE}  (${labeled} already labeled)`);
-  console.log('← not relevant   → relevant   Space skip   Backspace back   Ctrl+C to stop');
-});
+http
+  .createServer((req, res) => {
+    if (req.url === '/') {
+      res.writeHead(200, { 'content-type': 'text/html' });
+      return res.end(HTML);
+    }
+    if (req.url === '/api/data') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify(load()));
+    }
+    if (req.url === '/api/label' && req.method === 'POST') {
+      let b = '';
+      req.on('data', (c) => (b += c));
+      req.on('end', () => {
+        try {
+          const { uid, value } = JSON.parse(b);
+          const d = load();
+          const u = d.units.find((x) => x.uid === uid);
+          if (u) {
+            if (u.type === 'answer') u.useful = value;
+            else u.label = value;
+          }
+          save(d);
+          res.writeHead(200);
+          res.end('{"ok":true}');
+        } catch (e) {
+          res.writeHead(400);
+          res.end('{"ok":false}');
+        }
+      });
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  })
+  .listen(PORT, () => {
+    const d = load();
+    const done = d.units.filter((u) =>
+      u.type === 'answer' ? u.useful === 0 || u.useful === 1 : u.label === 0 || u.label === 1
+    ).length;
+    console.log(`Labeling UI: http://localhost:${PORT}`);
+    console.log(`File: ${FILE}  (${done}/${d.units.length} done)`);
+  });

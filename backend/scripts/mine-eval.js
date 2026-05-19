@@ -1,15 +1,17 @@
 /**
- * Evaluate the heuristic pre-filter against the human-labeled sample and
- * recommend a gate threshold (issue #92).
+ * Evaluate the thread-aware pipeline against the human-labeled sample
+ * (issue #92, v2) and project full-corpus Haiku cost.
  *
- * Sweeps thresholds, reporting precision / recall / F1 on the labeled set plus
- * the projected volume + Haiku cost when that threshold is applied to the FULL
- * corpus. Because Haiku is the precision stage and is cheap, the recommended
- * threshold favors RECALL (don't miss real masters) over a tight gate.
+ * Threads bypass the score gate by design (every reply to an inquiry is kept —
+ * that's where scarce master data hides), so this measures the *yield* of the
+ * approach, not a score threshold:
+ *   - answer units: how many human-confirmed-useful replies the net surfaced
+ *   - announcement units: precision of the standalone-advert detector
+ *   - projected Haiku spend if every thread+announcement in the FULL corpus is
+ *     sent for extraction
  *
  * Usage (from backend/):
- *   MONGO_DB_NAME=majstr_mining node scripts/mine-eval.js \
- *     --labels ../chat-history/italy/veneto/label-sample.json
+ *   MONGO_DB_NAME=majstr_mining node scripts/mine-eval.js
  */
 require('dotenv').config();
 const fs = require('fs');
@@ -17,80 +19,78 @@ const path = require('path');
 const mongoose = require('mongoose');
 const { runDB } = require('../database/db');
 const RawMessage = require('../database/schema/RawMessage');
-const { classify } = require('../mining/classifier/adapters/heuristic');
+const { buildThreads } = require('../mining/thread');
 
-function arg(name, def) {
-  const i = process.argv.indexOf(name);
-  return i !== -1 ? process.argv[i + 1] : def;
-}
-
-// Haiku price-ish per message (avg ~142B text): ~250 in tok, ~120 out tok.
-function haikuCost(count) {
-  return count * ((250 * 0.8) / 1e6 + (120 * 4) / 1e6);
-}
+const arg = (n, d) => {
+  const i = process.argv.indexOf(n);
+  return i !== -1 ? process.argv[i + 1] : d;
+};
+// Haiku-ish: a bundle averages ~400 input tok + ~150 output tok.
+const haikuCost = (units) => units * ((400 * 0.8) / 1e6 + (150 * 4) / 1e6);
 
 async function main() {
   const labelsPath = path.resolve(
     arg('--labels', '../chat-history/italy/veneto/label-sample.json')
   );
   const data = JSON.parse(fs.readFileSync(labelsPath, 'utf8'));
-  const rows = data.rows.filter((r) => r.label === 0 || r.label === 1);
-  if (!rows.length) throw new Error('No labeled rows (set "label" to 1/0 first)');
+  const ans = data.units.filter((u) => u.type === 'answer');
+  const annU = data.units.filter((u) => u.type === 'announcement');
+  const ansL = ans.filter((u) => u.useful === 0 || u.useful === 1);
+  const annL = annU.filter((u) => u.label === 0 || u.label === 1);
 
-  const pos = rows.filter((r) => r.label === 1).length;
+  console.log('=== Labeled sample ===');
   console.log(
-    `Labeled: ${rows.length} (positives ${pos}, negatives ${rows.length - pos}, ` +
-      `skipped ${data.rows.length - rows.length})`
+    `answers: ${ansL.length}/${ans.length} labeled — useful ${
+      ansL.filter((u) => u.useful === 1).length
+    }, not ${ansL.filter((u) => u.useful === 0).length}`
   );
-  if (pos < 10) {
+  console.log(
+    `announcements: ${annL.length}/${annU.length} labeled — real ${
+      annL.filter((u) => u.label === 1).length
+    }, not ${annL.filter((u) => u.label === 0).length}`
+  );
+
+  // Yield: of inquiries that produced >=1 human-useful reply, the thread is a
+  // real lead. Precision of the answer net = useful / labeled.
+  if (ansL.length) {
+    const p = ansL.filter((u) => u.useful === 1).length / ansL.length;
+    const threadsWithUseful = new Set(
+      ansL.filter((u) => u.useful === 1).map((u) => u.inquiryID)
+    ).size;
     console.log(
-      `⚠ Only ${pos} positives — recall estimate is weak. Consider a larger sample.`
+      `\nanswer precision: ${(p * 100).toFixed(1)}%  ` +
+        `| inquiries yielding >=1 useful reply: ${threadsWithUseful}`
     );
   }
-
-  const scored = [];
-  for (const r of rows) {
-    const c = await classify({ text: r.text });
-    scored.push({ y: r.label, s: c.score });
+  if (annL.length) {
+    const p = annL.filter((u) => u.label === 1).length / annL.length;
+    console.log(`announcement precision: ${(p * 100).toFixed(1)}%`);
   }
 
+  // Full-corpus volume + cost.
   await runDB();
-  const corpus = await RawMessage.find().select('text').lean();
-  const corpusScores = [];
-  for (const m of corpus) corpusScores.push((await classify({ text: m.text })).score);
-  const N = corpusScores.length;
-
-  console.log('\nthresh  precision  recall    F1     labeledPass  corpusPass   ~Haiku$');
-  let best = null;
-  for (const t of [0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.75]) {
-    let tp = 0, fp = 0, fn = 0;
-    for (const x of scored) {
-      const pred = x.s >= t;
-      if (pred && x.y === 1) tp++;
-      else if (pred && x.y === 0) fp++;
-      else if (!pred && x.y === 1) fn++;
-    }
-    const prec = tp + fp ? tp / (tp + fp) : 0;
-    const rec = tp + fn ? tp / (tp + fn) : 0;
-    const f1 = prec + rec ? (2 * prec * rec) / (prec + rec) : 0;
-    const corpusPass = corpusScores.filter((s) => s >= t).length;
+  const all = await RawMessage.find()
+    .select('messageID replyToID fromHash date text lang')
+    .lean();
+  const { threads, announcements } = buildThreads(all);
+  const answerBundles = threads.reduce((s, t) => s + t.answers.length, 0);
+  const total = answerBundles + announcements.length;
+  console.log('\n=== Full corpus projection ===');
+  console.log(
+    `threads ${threads.length} (answer bundles ${answerBundles}) + ` +
+      `announcements ${announcements.length} = ${total} Haiku calls`
+  );
+  console.log(
+    `projected Haiku spend: ~$${haikuCost(total).toFixed(2)} of $5 budget`
+  );
+  if (ansL.length) {
+    const p = ansL.filter((u) => u.useful === 1).length / ansL.length;
     console.log(
-      `${t.toFixed(2)}    ${prec.toFixed(3)}     ${rec.toFixed(3)}   ${f1.toFixed(3)}   ` +
-        `${String(tp + fp).padStart(6)}      ${String(corpusPass).padStart(6)}   ` +
-        `$${haikuCost(corpusPass).toFixed(2)}`
+      `\nGo/no-go: at ~${(p * 100).toFixed(0)}% answer precision, Haiku ` +
+        `cleans the rest for ~$${haikuCost(total).toFixed(
+          2
+        )}. ${p >= 0.15 ? 'PROCEED to Haiku.' : 'Tune inquiry net first.'}`
     );
-    // Recall-first pick: highest threshold that still keeps recall >= 0.90.
-    if (rec >= 0.9) best = { t, prec, rec, corpusPass };
-  }
-
-  if (best) {
-    console.log(
-      `\nRecommended gate: ${best.t.toFixed(2)} ` +
-        `(recall ${best.rec.toFixed(2)}, precision ${best.prec.toFixed(2)}, ` +
-        `${best.corpusPass}/${N} -> Haiku ~$${haikuCost(best.corpusPass).toFixed(2)})`
-    );
-  } else {
-    console.log('\nNo threshold reaches recall 0.90 — heuristic needs tuning before Haiku.');
   }
   await mongoose.disconnect();
 }
