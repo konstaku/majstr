@@ -64,7 +64,7 @@ kbd{background:#21262d;border:1px solid #30363d;border-radius:4px;padding:2px 7p
 let U=[],i=0;
 const $=x=>document.getElementById(x);
 const esc=s=>{const d=document.createElement('div');d.textContent=s==null?'':s;return d.innerHTML;};
-function val(u){return u.type==='answer'?u.useful:u.label;}
+function val(u){return u.type==='answer'?u.useful:u.type==='random'?u.useful:u.label;}
 function counts(){let a=0,b=0,s=0,l=0;for(const u of U){const v=val(u);
  if(v===1)a++;else if(v===0)b++;else if(u._seen)s++;else l++;}
  $('c1').textContent=a;$('c0').textContent=b;$('cs').textContent=s;$('cl').textContent=l;}
@@ -89,6 +89,20 @@ function render(){
      '  (answer '+(u.answerIndex+1)+'/'+u.answerCount+', '+u.messages.length+' msg)</div>';
   for(const m of u.messages)h+='<div class="m">'+esc(m.text)+'</div>';
   h+=exHtml(u.extracted)+'</div>';
+ }else if(u.type==='random'){
+  h+='<span class="tag tg-a">random / recall check · '+esc(u.chatLabel)+'</span>';
+  if(u.context.parent){h+='<div class="q"><div class="lbl">IN REPLY TO  #'+
+   u.context.parent.messageID+'</div><div class="t" style="font-size:14px;color:#8b949e">'+
+   esc(u.context.parent.text)+'</div></div>';}
+  h+='<div class="ans solo"><div class="lbl">MESSAGE  #'+u.messageID+'  ['+(u.lang||'?')+']'+
+   '</div><div class="m">'+esc(u.text)+'</div></div>';
+  if(u.context.replies&&u.context.replies.length){
+   h+='<div class="q" style="margin-top:14px;border-left-color:#bb8009"><div class="lbl">REPLIES ('+
+    u.context.replies.length+')</div>';
+   for(const r of u.context.replies)h+='<div class="t" style="font-size:14px;color:#8b949e;border-bottom:1px dashed #21262d;padding:4px 0">#'+
+    r.messageID+': '+esc(r.text)+'</div>';
+   h+='</div>';
+  }
  }else{
   h+='<span class="tag tg-n">announcement</span>';
   h+='<div class="ans solo"><div class="lbl">MESSAGE #'+u.messageID+'  ['+(u.lang||'?')+
@@ -97,7 +111,7 @@ function render(){
  $('card').innerHTML=h;counts();
 }
 function flash(c){const e=$('card');e.classList.add(c);setTimeout(()=>e.classList.remove(c),150);}
-async function set(v){const u=U[i];if(u.type==='answer')u.useful=v;else u.label=v;u._seen=true;
+async function set(v){const u=U[i];if(u.type==='answer'||u.type==='random')u.useful=v;else u.label=v;u._seen=true;
  await fetch('/api/label',{method:'POST',headers:{'content-type':'application/json'},
   body:JSON.stringify({uid:u.uid,value:v})});
  flash(v===1?'y':'n');i++;render();}
@@ -130,7 +144,7 @@ http
           const d = load();
           const u = d.units.find((x) => x.uid === uid);
           if (u) {
-            if (u.type === 'answer') u.useful = value;
+            if (u.type === 'answer' || u.type === 'random') u.useful = value;
             else u.label = value;
           }
           save(d);
@@ -148,9 +162,10 @@ http
   })
   .listen(PORT, () => {
     const d = load();
-    const done = d.units.filter((u) =>
-      u.type === 'answer' ? u.useful === 0 || u.useful === 1 : u.label === 0 || u.label === 1
-    ).length;
+    const done = d.units.filter((u) => {
+      const v = u.type === 'answer' || u.type === 'random' ? u.useful : u.label;
+      return v === 0 || v === 1;
+    }).length;
     console.log(`Labeling UI: http://localhost:${PORT}`);
     console.log(`File: ${FILE}  (${done}/${d.units.length} done)`);
   });
