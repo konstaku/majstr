@@ -45,3 +45,12 @@ one-page Legitimate Interest Assessment is maintained alongside this doc.
 **Admin review before publish** (the v1 human-in-the-loop design). Nothing
 becomes a public card without an explicit admin accept. Autonomy is a separate,
 precision-gated future phase and is out of scope for this policy version.
+
+## Poster identity (decided 2026-05-19)
+
+We do **not** persist author identity — only the salted `fromHash`. When a
+specialist describes a service but posts no contact, the card's contact is
+**not** auto-derived from their Telegram account. Instead the review dashboard
+links to the original message (`t.me/c/<chat>/<messageID>`, built from data we
+already store) and the admin fetches/confirms the real contact manually before
+the card goes live. No author numeric id, username, or display name is stored.
