@@ -48,12 +48,15 @@ async function main() {
   const nRand = parseInt(arg('--rand', '20'), 10);
   const nAnn = parseInt(arg('--ann', '40'), 10);
   const seed = parseInt(arg('--seed', '42'), 10);
+  const chatId = arg('--chatId', null); // scope to one chat (default: all)
   const out = path.resolve(arg('--out', '../chat-history/italy/veneto/label-sample.json'));
 
   await runDB();
-  const all = await RawMessage.find()
+  const q = chatId ? { chatID: chatId } : {};
+  const all = await RawMessage.find(q)
     .select('messageID replyToID fromHash date text lang')
     .lean();
+  if (!all.length) throw new Error(`No messages for chatId=${chatId}`);
   const { threads, announcements } = buildThreads(all);
   const rng = mulberry32(seed);
 

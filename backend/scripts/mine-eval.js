@@ -69,7 +69,9 @@ async function main() {
 
   // Full-corpus volume + cost.
   await runDB();
-  const all = await RawMessage.find()
+  const chatId = arg('--chatId', null);
+  const q = chatId ? { chatID: chatId } : {};
+  const all = await RawMessage.find(q)
     .select('messageID replyToID fromHash date text lang')
     .lean();
   const { threads, announcements } = buildThreads(all);
