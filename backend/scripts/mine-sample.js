@@ -54,7 +54,7 @@ async function main() {
   await runDB();
   const q = chatId ? { chatID: chatId } : {};
   const all = await RawMessage.find(q)
-    .select('messageID replyToID fromHash date text lang')
+    .select('messageID replyToID fromHash fromName date text lang')
     .lean();
   if (!all.length) throw new Error(`No messages for chatId=${chatId}`);
   const { threads, announcements } = buildThreads(all);
@@ -82,6 +82,7 @@ async function main() {
         answerIndex: idx,
         answerCount: t.answers.length,
         responderHash: a.responderHash.slice(0, 8),
+        responderName: a.responderName || null,
         messages: a.messages,
         extracted: a.extracted,
         useful: null,

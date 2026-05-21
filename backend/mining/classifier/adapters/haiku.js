@@ -14,7 +14,7 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 512;
 
@@ -43,6 +43,12 @@ const SYSTEM_PROMPT =
   'they will send the contact privately ("пишу в особисті", "написала вам", ' +
   '"можу дати контакт"). The asker would consider the answer valuable even ' +
   'if the contact itself is shared off-channel.\n\n' +
+  'SELF-OFFERING RESPONDER: when the responder offers their OWN service in ' +
+  'reply to an inquiry ("я можу допомогти", "я майстер", "пишіть мені", "роблю ' +
+  'це сам") they ARE the specialist. Flag as useful and set extracted.name to ' +
+  'the provided RESPONDER display name. Their contact is obtained later by an ' +
+  'admin — never invent one; leave contacts empty if none is in the text. The ' +
+  'profession usually comes from the inquiry itself.\n\n' +
   'NOT USEFUL — exclude all of these even if a phone or link appears:\n' +
   '- Job listings (employer hiring workers, "потрібен/шукаємо", "робота в...")\n' +
   '- Courses, schools, training programs, autoshcools\n' +
@@ -131,10 +137,14 @@ function tallyCost(usage) {
 
 function buildUserContent(message) {
   if (message && message.inquiry) {
+    const responder = message.responderName
+      ? `\n\nRESPONDER (Telegram display name): ${String(message.responderName).trim()}`
+      : '';
     return (
       'QUESTION ASKED (for context only):\n' +
       String(message.inquiry).trim() +
-      "\n\nBUNDLED REPLY (assess THIS):\n" +
+      responder +
+      '\n\nBUNDLED REPLY (assess THIS):\n' +
       String(message.text || '').trim()
     );
   }

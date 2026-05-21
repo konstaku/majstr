@@ -53,7 +53,7 @@ async function main() {
 
   for (const chatID of chatIds) {
     const all = await RawMessage.find({ chatID })
-      .select('messageID replyToID fromHash date text lang')
+      .select('messageID replyToID fromHash fromName date text lang')
       .lean();
     const byId = new Map(all.map((m) => [m.messageID, m]));
     const { threads, announcements } = buildThreads(all);

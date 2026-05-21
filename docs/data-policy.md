@@ -20,8 +20,9 @@ one-page Legitimate Interest Assessment is maintained alongside this doc.
 
 - Store only **extracted fields** (name as given, profession, city, contact)
   plus a **short redacted snippet** of the source message for admin context.
-- **Author identity is stored only as a salted hash** (`fromHash` on
-  `RawMessage`) — raw Telegram author IDs are never persisted.
+- **Author identity:** a salted hash (`fromHash`, for same-author clustering)
+  plus the Telegram **display name** (`fromName`, to fill a card's Name field).
+  The raw numeric author id and `@username` are **never** persisted.
 - **Purge the raw export** after classification completes.
 - **Purge declined candidates after 30 days.**
 
@@ -46,11 +47,20 @@ one-page Legitimate Interest Assessment is maintained alongside this doc.
 becomes a public card without an explicit admin accept. Autonomy is a separate,
 precision-gated future phase and is out of scope for this policy version.
 
-## Poster identity (decided 2026-05-19)
+## Poster identity (decided 2026-05-19, amended 2026-05-21)
 
-We do **not** persist author identity — only the salted `fromHash`. When a
-specialist describes a service but posts no contact, the card's contact is
-**not** auto-derived from their Telegram account. Instead the review dashboard
-links to the original message (`t.me/c/<chat>/<messageID>`, built from data we
-already store) and the admin fetches/confirms the real contact manually before
-the card goes live. No author numeric id, username, or display name is stored.
+We persist the Telegram **display name** (`fromName`) and a salted hash
+(`fromHash`) of each author — **not** the numeric author id or `@username`.
+
+Rationale for the amendment: replies where the responder offers their own
+service ("я можу допомогти", "я майстер") are valid leads, and a master card
+requires a Name. The display name fills that field. It is a value that was
+already posted publicly in the chat.
+
+The card **contact** is still **not** auto-derived from a Telegram account.
+When no contact appears in the message text, the review dashboard links to the
+original message (`t.me/c/<chat>/<messageID>`) and the admin fetches/confirms
+the real contact manually before the card goes live.
+
+Display names follow the same retention as the rest of `RawMessage` and are
+purged with declined candidates / the raw export per the rules above.

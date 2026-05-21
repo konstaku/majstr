@@ -8,7 +8,8 @@
 //
 // IMPORTANT: each normalized message carries `_fromId` (the raw Telegram
 // author id). This is TRANSIENT and must NEVER be persisted — the CLI maps it
-// to a salted hash and drops it before any DB write. See docs/data-policy.md.
+// to a salted hash and drops it before any DB write. `fromName` (the Telegram
+// display name) IS persisted — it fills a card's Name field. See docs/data-policy.md.
 
 // Telegram Desktop puts message text in two forms:
 //   - `text`: a string OR an array mixing plain strings and {type,text} objects
@@ -65,6 +66,7 @@ function parseExport(exportObj) {
       text,
       replyToID: m.reply_to_message_id != null ? m.reply_to_message_id : null,
       ingestSource: 'export',
+      fromName: m.from != null ? String(m.from) : null, // persisted display name
       _fromId: m.from_id != null ? String(m.from_id) : null, // transient
     });
     stats.parsed += 1;

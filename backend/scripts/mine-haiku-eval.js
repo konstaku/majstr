@@ -41,7 +41,7 @@ function unitLabel(u) {
 function unitInput(u) {
   if (u.type === 'answer') {
     const text = (u.messages || []).map((m) => m.text).join('\n');
-    return { inquiry: u.inquiryText, text };
+    return { inquiry: u.inquiryText, responderName: u.responderName || null, text };
   }
   if (u.type === 'announcement') return { text: u.text };
   if (u.type === 'random') {

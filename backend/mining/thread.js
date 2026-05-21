@@ -99,6 +99,7 @@ function buildThreads(messages, opts = {}) {
       items.forEach((it) => usedInThread.add(it.messageID));
       answers.push({
         responderHash,
+        responderName: items.map((i) => i.fromName).find(Boolean) || null,
         messageIDs: items.map((i) => i.messageID),
         messages: items.map((i) => ({ messageID: i.messageID, text: i.text })),
         extracted: assembleExtracted(items.map((i) => i.text)),

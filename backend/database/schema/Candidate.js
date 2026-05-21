@@ -19,6 +19,7 @@ const extractedSchema = new mongoose.Schema(
     profession: String,
     city: String,
     contacts: [{ contactType: String, value: String }],
+    description: String,
   },
   { _id: false }
 );

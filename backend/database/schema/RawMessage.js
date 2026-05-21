@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 
 // Normalized message ingested from a Telegram source (manual export or the
-// GramJS watcher). Author identity is stored ONLY as a salted hash per the
-// data policy — raw author IDs are never persisted. See docs/data-policy.md.
+// GramJS watcher). Author identity: a salted hash for clustering (fromHash)
+// plus the Telegram display name (fromName) used to fill a card's Name field.
+// The numeric author id and @username are NEVER persisted. See docs/data-policy.md.
 const INGEST_SOURCES = ['export', 'watch'];
 
 const rawMessageSchema = new mongoose.Schema(
@@ -11,6 +12,7 @@ const rawMessageSchema = new mongoose.Schema(
     messageID: { type: Number, required: true },
     date: { type: Date, required: true },
     fromHash: { type: String },
+    fromName: { type: String, default: null },
     text: { type: String, default: '' },
     replyToID: { type: Number, default: null },
     lang: { type: String, default: null },
