@@ -134,7 +134,7 @@ const esc=s=>{const d=document.createElement('div');d.textContent=s==null?'':s;r
 function opts(list,sel,blank){let h='<option value="">'+(blank||'— select —')+'</option>';
  for(const o of list){const nm=o.name.en||o.name.ua||o.id;h+='<option value="'+o.id+'"'+(o.id===sel?' selected':'')+'>'+esc(nm)+'</option>';}return h;}
 function contactRow(c){
- const types=['phone','telegram','whatsapp','viber','other'];
+ const types=['phone','telegram','instagram','whatsapp','viber','other'];
  return '<div class="crow"><select class="ctype">'+types.map(t=>'<option'+(c&&c.contactType===t?' selected':'')+'>'+t+'</option>').join('')+
    '</select><input class="cval" placeholder="number / @handle / link" value="'+esc(c?c.value:'')+'">'+
    '<button class="btnsm" onclick="this.parentNode.remove();sync()">×</button></div>';
