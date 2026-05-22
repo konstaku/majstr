@@ -1,23 +1,31 @@
 /**
  * M2 #91 — batch classification runner.
  *
- * RawMessages -> buildThreads (inquiry+reply bundles + announcements) -> Haiku
- * -> Candidate docs (only for units Haiku flags useful). This is what turns the
- * working classifier into a reviewable candidate queue.
+ * RawMessages -> buildThreads (inquiry+reply bundles + announcements) ->
+ * classifier -> Candidate docs (only for units flagged useful). This is what
+ * turns the working classifier into a reviewable candidate queue.
  *
- * Resumable & cheap to re-run: every Haiku verdict is cached to
+ * The classifier engine is pluggable via the CLASSIFIER env var (issue #114):
+ *   CLASSIFIER=haiku   — Claude Haiku 4.5, costs API budget
+ *   CLASSIFIER=ollama  — local Qwen2.5 14B via Ollama, zero cost/offline
+ *                        (≈67%/67% — parity with Haiku; OLLAMA_MODEL overrides)
+ * Nothing else changes — both produce identical Candidate docs.
+ *
+ * Resumable & cheap to re-run: every verdict is cached to
  * ../chat-history/mining-cache/<chatId>.json (gitignored) keyed by the anchor
  * message id + classifier version. A crash or re-run reuses cached verdicts and
- * only calls Haiku for new units. Candidate writes upsert on (chatID,
- * anchorMessageID) — admin-set status is preserved via $setOnInsert.
+ * only re-classifies new units. The cache is keyed by version, so switching
+ * engines (haiku<->ollama) does not collide. Candidate writes upsert on
+ * (chatID, anchorMessageID) — admin-set status is preserved via $setOnInsert.
  *
  * Usage (from backend/):
  *   MONGO_DB_NAME=majstr_mining node scripts/mine-classify.js            # both chats
  *   MONGO_DB_NAME=majstr_mining node scripts/mine-classify.js --chatId 1780497126
  *   MONGO_DB_NAME=majstr_mining node scripts/mine-classify.js --limit 20 # smoke test
+ *   MONGO_DB_NAME=majstr_mining CLASSIFIER=ollama node scripts/mine-classify.js
  *
- * Cost: full corpus ~1875 units ≈ $2.80. The adapter hard-stops at
- * MINING_BUDGET_USD ($5) per process.
+ * Cost: with Haiku, full corpus ~1875 units ≈ $2.80, hard-stopping at
+ * MINING_BUDGET_USD ($5) per process. With Ollama it is free (and offline).
  */
 require('dotenv').config();
 const fs = require('fs');
@@ -28,7 +36,7 @@ const RawMessage = require('../database/schema/RawMessage');
 const Candidate = require('../database/schema/Candidate');
 const MiningRun = require('../database/schema/MiningRun');
 const { buildThreads } = require('../mining/thread');
-const haiku = require('../mining/classifier/adapters/haiku');
+const { getClassifier } = require('../mining/classifier');
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
@@ -36,6 +44,13 @@ const arg = (n, d) => {
 };
 const CHAT_REGION = { '1780497126': 'Veneto', '1593295268': 'Milano' };
 const CONCURRENCY = 4;
+
+// Selected by the CLASSIFIER env var (default 'heuristic' — pass 'haiku' or
+// 'ollama' for real classification). Cost helpers are no-ops for free local
+// adapters (ollama) that do not implement cost tracking.
+const classifier = getClassifier();
+const costOf = () => (classifier.getCumulativeCost ? classifier.getCumulativeCost() : 0);
+const callsOf = () => (classifier.getCumulativeCalls ? classifier.getCumulativeCalls() : 0);
 
 // Flatten a chat's threads + announcements into classifiable candidate units.
 function unitsFromChat(all) {
@@ -75,7 +90,7 @@ function unitsFromChat(all) {
 async function classifyWithRetry(input) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      return await haiku.classify(input);
+      return await classifier.classify(input);
     } catch (e) {
       if (attempt === 2) throw e;
       await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
@@ -96,9 +111,13 @@ async function processChat(chatID, limit) {
   console.log(`[${region}] ${all.length} messages -> ${units.length} candidate units`);
   if (limit) units = units.slice(0, limit);
 
+  // Per-classifier cache file so haiku and ollama verdicts never overwrite
+  // each other. Haiku keeps the original unsuffixed name (`<chatId>.json`) so
+  // the existing, budget-funded Haiku cache is reused as-is, not re-classified.
   const cacheDir = path.resolve('../chat-history/mining-cache');
   fs.mkdirSync(cacheDir, { recursive: true });
-  const cacheFile = path.join(cacheDir, chatID + '.json');
+  const cacheSuffix = classifier.name === 'haiku' ? '' : '.' + classifier.name;
+  const cacheFile = path.join(cacheDir, chatID + cacheSuffix + '.json');
   let cache = {};
   if (fs.existsSync(cacheFile)) {
     cache = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
@@ -109,8 +128,8 @@ async function processChat(chatID, limit) {
     mode: 'research',
     chatID,
     source: `classify:${region}`,
-    classifierName: haiku.name,
-    classifierVersion: haiku.version,
+    classifierName: classifier.name,
+    classifierVersion: classifier.version,
     startedAt: new Date(),
   });
 
@@ -124,12 +143,12 @@ async function processChat(chatID, limit) {
     await Promise.all(
       batch.map(async (u) => {
         const key = String(u.anchorMessageID);
-        let cls = cache[key] && cache[key].v === haiku.version ? cache[key] : null;
+        let cls = cache[key] && cache[key].v === classifier.version ? cache[key] : null;
         if (cls) cached++;
         else {
           try {
             const r = await classifyWithRetry(u.classifyInput);
-            cls = { kind: r.kind, score: r.score, extracted: r.extracted, v: haiku.version };
+            cls = { kind: r.kind, score: r.score, extracted: r.extracted, v: classifier.version };
             cache[key] = cls;
             fresh++;
           } catch (e) {
@@ -155,8 +174,8 @@ async function processChat(chatID, limit) {
               kind: cls.kind,
               score: cls.score,
               extracted,
-              classifierName: haiku.name,
-              classifierVersion: haiku.version,
+              classifierName: classifier.name,
+              classifierVersion: classifier.version,
               runRef: run._id,
             },
             $setOnInsert: { status: 'new' },
@@ -170,7 +189,7 @@ async function processChat(chatID, limit) {
     process.stdout.write(
       `\r[${region}] ${Math.min(i + CONCURRENCY, units.length)}/${units.length}  ` +
         `fresh=${fresh} cached=${cached} failed=${failed} candidates=${written}  ` +
-        `$${haiku.getCumulativeCost().toFixed(3)}`
+        `$${costOf().toFixed(3)}`
     );
   }
   process.stdout.write('\n');
@@ -181,7 +200,7 @@ async function processChat(chatID, limit) {
     classified: fresh + cached,
     candidates: written,
   };
-  run.costUSD = haiku.getCumulativeCost();
+  run.costUSD = costOf();
   run.finishedAt = new Date();
   await run.save();
   console.log(
@@ -195,12 +214,15 @@ async function main() {
   const chats = only ? [only] : ['1780497126', '1593295268'];
 
   await runDB();
-  haiku.resetCost();
+  if (classifier.resetCost) classifier.resetCost();
+  console.log(`classifier: ${classifier.name} v${classifier.version}`);
   try {
     for (const c of chats) await processChat(c, limit);
   } finally {
     console.log(
-      `\nTOTAL: $${haiku.getCumulativeCost().toFixed(3)} across ${haiku.getCumulativeCalls()} Haiku calls`
+      classifier.getCumulativeCost
+        ? `\nTOTAL: $${costOf().toFixed(3)} across ${callsOf()} ${classifier.name} calls`
+        : `\nTOTAL: ${classifier.name} ran free (local — no API cost)`
     );
     await mongoose.disconnect();
   }

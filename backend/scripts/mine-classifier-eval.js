@@ -1,31 +1,41 @@
 /**
- * Evaluate Haiku against the three human-labeled fixtures and produce the
- * precision/recall numbers that decide M2 (issue #90).
+ * Evaluate a classifier against the three human-labeled fixtures and produce
+ * the precision/recall numbers that decide whether it is good enough for
+ * human-in-loop review (issue #90, extended for #114).
  *
- * For each unit, Haiku is called with:
+ * The classifier is pluggable via the CLASSIFIER env var:
+ *   CLASSIFIER=haiku   — Claude Haiku 4.5 (baseline ≈67%/69%)
+ *   CLASSIFIER=ollama  — local Qwen2.5 14B via Ollama (≈67%/67%, free/offline)
+ *
+ * For each unit, the classifier is called with:
  *   - 'answer'       : inquiry text as context + the bundled reply
  *   - 'announcement' : the message text
  *   - 'random'       : the message text, with parent (if any) as context
  *
- * Haiku "predicts positive" iff kind != 'unknown'. We compare against the
- * human 1/0 label and report precision / recall / F1 per fixture and overall,
- * plus running cost. Hard budget guard lives in the adapter; this script just
- * surfaces the running tally.
+ * It "predicts positive" iff kind != 'unknown'. We compare against the human
+ * 1/0 label and report precision / recall / F1 per fixture and overall. Cost is
+ * reported only for adapters that track it (Haiku); local adapters run free.
  *
  * Usage (from backend/):
- *   node scripts/mine-haiku-eval.js              # full run (all 3 fixtures)
- *   node scripts/mine-haiku-eval.js --limit 10   # dry-run, 10 units per fixture
- *   node scripts/mine-haiku-eval.js --only veneto
+ *   node scripts/mine-classifier-eval.js                       # Haiku, all 3 fixtures
+ *   CLASSIFIER=ollama node scripts/mine-classifier-eval.js     # local Mistral
+ *   CLASSIFIER=ollama node scripts/mine-classifier-eval.js --limit 10 --only veneto
  */
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const haiku = require('../mining/classifier/adapters/haiku');
+const { getClassifier } = require('../mining/classifier');
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
   return i !== -1 ? process.argv[i + 1] : d;
 };
+
+// Selected by CLASSIFIER env (default 'heuristic' — pass 'haiku' or 'ollama').
+// Cost helpers are no-ops for free local adapters that omit cost tracking.
+const classifier = getClassifier();
+const costOf = () => (classifier.getCumulativeCost ? classifier.getCumulativeCost() : 0);
+const callsOf = () => (classifier.getCumulativeCalls ? classifier.getCumulativeCalls() : 0);
 
 const FIXTURES = [
   { name: 'Veneto', file: '../chat-history/italy/veneto/label-sample.json' },
@@ -84,15 +94,15 @@ async function evalFixture(fx, limit) {
 
   const rows = [];
   const failed = [];
-  let startCost = haiku.getCumulativeCost();
+  let startCost = costOf();
   let i = 0;
   for (const u of slice) {
     const y = unitLabel(u);
     let r = null;
-    // Local retry on top of the SDK's own — a stubborn blip still gets a shot.
+    // Local retry on top of any the adapter does — a stubborn blip still gets a shot.
     for (let attempt = 0; attempt < 3 && !r; attempt++) {
       try {
-        r = await haiku.classify(unitInput(u));
+        r = await classifier.classify(unitInput(u));
       } catch (e) {
         if (attempt === 2) {
           failed.push({ uid: u.uid, error: e.message });
@@ -114,7 +124,7 @@ async function evalFixture(fx, limit) {
     i++;
     if (i % 25 === 0) {
       process.stdout.write(
-        `\r  ${i}/${slice.length}  ok=${rows.length} failed=${failed.length}  cost: $${(haiku.getCumulativeCost() - startCost).toFixed(3)}`
+        `\r  ${i}/${slice.length}  ok=${rows.length} failed=${failed.length}  cost: $${(costOf() - startCost).toFixed(3)}`
       );
     }
     // Light rate hygiene — keeps the connection pool calm without slowing us much.
@@ -130,7 +140,7 @@ async function evalFixture(fx, limit) {
     `[${fx.name}] precision ${(m.prec * 100).toFixed(1)}%  ` +
       `recall ${(m.rec * 100).toFixed(1)}%  F1 ${m.f1.toFixed(2)}  ` +
       `(tp=${m.tp} fp=${m.fp} fn=${m.fn} tn=${m.tn} of ${rows.length} scored)  ` +
-      `Δcost $${(haiku.getCumulativeCost() - startCost).toFixed(3)}`
+      `Δcost $${(costOf() - startCost).toFixed(3)}`
   );
   return { name: fx.name, rows, failed, metrics: m };
 }
@@ -141,7 +151,8 @@ async function main() {
   const targets = only ? FIXTURES.filter((f) => f.name.toLowerCase() === only.toLowerCase()) : FIXTURES;
   if (!targets.length) throw new Error('no fixtures matched --only ' + only);
 
-  haiku.resetCost();
+  console.log(`classifier: ${classifier.name} v${classifier.version}`);
+  if (classifier.resetCost) classifier.resetCost();
   const results = [];
   for (const fx of targets) {
     const r = await evalFixture(fx, limit);
@@ -158,13 +169,15 @@ async function main() {
     );
   }
   console.log(
-    `\nTotal: $${haiku.getCumulativeCost().toFixed(3)} across ${haiku.getCumulativeCalls()} Haiku calls`
+    classifier.getCumulativeCost
+      ? `\nTotal: $${costOf().toFixed(3)} across ${callsOf()} ${classifier.name} calls`
+      : `\n${classifier.name} ran free (local — no API cost)`
   );
 }
 
 main()
   .then(() => process.exit(0))
   .catch((e) => {
-    console.error('mine-haiku-eval failed:', e.message);
+    console.error('mine-classifier-eval failed:', e.message);
     process.exit(1);
   });

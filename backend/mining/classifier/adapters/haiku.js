@@ -135,6 +135,24 @@ function tallyCost(usage) {
   return cost;
 }
 
+// Map the schema-constrained JSON response onto the classifier interface:
+// kind ∈ {recommendation, announcement, unknown}; not-useful collapses to
+// 'unknown' so downstream gating treats it as "do not surface". Shared with the
+// ollama adapter so both engines map identically.
+function mapResult(parsed) {
+  let kind = 'unknown';
+  if (parsed.is_useful && (parsed.kind === 'announcement' || parsed.kind === 'recommendation')) {
+    kind = parsed.kind;
+  }
+  // Normalize confidence to the 0..1 the classifier interface promises. Haiku
+  // emits 0..1 already; some local models (e.g. Qwen) emit a 0..100 percentage
+  // — rescale those, then clamp anything still out of range.
+  let score = typeof parsed.confidence === 'number' ? parsed.confidence : 0;
+  if (score > 1) score = score / 100;
+  score = Math.max(0, Math.min(1, score));
+  return { kind, score, extracted: parsed.extracted || {} };
+}
+
 function buildUserContent(message) {
   if (message && message.inquiry) {
     const responder = message.responderName
@@ -188,18 +206,7 @@ async function classify(message) {
     }
   }
 
-  // Map onto the classifier interface: kind ∈ {recommendation, announcement,
-  // unknown}; not-useful collapses to 'unknown' so downstream gating treats
-  // it as "do not surface".
-  let kind = 'unknown';
-  if (parsed.is_useful && (parsed.kind === 'announcement' || parsed.kind === 'recommendation')) {
-    kind = parsed.kind;
-  }
-  return {
-    kind,
-    score: typeof parsed.confidence === 'number' ? parsed.confidence : 0,
-    extracted: parsed.extracted || {},
-  };
+  return mapResult(parsed);
 }
 
 module.exports = {
@@ -209,7 +216,11 @@ module.exports = {
   getCumulativeCost,
   getCumulativeCalls,
   resetCost,
-  // Exposed for tests / introspection.
+  // Exposed for tests / introspection and reuse by the ollama adapter, which
+  // shares the prompt, schema, input format and result mapping verbatim.
   _SYSTEM_PROMPT: SYSTEM_PROMPT,
+  _SCHEMA: SCHEMA,
   _MODEL: MODEL,
+  _buildUserContent: buildUserContent,
+  _mapResult: mapResult,
 };
