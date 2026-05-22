@@ -2,8 +2,9 @@
  * M2 #91 — batch classification runner.
  *
  * RawMessages -> buildThreads (inquiry+reply bundles + announcements) ->
- * classifier -> Candidate docs (only for units flagged useful). This is what
- * turns the working classifier into a reviewable candidate queue.
+ * prefilter (drop pure-ack / no-signal answers) -> classifier -> Candidate docs
+ * (only for units flagged useful). This is what turns the working classifier
+ * into a reviewable candidate queue.
  *
  * The classifier engine is pluggable via the CLASSIFIER env var (issue #114):
  *   CLASSIFIER=haiku   — Claude Haiku 4.5, costs API budget
@@ -14,7 +15,9 @@
  * Resumable & cheap to re-run: every verdict is cached to
  * ../chat-history/mining-cache/<chatId>.json (gitignored) keyed by the anchor
  * message id + classifier version. A crash or re-run reuses cached verdicts and
- * only re-classifies new units. The cache is keyed by version, so switching
+ * only re-classifies new units. Each entry also stores a content hash, so a
+ * reposted advert (identical text, new message id) reuses one verdict instead
+ * of a fresh classifier call. The cache is keyed by version, so switching
  * engines (haiku<->ollama) does not collide. Candidate writes upsert on
  * (chatID, anchorMessageID) — admin-set status is preserved via $setOnInsert.
  *
@@ -30,6 +33,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { runDB } = require('../database/db');
 const RawMessage = require('../database/schema/RawMessage');
@@ -37,6 +41,7 @@ const Candidate = require('../database/schema/Candidate');
 const MiningRun = require('../database/schema/MiningRun');
 const { buildThreads } = require('../mining/thread');
 const { getClassifier } = require('../mining/classifier');
+const { keepAnswerUnit } = require('../mining/prefilter');
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
@@ -44,6 +49,11 @@ const arg = (n, d) => {
 };
 const CHAT_REGION = { '1780497126': 'Veneto', '1593295268': 'Milano' };
 const CONCURRENCY = 4;
+
+// Stable fingerprint of a classifier input — lets reposted text (identical
+// content under a new message id) reuse one verdict instead of a fresh call.
+const hashInput = (input) =>
+  crypto.createHash('sha1').update(JSON.stringify(input)).digest('hex').slice(0, 16);
 
 // Selected by the CLASSIFIER env var (default 'heuristic' — pass 'haiku' or
 // 'ollama' for real classification). Cost helpers are no-ops for free local
@@ -53,13 +63,23 @@ const costOf = () => (classifier.getCumulativeCost ? classifier.getCumulativeCos
 const callsOf = () => (classifier.getCumulativeCalls ? classifier.getCumulativeCalls() : 0);
 
 // Flatten a chat's threads + announcements into classifiable candidate units.
+// Thread answers run through the pre-filter (mining/prefilter.js) — pure-ack and
+// no-signal replies are dropped here so they never reach the classifier.
+// Announcements already cleared the heuristic announcement gate and pass through.
 function unitsFromChat(all) {
   const { threads, announcements } = buildThreads(all);
   const units = [];
+  const dropped = { pureAck: 0, noSignal: 0 };
   for (const t of threads) {
     for (const a of t.answers) {
       const ids = a.messageIDs.slice().sort((x, y) => x - y);
       const text = a.messages.map((m) => m.text).join('\n');
+      const verdict = keepAnswerUnit(t.inquiry.text, text);
+      if (!verdict.keep) {
+        if (verdict.reason === 'pure-ack') dropped.pureAck++;
+        else dropped.noSignal++;
+        continue;
+      }
       units.push({
         sourceType: 'thread_answer',
         anchorMessageID: ids[0],
@@ -84,7 +104,7 @@ function unitsFromChat(all) {
       classifyInput: { text: an.text },
     });
   }
-  return units;
+  return { units, dropped };
 }
 
 async function classifyWithRetry(input) {
@@ -107,8 +127,13 @@ async function processChat(chatID, limit) {
     console.log(`[${region}] no messages — skipping`);
     return;
   }
-  let units = unitsFromChat(all);
-  console.log(`[${region}] ${all.length} messages -> ${units.length} candidate units`);
+  const { units: builtUnits, dropped } = unitsFromChat(all);
+  let units = builtUnits;
+  console.log(
+    `[${region}] ${all.length} messages -> ${units.length} units to classify ` +
+      `(prefilter dropped ${dropped.pureAck + dropped.noSignal}: ` +
+      `pure-ack ${dropped.pureAck}, no-signal ${dropped.noSignal})`
+  );
   if (limit) units = units.slice(0, limit);
 
   // Per-classifier cache file so haiku and ollama verdicts never overwrite
@@ -124,6 +149,14 @@ async function processChat(chatID, limit) {
     console.log(`[${region}] ${Object.keys(cache).length} cached verdicts loaded`);
   }
 
+  // Content-hash index over the cache — a reposted advert (identical text under
+  // a new message id) reuses one verdict instead of a fresh classifier call.
+  const byHash = new Map();
+  for (const k of Object.keys(cache)) {
+    const e = cache[k];
+    if (e && e.h && e.v === classifier.version) byHash.set(e.h, e);
+  }
+
   const run = await MiningRun.create({
     mode: 'research',
     chatID,
@@ -135,6 +168,7 @@ async function processChat(chatID, limit) {
 
   let fresh = 0,
     cached = 0,
+    deduped = 0,
     failed = 0,
     written = 0;
 
@@ -143,13 +177,21 @@ async function processChat(chatID, limit) {
     await Promise.all(
       batch.map(async (u) => {
         const key = String(u.anchorMessageID);
+        const hash = hashInput(u.classifyInput);
         let cls = cache[key] && cache[key].v === classifier.version ? cache[key] : null;
         if (cls) cached++;
-        else {
+        else if (byHash.has(hash)) {
+          // Identical content already classified (a repost) — reuse, no call.
+          const hit = byHash.get(hash);
+          cls = { kind: hit.kind, score: hit.score, extracted: hit.extracted, v: classifier.version, h: hash };
+          cache[key] = cls;
+          deduped++;
+        } else {
           try {
             const r = await classifyWithRetry(u.classifyInput);
-            cls = { kind: r.kind, score: r.score, extracted: r.extracted, v: classifier.version };
+            cls = { kind: r.kind, score: r.score, extracted: r.extracted, v: classifier.version, h: hash };
             cache[key] = cls;
+            byHash.set(hash, cls);
             fresh++;
           } catch (e) {
             failed++;
@@ -188,8 +230,8 @@ async function processChat(chatID, limit) {
     fs.writeFileSync(cacheFile, JSON.stringify(cache)); // crash-safe checkpoint
     process.stdout.write(
       `\r[${region}] ${Math.min(i + CONCURRENCY, units.length)}/${units.length}  ` +
-        `fresh=${fresh} cached=${cached} failed=${failed} candidates=${written}  ` +
-        `$${costOf().toFixed(3)}`
+        `fresh=${fresh} cached=${cached} dedup=${deduped} failed=${failed} ` +
+        `candidates=${written}  $${costOf().toFixed(3)}`
     );
   }
   process.stdout.write('\n');
@@ -197,14 +239,15 @@ async function processChat(chatID, limit) {
   run.counts = {
     ingested: all.length,
     prefiltered: units.length,
-    classified: fresh + cached,
+    classified: fresh + cached + deduped,
     candidates: written,
   };
   run.costUSD = costOf();
   run.finishedAt = new Date();
   await run.save();
   console.log(
-    `[${region}] done — ${written} candidates written, ${failed} failed, run=${run._id}`
+    `[${region}] done — ${written} candidates written, ` +
+      `${fresh} classified / ${deduped} repost-deduped / ${failed} failed, run=${run._id}`
   );
 }
 

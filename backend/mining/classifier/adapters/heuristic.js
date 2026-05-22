@@ -15,11 +15,20 @@
 // loop can tune without touching logic.
 
 const lexicon = require('../../data/profession-lexicon.json');
+// Hand-maintained mining-detection aliases (colloquial / misspelled / specialty
+// terms). Merged on top of the generated lexicon — mine-build-lexicon.js only
+// regenerates the DB-derived part, so these survive a lexicon rebuild.
+const aliases = require('../../data/profession-aliases.json');
 
 const CONFIG = {
   version: '1.1.0',
   threshold: 0.3,
-  weights: { profession: 0.45, requestIntent: 0.3, offerIntent: 0.3, contact: 0.2 },
+  weights: {
+    profession: 0.45,
+    requestIntent: 0.3,
+    offerIntent: 0.3,
+    contact: 0.2,
+  },
   inquiryFloor: 0.35, // an inquiry must clear the gate even with no other signal
   shortLenChars: 15,
   shortPenalty: 0.4,
@@ -27,16 +36,58 @@ const CONFIG = {
 };
 
 const REQUEST_CUES = [
-  'шука', 'порад', 'підкаж', 'порекоменд', 'потріб', 'треба', 'хто може',
-  'хто знає', 'хто робить', 'де знайти', 'кто може', 'кто знает', 'посоветуйте',
-  'ищу', 'нужен', 'нужна', 'нужно', 'подскажите', 'кто делает', 'порекомендуйте',
-  'cerco', 'qualcuno', 'consigli', 'mi serve', 'conoscete', 'avete',
+  'шука',
+  'порад',
+  'підкаж',
+  'порекоменд',
+  'потріб',
+  'треба',
+  'хто може',
+  'подскаж',
+  'хто знає',
+  'хто робить',
+  'де знайти',
+  'кто може',
+  'кто знает',
+  'посоветуйте',
+  'ищу',
+  'нужен',
+  'нужна',
+  'нужно',
+  'подскажите',
+  'кто делает',
+  'порекомендуйте',
+  'cerco',
+  'qualcuno',
+  'consigli',
+  'mi serve',
+  'conoscete',
+  'avete',
 ];
 const OFFER_CUES = [
-  'послуг', 'пропоную', 'виконую', 'надаю', 'працюю', 'записатися', 'запис на',
-  'мої контакт', 'телефонуйте', 'дзвоніть', 'звертайтеся', 'оказываю',
-  'предлагаю', 'услуги', 'записаться', 'обращайтесь', 'мастер по', 'майстер з',
-  'offro', 'disponibile', 'servizi', 'prezzi', 'contattatemi',
+  'послуг',
+  'пропоную',
+  'виконую',
+  'надаю',
+  'працюю',
+  'записатися',
+  'запис на',
+  'мої контакт',
+  'телефонуйте',
+  'дзвоніть',
+  'звертайтеся',
+  'оказываю',
+  'предлагаю',
+  'услуги',
+  'записаться',
+  'обращайтесь',
+  'мастер по',
+  'майстер з',
+  'offro',
+  'disponibile',
+  'servizi',
+  'prezzi',
+  'contattatemi',
 ];
 
 const PHONE_RE = /(?:\+?\d[\d\s().\-]{7,}\d)/;
@@ -54,9 +105,27 @@ function norm(s) {
 
 const STEMS = new Map();
 const TERMS = new Map();
+
+// DB-derived lexicon — already normalized + stemmed by the build script.
 for (const t of lexicon.terms) {
   TERMS.set(t.term, t.profId);
   if (t.stem && t.stem.length >= 5) STEMS.set(t.stem, t.profId);
+}
+
+// Curated aliases — { aliases: { profId: { ru: [...], ua: [...], it: [...] } } }.
+// Stem rule mirrors mine-build-lexicon.js (drop last 2 chars for words >=6);
+// stems under 5 chars are not indexed for prefix matching (too ambiguous).
+function registerAlias(rawTerm, profId) {
+  const term = norm(rawTerm);
+  if (!term) return;
+  TERMS.set(term, profId);
+  const stem = term.length >= 6 ? term.slice(0, -2) : term;
+  if (stem.length >= 5) STEMS.set(stem, profId);
+}
+for (const [profId, byLang] of Object.entries(aliases.aliases || {})) {
+  for (const list of Object.values(byLang)) {
+    for (const raw of list) registerAlias(raw, profId);
+  }
 }
 
 function matchProfession(normText) {
@@ -125,4 +194,10 @@ async function classify(message) {
   return { kind: a.kind, score: a.score, extracted };
 }
 
-module.exports = { name: 'heuristic', version: CONFIG.version, CONFIG, classify, analyze };
+module.exports = {
+  name: 'heuristic',
+  version: CONFIG.version,
+  CONFIG,
+  classify,
+  analyze,
+};
