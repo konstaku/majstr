@@ -8,7 +8,9 @@
  * One candidate per screen: message text + inquiry + a t.me deep link to the
  * original (to fetch a contact), and editable Name / Profession / City /
  * Contacts / Description pre-filled from Haiku's extraction. Approve requires a
- * complete card — name + profession + city + >=1 contact.
+ * complete card — name + profession + city + >=1 contact — and publishes it
+ * live: the Master is created `approved` (the review IS the quality gate) with
+ * a MasterAudit entry. Decline marks the candidate.
  *
  * Usage (from backend/):
  *   node scripts/mine-review.js [--port 4102] [--miningDb majstr_mining]
@@ -21,6 +23,7 @@ const { runDB } = require('../database/db');
 const Master = require('../database/schema/Master');
 const Profession = require('../database/schema/Profession');
 const Location = require('../database/schema/Location');
+const MasterAudit = require('../database/schema/MasterAudit');
 const CandidateModel = require('../database/schema/Candidate');
 
 const arg = (n, d) => {
@@ -143,7 +146,7 @@ function render(){
  $('cc').textContent=approved;$('cd').textContent=declined;
  const total=Q.length;$('cl').textContent=total-i;
  if(i>=Q.length){$('main').innerHTML='<div class="done">All '+Q.length+' candidates reviewed.<br>'+
-   approved+' approved → pending Masters in production.</div>';$('pg').style.width='100%';return;}
+   approved+' published live on the site.</div>';$('pg').style.width='100%';return;}
  const c=Q[i];$('ix').textContent=i+1;$('tot').textContent=Q.length;$('pg').style.width=(100*i/Q.length)+'%';
  const e=c.extracted||{};
  let h='<div class="src"><span class="tag">'+c.kind+'</span><span class="tag">'+c.sourceType+'</span>'+
@@ -165,7 +168,7 @@ function render(){
  h+='<div class="warn" id="warn"></div>';
  h+='<div class="actions"><button class="dec" onclick="decline()">Decline</button>'+
    '<button class="skip" onclick="i++;render()">Skip</button>'+
-   '<button class="app" id="appBtn" onclick="approve()">Approve → pending Master</button></div></div>';
+   '<button class="app" id="appBtn" onclick="approve()">Approve → publish live</button></div></div>';
  $('main').innerHTML=h;
  ['f_name','f_prof','f_loc'].forEach(id=>$(id).addEventListener('input',sync));
  sync();
@@ -227,6 +230,8 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(404);
         return res.end('{"ok":false}');
       }
+      const now = new Date();
+      // The review IS the quality gate — publish live (status: 'approved').
       const created = await Master.create({
         name: master.name,
         professionID: master.professionID,
@@ -235,17 +240,28 @@ const server = http.createServer(async (req, res) => {
         contacts: master.contacts,
         about: master.about || '',
         source: 'scraped',
-        status: 'pending',
+        status: 'approved',
         claimable: true,
-        submittedAt: new Date(),
+        submittedAt: now,
+        approvedAt: now,
         sourceMetadata: {
           chatID: cand.chatID,
           anchorMessageID: cand.anchorMessageID,
           candidateRef: String(cand._id),
           classifierName: cand.classifierName,
           classifierVersion: cand.classifierVersion,
-          scrapedAt: new Date(),
+          scrapedAt: now,
         },
+      });
+      await MasterAudit.create({
+        masterID: created._id,
+        actorTelegramID: process.env.TELEGRAM_ADMIN_CHAT_ID
+          ? Number(process.env.TELEGRAM_ADMIN_CHAT_ID)
+          : undefined,
+        action: 'approve',
+        from: null,
+        to: 'approved',
+        reason: 'mining-review',
       });
       await Candidate.updateOne(
         { _id: id },
