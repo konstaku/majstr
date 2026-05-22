@@ -14,7 +14,9 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
-const VERSION = '1.2.0';
+// 1.3.0 — a bare "I'll DM you the contact" promise (no name, no link) is no
+// longer useful: nothing about a master is captured publicly.
+const VERSION = '1.3.0';
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 512;
 
@@ -38,11 +40,12 @@ const SYSTEM_PROMPT =
   'Service-list adverts with profession + location count as useful even without ' +
   'a phone (an admin can fetch the contact from the original post).\n\n' +
   'When the input is an inquiry + a bundled reply, ALSO flag as useful when ' +
-  'the responder clearly indicates they have a specific master to share — ' +
-  'naming a person ("Maxim is great"), attaching a profile/URL, or saying ' +
-  'they will send the contact privately ("пишу в особисті", "написала вам", ' +
-  '"можу дати контакт"). The asker would consider the answer valuable even ' +
-  'if the contact itself is shared off-channel.\n\n' +
+  'the reply PUBLICLY surfaces a specific master — naming a person ("Maxim is ' +
+  'great") or attaching their profile/URL. A reply where the responder only ' +
+  'PROMISES to share a contact privately ("написала вам", "пишу в особисті", ' +
+  '"можу дати контакт", "скину в приват") WITHOUT naming the specialist or ' +
+  'posting a link is NOT useful — nothing about a master is captured, and the ' +
+  'exchange happens off-channel where it cannot be recorded.\n\n' +
   'SELF-OFFERING RESPONDER: when the responder offers their OWN service in ' +
   'reply to an inquiry ("я можу допомогти", "я майстер", "пишіть мені", "роблю ' +
   'це сам") they ARE the specialist. Flag as useful and set extracted.name to ' +
@@ -55,6 +58,7 @@ const SYSTEM_PROMPT =
   '- Retail shops / store recommendations / generic product tips\n' +
   '- Out-of-context contacts (a phone number with no profession or context)\n' +
   '- General chatter, greetings, complaints, thanks/praise without naming a specialist\n' +
+  '- A bare promise to share a contact privately, with no specialist named and no link\n' +
   '- Unanswered questions; comments unrelated to finding a specialist\n\n' +
   'Extract fields verbatim from the source text; use null when absent. Respond ' +
   'strictly in the JSON schema.';

@@ -26,7 +26,9 @@
 
 const haiku = require('./haiku');
 
-const VERSION = '1.0.0';
+// 1.1.0 — tracks the shared SYSTEM_PROMPT change in haiku.js v1.3.0
+// (private-contact-promise replies are no longer classified useful).
+const VERSION = '1.1.0';
 const MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:14b';
 const HOST = (process.env.OLLAMA_HOST || 'http://localhost:11434').replace(/\/$/, '');
 const TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 120000);

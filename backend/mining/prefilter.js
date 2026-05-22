@@ -1,62 +1,64 @@
 'use strict';
 
-// Pre-classification filters — trim obvious noise BEFORE the LLM stage. This is
-// the volume lever for the slow local (Ollama) path: ~94% of units historically
+// Pre-classification filter — trims obvious noise BEFORE the LLM stage. The
+// volume lever for the slow local (Ollama) path: ~94% of units historically
 // came back "unknown", so cheaply dropping the most certain noise saves hours.
 //
 // Applied to thread-ANSWER units only. Standalone announcements already cleared
 // the heuristic announcement gate and pass through untouched.
 //
-// Conservative by design — recall is verified by scripts/mine-prefilter-eval.js
-// (labeled fixtures) AND against real classified candidates. The "no-signal"
-// rule deliberately KEEPS the "I'll DM you the contact" pattern (написала вам,
-// можу дати контакт): the classifier's USEFUL bar explicitly rewards a responder
-// who signals they have a master to share off-channel, so a reply can be a real
-// lead while carrying almost no extractable text.
+// Division of labour:
+//   - This filter is a SAFE volume cut. It keeps anything that plausibly points
+//     at a specialist and only drops threads with no specialist signal at all.
+//   - The CLASSIFIER (with its system prompt) is the precision gate. In
+//     particular it — not this filter — rejects the "I'll DM you the contact"
+//     pattern ("написала вам", "можу дати контакт"): that needs full context,
+//     so such replies may still reach the classifier and be rejected there.
 //
-// Two rules:
-//   pure-ack         — the answer is only acknowledgement / chatter / bump
-//                      words or emoji; no contact, link, profession or cue.
-//   no-thread-signal — no profession word anywhere (inquiry OR answer), and the
-//                      answer has no contact, no link, and no lead cue.
+// A thread answer is kept when it has any specialist signal:
+//   - a profession word in the answer OR the inquiry (heuristic lexicon)
+//   - a contact (phone / @handle) in the answer
+//   - a link or a social-platform mention in the answer
+//   - a self-offer — the responder offering their own service
+// Otherwise it is dropped: `pure-ack` (only chatter/emoji) or `no-thread-signal`.
+//
+// Recall is verified by scripts/mine-prefilter-eval.js (labeled fixtures) and
+// against real classified candidates.
 
 const { analyze } = require('./classifier/adapters/heuristic');
 
-// Acknowledgement / chatter / bump words — UA, RU, IT, EN. Lowercased; matched
-// whole-word. A reply made up entirely of these has nothing to extract.
+// Acknowledgement / chatter / bump words — UA, RU, IT, EN. Lowercased.
 const ACK_WORDS = new Set([
-  // Ukrainian
   'дякую', 'дяки', 'дякс', 'дякуючи', 'подяка', 'прошу', 'будь', 'ласка',
   'добре', 'гаразд', 'зрозуміло', 'ясно', 'так', 'ні', 'ага', 'угу',
   'актуально', 'неактуально', 'плюс', 'плюсую', 'плюсуюсь', 'підніму',
   'піднімаю', 'ап', 'вгору', 'дуже',
-  // Russian
   'спасибо', 'спс', 'спасиб', 'спасибки', 'спасибочки', 'благодарю',
   'пожалуйста', 'хорошо', 'понятно', 'согласна', 'согласен', 'да', 'нет',
   'поддерживаю', 'тоже', 'вверх', 'поднимаю', 'очень',
-  // Italian / English / generic
   'grazie', 'prego', 'certo', 'ok', 'okay', 'si', 'thanks', 'thank', 'ty',
   'yes', 'no', 'please', 'up', 'bump', 'plus',
 ]);
 
-// Lead cues — substrings whose presence in a reply means it MAY carry a lead,
-// even with no profession word or inline contact. Matched on lowercased text.
-//   share-privately : responder will hand over a contact off-channel
-//   recommends      : responder is recommending / pointing to someone
-//   self-offer      : responder offers their own service / help
-const LEAD_CUES = [
-  // will share a contact privately
-  'написал', 'напиш', 'пишу ', 'пишіть', 'пишите', 'в особист', 'в лічк',
-  'в личк', 'в приват', 'в лс', 'в дірект', 'в директ', 'скину', 'скинул',
-  'надішл', 'надсил', 'відправл', 'отправл', 'кину контакт', 'кину в',
-  'дам контакт', 'дати контакт', 'дам номер', 'можу дати', 'дам вам', 'дам тобі',
-  // recommends / points to someone
-  'рекоменд', 'раджу', 'пораджу', 'звертайс', 'звернись', 'обращайс',
-  'скористал', 'користувал', 'послуг',
-  // offers their own service / help
-  'можу допомог', 'допоможу', 'працю', 'роблю', 'виконую', 'надаю',
-  'підвезу', 'завезу', 'заберу', 'доставлю', 'перевезу', 'можу зробити',
-  'можу провести', 'звертайтесь',
+// Self-offer cues — the responder offering THEIR OWN service / help. They are
+// the specialist (named by their display name). Substring-matched on lowercased
+// text. The heuristic's own OFFER_CUES (analyze().hasOffer) covers виконую /
+// надаю / працюю / оказываю / предлагаю / обращайтесь etc.; these add the
+// first-person verbs it misses.
+const SELF_OFFER_CUES = [
+  'роблю', 'робл', 'робив', 'робила', 'зробл', 'займаю', 'займаюс', 'занимаюс',
+  'даю урок', 'даю консульт', 'викладаю', 'навчаю', 'делаю',
+  'наберіть мене', 'наберите меня', 'можу допомог', 'можу зроб',
+  'можу провест', 'можу підвез', 'підвезу', 'завезу', 'заберу', 'доставлю',
+  'перевезу', 'підвозжу', 'я майстер', 'я фотограф',
+];
+
+// Social-platform mentions — a reply pointing at a public profile, even when
+// the handle is not written as a @handle or full URL ("в instagram artcake_x").
+const SOCIAL_WORDS = [
+  'instagram', 'інстаграм', 'инстаграм', 'інста', 'инста', 'insta',
+  'telegram', 'телеграм', 'телега', 'viber', 'вайбер', 'whatsapp', 'ватсап',
+  'вотсап', 'facebook', 'фейсбук', 'тікток', 'тикток', 'tiktok',
 ];
 
 const LINK_RE = /(https?:\/\/|t\.me\/|wa\.me\/|instagram\.com|facebook\.com|\bfb\.com)/i;
@@ -66,8 +68,7 @@ function words(text) {
   return String(text || '').toLowerCase().match(WORD_RE) || [];
 }
 
-// True when the text carries nothing beyond acknowledgement / chatter: either
-// no words at all (emoji / punctuation only) or every word is an ack word.
+// True when the text carries nothing beyond acknowledgement / chatter.
 function isAck(text) {
   const w = words(text);
   if (!w.length) return true;
@@ -83,18 +84,18 @@ function keepAnswerUnit(inquiryText, answerText) {
   const inq = analyze(inquiryText);
   const lower = String(answerText || '').toLowerCase();
 
-  const hasContact = ans.contacts.length > 0;
-  const hasLink = LINK_RE.test(String(answerText || ''));
   const hasProfession = !!ans.profId || !!inq.profId;
-  const hasLeadCue = LEAD_CUES.some((c) => lower.includes(c));
+  const hasContact = ans.contacts.length > 0;
+  const hasLink =
+    LINK_RE.test(String(answerText || '')) ||
+    SOCIAL_WORDS.some((s) => lower.includes(s));
+  const hasSelfOffer = ans.hasOffer || SELF_OFFER_CUES.some((c) => lower.includes(c));
 
-  if (!hasContact && !hasLink && !ans.profId && isAck(answerText)) {
-    return { keep: false, reason: 'pure-ack' };
+  if (hasProfession || hasContact || hasLink || hasSelfOffer) {
+    return { keep: true, reason: 'kept' };
   }
-  if (!hasProfession && !hasContact && !hasLink && !hasLeadCue) {
-    return { keep: false, reason: 'no-thread-signal' };
-  }
-  return { keep: true, reason: 'kept' };
+  if (isAck(answerText)) return { keep: false, reason: 'pure-ack' };
+  return { keep: false, reason: 'no-thread-signal' };
 }
 
-module.exports = { keepAnswerUnit, isAck, ACK_WORDS, LEAD_CUES };
+module.exports = { keepAnswerUnit, isAck, ACK_WORDS, SELF_OFFER_CUES };

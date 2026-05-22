@@ -4,8 +4,8 @@
  * cost. Run this whenever the filter rules or the profession lexicon change.
  *
  * The filters govern thread-ANSWER units, so this evaluates `type: 'answer'`
- * fixture units only. For each: apply keepAnswerUnit(inquiry, reply) and compare
- * the drop decision against the human useful/not-useful label.
+ * fixture units only. For each: apply keepAnswerUnit(inquiry, reply) and
+ * compare the drop decision against the human useful/not-useful label.
  *
  *   recall loss   — answer units labeled useful (1) that the filter DROPS.
  *                   These are real masters the pipeline would never see. Keep ~0.

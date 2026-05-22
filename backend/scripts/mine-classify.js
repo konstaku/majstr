@@ -2,7 +2,7 @@
  * M2 #91 — batch classification runner.
  *
  * RawMessages -> buildThreads (inquiry+reply bundles + announcements) ->
- * prefilter (drop pure-ack / no-signal answers) -> classifier -> Candidate docs
+ * prefilter (drop pure-ack / no-thread-signal answers) -> classifier -> Candidate
  * (only for units flagged useful). This is what turns the working classifier
  * into a reviewable candidate queue.
  *
@@ -64,12 +64,12 @@ const callsOf = () => (classifier.getCumulativeCalls ? classifier.getCumulativeC
 
 // Flatten a chat's threads + announcements into classifiable candidate units.
 // Thread answers run through the pre-filter (mining/prefilter.js) — pure-ack and
-// no-signal replies are dropped here so they never reach the classifier.
+// no-thread-signal replies are dropped here so they never reach the classifier.
 // Announcements already cleared the heuristic announcement gate and pass through.
 function unitsFromChat(all) {
   const { threads, announcements } = buildThreads(all);
   const units = [];
-  const dropped = { pureAck: 0, noSignal: 0 };
+  const dropped = { pureAck: 0, noLead: 0 };
   for (const t of threads) {
     for (const a of t.answers) {
       const ids = a.messageIDs.slice().sort((x, y) => x - y);
@@ -77,7 +77,7 @@ function unitsFromChat(all) {
       const verdict = keepAnswerUnit(t.inquiry.text, text);
       if (!verdict.keep) {
         if (verdict.reason === 'pure-ack') dropped.pureAck++;
-        else dropped.noSignal++;
+        else dropped.noLead++;
         continue;
       }
       units.push({
@@ -131,8 +131,8 @@ async function processChat(chatID, limit) {
   let units = builtUnits;
   console.log(
     `[${region}] ${all.length} messages -> ${units.length} units to classify ` +
-      `(prefilter dropped ${dropped.pureAck + dropped.noSignal}: ` +
-      `pure-ack ${dropped.pureAck}, no-signal ${dropped.noSignal})`
+      `(prefilter dropped ${dropped.pureAck + dropped.noLead}: ` +
+      `pure-ack ${dropped.pureAck}, no-thread-signal ${dropped.noLead})`
   );
   if (limit) units = units.slice(0, limit);
 
