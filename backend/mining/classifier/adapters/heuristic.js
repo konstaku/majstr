@@ -21,7 +21,11 @@ const lexicon = require('../../data/profession-lexicon.json');
 const aliases = require('../../data/profession-aliases.json');
 
 const CONFIG = {
-  version: '1.1.0',
+  // 1.2.0 — fix #115: a specialist self-announcement that happens to contain a
+  // request cue ("я роблю манікюр, шукаю клієнтів", "Знімаю в Мілані... Шукаю
+  // моделей") is no longer treated as an inquiry. Adds first-person offer
+  // verbs (роблю / займа / делаю / знімаю) so the offer signal actually fires.
+  version: '1.2.0',
   threshold: 0.3,
   weights: {
     profession: 0.45,
@@ -83,6 +87,15 @@ const OFFER_CUES = [
   'обращайтесь',
   'мастер по',
   'майстер з',
+  // First-person service-offer verbs (added with #115 fix). Together with the
+  // isInquiry change below they let a specialist's own post that also contains
+  // a request cue ("Знімаю в Мілані... Шукаю моделей") be filed as an
+  // announcement instead of an inquiry-anchor.
+  'роблю',
+  'роблять',
+  'займа',
+  'делаю',
+  'знімаю',
   'offro',
   'disponibile',
   'servizi',
@@ -164,7 +177,11 @@ function analyze(rawText) {
   const hasOffer = anyCue(text, OFFER_CUES);
   const contacts = extractContacts(raw);
   const hasContact = contacts.length > 0;
-  const isInquiry = hasRequest && !(hasOffer && hasContact);
+  // A message with strong offer signal is a self-announcement, not an inquiry
+  // — even if it also contains a request cue ("шукаю клієнтів" inside a
+  // specialist's own post). Without this exclusion, buildThreads anchors a
+  // thread on the announcement and the specialist is never classified (#115).
+  const isInquiry = hasRequest && !(hasOffer && (hasContact || profId));
 
   let score = 0;
   if (profId) score += w.profession;
