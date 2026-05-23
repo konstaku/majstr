@@ -20,7 +20,17 @@ const { getDraft, patchDraft, deleteDraft, submitDraft, getMine } = require('./r
 const { uploadDraftPhoto, uploadDraftPhotoFromTelegram } = require('./routes/photo');
 const { patchDraftLimiter, submitDraftLimiter, photoUploadLimiter, claimsLimiter } = require('./middleware/draftRateLimiter');
 const { submitClaim, getMyClaims, withdrawClaim } = require('./routes/claims');
-const { createProfession, createProfCategory, createLocation } = require('./routes/referenceAdmin');
+const {
+  createProfession,
+  createProfCategory,
+  createLocation,
+  rebuildLexicon,
+} = require('./routes/referenceAdmin');
+const {
+  listCandidates,
+  acceptCandidate,
+  declineCandidate,
+} = require('./routes/miningReview');
 
 const PORT_NUMBER = process.env.PORT || 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
@@ -117,6 +127,24 @@ async function main() {
   app.post('/api/reference/professions', requireUser, requireAdmin, createProfession);
   app.post('/api/reference/prof-categories', requireUser, requireAdmin, createProfCategory);
   app.post('/api/reference/locations', requireUser, requireAdmin, createLocation);
+  // Explicit "Rebuild lexicon" — call after a batch of profession creates so
+  // the mining heuristic picks up the new terms (#116 follow-up).
+  app.post('/api/admin/lexicon/rebuild', requireUser, requireAdmin, rebuildLexicon);
+
+  // Mining review queue (#93 / #94) — admin dashboard backend.
+  app.get('/api/mining/candidates', requireUser, requireAdmin, listCandidates);
+  app.post(
+    '/api/mining/candidates/:id/accept',
+    requireUser,
+    requireAdmin,
+    acceptCandidate
+  );
+  app.post(
+    '/api/mining/candidates/:id/decline',
+    requireUser,
+    requireAdmin,
+    declineCandidate
+  );
 
   const server = httpsOptions
     ? https.createServer(httpsOptions, app)

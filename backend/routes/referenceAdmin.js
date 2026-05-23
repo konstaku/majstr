@@ -15,6 +15,10 @@
 // backend/mining/data/profession-aliases.json is the place to add detection
 // signals (UA/RU/IT colloquial forms) for newly-created professions.
 
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
 const Profession = require('../database/schema/Profession');
 const ProfCategory = require('../database/schema/ProfCategory');
 const Location = require('../database/schema/Location');
@@ -133,10 +137,87 @@ async function createLocation(req, res) {
   res.status(201).json(created);
 }
 
+// ---------------------------------------------------------------------------
+// Lexicon rebuild — explicit endpoint the M3 dashboard calls after a batch of
+// profession creates. Spawns mine-build-lexicon.js, waits for it, returns the
+// resulting counts. Single-flight: a second concurrent request returns 409.
+//
+// Why explicit (chosen over auto-spawn on every create):
+//   - Lets the admin batch N creates and rebuild once.
+//   - Makes success/failure visible in the dashboard, not just server logs.
+//   - Avoids surprise rebuilds during dev sessions.
+
+const LEXICON_PATH = path.join(__dirname, '..', 'mining', 'data', 'profession-lexicon.json');
+const BUILD_SCRIPT = path.join(__dirname, '..', 'scripts', 'mine-build-lexicon.js');
+const BUILD_CWD = path.join(__dirname, '..');
+const BUILD_TIMEOUT_MS = 60_000;
+
+let rebuildInFlight = null;
+
+async function rebuildLexicon(req, res) {
+  if (rebuildInFlight) {
+    return res.status(409).json({
+      error: 'rebuild_in_progress',
+      startedAt: rebuildInFlight.startedAt,
+    });
+  }
+  const startedAt = new Date();
+  rebuildInFlight = { startedAt };
+  const t0 = Date.now();
+
+  // mine-build-lexicon.js needs the default DB (reference collections live
+  // there, not in majstr_mining). Scrub the override so a dev API process
+  // running against the mining DB doesn't blast the lexicon with an empty one.
+  const env = { ...process.env };
+  delete env.MONGO_DB_NAME;
+
+  try {
+    await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [BUILD_SCRIPT], {
+        cwd: BUILD_CWD,
+        env,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: BUILD_TIMEOUT_MS,
+      });
+      let stdout = '';
+      let stderr = '';
+      child.stdout.on('data', (d) => (stdout += d.toString()));
+      child.stderr.on('data', (d) => (stderr += d.toString()));
+      child.on('error', reject);
+      child.on('close', (code) => {
+        if (code === 0) return resolve({ stdout, stderr });
+        reject(new Error(`build-lexicon exited ${code}: ${(stderr || stdout).trim().slice(0, 400)}`));
+      });
+    });
+
+    // Read the freshly-written artifact for counts the dashboard can show.
+    const lex = JSON.parse(fs.readFileSync(LEXICON_PATH, 'utf8'));
+    const ms = Date.now() - t0;
+    console.log(
+      `[refAdmin] lexicon rebuilt by user ${req.user._id}: ` +
+        `${lex.professionCount} professions, ${lex.termCount} terms in ${ms}ms`
+    );
+    res.json({
+      ok: true,
+      professions: lex.professionCount,
+      terms: lex.termCount,
+      generatedAt: lex.generatedAt,
+      ms,
+    });
+  } catch (err) {
+    const ms = Date.now() - t0;
+    console.error('[refAdmin] lexicon rebuild failed:', err.message);
+    res.status(500).json({ ok: false, error: err.message, ms });
+  } finally {
+    rebuildInFlight = null;
+  }
+}
+
 module.exports = {
   createProfession,
   createProfCategory,
   createLocation,
+  rebuildLexicon,
   // Exported for tests / introspection.
   _slugify: slugify,
   _sanitizeName: sanitizeName,
