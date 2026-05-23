@@ -22,9 +22,19 @@ const mongoose = require('mongoose');
 const { runDB } = require('../database/db');
 const Master = require('../database/schema/Master');
 const Profession = require('../database/schema/Profession');
+const ProfCategory = require('../database/schema/ProfCategory');
 const Location = require('../database/schema/Location');
+const Country = require('../database/schema/Country');
 const MasterAudit = require('../database/schema/MasterAudit');
 const CandidateModel = require('../database/schema/Candidate');
+// Reuse the same create logic the API uses, so the CLI and dashboard stay in
+// sync on validation, slugging, duplicate-detection and the rebuild mutex.
+const {
+  createProfessionDoc,
+  createProfCategoryDoc,
+  createLocationDoc,
+  runLexiconRebuild,
+} = require('../routes/referenceAdmin');
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
@@ -53,7 +63,16 @@ function matchRef(text, refs, langs) {
   return '';
 }
 
-let Candidate, professions, locations;
+let Candidate, professions, locations, categories, countries;
+
+async function reloadRefs() {
+  [professions, locations, categories, countries] = await Promise.all([
+    Profession.find().lean(),
+    Location.find().lean(),
+    ProfCategory.find().lean(),
+    Country.find().lean(),
+  ]);
+}
 
 async function getData() {
   const candidates = await Candidate.find({ status: 'new' })
@@ -66,6 +85,8 @@ async function getData() {
     stats: counts.reduce((a, c) => ((a[c._id] = c.n), a), {}),
     professions: professions.map((p) => ({ id: p.id, name: p.name })),
     locations: locations.map((l) => ({ id: l.id, name: l.name })),
+    categories: categories.map((c) => ({ id: c.id, name: c.name })),
+    countries: countries.map((c) => ({ id: c.id, name: c.name, flag: c.flag })),
     candidates: candidates.map((c) => ({
       id: String(c._id),
       chatID: c.chatID,
@@ -125,11 +146,26 @@ textarea{min-height:54px;resize:vertical}
 .app:disabled{background:#21343a;color:#5b6b70;cursor:not-allowed}
 .warn{color:#e3b341;font-size:12px;margin-top:8px}.done{text-align:center;padding:60px;font-size:20px}
 .hint{font-size:11px;color:#8b949e;margin-top:2px}
+.picker-row{display:flex;gap:6px}.picker-row select{flex:1}
+#rebuildBtn{margin-left:auto}
+#rebuild-msg{font-size:12px;color:#8b949e;padding:6px 18px;border-bottom:1px solid #30363d;background:#0d1117}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+.modal{background:#161b22;border:1px solid #30363d;border-radius:10px;width:100%;max-width:480px;max-height:90vh;overflow:auto;padding:16px 18px;color:#e6edf3}
+.modal h3{margin:0 0 12px;font-size:16px}
+.modal label{display:block;font-size:12px;color:#8b949e;margin:10px 0 4px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.modal-actions button{padding:8px 14px;border-radius:6px;cursor:pointer;border:0;font:inherit;font-weight:600}
+.modal-err{color:#f85149;font-size:12px;margin-top:6px;min-height:1em}
+.modal-hint{color:#8b949e;font-size:11px;margin:4px 0 0}
+.btn-go{background:#238636;color:#fff}.btn-go:disabled{background:#21343a;color:#5b6b70;cursor:not-allowed}
+.btn-cancel{background:#21262d;border:1px solid #30363d;color:#e6edf3}
 </style></head><body>
 <header><div>#<b id="ix">–</b>/<b id="tot">–</b></div>
 <div class="bar"><i id="pg" style="width:0"></i></div>
-<div>approved <b id="cc">0</b> · declined <b id="cd">0</b> · left <b id="cl">0</b></div></header>
+<div>approved <b id="cc">0</b> · declined <b id="cd">0</b> · left <b id="cl">0</b></div>
+<button class="btnsm" id="rebuildBtn" onclick="rebuildLex()" title="Regenerate the profession lexicon after creating new professions">Rebuild lexicon</button></header>
 <main id="main"></main>
+<div id="modal-root"></div>
 <script>
 let D=null,Q=[],i=0,approved=0,declined=0;
 const $=x=>document.getElementById(x);
@@ -157,10 +193,12 @@ function render(){
  h+='<a class="tg" href="'+c.tgLink+'" target="_blank">↗ open original message in Telegram (to fetch a contact)</a></div>';
  h+='<div class="form">';
  h+='<label>Name</label><input id="f_name" value="'+esc(e.name||c.responderName||'')+'">';
- h+='<label>Profession</label><select id="f_prof">'+opts(D.professions,c.suggestProfessionID)+'</select>';
- if(e.profession)h+='<div class="hint">Haiku read: “'+esc(e.profession)+'”</div>';
- h+='<label>City</label><select id="f_loc">'+opts(D.locations,c.suggestLocationID)+'</select>';
- if(e.city)h+='<div class="hint">Haiku read: “'+esc(e.city)+'”</div>';
+ h+='<label>Profession</label><div class="picker-row"><select id="f_prof">'+opts(D.professions,c.suggestProfessionID)+'</select>'+
+   '<button type="button" class="btnsm" onclick="openCreateProf()">+ Add new</button></div>';
+ if(e.profession)h+='<div class="hint">Classifier read: “'+esc(e.profession)+'”</div>';
+ h+='<label>City</label><div class="picker-row"><select id="f_loc">'+opts(D.locations,c.suggestLocationID)+'</select>'+
+   '<button type="button" class="btnsm" onclick="openCreateLoc()">+ Add new</button></div>';
+ if(e.city)h+='<div class="hint">Classifier read: “'+esc(e.city)+'”</div>';
  h+='<label>Contacts</label><div id="contacts">'+
    ((e.contacts&&e.contacts.length?e.contacts:[]).map(contactRow).join('')||'')+'</div>';
  h+='<button class="btnsm add" onclick="addContact()">+ add contact</button>';
@@ -199,6 +237,105 @@ async function approve(){
  if(r.ok){approved++;i++;render();}
  else{btn.textContent='FAILED — retry';btn.disabled=false;}
 }
+
+// ----- inline-create profession / category / city, + lexicon rebuild ------
+function langInputs(prefix,values){
+ return [['en','English (required)'],['ua','Українська'],['ru','Русский'],['it','Italiano']]
+  .map(([k,lab])=>'<label>'+lab+'</label><input id="'+prefix+'_'+k+'" value="'+esc((values&&values[k])||'')+'">').join('');
+}
+function readLangs(prefix){
+ const out={};
+ for (const k of ['en','ua','ru','it']){const el=$(prefix+'_'+k);const v=(el&&el.value||'').trim();if(v)out[k]=v;}
+ return out;
+}
+function closeModal(){$('modal-root').innerHTML='';}
+function modalShell(title,inner){
+ return '<div class="modal-bg" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">'+
+   '<h3>'+esc(title)+'</h3>'+inner+'</div></div>';
+}
+function openCreateProf(){
+ const cats=(D.categories||[]).map(c=>'<option value="'+c.id+'">'+esc(c.name.en||c.name.ua||c.id)+'</option>').join('');
+ const inner=langInputs('np',{})+
+   '<label>Category</label><div class="picker-row"><select id="np_cat"><option value="">— select —</option>'+cats+'</select>'+
+   '<button type="button" class="btnsm" onclick="openCreateCat()">+ Add</button></div>'+
+   '<p class="modal-hint">After saving a batch, click "Rebuild lexicon" so the mining heuristic recognises the new profession.</p>'+
+   '<div id="np_err" class="modal-err"></div>'+
+   '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>'+
+   '<button type="button" class="btn-go" id="np_go" onclick="submitCreateProf()">Create profession</button></div>';
+ $('modal-root').innerHTML=modalShell('New profession',inner);
+ setTimeout(()=>$('np_en').focus(),0);
+}
+async function submitCreateProf(){
+ const name=readLangs('np');const categoryID=$('np_cat').value;const err=$('np_err');err.textContent='';
+ if(!name.en){err.textContent='English name required';return;}
+ if(!categoryID){err.textContent='Pick or add a category';return;}
+ if(!name.ua&&!name.ru){err.textContent='At least one of UA/RU is required for the mining lexicon';return;}
+ const btn=$('np_go');btn.disabled=true;btn.textContent='Saving…';
+ const r=await fetch('/api/create-profession',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({categoryID,name})});
+ const data=await r.json();btn.disabled=false;btn.textContent='Create profession';
+ if(!r.ok){err.textContent='Failed: '+(data.error||r.status);return;}
+ D.professions.push({id:data.id,name:data.name});
+ closeModal();
+ const sel=$('f_prof');if(sel){sel.innerHTML=opts(D.professions,data.id);sel.value=data.id;}
+ sync();
+}
+function openCreateCat(){
+ const inner=langInputs('nc',{})+
+   '<div id="nc_err" class="modal-err"></div>'+
+   '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>'+
+   '<button type="button" class="btn-go" id="nc_go" onclick="submitCreateCat()">Create category</button></div>';
+ $('modal-root').innerHTML=modalShell('New category',inner);
+ setTimeout(()=>$('nc_en').focus(),0);
+}
+async function submitCreateCat(){
+ const name=readLangs('nc');const err=$('nc_err');err.textContent='';
+ if(!name.en){err.textContent='English name required';return;}
+ const btn=$('nc_go');btn.disabled=true;btn.textContent='Saving…';
+ const r=await fetch('/api/create-category',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name})});
+ const data=await r.json();btn.disabled=false;btn.textContent='Create category';
+ if(!r.ok){err.textContent='Failed: '+(data.error||r.status);return;}
+ if(!D.categories)D.categories=[];
+ D.categories.push({id:data.id,name:data.name});
+ // re-open profession modal with the fresh category pre-selected
+ openCreateProf();
+ setTimeout(()=>{const s=$('np_cat');if(s)s.value=data.id;},0);
+}
+function openCreateLoc(){
+ const cs=(D.countries||[]).map(c=>'<option value="'+c.id+'">'+(c.flag?c.flag+' ':'')+esc(c.name.en||c.name.ua||c.id)+'</option>').join('');
+ const inner=langInputs('nl',{})+
+   '<label>Country</label><select id="nl_country"><option value="">— select —</option>'+cs+'</select>'+
+   '<div id="nl_err" class="modal-err"></div>'+
+   '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>'+
+   '<button type="button" class="btn-go" id="nl_go" onclick="submitCreateLoc()">Create city</button></div>';
+ $('modal-root').innerHTML=modalShell('New city',inner);
+ setTimeout(()=>{$('nl_country').value='IT';$('nl_en').focus();},0);
+}
+async function submitCreateLoc(){
+ const name=readLangs('nl');const countryID=$('nl_country').value;const err=$('nl_err');err.textContent='';
+ if(!name.en){err.textContent='English name required';return;}
+ if(!countryID){err.textContent='Pick a country';return;}
+ const btn=$('nl_go');btn.disabled=true;btn.textContent='Saving…';
+ const r=await fetch('/api/create-location',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({countryID,name})});
+ const data=await r.json();btn.disabled=false;btn.textContent='Create city';
+ if(!r.ok){err.textContent='Failed: '+(data.error||r.status);return;}
+ D.locations.push({id:data.id,name:data.name});
+ closeModal();
+ const sel=$('f_loc');if(sel){sel.innerHTML=opts(D.locations,data.id);sel.value=data.id;}
+ sync();
+}
+async function rebuildLex(){
+ const btn=$('rebuildBtn');btn.disabled=true;const orig=btn.textContent;btn.textContent='Rebuilding…';
+ let msgEl=$('rebuild-msg');
+ if(!msgEl){msgEl=document.createElement('div');msgEl.id='rebuild-msg';document.body.insertBefore(msgEl,document.querySelector('main'));}
+ msgEl.textContent='Rebuilding lexicon…';
+ try{
+  const r=await fetch('/api/rebuild-lexicon',{method:'POST'});
+  const data=await r.json();
+  if(r.ok)msgEl.textContent='✓ Lexicon rebuilt: '+data.professions+' professions → '+data.terms+' terms ('+data.ms+'ms)';
+  else msgEl.textContent='✗ Rebuild failed: '+(data.error||'unknown');
+ }catch(e){msgEl.textContent='✗ Rebuild failed: '+e.message;}
+ btn.disabled=false;btn.textContent=orig;
+}
 document.addEventListener('keydown',e=>{
  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
  if(e.key==='ArrowLeft')decline();
@@ -216,6 +353,57 @@ const server = http.createServer(async (req, res) => {
     if (req.url === '/api/data') {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(await getData()));
+    }
+    // --- inline create reference data ----------------------------------
+    if (req.url === '/api/create-category' && req.method === 'POST') {
+      try {
+        const created = await createProfCategoryDoc(await body(req));
+        await reloadRefs();
+        res.writeHead(201, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify(created));
+      } catch (e) {
+        const code = e.code === 'duplicate' ? 409 : 400;
+        res.writeHead(code, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify({ error: e.message, existing: e.existing }));
+      }
+    }
+    if (req.url === '/api/create-profession' && req.method === 'POST') {
+      try {
+        const created = await createProfessionDoc(await body(req));
+        await reloadRefs();
+        res.writeHead(201, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify(created));
+      } catch (e) {
+        const code = e.code === 'duplicate' ? 409 : 400;
+        res.writeHead(code, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify({ error: e.message, existing: e.existing }));
+      }
+    }
+    if (req.url === '/api/create-location' && req.method === 'POST') {
+      try {
+        const created = await createLocationDoc(await body(req));
+        await reloadRefs();
+        res.writeHead(201, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify(created));
+      } catch (e) {
+        const code = e.code === 'duplicate' ? 409 : 400;
+        res.writeHead(code, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify({ error: e.message, existing: e.existing }));
+      }
+    }
+    if (req.url === '/api/rebuild-lexicon' && req.method === 'POST') {
+      try {
+        const r = await runLexiconRebuild();
+        console.log(
+          `[mine-review] lexicon rebuilt: ${r.professions} professions, ${r.terms} terms in ${r.ms}ms`
+        );
+        res.writeHead(200, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify({ ok: true, ...r }));
+      } catch (e) {
+        const code = e.code === 'in_progress' ? 409 : 500;
+        res.writeHead(code, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
     }
     if (req.url === '/api/decline' && req.method === 'POST') {
       const { id } = await body(req);
@@ -283,8 +471,7 @@ async function main() {
   await runDB(); // default connection -> production DB
   const miningConn = mongoose.connection.useDb(MINING_DB);
   Candidate = miningConn.model('Candidate', CandidateModel.schema);
-  professions = await Profession.find().lean();
-  locations = await Location.find().lean();
+  await reloadRefs();
   if (!professions.length || !locations.length) {
     throw new Error('No reference data in the default DB — wrong DB target?');
   }

@@ -1,19 +1,18 @@
 'use strict';
 
-// Admin-only create endpoints for reference data (issue #116). Lets the M3
-// review dashboard add a Profession / ProfCategory / Location on the fly when
-// the candidate doesn't match an existing entry. Read endpoints stay on
-// index.js — this file is the write side.
+// Admin-only reference-data create + lexicon rebuild — used by:
+//   - the API (Express endpoints below, wired in index.js)
+//   - the CLI review tool (scripts/mine-review.js)
 //
-// All endpoints require an authenticated admin (requireUser + requireAdmin).
+// The business logic lives in the `*Doc` / `runLexiconRebuild` functions so
+// both callers share validation, slugging, dedup and the in-flight mutex.
+// The Express handlers are thin wrappers that map thrown errors → HTTP codes.
 //
-// After a Profession (or Category) is created, the mining heuristic only
-// recognises it once `node scripts/mine-build-lexicon.js` regenerates
-// backend/mining/data/profession-lexicon.json. We log a reminder rather than
-// auto-spawning the rebuild — environments differ and a silent failure here
-// would surprise an admin. The hand-maintained
-// backend/mining/data/profession-aliases.json is the place to add detection
-// signals (UA/RU/IT colloquial forms) for newly-created professions.
+// Errors thrown by the core functions carry a `code` for the wrappers:
+//   'validation'    -> HTTP 400
+//   'duplicate'     -> HTTP 409 (with `existing` attached)
+//   'in_progress'   -> HTTP 409 (rebuild only)
+//   'build_failed'  -> HTTP 500 (rebuild only)
 
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -25,6 +24,10 @@ const Location = require('../database/schema/Location');
 const Country = require('../database/schema/Country');
 
 const SUPPORTED_LANGS = ['ua', 'en', 'ru', 'it', 'pt', 'de', 'fr', 'tr', 'es'];
+
+function refError(message, code, extra = {}) {
+  return Object.assign(new Error(message), { code, ...extra });
+}
 
 // Slug like "auto_electrician" — matches the existing id convention in the
 // Profession / ProfCategory / Location collections.
@@ -38,8 +41,6 @@ function slugify(text, maxLen = 40) {
     .slice(0, maxLen);
 }
 
-// Lift, validate and normalize a `name` payload. Returns either a sanitized
-// object (only known lang keys, trimmed, non-empty) or an error string.
 function sanitizeName(rawName, { extraLangs = [] } = {}) {
   if (!rawName || typeof rawName !== 'object') {
     return { error: 'name object required' };
@@ -56,7 +57,6 @@ function sanitizeName(rawName, { extraLangs = [] } = {}) {
   return { name: out };
 }
 
-// Case-insensitive duplicate check against every language we were given.
 async function findDuplicate(Model, name, id) {
   const ors = [];
   if (id) ors.push({ id });
@@ -68,84 +68,58 @@ async function findDuplicate(Model, name, id) {
   return Model.findOne({ $or: ors }).lean();
 }
 
-async function createProfCategory(req, res) {
-  const { id: rawId, name: rawName } = req.body || {};
+// ---------------------------------------------------------------------------
+// Core functions — plain async, throw on error, return the created Mongoose doc.
+
+async function createProfCategoryDoc({ id: rawId, name: rawName } = {}) {
   const s = sanitizeName(rawName);
-  if (s.error) return res.status(400).json({ error: s.error });
-
+  if (s.error) throw refError(s.error, 'validation');
   const id = (rawId && slugify(rawId)) || slugify(s.name.en);
-  if (!id) return res.status(400).json({ error: 'could not derive id from name.en' });
-
+  if (!id) throw refError('could not derive id from name.en', 'validation');
   const dup = await findDuplicate(ProfCategory, s.name, id);
-  if (dup) return res.status(409).json({ error: 'duplicate', existing: dup });
-
-  const created = await ProfCategory.create({ id, name: s.name });
-  console.log(`[refAdmin] ProfCategory created: ${id} by user ${req.user._id}`);
-  res.status(201).json(created);
+  if (dup) throw refError('duplicate', 'duplicate', { existing: dup });
+  return ProfCategory.create({ id, name: s.name });
 }
 
-async function createProfession(req, res) {
-  const { id: rawId, categoryID, name: rawName } = req.body || {};
+async function createProfessionDoc({ id: rawId, categoryID, name: rawName } = {}) {
   if (!categoryID || typeof categoryID !== 'string') {
-    return res.status(400).json({ error: 'categoryID required' });
+    throw refError('categoryID required', 'validation');
   }
   const cat = await ProfCategory.findOne({ id: categoryID }).lean();
-  if (!cat) return res.status(400).json({ error: 'unknown categoryID' });
-
+  if (!cat) throw refError('unknown categoryID', 'validation');
   const s = sanitizeName(rawName);
-  if (s.error) return res.status(400).json({ error: s.error });
+  if (s.error) throw refError(s.error, 'validation');
   if (!s.name.ua && !s.name.ru) {
-    return res.status(400).json({
-      error: 'at least one of name.ua / name.ru is required (lexicon needs it)',
-    });
+    throw refError(
+      'at least one of name.ua / name.ru is required (lexicon needs it)',
+      'validation'
+    );
   }
-
   const id = (rawId && slugify(rawId)) || slugify(s.name.en);
-  if (!id) return res.status(400).json({ error: 'could not derive id from name.en' });
-
+  if (!id) throw refError('could not derive id from name.en', 'validation');
   const dup = await findDuplicate(Profession, s.name, id);
-  if (dup) return res.status(409).json({ error: 'duplicate', existing: dup });
-
-  const created = await Profession.create({ id, categoryID, name: s.name });
-  console.log(
-    `[refAdmin] Profession created: ${id} (cat=${categoryID}) by user ${req.user._id}. ` +
-      'Run `node scripts/mine-build-lexicon.js` to refresh the mining heuristic.'
-  );
-  res.status(201).json(created);
+  if (dup) throw refError('duplicate', 'duplicate', { existing: dup });
+  return Profession.create({ id, categoryID, name: s.name });
 }
 
-async function createLocation(req, res) {
-  const { id: rawId, countryID, name: rawName } = req.body || {};
+async function createLocationDoc({ id: rawId, countryID, name: rawName } = {}) {
   if (!countryID || typeof countryID !== 'string') {
-    return res.status(400).json({ error: 'countryID required' });
+    throw refError('countryID required', 'validation');
   }
   const country = await Country.findOne({ id: countryID }).lean();
-  if (!country) return res.status(400).json({ error: 'unknown countryID' });
-
-  // Location supports ua_alt / ru_alt for alternate spellings.
+  if (!country) throw refError('unknown countryID', 'validation');
   const s = sanitizeName(rawName, { extraLangs: ['ua_alt', 'ru_alt'] });
-  if (s.error) return res.status(400).json({ error: s.error });
-
+  if (s.error) throw refError(s.error, 'validation');
   const id = (rawId && slugify(rawId)) || slugify(s.name.en);
-  if (!id) return res.status(400).json({ error: 'could not derive id from name.en' });
-
+  if (!id) throw refError('could not derive id from name.en', 'validation');
   const dup = await findDuplicate(Location, s.name, id);
-  if (dup) return res.status(409).json({ error: 'duplicate', existing: dup });
-
-  const created = await Location.create({ id, countryID, name: s.name });
-  console.log(`[refAdmin] Location created: ${id} (country=${countryID}) by user ${req.user._id}`);
-  res.status(201).json(created);
+  if (dup) throw refError('duplicate', 'duplicate', { existing: dup });
+  return Location.create({ id, countryID, name: s.name });
 }
 
 // ---------------------------------------------------------------------------
-// Lexicon rebuild — explicit endpoint the M3 dashboard calls after a batch of
-// profession creates. Spawns mine-build-lexicon.js, waits for it, returns the
-// resulting counts. Single-flight: a second concurrent request returns 409.
-//
-// Why explicit (chosen over auto-spawn on every create):
-//   - Lets the admin batch N creates and rebuild once.
-//   - Makes success/failure visible in the dashboard, not just server logs.
-//   - Avoids surprise rebuilds during dev sessions.
+// Lexicon rebuild — single-flight, env-scrubbed spawn of mine-build-lexicon.js.
+// Shared mutex across every caller (API and CLI). Returns counts on success.
 
 const LEXICON_PATH = path.join(__dirname, '..', 'mining', 'data', 'profession-lexicon.json');
 const BUILD_SCRIPT = path.join(__dirname, '..', 'scripts', 'mine-build-lexicon.js');
@@ -154,22 +128,17 @@ const BUILD_TIMEOUT_MS = 60_000;
 
 let rebuildInFlight = null;
 
-async function rebuildLexicon(req, res) {
+async function runLexiconRebuild() {
   if (rebuildInFlight) {
-    return res.status(409).json({
-      error: 'rebuild_in_progress',
+    throw refError('rebuild_in_progress', 'in_progress', {
       startedAt: rebuildInFlight.startedAt,
     });
   }
   const startedAt = new Date();
   rebuildInFlight = { startedAt };
   const t0 = Date.now();
-
-  // mine-build-lexicon.js needs the default DB (reference collections live
-  // there, not in majstr_mining). Scrub the override so a dev API process
-  // running against the mining DB doesn't blast the lexicon with an empty one.
   const env = { ...process.env };
-  delete env.MONGO_DB_NAME;
+  delete env.MONGO_DB_NAME; // build script needs the default reference DB
 
   try {
     await new Promise((resolve, reject) => {
@@ -186,39 +155,107 @@ async function rebuildLexicon(req, res) {
       child.on('error', reject);
       child.on('close', (code) => {
         if (code === 0) return resolve({ stdout, stderr });
-        reject(new Error(`build-lexicon exited ${code}: ${(stderr || stdout).trim().slice(0, 400)}`));
+        reject(
+          refError(
+            `build-lexicon exited ${code}: ${(stderr || stdout).trim().slice(0, 400)}`,
+            'build_failed'
+          )
+        );
       });
     });
 
-    // Read the freshly-written artifact for counts the dashboard can show.
     const lex = JSON.parse(fs.readFileSync(LEXICON_PATH, 'utf8'));
-    const ms = Date.now() - t0;
-    console.log(
-      `[refAdmin] lexicon rebuilt by user ${req.user._id}: ` +
-        `${lex.professionCount} professions, ${lex.termCount} terms in ${ms}ms`
-    );
-    res.json({
-      ok: true,
+    return {
       professions: lex.professionCount,
       terms: lex.termCount,
       generatedAt: lex.generatedAt,
-      ms,
-    });
-  } catch (err) {
-    const ms = Date.now() - t0;
-    console.error('[refAdmin] lexicon rebuild failed:', err.message);
-    res.status(500).json({ ok: false, error: err.message, ms });
+      ms: Date.now() - t0,
+    };
   } finally {
     rebuildInFlight = null;
   }
 }
 
+// ---------------------------------------------------------------------------
+// Express handlers — thin wrappers that map thrown errors to HTTP codes.
+
+function actor(req) {
+  return (req.user && req.user._id) || '<unknown>';
+}
+
+function handleRefError(res, err) {
+  if (err.code === 'validation') return res.status(400).json({ error: err.message });
+  if (err.code === 'duplicate')
+    return res.status(409).json({ error: 'duplicate', existing: err.existing });
+  if (err.code === 'in_progress')
+    return res.status(409).json({ error: 'rebuild_in_progress', startedAt: err.startedAt });
+  if (err.code === 'build_failed') return res.status(500).json({ ok: false, error: err.message });
+  return res.status(500).json({ error: err.message });
+}
+
+async function createProfCategory(req, res) {
+  try {
+    const created = await createProfCategoryDoc(req.body || {});
+    console.log(`[refAdmin] ProfCategory created: ${created.id} by user ${actor(req)}`);
+    res.status(201).json(created);
+  } catch (err) {
+    handleRefError(res, err);
+  }
+}
+
+async function createProfession(req, res) {
+  try {
+    const created = await createProfessionDoc(req.body || {});
+    console.log(
+      `[refAdmin] Profession created: ${created.id} (cat=${created.categoryID}) by user ${actor(req)}. ` +
+        'Run `node scripts/mine-build-lexicon.js` (or POST /api/admin/lexicon/rebuild) to refresh the mining heuristic.'
+    );
+    res.status(201).json(created);
+  } catch (err) {
+    handleRefError(res, err);
+  }
+}
+
+async function createLocation(req, res) {
+  try {
+    const created = await createLocationDoc(req.body || {});
+    console.log(
+      `[refAdmin] Location created: ${created.id} (country=${created.countryID}) by user ${actor(req)}`
+    );
+    res.status(201).json(created);
+  } catch (err) {
+    handleRefError(res, err);
+  }
+}
+
+async function rebuildLexicon(req, res) {
+  const t0 = Date.now();
+  try {
+    const r = await runLexiconRebuild();
+    console.log(
+      `[refAdmin] lexicon rebuilt by user ${actor(req)}: ` +
+        `${r.professions} professions, ${r.terms} terms in ${r.ms}ms`
+    );
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    if (err.code === 'in_progress') return handleRefError(res, err);
+    console.error('[refAdmin] lexicon rebuild failed:', err.message);
+    res.status(500).json({ ok: false, error: err.message, ms: Date.now() - t0 });
+  }
+}
+
 module.exports = {
+  // Express handlers (mounted in index.js)
   createProfession,
   createProfCategory,
   createLocation,
   rebuildLexicon,
-  // Exported for tests / introspection.
+  // Reusable core functions (used by scripts/mine-review.js)
+  createProfessionDoc,
+  createProfCategoryDoc,
+  createLocationDoc,
+  runLexiconRebuild,
+  // Exported for tests / introspection
   _slugify: slugify,
   _sanitizeName: sanitizeName,
 };
