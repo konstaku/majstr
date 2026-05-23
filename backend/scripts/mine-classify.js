@@ -47,7 +47,11 @@ const arg = (n, d) => {
   const i = process.argv.indexOf(n);
   return i !== -1 ? process.argv[i + 1] : d;
 };
-const CHAT_REGION = { '1780497126': 'Veneto', '1593295268': 'Milano' };
+const CHAT_REGION = {
+  '1780497126': 'Veneto',
+  '1593295268': 'Milano',
+  '1310497068': 'Torino',
+};
 const CONCURRENCY = 4;
 
 // Stable fingerprint of a classifier input — lets reposted text (identical
@@ -254,7 +258,7 @@ async function processChat(chatID, limit) {
 async function main() {
   const limit = arg('--limit') ? parseInt(arg('--limit'), 10) : null;
   const only = arg('--chatId', null);
-  const chats = only ? [only] : ['1780497126', '1593295268'];
+  const chats = only ? [only] : ['1780497126', '1593295268', '1310497068'];
 
   await runDB();
   if (classifier.resetCost) classifier.resetCost();

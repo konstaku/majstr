@@ -20,6 +20,7 @@ const { getDraft, patchDraft, deleteDraft, submitDraft, getMine } = require('./r
 const { uploadDraftPhoto, uploadDraftPhotoFromTelegram } = require('./routes/photo');
 const { patchDraftLimiter, submitDraftLimiter, photoUploadLimiter, claimsLimiter } = require('./middleware/draftRateLimiter');
 const { submitClaim, getMyClaims, withdrawClaim } = require('./routes/claims');
+const { createProfession, createProfCategory, createLocation } = require('./routes/referenceAdmin');
 
 const PORT_NUMBER = process.env.PORT || 5000;
 const CERTIFICATE = process.env.CERTIFICATE_API;
@@ -110,6 +111,12 @@ async function main() {
   app.get('/api/reference/countries', async (req, res) =>
     res.json(await Country.find())
   );
+
+  // Admin-only create endpoints — let the M3 review dashboard add a new
+  // profession / category / city inline when approving a candidate (#116).
+  app.post('/api/reference/professions', requireUser, requireAdmin, createProfession);
+  app.post('/api/reference/prof-categories', requireUser, requireAdmin, createProfCategory);
+  app.post('/api/reference/locations', requireUser, requireAdmin, createLocation);
 
   const server = httpsOptions
     ? https.createServer(httpsOptions, app)
