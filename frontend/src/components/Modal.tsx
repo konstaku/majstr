@@ -4,6 +4,7 @@ import ContactsLayout from "./ContactsLayout";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
 import { transliterate } from "../helpers/transliterate";
+import Sigil from "./Sigil";
 
 import type { Master } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
@@ -80,7 +81,7 @@ export default function Modal({ master, setShowModal }: ModalProps) {
             <div className="modal-top-pattern" />
 
             <div className="modal-head-row">
-              <ModalAvatar photo={master.photo} name={displayName} />
+              <ModalAvatar photo={master.photo} seed={master._id} />
               <div className="modal-title-area">
                 <div className="modal-name">{displayName}</div>
                 <div className="modal-profession">{profName}</div>
@@ -170,7 +171,7 @@ export default function Modal({ master, setShowModal }: ModalProps) {
   );
 }
 
-function ModalAvatar({ photo, name }: { photo: string | null; name: string }) {
+function ModalAvatar({ photo, seed }: { photo: string | null; seed: string }) {
   if (photo) {
     return (
       <div
@@ -180,8 +181,8 @@ function ModalAvatar({ photo, name }: { photo: string | null; name: string }) {
     );
   }
   return (
-    <div className="modal-avatar">
-      {name ? name[0].toUpperCase() : "?"}
+    <div className="modal-avatar modal-avatar--sigil">
+      <Sigil seed={seed} size={3} />
     </div>
   );
 }

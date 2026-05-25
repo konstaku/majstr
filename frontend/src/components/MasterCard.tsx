@@ -1,8 +1,9 @@
-import { useContext, useMemo, useRef } from "react";
+import { useContext, useRef } from "react";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
 import { transliterate } from "../helpers/transliterate";
+import Sigil from "./Sigil";
 
 import type { Master } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
@@ -43,10 +44,6 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
   const displayName = lang === "uk" ? name : transliterate(name);
   const isVerified = !!photo;
 
-  const hue = useMemo(() => {
-    return (parseInt(_id.slice(-4), 16) % 360);
-  }, [_id]);
-
   const profName = localizedName(
     professions.find((p: Profession) => p.id === professionID)?.name,
     lang
@@ -56,13 +53,6 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
     locations.find((l: Location) => l.id === locationID)?.name,
     lang
   );
-
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   const hasRating = rating != null && reviewCount != null && reviewCount > 0;
 
@@ -81,11 +71,9 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
       {/* Top row: photo + identity */}
       <div className="card-top-row">
         <div
-          className="card-photo-block"
+          className={`card-photo-block${photoRef.current ? "" : " card-photo-block--sigil"}`}
           style={{
-            background: photoRef.current
-              ? "var(--ink)"
-              : `linear-gradient(135deg, hsl(${hue},45%,52%), hsl(${hue},52%,32%))`,
+            background: photoRef.current ? "var(--ink)" : "var(--cream)",
           }}
         >
           {photoRef.current ? (
@@ -97,10 +85,7 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
               <div className="card-avatar-overlay" />
             </>
           ) : (
-            <>
-              <div className="card-photo-scanlines" />
-              {initials}
-            </>
+            <Sigil seed={_id} size={3} />
           )}
           {isVerified && (
             <span className="card-verified-badge" title="Verified">✓</span>
