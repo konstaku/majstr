@@ -17,6 +17,9 @@ const Master = require('../database/schema/Master');
 const MasterAudit = require('../database/schema/MasterAudit');
 const Profession = require('../database/schema/Profession');
 const Location = require('../database/schema/Location');
+const {
+  fetchAndUploadPhotoForMaster,
+} = require('../helpers/telegramPhotoByHandle');
 
 const DECLINE_REASONS = CandidateModel.DECLINE_REASONS; // shared enum
 const STATUSES = CandidateModel.STATUS;
@@ -215,6 +218,15 @@ async function acceptCandidate(req, res) {
   cand.status = 'carded';
   cand.masterRef = created._id;
   await cand.save();
+
+  // #117 — fire-and-forget Telegram profile photo fetch for scraped masters
+  // with an @handle. The admin doesn't wait for it; if it succeeds the photo
+  // appears on the card on the next render. Any failure is logged, not thrown.
+  fetchAndUploadPhotoForMaster(created)
+    .then((url) => {
+      if (url) return Master.updateOne({ _id: created._id }, { $set: { photo: url } });
+    })
+    .catch((e) => console.error('[scraped-photo] post-accept', e.message));
 
   const MiningFeedback = miningDb.MiningFeedback();
   // Diff what the admin saved vs what the classifier extracted — the labeled

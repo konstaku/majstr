@@ -36,6 +36,9 @@ const {
   runLexiconRebuild,
 } = require('../routes/referenceAdmin');
 const { applyDedup, buildMasterIndex } = require('../mining/dedup');
+const {
+  fetchAndUploadPhotoForMaster,
+} = require('../helpers/telegramPhotoByHandle');
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
@@ -487,6 +490,13 @@ const server = http.createServer(async (req, res) => {
         { _id: id },
         { $set: { status: 'carded', masterRef: created._id } }
       );
+      // #117 — kick off the Telegram-photo fetch in the background; the admin
+      // doesn't wait. Photo is written via a follow-up Master.updateOne.
+      fetchAndUploadPhotoForMaster(created)
+        .then((url) => {
+          if (url) return Master.updateOne({ _id: created._id }, { $set: { photo: url } });
+        })
+        .catch((e) => console.error('[scraped-photo] post-approve', e.message));
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, masterId: String(created._id) }));
     }
