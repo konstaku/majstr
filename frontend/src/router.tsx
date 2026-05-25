@@ -3,6 +3,7 @@ import AddNewRecord from "./pages/AddNewRecord";
 
 import { mainRoute } from "./pages/Main";
 import { adminRoute } from "./pages/Admin";
+import { miningReviewRoute } from "./pages/MiningReview";
 import Root from "./components/Root";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
@@ -41,6 +42,10 @@ export const router = createBrowserRouter([
           {
             path: "/admin",
             ...adminRoute,
+          },
+          {
+            path: "/admin/mining",
+            ...miningReviewRoute,
           },
         ],
       },

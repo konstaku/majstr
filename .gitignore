@@ -9,4 +9,5 @@
 -backup
 /dump/
 /.claude/settings.local.json
+/chat-history/
 

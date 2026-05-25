@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Majstr is a platform for finding Ukrainian craftsmen/masters in Italy. Users authenticate via Telegram, and admins approve new master listings through the Telegram bot.
 
+## Architecture Decisions
+
+- [ADR 0001 — Telegram chat access strategy](docs/adr/0001-telegram-access.md): manual export for history backfill, GramJS (dedicated account) for live watcher only.
+- [Data-handling policy for scraped contacts](docs/data-policy.md): lawful basis, minimization, takedown, admin-review safeguard.
+
+Telegram master-mining initiative is tracked on GitHub Project #4; blockers/decisions on pinned issue konstaku/majstr#113.
+
 # Project Instructions
 
 ## Meeting Notes System

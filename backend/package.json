@@ -12,6 +12,7 @@
   "author": "Konstantin Kupriyanov",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.97.1",
     "aws-sdk": "^2.1480.0",
     "canvas": "^3.2.3",
     "cors": "^2.8.5",
