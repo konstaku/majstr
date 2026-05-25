@@ -1,31 +1,42 @@
 'use strict';
 
-// Fetch a Telegram user's profile photo by PUBLIC USERNAME (no GramJS needed).
-// Used for scraped masters whose only Telegram identifier is an @handle — we
-// don't have their numeric telegramID, so the bot.js fetchUserTelegramPhoto()
-// helper (which uses getUserProfilePhotos with a numeric user_id) doesn't apply.
+// Fetch a Telegram user's profile photo by PUBLIC USERNAME for scraped masters
+// who have never interacted with our bot. We can't use the Bot API for this:
+// `getChat('@username')` returns `chat_not_found` for any user who hasn't
+// started the bot — verified against 49 real handles, 0 of 49 succeeded.
+//
+// Working path: the t.me public profile page. https://t.me/<handle> serves
+// HTML with an `og:image` meta tag pointing to the user's profile photo on
+// the Telegram CDN (telesco.pe). For users with restrictive privacy or no
+// photo, the og:image falls back to Telegram's default logo — we filter that.
 //
 // Path:
-//   1. POST /getChat { chat_id: '@username' } -> Chat with photo.{small,big}_file_id
-//   2. POST /getFile { file_id: big_file_id }  -> file_path
-//   3. GET  /file/bot<TOKEN>/<file_path>       -> binary
-//   4. S3 upload -> scraped-photos/<masterId>.jpg
+//   1. GET https://t.me/<handle>      -> HTML page
+//   2. parse og:image meta -> CDN URL
+//   3. filter out default logo (user has no public photo)
+//   4. GET the CDN URL                -> JPEG bytes
+//   5. S3 upload -> scraped-photos/<masterId>.jpg
 //
 // Quietly tolerated failures (return { ok: false, reason }):
-//   - invalid_handle               — couldn't parse a username out of the value
-//   - chat_not_found / forbidden   — Telegram says no, getChat error
-//   - no_photo                     — user has no public profile photo
-//   - getFile_failed / download_*  — network / API errors on later steps
+//   - invalid_handle  — couldn't parse a username out of the value
+//   - page_<status>   — HTTP error fetching the t.me page (404 = no such user)
+//   - no_og_image     — page didn't contain an og:image (rare)
+//   - default_logo    — user has no public photo (default Telegram logo served)
+//   - download_<status> — network error downloading the actual image
 //
-// S3: same bucket / credentials as the existing helpers. Key namespace is
-// `scraped-photos/` to keep it separate from `userpics/` (interactive users).
+// This is web scraping, not an API. If Telegram changes the t.me page layout,
+// we adjust the regex. The Bot API path is gone — it doesn't work for our
+// use case. GramJS (#103) would be the proper API, but is not needed here.
 
 const AWS = require('aws-sdk');
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const BUCKET = process.env.S3_BUCKET || 'chupakabra-test';
+// Some servers reject default fetch UAs; spoof a normal browser.
+const USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/120.0 Safari/537.36';
 
 let _s3 = null;
 function getS3() {
@@ -35,15 +46,6 @@ function getS3() {
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
   });
   return _s3;
-}
-
-async function tgApi(method, body) {
-  const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return r.json();
 }
 
 // "@MasterX" / "https://t.me/MasterX" / "MasterX" -> "masterx"
@@ -62,36 +64,37 @@ function firstTelegramContact(master) {
   );
 }
 
+// Telegram's default profile logo for users with no public photo / private
+// account. Looks like `https://telegram.org/img/t_logo_2x.png`.
+function isDefaultLogo(url) {
+  return /telegram\.org\/img\/t_logo/i.test(String(url || ''));
+}
+
 async function fetchProfilePhotoByHandle(handle) {
-  if (!BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN not set');
   const username = normalizeHandle(handle);
   if (!username) return { ok: false, reason: 'invalid_handle' };
 
-  const chat = await tgApi('getChat', { chat_id: '@' + username });
-  if (!chat || !chat.ok) {
-    return { ok: false, reason: 'chat_' + (chat && chat.description ? slugErr(chat.description) : 'failed') };
-  }
-  const photo = chat.result && chat.result.photo;
-  if (!photo || !photo.big_file_id) return { ok: false, reason: 'no_photo' };
+  const pageRes = await fetch(`https://t.me/${username}`, {
+    headers: { 'User-Agent': USER_AGENT },
+    redirect: 'follow',
+  });
+  if (!pageRes.ok) return { ok: false, reason: 'page_' + pageRes.status };
 
-  const file = await tgApi('getFile', { file_id: photo.big_file_id });
-  if (!file || !file.ok) {
-    return { ok: false, reason: 'getfile_' + (file && file.description ? slugErr(file.description) : 'failed') };
-  }
-  const path = file.result.file_path;
-  if (!path) return { ok: false, reason: 'no_file_path' };
+  const html = await pageRes.text();
+  // og:image is the open-graph meta the t.me preview page sets to the user
+  // (or channel/bot) profile photo. Match either single or double quotes.
+  const m = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+  if (!m) return { ok: false, reason: 'no_og_image' };
+  const photoUrl = m[1];
 
-  const r = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${path}`);
+  if (isDefaultLogo(photoUrl)) {
+    return { ok: false, reason: 'default_logo' };
+  }
+
+  const r = await fetch(photoUrl, { headers: { 'User-Agent': USER_AGENT } });
   if (!r.ok) return { ok: false, reason: 'download_' + r.status };
   const buffer = Buffer.from(await r.arrayBuffer());
-  return { ok: true, buffer, handle: username };
-}
-
-function slugErr(s) {
-  return String(s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .slice(0, 40);
+  return { ok: true, buffer, handle: username, sourceUrl: photoUrl };
 }
 
 async function uploadMasterPhoto(masterId, buffer) {

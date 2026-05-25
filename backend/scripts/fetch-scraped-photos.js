@@ -28,9 +28,9 @@ function arg(name, fallback) {
 }
 
 async function main() {
-  if (!process.env.TELEGRAM_BOT_TOKEN) {
-    throw new Error('TELEGRAM_BOT_TOKEN not set');
-  }
+  // No bot token needed — the helper scrapes the public t.me preview page;
+  // the Bot API path was abandoned because it can't resolve @usernames for
+  // users who haven't started our bot (0/49 success in the first run).
   const force = process.argv.includes('--force');
   const limit = parseInt(arg('--limit', '0'), 10) || 0;
   const sleepMs = parseInt(arg('--sleep', '1000'), 10);
