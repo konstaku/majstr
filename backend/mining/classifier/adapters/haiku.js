@@ -14,9 +14,11 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
-// 1.3.0 — a bare "I'll DM you the contact" promise (no name, no link) is no
-// longer useful: nothing about a master is captured publicly.
-const VERSION = '1.3.0';
+// 1.4.0 — cross-border passenger / parcel transport between countries excluded
+// (scam-prone, not local). Local moving (trasloco, in-city furniture moves)
+// stays useful. 1.3.0: a bare "I'll DM you the contact" promise (no name, no
+// link) is no longer useful: nothing about a master is captured publicly.
+const VERSION = '1.4.0';
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 512;
 
@@ -59,6 +61,11 @@ const SYSTEM_PROMPT =
   '- Out-of-context contacts (a phone number with no profession or context)\n' +
   '- General chatter, greetings, complaints, thanks/praise without naming a specialist\n' +
   '- A bare promise to share a contact privately, with no specialist named and no link\n' +
+  '- Cross-border passenger or parcel transport between countries — buses / drivers / ' +
+  'couriers running Ukraine ↔ Italy / Europe routes, "посилки в Україну", "автобус до Львова", ' +
+  '"передачі додому", "забираю з України", trips and parcel handovers across borders. ' +
+  'These are scam-prone and not local. LOCAL moving services within Italy (a trasloco, ' +
+  'помічу з переїздом квартири, перевезу меблі по місту) ARE useful — keep those.\n' +
   '- Unanswered questions; comments unrelated to finding a specialist\n\n' +
   'Extract fields verbatim from the source text; use null when absent. Respond ' +
   'strictly in the JSON schema.';

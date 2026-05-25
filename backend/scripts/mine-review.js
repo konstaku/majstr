@@ -35,6 +35,7 @@ const {
   createLocationDoc,
   runLexiconRebuild,
 } = require('../routes/referenceAdmin');
+const { applyDedup, buildMasterIndex } = require('../mining/dedup');
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
@@ -75,19 +76,36 @@ async function reloadRefs() {
 }
 
 async function getData() {
-  const candidates = await Candidate.find({ status: 'new' })
-    .sort({ score: -1 })
-    .lean();
-  const counts = await Candidate.aggregate([
-    { $group: { _id: '$status', n: { $sum: 1 } } },
+  const [candidatesRaw, counts, liveMasters] = await Promise.all([
+    Candidate.find({ status: 'new' }).sort({ score: -1 }).lean(),
+    Candidate.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
+    // Cross-DB collision check: production Masters this candidate may already
+    // duplicate. Only `approved` (live) — declined / pending are not collisions.
+    Master.find({ status: 'approved' })
+      .select('_id name contacts professionID locationID')
+      .lean(),
   ]);
+
+  const masterIndex = buildMasterIndex(liveMasters);
+  const { reps, suppressed } = applyDedup(candidatesRaw, masterIndex);
+
+  const supByReason = {};
+  for (const s of suppressed.values()) {
+    supByReason[s.reason] = (supByReason[s.reason] || 0) + 1;
+  }
+
   return {
-    stats: counts.reduce((a, c) => ((a[c._id] = c.n), a), {}),
+    stats: {
+      ...counts.reduce((a, c) => ((a[c._id] = c.n), a), {}),
+      visible: reps.length,
+      hiddenTotal: suppressed.size,
+      hiddenBy: supByReason, // { 'duplicate-of': N, 'existing-master': N, 'cross-border-transport': N }
+    },
     professions: professions.map((p) => ({ id: p.id, name: p.name })),
     locations: locations.map((l) => ({ id: l.id, name: l.name })),
     categories: categories.map((c) => ({ id: c.id, name: c.name })),
     countries: countries.map((c) => ({ id: c.id, name: c.name, flag: c.flag })),
-    candidates: candidates.map((c) => ({
+    candidates: reps.map((c) => ({
       id: String(c._id),
       chatID: c.chatID,
       kind: c.kind,
@@ -149,6 +167,9 @@ textarea{min-height:54px;resize:vertical}
 .picker-row{display:flex;gap:6px}.picker-row select{flex:1}
 #rebuildBtn{margin-left:auto}
 #rebuild-msg{font-size:12px;color:#8b949e;padding:6px 18px;border-bottom:1px solid #30363d;background:#0d1117}
+.hidden-bar{font-size:11px;color:#8b949e;padding:6px 18px;border-bottom:1px solid #30363d;background:#0d1117}
+.hidden-bar:empty{display:none}
+.hidden-bar b{color:#e6edf3}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
 .modal{background:#161b22;border:1px solid #30363d;border-radius:10px;width:100%;max-width:480px;max-height:90vh;overflow:auto;padding:16px 18px;color:#e6edf3}
 .modal h3{margin:0 0 12px;font-size:16px}
@@ -164,6 +185,7 @@ textarea{min-height:54px;resize:vertical}
 <div class="bar"><i id="pg" style="width:0"></i></div>
 <div>approved <b id="cc">0</b> · declined <b id="cd">0</b> · left <b id="cl">0</b></div>
 <button class="btnsm" id="rebuildBtn" onclick="rebuildLex()" title="Regenerate the profession lexicon after creating new professions">Rebuild lexicon</button></header>
+<div id="hidden-bar" class="hidden-bar"></div>
 <main id="main"></main>
 <div id="modal-root"></div>
 <script>
@@ -341,7 +363,17 @@ document.addEventListener('keydown',e=>{
  if(e.key==='ArrowLeft')decline();
  if(e.key===' '){e.preventDefault();i++;render();}
 });
-fetch('/api/data').then(r=>r.json()).then(d=>{D=d;Q=d.candidates;render();});
+function updateHiddenBar(){
+ const s=(D&&D.stats)||{};const by=s.hiddenBy||{};const total=s.hiddenTotal||0;
+ const bar=$('hidden-bar');if(!bar)return;
+ if(!total){bar.innerHTML='';return;}
+ const parts=[];
+ if(by['duplicate-of'])parts.push(by['duplicate-of']+' duplicate'+(by['duplicate-of']>1?'s':''));
+ if(by['existing-master'])parts.push(by['existing-master']+' already published');
+ if(by['cross-border-transport'])parts.push(by['cross-border-transport']+' cross-border transport');
+ bar.innerHTML='<b>'+total+'</b> candidate'+(total>1?'s':'')+' hidden by dedup/policy ('+parts.join(' · ')+'). Showing '+(s.visible||0)+' to review.';
+}
+fetch('/api/data').then(r=>r.json()).then(d=>{D=d;Q=d.candidates;updateHiddenBar();render();});
 </script></body></html>`;
 
 const server = http.createServer(async (req, res) => {
