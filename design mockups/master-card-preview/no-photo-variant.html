@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Master card · sigil variant · MAJSTR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:    #0E0A06;
+    --paper:  #FFFAF0;
+    --cream:  #F4EDE0;
+    --terra:  #C84B31;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--paper); color: var(--ink); }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 56px clamp(24px, 5vw, 72px);
+  }
+  .page { max-width: 1280px; margin: 0 auto; }
+
+  /* section header — brand-kit micro-label */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink);
+    padding-bottom: 10px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--ink);
+  }
+  section + section { margin-top: 64px; }
+
+  /* ────────────────────────────────────────────────────────────
+     WEB card — 560 × 200, sigil on left, body on right
+     ──────────────────────────────────────────────────────────── */
+  .web-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .card-web {
+    width: 560px;
+    height: 200px;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    display: flex;
+    overflow: hidden;
+  }
+  .card-web .sigil-cell {
+    width: 200px;
+    height: 200px;
+    background: var(--cream);
+    border-right: 2px solid var(--ink);
+    flex: 0 0 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* the card border accounts for 2px on outer edges; the right
+       border here is the internal divider. card width = 200 + 2 + 358 ? No.
+       560 total minus 2px outer L + 2px outer R = 556 inner.
+       Left cell measured 200 from outer edge → inner cell = 200-2 = 198?
+       Figma spec: left block 200×200 visually (incl. outer border).
+       Using border-box, .card-web's outer 2px border is OUTSIDE the
+       560/200 box when box-sizing: border-box → border is part of width.
+    */
+  }
+  .card-web .sigil-cell svg {
+    width: 168px;
+    height: 168px;
+    display: block;
+  }
+
+  .card-web .body-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+  }
+  .card-web .body-inner {
+    padding: 18px 18px 0 18px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  /* big primary line — now the master's NAME */
+  .card-web .name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 26px;
+    line-height: 1.0;
+    letter-spacing: -1.04px;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  /* small secondary line — now profession · city (city in terra) */
+  .card-web .meta {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 14px;
+    line-height: 1.0;
+    letter-spacing: -0.14px;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-top: 6px;
+  }
+  .card-web .meta .sep,
+  .card-web .meta .city {
+    color: var(--terra);
+  }
+  .card-web .badges {
+    display: flex;
+    gap: 3px;
+    margin-top: 9px;
+    align-items: center;
+  }
+  /* badge base — JetBrains Mono per the brand kit (metadata family).
+     Asymmetric padding (vertical < horizontal) per the Figma reference,
+     but bumped from the spec's literal 2/5 so the vertical padding
+     reads on screen instead of being crushed. */
+  .card-web .badge {
+    padding: 4px 6px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.72px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  /* status badges sit slightly apart from the language row */
+  .card-web .badge--status { margin-left: 4px; }
+  .card-web .badge--verified {
+    background: var(--terra);
+    color: var(--paper);
+  }
+  /* "NEW" — inverted treatment so it pops without competing with the
+     terra trust signal. Same padding as solid badges (border is INSIDE
+     box-sizing border-box, so the outer footprint matches). */
+  .card-web .badge--new {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  /* Tags — muted grey (ink at 60% on paper) so the row reads as
+     metadata rather than competing with the name above. The Figma
+     export's literal value is full-ink, but the rendered Figma file
+     visibly shows the tags much lighter — matching the rendered look. */
+  .card-web .tags {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.42px;
+    color: rgba(14, 10, 6, 0.55);
+    line-height: 1.0;
+    margin-top: 9px;
+  }
+  .card-web .bottom-strip {
+    height: 36px;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+  }
+  /* Member-since stamp — metadata in JetBrains Mono (brand rule:
+     "Mono for metadata · ALL CAPS, 0.10em tracking"). The year is
+     accented in terra so the eye lands on the trust signal (longevity)
+     while the label stays calm in paper.
+     align-items: center (not baseline) so the year span doesn't shift
+     the whole block off the strip's vertical centerline. */
+  .card-web .member-since {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--paper);
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .card-web .member-since .year {
+    color: var(--terra);
+    font-weight: 600;
+  }
+  .card-web .cta {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.78px;
+    text-transform: uppercase;
+    color: var(--paper);
+    line-height: 1;
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     MOBILE card — 360 wide, sigil on top, body below
+     ──────────────────────────────────────────────────────────── */
+  .mobile-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .card-mobile {
+    width: 360px;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .card-mobile .sigil-cell {
+    width: 100%;
+    height: 223px;
+    background: var(--cream);
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-mobile .sigil-cell svg {
+    width: 167px;
+    height: 167px;
+    display: block;
+  }
+  .card-mobile .body-inner {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    /* Absorbs any extra card height (e.g. when sibling cards in a
+       wrapping flex row are taller and stretch this card to match)
+       so the bottom strip stays pinned to the card's bottom border
+       instead of leaving a paper-colored gap. */
+    flex: 1 1 auto;
+  }
+  /* big primary line — now NAME */
+  .card-mobile .name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 30px;
+    line-height: 1.0;
+    letter-spacing: -1.2px;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  /* small secondary line — profession · city (city in terra) */
+  .card-mobile .meta {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 14px;
+    line-height: 1.0;
+    letter-spacing: -0.14px;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-top: 12px;
+  }
+  .card-mobile .meta .sep,
+  .card-mobile .meta .city {
+    color: var(--terra);
+  }
+  .card-mobile .badges {
+    display: flex;
+    gap: 3px;
+    margin-top: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .card-mobile .badge {
+    padding: 4px 6px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.72px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .card-mobile .badge--status { margin-left: 4px; }
+  .card-mobile .badge--verified {
+    background: var(--terra);
+    color: var(--paper);
+  }
+  .card-mobile .badge--new {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .card-mobile .tags {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.44px;
+    color: rgba(14, 10, 6, 0.55);
+    line-height: 1.0;
+    margin-top: 10px;
+  }
+  .card-mobile .bottom-strip {
+    height: 42px;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+  }
+  .card-mobile .member-since {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--paper);
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .card-mobile .member-since .year {
+    color: var(--terra);
+    font-weight: 600;
+  }
+  .card-mobile .cta {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.78px;
+    text-transform: uppercase;
+    color: var(--paper);
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <section>
+    <div class="section-label">WEB · 560 × 200</div>
+    <div class="web-stack" id="web-stack"></div>
+  </section>
+
+  <section>
+    <div class="section-label">MOBILE · 360 × ~530</div>
+    <div class="mobile-row" id="mobile-row"></div>
+  </section>
+
+</div>
+
+<script>
+/* ────────────────────────────────────────────────────────────
+   Sigil algorithm — verbatim port from Sigil.tsx (3×3 grid)
+   ──────────────────────────────────────────────────────────── */
+const INK='#0E0A06', TERRA='#C84B31', PAPER='#FFFAF0';
+function fnv1a(s){let h=0x811c9dc5>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return h>>>0;}
+function mulberry32(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+const randInt=(r,m)=>Math.floor(r()*m);
+function buildSigil(seed,size){
+  const total=size*size, minF=size===4?6:4, maxF=size===4?10:6;
+  const rnd=mulberry32(fnv1a(seed+'|'+size));
+  const fc=minF+randInt(rnd,maxF-minF+1);
+  const idx=Array.from({length:total},(_,i)=>i);
+  for(let i=0;i<fc;i++){const j=i+randInt(rnd,total-i);[idx[i],idx[j]]=[idx[j],idx[i]];}
+  const filled=idx.slice(0,fc);
+  const tT=Math.max(1,Math.round(fc*(0.18+rnd()*0.18)));
+  const sh=filled.slice();
+  for(let i=sh.length-1;i>0;i--){const j=randInt(rnd,i+1);[sh[i],sh[j]]=[sh[j],sh[i]];}
+  const tSet=new Set(sh.slice(0,tT));
+  const SH=['square','circle','triangle','bar'];
+  return {size, cells: filled.map(i=>({idx:i,row:(i/size)|0,col:i%size,shape:SH[randInt(rnd,SH.length)],rotation:randInt(rnd,4),color:tSet.has(i)?TERRA:INK}))};
+}
+function renderSigil(seed,size=3){
+  const sp=buildSigil(seed,size), VB=100, gap=VB*0.055, pad=gap, cell=(VB-pad*2-gap*(size-1))/size;
+  const out=[];
+  for(const c of sp.cells){
+    const x=pad+c.col*(cell+gap), y=pad+c.row*(cell+gap), cx=x+cell/2, cy=y+cell/2;
+    if(c.shape==='square') out.push(`<rect x="${x}" y="${y}" width="${cell}" height="${cell}" fill="${c.color}"/>`);
+    else if(c.shape==='circle') out.push(`<circle cx="${cx}" cy="${cy}" r="${cell/2}" fill="${c.color}"/>`);
+    else if(c.shape==='triangle'){const s=cell,h=cell*Math.sqrt(3)/2;out.push(`<polygon points="${cx},${cy-h/2} ${cx+s/2},${cy+h/2} ${cx-s/2},${cy+h/2}" fill="${c.color}" transform="rotate(${c.rotation*90} ${cx} ${cy})"/>`);}
+    else{const t=cell/3;if(c.rotation%2===0)out.push(`<rect x="${x}" y="${cy-t/2}" width="${cell}" height="${t}" fill="${c.color}"/>`);else out.push(`<rect x="${cx-t/2}" y="${y}" width="${t}" height="${cell}" fill="${c.color}"/>`);}
+  }
+  return `<svg viewBox="0 0 ${VB} ${VB}" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision">${out.join('')}</svg>`;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+
+/* status: 'verified' | 'new' | null. Verified takes precedence — it's
+   the trust signal that matters most, so a master who is BOTH verified
+   and recently added shows only the verified badge. */
+const MASTERS = [
+  { id: 'm12', name: 'Mariia Savchuk',   profession: 'Fotógrafa',    city: 'Lisboa', langs: ['UA','PT','EN'], tags: ['family','branding','events'],         status: 'verified', since: 2024 },
+  { id: 'm03', name: 'Yuriy Kovalenko',  profession: 'Carpenter',    city: 'Milano', langs: ['UA','IT'],      tags: ['furniture','restoration','kitchens'], status: 'new',      since: 2026 },
+  { id: 'm08', name: 'Kateryna Olar',    profession: 'Hair stylist', city: 'Roma',   langs: ['UA','IT','EN'], tags: ['colour','cuts','weddings'],           status: null,       since: 2025 },
+];
+
+/** verified > new > none. Returns an HTML <span> badge or empty string. */
+function statusBadge(status){
+  if (status === 'verified') return `<span class="badge badge--status badge--verified">VERIFIED</span>`;
+  if (status === 'new')      return `<span class="badge badge--status badge--new">NEW</span>`;
+  return '';
+}
+
+function webCard(m){
+  const tags = m.tags.join(' · ');
+  const langs = m.langs.map(l => `<span class="badge">${l}</span>`).join('');
+  return `
+    <div class="card-web">
+      <div class="sigil-cell">${renderSigil(m.id, 3)}</div>
+      <div class="body-col">
+        <div class="body-inner">
+          <div class="name">${m.name}</div>
+          <div class="meta">${m.profession} <span class="sep">·</span> <span class="city">${m.city}</span></div>
+          <div class="badges">${langs}${statusBadge(m.status)}</div>
+          <div class="tags">${tags}</div>
+        </div>
+        <div class="bottom-strip">
+          <div class="member-since">Member since <span class="year">${m.since}</span></div>
+          <div class="cta">OPEN PROFILE &rarr;</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function mobileCard(m){
+  const tags = m.tags.join(' · ');
+  const langs = m.langs.map(l => `<span class="badge">${l}</span>`).join('');
+  return `
+    <div class="card-mobile">
+      <div class="sigil-cell">${renderSigil(m.id, 3)}</div>
+      <div class="body-inner">
+        <div class="name">${m.name}</div>
+        <div class="meta">${m.profession} <span class="sep">·</span> <span class="city">${m.city}</span></div>
+        <div class="badges">${langs}${statusBadge(m.status)}</div>
+        <div class="tags">${tags}</div>
+      </div>
+      <div class="bottom-strip">
+        <div class="member-since">Member since <span class="year">${m.since}</span></div>
+        <div class="cta">OPEN &rarr;</div>
+      </div>
+    </div>
+  `;
+}
+
+document.getElementById('web-stack').innerHTML = MASTERS.map(webCard).join('');
+document.getElementById('mobile-row').innerHTML = MASTERS.map(mobileCard).join('');
+</script>
+</body>
+</html>

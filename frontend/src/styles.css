@@ -625,284 +625,258 @@ img {
 
 /* ============================================================
    MASTER CARD — Brutalist
+   Layout matches design mockups/master-card-preview/no-photo-variant.html.
+   Web (≥640px): sigil cell left (200×200), body right with bottom
+   ink strip. Mobile: sigil cell on top, body + strip below.
+
+   NOTE on scoping: `.master-card` is shared with `MasterCardPreview`
+   and `NewMasterPreview` (admin/preview surfaces with their own
+   internal layouts). To avoid trampling those, the search-result
+   card uses the modifier `.master-card--list`, and the bare
+   `.master-card` rule below only carries the shared visual base
+   (border + bg + cursor) that all three components expect.
    ============================================================ */
 .master-card {
   --divider: var(--ink);
   background: var(--paper);
   color: var(--ink);
   border: 2px solid var(--ink);
-  max-width: 480px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
   cursor: pointer;
-  transition:
-    transform 80ms ease,
-    z-index 0ms;
+  overflow: hidden;
 }
-.master-card:hover {
+
+/* Search-result variant — the new horizontal card */
+.master-card--list {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-template-rows: 200px;
+  width: 100%;
+  max-width: 560px;
+  transition: transform 80ms ease, z-index 0ms;
+}
+.master-card--list:hover {
   transform: translate(-2px, -2px);
   z-index: 2;
 }
-.master-card.variant-ink {
-  --divider: var(--paper);
-  background: var(--ink);
-  color: var(--paper);
-}
-.master-card.variant-terra {
-  --divider: var(--paper);
-  background: var(--terra);
-  color: var(--paper);
-}
 
-/* Top row */
-.card-top-row {
-  display: flex;
-  align-items: stretch;
-  border-bottom: 2px solid var(--divider);
-}
-
-.card-photo-block {
-  width: 84px;
-  min-height: 84px;
-  flex-shrink: 0;
-  border-right: 2px solid var(--divider);
-  position: relative;
-  overflow: hidden;
+/* ── sigil cell (left on web, top on mobile) ─────────────────── */
+.master-card__sigil-cell {
+  background: var(--cream);
+  border-right: 2px solid var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
-  font-size: clamp(28px, 3vw, 35px);
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: -0.03em;
+  position: relative;
+  overflow: hidden;
 }
-
-/* Duotone photo — ink shadow + paper highlight overlay */
-.card-photo-block .card-avatar {
+/* Sigil SVG inset — matches the photo's optical inset (156/200 ≈ 78%) */
+.master-card__sigil-cell > svg.sigil {
+  width: 78%;
+  height: 78%;
+  display: block;
+}
+/* Duotone photo treatment when a photo exists */
+.master-card__photo {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 0;
   background-size: cover;
   background-position: center;
   filter: grayscale(100%) contrast(118%) brightness(102%);
   mix-blend-mode: lighten;
+  background-color: var(--ink);
 }
-/* Paper highlight cap — turns ink+lighten into true ink/paper duotone */
-.card-avatar-overlay {
+.master-card__photo-overlay {
   position: absolute;
   inset: 0;
   background: var(--paper);
   mix-blend-mode: darken;
   pointer-events: none;
-  z-index: 1;
 }
-/* Subtle scanlines on gradient placeholders */
-.card-photo-scanlines {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0 3px,
-    rgba(255, 255, 255, 0.05) 3px 4px
-  );
-  pointer-events: none;
-}
-/* Sigil — generative portrait when no photo. Hard rectangle, no radius
-   (brand rule). Fills its container. */
-.sigil {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.card-photo-block--sigil {
-  padding: 0;
-  font-size: 0;        /* suppress any inherited text styling */
-}
-.card-avatar--sigil {
-  border-radius: 0;
-  background: var(--cream);
-  overflow: hidden;
-  padding: 0;
-}
-.modal-avatar--sigil {
-  background: var(--cream);
-  padding: 0;
-}
-.modal-avatar--sigil .sigil { width: 100%; height: 100%; }
-/* Verified badge — bottom-right of photo */
-.card-verified-badge {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  width: 18px;
-  height: 18px;
-  background: var(--paper);
-  color: var(--ink);
-  border: 2px solid var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 10px;
-  line-height: 1;
-  z-index: 3;
+/* When a photo is present the cell flips from cream to ink so the
+   duotone math (ink × lighten + paper × darken) lands as ink/paper. */
+.master-card__sigil-cell:has(.master-card__photo) {
+  background: var(--ink);
 }
 
-.card-identity {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 14px;
+/* ── body column (right on web, below sigil on mobile) ───────── */
+.master-card__body {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  min-width: 0;
 }
-
-.card-name {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.card-meta {
-  font-size: 11.5px;
-  font-weight: 600;
-  margin-top: 4px;
-  opacity: 0.65;
-  letter-spacing: 0.01em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.master-card.variant-ink .card-meta {
-  opacity: 0.72;
-}
-
-.card-lang-row {
+.master-card__body-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 18px 18px 0 18px;
   display: flex;
-  gap: 4px;
-  margin-top: 7px;
+  flex-direction: column;
+}
+
+/* big primary line — master's name */
+.master-card__name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 900;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* small secondary line — profession · city (city in terra) */
+.master-card__meta {
+  font-family: var(--font-display);
+  font-size: 14px;
+  line-height: 1.0;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.master-card__meta .master-card__sep,
+.master-card__meta .master-card__city {
+  color: var(--terra);
+}
+
+/* ── badge row: lang codes + optional status ─────────────────── */
+.master-card__badges {
+  display: flex;
+  gap: 3px;
+  margin-top: 9px;
+  align-items: center;
   flex-wrap: wrap;
 }
-.card-lang-badge {
+/* badge base: JetBrains Mono per brand kit "Mono for metadata".
+   Asymmetric padding (vertical < horizontal) matches the Figma spec
+   but bumped from the literal 2/5 so vertical reads on screen. */
+.master-card__badge {
+  padding: 4px 6px;
+  background: var(--ink);
+  color: var(--paper);
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 700;
-  background: var(--ink);
-  color: var(--paper);
-  padding: 2px 5px;
   letter-spacing: 0.08em;
-}
-.master-card.variant-ink .card-lang-badge {
-  background: var(--paper);
-  color: var(--ink);
-}
-.master-card.variant-terra .card-lang-badge {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-/* Bottom row */
-.card-bottom-row {
-  display: flex;
-  align-items: stretch;
-  min-height: 50px;
-}
-
-.card-rating-num {
-  width: 84px;
-  flex-shrink: 0;
-  padding: 8px 12px;
-  font-family: var(--font-display);
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 1;
-  color: var(--terra);
-  border-right: 2px solid var(--divider);
-  font-variant-numeric: tabular-nums;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
-.master-card.variant-terra .card-rating-num {
+/* status badges sit slightly apart from the language row */
+.master-card__badge--status { margin-left: 4px; }
+.master-card__badge--verified {
+  background: var(--terra);
   color: var(--paper);
 }
-.card-rating-none {
+.master-card__badge--new {
+  background: var(--paper);
   color: var(--ink);
-  opacity: 0.2;
-}
-.master-card.variant-ink .card-rating-none,
-.master-card.variant-terra .card-rating-none {
-  color: var(--paper);
-  opacity: 0.2;
+  border: 1.5px solid var(--ink);
 }
 
-.card-rating-detail {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 12px;
-  font-size: 10.5px;
-  line-height: 1.3;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.card-stars-row {
+/* tags — muted grey so they read as metadata, not body text.
+   Figma export says full ink color but renders visibly grey;
+   matching the rendered look (ink at 55% on paper ≈ #7B7670). */
+.master-card__tags {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: currentColor;
-  opacity: 0.65;
-}
-.master-card.variant-ink .card-stars-row {
-  opacity: 0.75;
-}
-.card-review-count {
   font-size: 10.5px;
-  opacity: 0.55;
-  margin-top: 2px;
-}
-.master-card.variant-ink .card-review-count {
-  opacity: 0.65;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(14, 10, 6, 0.55);
+  line-height: 1.0;
+  margin-top: 9px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.card-open-btn {
-  padding: 0 18px;
-  border: none;
-  border-left: 2px solid var(--divider);
+/* ── bottom strip — ink bg, member-since left, CTA right ─────── */
+.master-card__strip {
+  height: 36px;
   background: var(--ink);
   color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  border-top: 2px solid var(--ink);
+}
+.master-card__member-since {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--paper);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.master-card__year {
+  color: var(--terra);
+  font-weight: 600;
+}
+.master-card__cta {
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 1;
   cursor: pointer;
-  min-width: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   white-space: nowrap;
 }
-.master-card.variant-ink .card-open-btn {
-  background: var(--paper);
-  color: var(--ink);
-}
-.master-card.variant-terra .card-open-btn {
-  background: var(--ink);
-  color: var(--paper);
+
+/* ── mobile breakpoint — stack sigil on top, strip below body ── */
+@media (max-width: 640px) {
+  .master-card--list {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    max-width: none;
+  }
+  .master-card--list .master-card__sigil-cell {
+    aspect-ratio: 360 / 223;
+    border-right: 0;
+    border-bottom: 2px solid var(--ink);
+  }
+  .master-card--list .master-card__sigil-cell > svg.sigil {
+    /* On mobile the sigil sits in a wide-but-short strip; cap its
+       size so it doesn't try to fill the entire width. */
+    width: 46%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .master-card--list .master-card__body-inner {
+    padding: 16px 16px 14px 16px;
+  }
+  .master-card--list .master-card__name {
+    font-size: 30px;
+    letter-spacing: -0.04em;
+  }
+  .master-card--list .master-card__meta {
+    margin-top: 8px;
+  }
+  .master-card--list .master-card__tags {
+    font-size: 11px;
+    margin-top: 10px;
+  }
+  .master-card--list .master-card__strip {
+    height: 42px;
+    padding: 0 16px;
+  }
 }
 
 /* legacy preview card used in Add New Record form */

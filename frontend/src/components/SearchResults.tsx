@@ -9,8 +9,6 @@ import { ACTIONS } from "../data/actions";
 import type { Master } from "../schema/master/master.schema";
 import type { Profession } from "../schema/state/state.schema";
 
-const VARIANTS = ["cream", "ink", "terra"] as const;
-
 type SearchResultsProps = {
   masters: Master[];
   city: string;
@@ -31,18 +29,20 @@ function getWeekStart(): number {
   return start.getTime();
 }
 
-function buildBadgeMap(allCountryMasters: Master[], newThisWeekLabel: string, recentlyAddedLabel: string): Map<string, string> {
+/** Mark "new" masters using the same rule SearchResults used before:
+ *  if 2+ masters were added this week, they're all NEW; otherwise the
+ *  four newest of the dataset get the NEW badge. */
+function buildNewSet(allCountryMasters: Master[]): Set<string> {
   const weekStart = getWeekStart();
   const sorted = [...allCountryMasters].sort((a, b) => getCreatedMs(b._id) - getCreatedMs(a._id));
   const thisWeek = sorted.filter(m => getCreatedMs(m._id) >= weekStart);
-  const map = new Map<string, string>();
-
+  const set = new Set<string>();
   if (thisWeek.length >= 2) {
-    thisWeek.forEach(m => map.set(m._id, newThisWeekLabel));
+    thisWeek.forEach(m => set.add(m._id));
   } else {
-    sorted.slice(0, 4).forEach(m => map.set(m._id, recentlyAddedLabel));
+    sorted.slice(0, 4).forEach(m => set.add(m._id));
   }
-  return map;
+  return set;
 }
 
 export default function SearchResults({
@@ -69,18 +69,12 @@ export default function SearchResults({
   );
 
   const countryMasters = masters.filter(m => m.countryID === countryID);
-  const badgeMap = buildBadgeMap(countryMasters, t("badge.newThisWeek"), t("badge.recentlyAdded"));
+  const newSet = buildNewSet(countryMasters);
 
   const hasActiveFilter = city !== "" || professionCategory !== "";
 
   // QuoteCard shown in grid for all layouts when 2+ results; CSS hides it at ≥1540px
   const showQuote = filteredMasters.length >= 2;
-
-  function quoteVariantIndex(i: number): number {
-    if (!showQuote || i < 2) return i % 3;
-    if (i >= 4) return (i + 2) % 3;
-    return (i + 1) % 3;
-  }
 
   return (
     <>
@@ -122,8 +116,7 @@ export default function SearchResults({
                 key={master._id}
                 master={master}
                 setShowModal={setShowModal}
-                variant={VARIANTS[quoteVariantIndex(i)]}
-                badge={badgeMap.get(master._id)}
+                isNew={newSet.has(master._id)}
               />
             );
 

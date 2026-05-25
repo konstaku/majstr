@@ -1,4 +1,4 @@
-import { useContext, useRef } from "react";
+import { useContext } from "react";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
@@ -8,13 +8,11 @@ import Sigil from "./Sigil";
 import type { Master } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
 
-type CardVariant = "cream" | "ink" | "terra";
-
 type MasterCardProps = {
   master: Master;
   setShowModal: (show: string) => void;
-  variant?: CardVariant;
-  badge?: string;
+  /** SearchResults computes this — newest-in-dataset signal. */
+  isNew?: boolean;
 };
 
 const LANG_LABELS: Record<string, string> = {
@@ -22,39 +20,30 @@ const LANG_LABELS: Record<string, string> = {
   es: "ES", de: "DE", fr: "FR", pl: "PL",
 };
 
-function getCreatedMonth(id: string): string {
-  const ms = parseInt(id.slice(0, 8), 16) * 1000;
-  return new Date(ms).toLocaleDateString("en", { month: "short", year: "numeric" }).toUpperCase();
+/** Mongo ObjectId → 4-digit creation year (first 4 hex bytes = unix seconds). */
+function getCreatedYear(id: string): number {
+  return new Date(parseInt(id.slice(0, 8), 16) * 1000).getFullYear();
 }
 
-function renderStars(rating: number): string {
-  const filled = Math.round(rating);
-  return "★".repeat(filled) + "☆".repeat(5 - filled);
-}
-
-export default function MasterCard({ master, setShowModal, variant = "cream", badge }: MasterCardProps) {
+export default function MasterCard({ master, setShowModal, isNew }: MasterCardProps) {
   const {
-    state: { locations, professions },
+    state: { locations, professions, lang },
   } = useContext(MasterContext);
-  const { t, lang } = useTranslation();
+  const { t } = useTranslation();
 
-  const { _id, name, professionID, locationID, languages, rating, reviewCount, countryID, photo } = master;
+  const { _id, name, professionID, locationID, languages, countryID, photo, tags } = master;
 
-  const photoRef = useRef(master.photo);
   const displayName = lang === "uk" ? name : transliterate(name);
   const isVerified = !!photo;
 
   const profName = localizedName(
     professions.find((p: Profession) => p.id === professionID)?.name,
-    lang
+    lang,
   );
-
   const locName = localizedName(
     locations.find((l: Location) => l.id === locationID)?.name,
-    lang
+    lang,
   );
-
-  const hasRating = rating != null && reviewCount != null && reviewCount > 0;
 
   const displayLangs = (languages && languages.length > 0)
     ? languages
@@ -62,81 +51,89 @@ export default function MasterCard({ master, setShowModal, variant = "cream", ba
     : countryID === "PT" ? ["uk", "pt"]
     : ["uk"];
 
+  // Verified beats new — a master who is both shows only VERIFIED.
+  const statusBadge: "verified" | "new" | null =
+    isVerified ? "verified" : isNew ? "new" : null;
+
+  // Tags from the master's preferred language. Fall back to ua, then en.
+  const tagList = (lang === "uk" ? tags?.ua : tags?.en) ?? tags?.ua ?? tags?.en ?? [];
+  const tagDisplay = tagList.slice(0, 4).join(" · ");
+
+  const year = getCreatedYear(_id);
+
   return (
     <article
-      className={`master-card variant-${variant}`}
+      className="master-card master-card--list"
       id={_id}
       onClick={() => setShowModal(_id)}
     >
-      {/* Top row: photo + identity */}
-      <div className="card-top-row">
-        <div
-          className={`card-photo-block${photoRef.current ? "" : " card-photo-block--sigil"}`}
-          style={{
-            background: photoRef.current ? "var(--ink)" : "var(--cream)",
-          }}
-        >
-          {photoRef.current ? (
-            <>
-              <div
-                className="card-avatar"
-                style={{ backgroundImage: `url(${photoRef.current})` }}
-              />
-              <div className="card-avatar-overlay" />
-            </>
-          ) : (
-            <Sigil seed={_id} size={3} />
-          )}
-          {isVerified && (
-            <span className="card-verified-badge" title="Verified">✓</span>
-          )}
-        </div>
+      <div className="master-card__sigil-cell">
+        {photo ? (
+          <>
+            <div
+              className="master-card__photo"
+              style={{ backgroundImage: `url(${photo})` }}
+            />
+            <div className="master-card__photo-overlay" />
+          </>
+        ) : (
+          <Sigil seed={_id} size={3} />
+        )}
+      </div>
 
-        <div className="card-identity">
-          <div>
-            <div className="card-name" title={displayName}>{displayName}</div>
-            <div className="card-meta">{profName} · {locName?.toUpperCase()}</div>
+      <div className="master-card__body">
+        <div className="master-card__body-inner">
+          <h3 className="master-card__name" title={displayName}>
+            {displayName}
+          </h3>
+          <div className="master-card__meta">
+            <span>{profName}</span>
+            {locName && (
+              <>
+                {" "}<span className="master-card__sep">·</span>{" "}
+                <span className="master-card__city">{locName}</span>
+              </>
+            )}
           </div>
-          <div className="card-lang-row">
+
+          <div className="master-card__badges">
             {displayLangs.slice(0, 3).map((code) => (
-              <span key={code} className="card-lang-badge">
+              <span key={code} className="master-card__badge">
                 {LANG_LABELS[code] ?? code.toUpperCase()}
               </span>
             ))}
-            {badge && <span className="card-badge">{badge}</span>}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom row: rating or member-since + OPEN */}
-      <div className="card-bottom-row">
-        {hasRating ? (
-          <>
-            <div className="card-rating-num">{rating!.toFixed(1)}</div>
-            <div className="card-rating-detail">
-              <div className="card-stars-row">{renderStars(rating!)}</div>
-              <div className="card-review-count">
-                {reviewCount} {lang === "uk" ? "відгуків" : "reviews"}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="card-member-row">
-            <div className="card-member-info">
-              <span className="card-member-label">{t("masterCard.memberSince")}</span>
-              <div className="card-member-date">{getCreatedMonth(_id)}</div>
-            </div>
-            {isVerified && (
-              <span className="card-verified-pill">✓ {t("masterCard.verified")}</span>
+            {statusBadge === "verified" && (
+              <span
+                className="master-card__badge master-card__badge--status master-card__badge--verified"
+                title={t("masterCard.verified")}
+              >
+                VERIFIED
+              </span>
+            )}
+            {statusBadge === "new" && (
+              <span className="master-card__badge master-card__badge--status master-card__badge--new">
+                NEW
+              </span>
             )}
           </div>
-        )}
-        <button
-          className="card-open-btn"
-          onClick={(e) => { e.stopPropagation(); setShowModal(_id); }}
-        >
-          {t("masterCard.details")} →
-        </button>
+
+          {tagDisplay && (
+            <div className="master-card__tags">{tagDisplay}</div>
+          )}
+        </div>
+
+        <div className="master-card__strip">
+          <span className="master-card__member-since">
+            {t("masterCard.memberSince")}{" "}
+            <span className="master-card__year">{year}</span>
+          </span>
+          <button
+            className="master-card__cta"
+            onClick={(e) => { e.stopPropagation(); setShowModal(_id); }}
+          >
+            {t("masterCard.details")} →
+          </button>
+        </div>
       </div>
     </article>
   );
