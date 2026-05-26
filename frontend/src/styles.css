@@ -606,14 +606,16 @@ img {
 
 .masters-grid {
   display: grid;
-  /* 560px minimum keeps the horizontal sigil+body layout breathable
-     per the brand-kit spec; below that the body column gets crushed
-     and names truncate. At narrower viewports the auto-fill collapses
-     to a single column and the card stretches to fill it. */
-  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  /* Cards target 320-400px wide. The horizontal sigil+body layout
+     scales proportionally via container queries (see below), so
+     names and badges stay legible across the range.
+     `min(320px, 100%)` keeps the layout from horizontal-scrolling
+     on viewports narrower than 320px (rare, foldables / 280-300px). */
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 400px));
   grid-auto-flow: dense;
   gap: 12px;
   padding: 0 32px 32px;
+  justify-content: center;
 }
 
 .search-empty-state {
@@ -649,17 +651,33 @@ img {
   overflow: hidden;
 }
 
-/* Search-result variant — the new horizontal card.
-   No max-width: card stretches to its grid cell. Sigil cell stays
-   pinned at 200px so the body absorbs the extra width when the grid
-   gives the card more than 560px (e.g. single-column at ~700-900px
-   viewports). The spec proportions (200 sigil + 360 body) hold at
-   the brand-kit's 560px target; wider just gives the body more
-   breathing room. */
+/* Search-result variant — horizontal sigil + body card.
+   Everything inside is sized in `cqi` (container-query inline)
+   so a 320px card is a true miniature of a 560px card: every
+   gap, padding, font size, and badge dimension scales with the
+   card's own width. Brand-kit proportions hold at every size.
+
+   Reference (cqi → px at 560 target):
+     35.71cqi  →  200px  (sigil cell width / card height)
+      6.43cqi  →   36px  (bottom strip height)
+      4.64cqi  →   26px  (name)
+      3.21cqi  →   18px  (body inner padding)
+      2.50cqi  →   14px  (meta line)
+      1.875cqi →   10.5px (tags)
+      1.79cqi  →   10px  (member-since label)
+      2.32cqi  →   13px  (cta)
+      1.61cqi  →   9px   (lang badge font)
+      1.07cqi  →   6px   (badge horiz padding)
+      0.71cqi  →   4px   (badge vert padding)
+
+   Text gets a `max()` floor so labels stay legible at the 320px
+   end of the range (where strict scaling would push some text
+   below ~6px). */
 .master-card--list {
+  container-type: inline-size;
   display: grid;
-  grid-template-columns: 200px 1fr;
-  grid-template-rows: 200px;
+  grid-template-columns: 35.7142% 1fr;
+  aspect-ratio: 560 / 200;
   width: 100%;
   transition: transform 80ms ease, z-index 0ms;
 }
@@ -707,7 +725,7 @@ img {
   background: var(--ink);
 }
 
-/* ── body column (right on web, below sigil on mobile) ───────── */
+/* ── body column ─────────────────────────────────────────────── */
 .master-card__body {
   display: flex;
   flex-direction: column;
@@ -716,15 +734,16 @@ img {
 .master-card__body-inner {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 18px 18px 0 18px;
+  /* 18px at 560 → 3.21cqi (proportional across 320-400 range) */
+  padding: 3.21cqi 3.21cqi 0 3.21cqi;
   display: flex;
   flex-direction: column;
 }
 
-/* big primary line — master's name */
+/* big primary line — master's name (26px at 560) */
 .master-card__name {
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: max(13px, 4.64cqi);
   line-height: 1.0;
   letter-spacing: -0.04em;
   text-transform: uppercase;
@@ -736,15 +755,15 @@ img {
   white-space: nowrap;
 }
 
-/* small secondary line — profession · city (city in terra) */
+/* small secondary line — profession · city, city in terra (14px @ 560) */
 .master-card__meta {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: max(9px, 2.5cqi);
   line-height: 1.0;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   color: var(--ink);
-  margin-top: 6px;
+  margin-top: 1.07cqi;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -757,20 +776,21 @@ img {
 /* ── badge row: lang codes + optional status ─────────────────── */
 .master-card__badges {
   display: flex;
-  gap: 3px;
-  margin-top: 9px;
+  gap: 0.54cqi;
+  margin-top: 1.61cqi;
   align-items: center;
   flex-wrap: wrap;
 }
 /* badge base: JetBrains Mono per brand kit "Mono for metadata".
-   Asymmetric padding (vertical < horizontal) matches the Figma spec
-   but bumped from the literal 2/5 so vertical reads on screen. */
+   Asymmetric padding (vertical < horizontal) per Figma spec, but
+   bumped from the literal 2/5 so vertical reads on screen.
+   At 560: 4px × 6px padding, 9px font. */
 .master-card__badge {
-  padding: 4px 6px;
+  padding: max(2px, 0.71cqi) max(4px, 1.07cqi);
   background: var(--ink);
   color: var(--paper);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: max(7px, 1.61cqi);
   font-weight: 700;
   letter-spacing: 0.08em;
   display: inline-flex;
@@ -778,8 +798,7 @@ img {
   justify-content: center;
   line-height: 1;
 }
-/* status badges sit slightly apart from the language row */
-.master-card__badge--status { margin-left: 4px; }
+.master-card__badge--status { margin-left: 0.71cqi; }
 .master-card__badge--verified {
   background: var(--terra);
   color: var(--paper);
@@ -790,18 +809,16 @@ img {
   border: 1.5px solid var(--ink);
 }
 
-/* tags — muted grey so they read as metadata, not body text.
-   Figma export says full ink color but renders visibly grey;
-   matching the rendered look (ink at 55% on paper ≈ #7B7670). */
+/* tags — muted grey, JetBrains Mono lowercase (10.5px @ 560) */
 .master-card__tags {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: max(8px, 1.875cqi);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: rgba(14, 10, 6, 0.55);
   line-height: 1.0;
-  margin-top: 9px;
-  margin-bottom: 14px;
+  margin-top: 1.61cqi;
+  margin-bottom: 2.5cqi;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -809,18 +826,27 @@ img {
 
 /* ── bottom strip — ink bg, member-since left, CTA right ─────── */
 .master-card__strip {
-  height: 36px;
+  /* 36px @ 560 = 6.43% of width. With aspect-ratio 560:200 the
+     strip stays at 18% of the card's height across all sizes. */
+  height: 6.43cqi;
   background: var(--ink);
   color: var(--paper);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
+  padding: 0 3.21cqi;
   border-top: 2px solid var(--ink);
+  /* nowrap + min-width:0 children: at the 320px end of the range
+     the cumulative width of "MEMBER SINCE <YEAR>" + "OPEN PROFILE →"
+     can exceed the strip — let the member-since label truncate
+     with ellipsis rather than wrap to a second line. */
+  white-space: nowrap;
+  overflow: hidden;
+  gap: 1.07cqi;
 }
 .master-card__member-since {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: max(8px, 1.79cqi);
   font-weight: 500;
   letter-spacing: 0.10em;
   text-transform: uppercase;
@@ -828,7 +854,11 @@ img {
   line-height: 1;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.89cqi;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .master-card__year {
   color: var(--terra);
@@ -836,7 +866,7 @@ img {
 }
 .master-card__cta {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: max(9px, 2.32cqi);
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -849,44 +879,10 @@ img {
   white-space: nowrap;
 }
 
-/* ── mobile breakpoint — stack sigil on top, strip below body ── */
-@media (max-width: 640px) {
-  .master-card--list {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    max-width: none;
-  }
-  .master-card--list .master-card__sigil-cell {
-    aspect-ratio: 360 / 223;
-    border-right: 0;
-    border-bottom: 2px solid var(--ink);
-  }
-  .master-card--list .master-card__sigil-cell > svg.sigil {
-    /* On mobile the sigil sits in a wide-but-short strip; cap its
-       size so it doesn't try to fill the entire width. */
-    width: 46%;
-    height: auto;
-    aspect-ratio: 1;
-  }
-  .master-card--list .master-card__body-inner {
-    padding: 16px 16px 14px 16px;
-  }
-  .master-card--list .master-card__name {
-    font-size: 30px;
-    letter-spacing: -0.04em;
-  }
-  .master-card--list .master-card__meta {
-    margin-top: 8px;
-  }
-  .master-card--list .master-card__tags {
-    font-size: 11px;
-    margin-top: 10px;
-  }
-  .master-card--list .master-card__strip {
-    height: 42px;
-    padding: 0 16px;
-  }
-}
+/* No separate mobile breakpoint: the horizontal layout scales
+   proportionally via `cqi` from the wide-desktop 400px target down
+   to the narrowest plausible mobile viewport (~280-320px). Below
+   that the text floors kick in via the `max()` clauses above. */
 
 /* legacy preview card used in Add New Record form */
 .card-with-strip {
