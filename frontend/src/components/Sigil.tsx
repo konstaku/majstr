@@ -108,7 +108,11 @@ type SigilProps = {
   seed: string;
   /** Grid edge. Defaults to 3 — that's the site-wide variant. */
   size?: 3 | 4;
-  /** Render a paper background rect inside the SVG (default true). */
+  /** Paint a paper-coloured rect behind the shapes. Default `false`
+   *  — the SVG is transparent so the wrapper's background shows
+   *  through cleanly (avoids a paper-on-cream seam in containers
+   *  that already supply their own background). Set `true` only
+   *  when the surface has no background of its own. */
   background?: boolean;
   className?: string;
 };
@@ -116,7 +120,7 @@ type SigilProps = {
 export default function Sigil({
   seed,
   size = 3,
-  background = true,
+  background = false,
   className,
 }: SigilProps) {
   const spec = buildSigil(seed || "?", size);
