@@ -1027,6 +1027,420 @@ img {
   overflow: hidden;
 }
 
+/* ============================================================
+   MASTER-CARD MODAL
+   Layout follows /design mockups/master-card-modal/*.html.
+   Five vertical sections under a wordmark header:
+     identity → speaks → tags → contacts → bio → CTA band
+   ============================================================ */
+.modal-overlay-inside--master {
+  max-width: 940px;
+}
+.modal-master {
+  display: flex;
+  flex-direction: column;
+}
+
+/* — Header — */
+.modal-master__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-bottom: var(--border);
+}
+.modal-master__wordmark {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 24px;
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.modal-master__wordmark-dot {
+  color: var(--terra);
+}
+.modal-master__close {
+  width: 32px;
+  height: 32px;
+  border: var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.modal-master__close:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* — Identity row: avatar + name block — */
+.modal-master__identity {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  border-bottom: var(--border);
+}
+.modal-master__avatar {
+  position: relative;
+  height: 280px;
+  border-right: var(--border);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.modal-master__avatar--sigil {
+  background: var(--cream);
+}
+.modal-master__avatar--sigil > svg.sigil {
+  width: 67%;
+  height: 67%;
+}
+.modal-master__avatar--photo {
+  background: var(--ink);
+}
+.modal-master__photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(100%) contrast(118%) brightness(102%);
+  mix-blend-mode: lighten;
+  background-color: var(--ink);
+}
+.modal-master__photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  mix-blend-mode: darken;
+  pointer-events: none;
+}
+
+/* Registration code (M-XX) — only on sigil variant */
+.modal-master__regcode {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--terra);
+  text-transform: uppercase;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+.modal-master__regcode-dot {
+  display: inline-block;
+}
+
+/* — Name block — */
+.modal-master__name-block {
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.modal-master__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(34px, 4.6vw, 56px);
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  word-break: break-word;
+}
+.modal-master__name-dot {
+  color: var(--terra);
+}
+.modal-master__meta {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+.modal-master__profession {
+  color: var(--ink);
+}
+.modal-master__divider {
+  width: 6px;
+  height: 6px;
+  background: var(--terra);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.modal-master__city {
+  color: var(--terra);
+}
+
+/* — Section row (speaks/contacts kicker + content) — */
+.modal-master__row {
+  padding: 14px 26px;
+  border-bottom: var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.modal-master__row-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+/* Speaks */
+.modal-master__row--speaks {
+  padding: 12px 26px;
+}
+.modal-master__lang-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.modal-master__lang {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 3px 6px;
+  text-transform: uppercase;
+}
+
+/* Tags strip */
+.modal-master__tags {
+  padding: 10px 26px;
+  border-bottom: var(--border);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  opacity: 0.6;
+  text-transform: lowercase;
+}
+
+/* Contacts */
+.modal-master__contacts-section {
+  padding: 14px 26px;
+  border-bottom: var(--border);
+}
+.modal-master__contacts-section > .modal-master__row-label {
+  margin-bottom: 10px;
+}
+.modal-master__contacts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.modal-master__contacts--two-col {
+  grid-template-columns: 1fr 1fr;
+  column-gap: 28px;
+}
+.modal-master__contact {
+  border-top: 1px solid rgba(14, 10, 6, 0.12);
+}
+.modal-master__contact:first-child,
+.modal-master__contacts--two-col .modal-master__contact:nth-child(2) {
+  border-top: none;
+}
+.modal-master__contact-link {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  align-items: baseline;
+  padding: 8px 0;
+  text-decoration: none;
+  color: var(--ink);
+}
+.modal-master__contact-link:hover .modal-master__contact-value {
+  color: var(--terra);
+}
+.modal-master__contact-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+.modal-master__contact-value {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  word-break: break-word;
+  transition: color 0.12s;
+}
+
+/* Bio */
+.modal-master__bio {
+  padding: 14px 26px;
+  background: var(--cream);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  border-bottom: var(--border);
+}
+
+/* — CTA band — */
+.modal-master__cta-band {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  min-height: 64px;
+  background: var(--ink);
+}
+.modal-master__rate-btn {
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-right: 2px solid var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0 10px;
+}
+.modal-master__rate-btn:hover {
+  background: #1a140d;
+}
+.modal-master__rate-star {
+  font-size: 14px;
+}
+.modal-master__cta {
+  background: var(--terra);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.modal-master__cta:hover {
+  background: var(--terra-dk);
+}
+.modal-master__cta-arrow {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1;
+  margin-left: 14px;
+}
+.modal-master__cta--disabled {
+  background: var(--cream2);
+  color: var(--ink);
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* — Mobile (≤640) — */
+@media (max-width: 640px) {
+  .modal-overlay-inside--master {
+    max-width: 420px;
+  }
+  .modal-master__header {
+    padding: 12px 18px;
+  }
+  .modal-master__wordmark {
+    font-size: 20px;
+  }
+  .modal-master__identity {
+    grid-template-columns: 132px 1fr;
+  }
+  .modal-master__avatar {
+    height: 132px;
+  }
+  .modal-master__avatar--sigil > svg.sigil {
+    width: 70%;
+    height: 70%;
+  }
+  .modal-master__regcode {
+    top: 9px;
+    left: 10px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+  }
+  .modal-master__name-block {
+    padding: 12px 16px;
+  }
+  .modal-master__name {
+    font-size: clamp(24px, 7vw, 30px);
+  }
+  .modal-master__meta {
+    margin-top: 10px;
+    font-size: 14px;
+    gap: 8px;
+  }
+  .modal-master__divider {
+    width: 5px;
+    height: 5px;
+  }
+  .modal-master__row,
+  .modal-master__row--speaks,
+  .modal-master__tags,
+  .modal-master__contacts-section,
+  .modal-master__bio {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .modal-master__contacts--two-col {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+  }
+  .modal-master__contacts--two-col .modal-master__contact:nth-child(2) {
+    border-top: 1px solid rgba(14, 10, 6, 0.12);
+  }
+  .modal-master__cta-band {
+    grid-template-columns: 88px 1fr;
+    min-height: 60px;
+  }
+  .modal-master__cta {
+    padding: 0 16px;
+    font-size: 15px;
+  }
+  .modal-master__cta-arrow {
+    font-size: 20px;
+  }
+}
+
 /* "Join as a master" modal — tidy, brutalist, on-brand */
 .join-modal {
   position: relative;
@@ -1115,84 +1529,6 @@ img {
   color: var(--terra);
 }
 
-/* modal header band */
-.modal-top-band {
-  background: var(--terra);
-  color: var(--paper);
-  padding: 20px 20px 16px;
-  border-bottom: var(--border);
-  position: relative;
-  overflow: hidden;
-}
-.modal-top-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.04) 0,
-    rgba(255, 255, 255, 0.04) 1px,
-    transparent 1px,
-    transparent 14px
-  );
-  pointer-events: none;
-}
-.modal-head-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  position: relative;
-  z-index: 1;
-}
-.modal-avatar {
-  width: 80px;
-  height: 80px;
-  flex-shrink: 0;
-  background: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 900;
-  color: var(--paper);
-  overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  letter-spacing: -0.03em;
-}
-.modal-title-area {
-  flex: 1;
-  min-width: 0;
-}
-.modal-name {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-.modal-profession {
-  font-size: 13px;
-  font-weight: 700;
-  margin-top: 6px;
-  opacity: 0.85;
-  letter-spacing: 0.02em;
-}
-.modal-location {
-  font-size: 12px;
-  margin-top: 4px;
-  opacity: 0.72;
-}
-.modal-header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-}
 .share-container,
 .close-container {
   width: 32px;
@@ -1215,84 +1551,6 @@ img {
 }
 .share-container.confirm {
   background: rgba(34, 197, 94, 0.5);
-}
-
-.modal-avail {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  position: relative;
-  z-index: 1;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: rgba(0, 0, 0, 0.22);
-  padding: 4px 10px;
-}
-.modal-avail-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 0;
-}
-
-/* modal body */
-.modal-body {
-  padding: 0;
-}
-.modal-section-title {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  padding: 14px 20px 4px;
-  opacity: 0.5;
-  color: var(--ink);
-}
-.modal-bio {
-  padding: 4px 20px 14px;
-  font-size: 14px;
-  line-height: 1.65;
-  font-weight: 400;
-  color: var(--ink);
-}
-.modal-tags {
-  padding: 4px 20px 14px;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.modal-tag {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  background: var(--cream);
-  border: var(--border);
-  padding: 4px 8px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.modal-langs {
-  padding: 4px 20px 12px;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.modal-lang-badge {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  background: var(--ink);
-  color: var(--paper);
-  padding: 4px 10px;
-  letter-spacing: 0.06em;
-}
-.modal-divider {
-  height: 2px;
-  background: var(--cream2);
 }
 
 /* contact buttons */
