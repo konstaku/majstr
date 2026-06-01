@@ -1080,10 +1080,11 @@ img {
   color: var(--paper);
 }
 
-/* — Identity row: avatar + name block + speaks + tags
-   On desktop, speaks/tags live in column 2 alongside the name block;
-   the avatar spans all rows. On mobile, speaks/tags break out to span
-   the full width below the avatar (see media query). */
+/* — Identity row: avatar + name block (which contains
+   name+meta + speaks + tags as a single flex column).
+   On mobile, the name-block dissolves (display: contents) so that
+   name-meta stays beside the avatar but speaks/tags break out as
+   their own full-width rows. */
 .modal-master__identity {
   display: grid;
   grid-template-columns: 170px 1fr;
@@ -1092,7 +1093,7 @@ img {
 .modal-master__avatar {
   position: relative;
   grid-column: 1;
-  grid-row: 1 / -1;
+  grid-row: 1;
   align-self: stretch;
   min-height: 170px;
   border-right: var(--border);
@@ -1149,14 +1150,23 @@ img {
   line-height: 1;
 }
 
-/* — Name block (col 2, row 1) — */
+/* — Name block (col 2, row 1) — wraps everything in the right column.
+   Flex-column with centered justification so name+meta+speaks+tags
+   sit as one tight, vertically-centered group beside the avatar. */
 .modal-master__name-block {
   grid-column: 2;
   grid-row: 1;
-  padding: 14px 18px 4px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 10px;
+  min-width: 0;
+}
+.modal-master__name-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
 }
 .modal-master__name {
@@ -1174,7 +1184,6 @@ img {
   color: var(--terra);
 }
 .modal-master__meta {
-  margin-top: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1199,10 +1208,8 @@ img {
   color: var(--terra);
 }
 
-/* — Speaks row (col 2 on desktop, full-width on mobile) — */
+/* — Speaks row (inside name-block on desktop, grid item on mobile) — */
 .modal-master__speaks-row {
-  grid-column: 2;
-  padding: 4px 18px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1224,10 +1231,8 @@ img {
   text-transform: uppercase;
 }
 
-/* — Tags row (col 2 on desktop, full-width on mobile) — */
+/* — Tags row (inside name-block on desktop, grid item on mobile) — */
 .modal-master__tags-row {
-  grid-column: 2;
-  padding: 4px 18px 14px;
   font-family: var(--font-body);
   font-size: 11.5px;
   font-weight: 500;
@@ -1393,8 +1398,10 @@ img {
   .modal-master__identity {
     grid-template-columns: 122px 1fr;
   }
-  /* Mobile: avatar only takes row 1; speaks/tags break out to span
-     full width as their own rows below (matches the mobile mockups). */
+  /* Mobile: dissolve the name-block so its children (name-meta, speaks,
+     tags) participate directly in the identity grid. Name-meta stays in
+     row 1 col 2 beside the avatar; speaks/tags span the full width as
+     their own rows below — matches the mobile mockups. */
   .modal-master__avatar {
     grid-column: 1;
     grid-row: 1;
@@ -1414,9 +1421,17 @@ img {
     gap: 5px;
   }
   .modal-master__name-block {
+    display: contents;
+  }
+  .modal-master__name-meta {
     grid-column: 2;
     grid-row: 1;
     padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
   }
   .modal-master__speaks-row {
     grid-column: 1 / -1;
@@ -1436,7 +1451,6 @@ img {
     font-size: clamp(20px, 6vw, 26px);
   }
   .modal-master__meta {
-    margin-top: 6px;
     font-size: 12px;
     gap: 7px;
   }

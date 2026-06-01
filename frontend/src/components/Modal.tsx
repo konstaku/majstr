@@ -178,33 +178,35 @@ export default function Modal({ master, setShowModal }: ModalProps) {
             </div>
 
             <div className="modal-master__name-block">
-              <h2 className="modal-master__name">
-                {displayName}
-                <span className="modal-master__name-dot">.</span>
-              </h2>
-              <div className="modal-master__meta">
-                <span className="modal-master__profession">{profName}</span>
-                <span className="modal-master__divider" aria-hidden="true" />
-                <span className="modal-master__city">{locName}</span>
+              <div className="modal-master__name-meta">
+                <h2 className="modal-master__name">
+                  {displayName}
+                  <span className="modal-master__name-dot">.</span>
+                </h2>
+                <div className="modal-master__meta">
+                  <span className="modal-master__profession">{profName}</span>
+                  <span className="modal-master__divider" aria-hidden="true" />
+                  <span className="modal-master__city">{locName}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="modal-master__speaks-row">
-              <span className="modal-master__row-label">Speaks</span>
-              <span className="modal-master__lang-list">
-                {displayLangs.slice(0, 4).map((code) => (
-                  <span key={code} className="modal-master__lang">
-                    {LANG_LABELS[code] ?? code.toUpperCase()}
-                  </span>
-                ))}
-              </span>
-            </div>
-
-            {modalTags.length > 0 && (
-              <div className="modal-master__tags-row">
-                {modalTags.slice(0, 4).join(" · ")}
+              <div className="modal-master__speaks-row">
+                <span className="modal-master__row-label">Speaks</span>
+                <span className="modal-master__lang-list">
+                  {displayLangs.slice(0, 4).map((code) => (
+                    <span key={code} className="modal-master__lang">
+                      {LANG_LABELS[code] ?? code.toUpperCase()}
+                    </span>
+                  ))}
+                </span>
               </div>
-            )}
+
+              {modalTags.length > 0 && (
+                <div className="modal-master__tags-row">
+                  {modalTags.slice(0, 4).join(" · ")}
+                </div>
+              )}
+            </div>
           </section>
 
           {/* Contacts */}
