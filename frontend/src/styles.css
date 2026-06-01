@@ -1642,95 +1642,6 @@ img {
 }
 
 /* ============================================================
-   QUOTE CARD (What clients say)
-   ============================================================ */
-.quote-card {
-  display: flex;
-  border: 2px solid var(--ink);
-  flex-direction: column;
-  overflow: hidden;
-  grid-column: -2 / -1;
-  grid-row: span 2;
-}
-
-.quote-card-header {
-  padding: 10px 18px;
-  border-bottom: 2px solid var(--ink);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.quote-card-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-.quote-card-stars {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-/* terra variant: ink header, terra body */
-.quote-card-terra .quote-card-header {
-  background: var(--ink);
-  color: var(--paper);
-}
-.quote-card-terra {
-  background: var(--terra);
-  color: var(--paper);
-}
-/* ink variant: terra header, ink body */
-.quote-card-ink .quote-card-header {
-  background: var(--terra);
-  color: var(--paper);
-}
-.quote-card-ink {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.quote-card-body {
-  flex: 1;
-  padding: 18px 20px 16px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-}
-.quote-card-mark {
-  position: absolute;
-  top: -2px;
-  left: 10px;
-  font-family: var(--font-display);
-  font-size: 100px;
-  line-height: 0.5;
-  opacity: 0.16;
-  pointer-events: none;
-}
-.quote-card-text {
-  font-size: 15px;
-  line-height: 1.5;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  position: relative;
-  z-index: 1;
-  padding-left: 26px;
-}
-.quote-card-attr {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0.7;
-  padding-left: 26px;
-}
-
-/* ============================================================
    ANIMATIONS
    ============================================================ */
 @keyframes count-pop {
@@ -2112,7 +2023,6 @@ img {
 
 /* ============================================================
    MEDIA QUERIES — Wide desktop (≥1540): 3-col hero + testimonial
-   Appears at ~4 master-grid columns; QuoteCard in grid hidden here.
    ============================================================ */
 @media (min-width: 1540px) {
   .hero-section {
@@ -2123,9 +2033,6 @@ img {
   }
   .hero-testimonial {
     display: flex;
-  }
-  .quote-card {
-    display: none;
   }
 }
 
@@ -2327,12 +2234,6 @@ img {
   .masters-grid {
     padding: 0 16px 20px;
     grid-template-columns: 1fr;
-  }
-  .quote-card {
-    display: none;
-  }
-  .quote-card-mark {
-    font-size: 56px;
   }
   .search-empty-state {
     padding: 32px 16px;

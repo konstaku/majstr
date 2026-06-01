@@ -2,7 +2,6 @@ import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { MasterContext } from "../context";
 import MasterCard from "./MasterCard";
-import QuoteCard from "./QuoteCard";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { ACTIONS } from "../data/actions";
 
@@ -73,9 +72,6 @@ export default function SearchResults({
 
   const hasActiveFilter = city !== "" || professionCategory !== "";
 
-  // QuoteCard shown in grid for all layouts when 2+ results; CSS hides it at ≥1540px
-  const showQuote = filteredMasters.length >= 2;
-
   return (
     <>
       <div className="results-top">
@@ -108,24 +104,14 @@ export default function SearchResults({
         </div>
       ) : (
         <div className="masters-grid">
-          {filteredMasters.map((master, i) => {
-            const cards = [];
-
-            cards.push(
-              <MasterCard
-                key={master._id}
-                master={master}
-                setShowModal={setShowModal}
-                isNew={newSet.has(master._id)}
-              />
-            );
-
-            if (showQuote && i === 1) {
-              cards.push(<QuoteCard key="quote-card" variant="terra" />);
-            }
-
-            return cards;
-          })}
+          {filteredMasters.map((master) => (
+            <MasterCard
+              key={master._id}
+              master={master}
+              setShowModal={setShowModal}
+              isNew={newSet.has(master._id)}
+            />
+          ))}
         </div>
       )}
     </>
