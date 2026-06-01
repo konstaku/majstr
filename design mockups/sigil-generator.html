@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Master sigil generator · MAJSTR brand kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:    #0E0A06;
+    --paper:  #FFFAF0;
+    --cream:  #F4EDE0;
+    --terra:  #C84B31;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { background: var(--paper); color: var(--ink); }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    padding: 56px clamp(24px, 5vw, 72px);
+  }
+
+  .page { max-width: 1280px; margin: 0 auto; }
+
+  /* ── typography ──────────────────────────────────────────── */
+  h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+  h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 26px;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    margin-bottom: 28px;
+    border-bottom: 2px solid var(--ink);
+  }
+  h3 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  p + p { margin-top: 12px; }
+  strong { font-weight: 700; }
+
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .terra { color: var(--terra); }
+
+  /* ── header ──────────────────────────────────────────────── */
+  .header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 28px;
+    margin-bottom: 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .header .crumbs {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+  }
+  .header .crumbs .dot { color: var(--terra); }
+
+  /* ── section ─────────────────────────────────────────────── */
+  .section { margin-bottom: 72px; }
+
+  /* ── algorithm box ──────────────────────────────────────── */
+  .algo {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 820px) {
+    .algo { grid-template-columns: 1fr; }
+  }
+
+  .algo-rules {
+    border: 2px solid var(--ink);
+    padding: 24px;
+    background: var(--cream);
+  }
+  .algo-rules ol {
+    list-style: none;
+    counter-reset: step;
+  }
+  .algo-rules li {
+    counter-increment: step;
+    padding-left: 36px;
+    position: relative;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px dashed rgba(14,10,6,0.25);
+    font-size: 14px;
+  }
+  .algo-rules li:last-child { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
+  .algo-rules li::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 0; top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    color: var(--terra);
+  }
+  .algo-rules code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    padding: 1px 6px;
+  }
+
+  .algo-prose p { font-size: 15px; }
+  .algo-prose .pill {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    margin: 0 2px;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+  }
+  .algo-prose .pill.ink   { background: var(--ink); color: var(--paper); }
+  .algo-prose .pill.terra { background: var(--terra); color: var(--paper); border-color: var(--terra); }
+
+  /* ── controls bar ────────────────────────────────────────── */
+  .controls {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+    padding: 16px 20px;
+    border: 2px solid var(--ink);
+    background: var(--cream);
+  }
+  .controls label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .toggle {
+    display: inline-flex;
+    border: 2px solid var(--ink);
+  }
+  .toggle button {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 0;
+    border-right: 2px solid var(--ink);
+    cursor: pointer;
+  }
+  .toggle button:last-child { border-right: 0; }
+  .toggle button[aria-pressed="true"] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .seed-field {
+    display: flex;
+    align-items: stretch;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    flex: 1 1 280px;
+    max-width: 420px;
+  }
+  .seed-field span {
+    padding: 8px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    align-self: center;
+  }
+  .seed-field input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .seed-field input:focus { outline: none; }
+
+  /* ── specimen card ──────────────────────────────────────── */
+  .specimen {
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .specimen .sigil-wrap {
+    aspect-ratio: 1;
+    background: var(--paper);
+    display: block;
+  }
+  .specimen .sigil-wrap svg { display: block; width: 100%; height: 100%; }
+  .specimen .meta {
+    border-top: 2px solid var(--ink);
+    padding: 10px 14px;
+    background: var(--cream);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .specimen .meta .name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+  .specimen .meta .id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    color: var(--terra);
+  }
+
+  /* ── grids ──────────────────────────────────────────────── */
+  .specimens-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 1000px) {
+    .specimens-row { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 540px) {
+    .specimens-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .variety-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+  }
+  @media (max-width: 1100px) { .variety-grid { grid-template-columns: repeat(6, 1fr); } }
+  @media (max-width: 720px)  { .variety-grid { grid-template-columns: repeat(4, 1fr); } }
+
+  .variety-grid .specimen .meta {
+    padding: 6px 8px;
+  }
+  .variety-grid .specimen .meta .name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .variety-grid .specimen .meta .id { display: none; }
+
+  /* ── seed playground ────────────────────────────────────── */
+  .playground {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 820px) {
+    .playground { grid-template-columns: 1fr; }
+  }
+  .playground .preview {
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    aspect-ratio: 1;
+    display: block;
+  }
+  .playground .preview svg { display: block; width: 100%; height: 100%; }
+  .playground .panel {
+    border: 2px solid var(--ink);
+    padding: 24px;
+    background: var(--cream);
+  }
+  .playground .panel dl {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px 16px;
+    margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .playground .panel dt {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    opacity: 0.6;
+    font-size: 10px;
+    align-self: center;
+  }
+  .playground .panel dd {
+    font-weight: 500;
+    word-break: break-all;
+  }
+  .playground .panel dd.terra { color: var(--terra); }
+
+  /* ── card mockup ────────────────────────────────────────── */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .cards-row { grid-template-columns: 1fr; }
+  }
+  .master-card {
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    display: grid;
+    grid-template-columns: 112px 1fr;
+    grid-template-rows: 112px;        /* force the sigil slot to 1:1 */
+    overflow: hidden;
+  }
+  .master-card .sigil-slot {
+    border-right: 2px solid var(--ink);
+    background: var(--cream);
+    width: 112px;
+    height: 112px;
+  }
+  .master-card .sigil-slot svg { display: block; width: 100%; height: 100%; }
+  .master-card .body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .master-card .profession {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--terra);
+    font-weight: 600;
+  }
+  .master-card .name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .master-card .location {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+  .master-card .footer {
+    border-top: 2px solid var(--ink);
+    margin-top: auto;
+    padding-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink);
+  }
+  .master-card .footer .id { color: var(--terra); font-weight: 600; }
+
+  /* ── footer ─────────────────────────────────────────────── */
+  footer {
+    border-top: 2px solid var(--ink);
+    padding-top: 24px;
+    margin-top: 80px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink);
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="crumbs mono">
+      <span>brand kit</span>
+      <span class="dot">·</span>
+      <span>v0.2</span>
+      <span class="dot">·</span>
+      <span class="terra">sigil generator</span>
+    </div>
+    <h1>Master sigil · generative pattern</h1>
+    <p style="max-width: 800px;">The sigil is the master's portrait when no photo exists. It's a deterministic generative pattern derived from the master's ID — the same input always renders the same sigil, so a master's identity stays visually consistent across cards, modals, OG images, and business cards.</p>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <h2>The algorithm</h2>
+    <div class="algo">
+      <aside class="algo-rules">
+        <h3>Generation rules</h3>
+        <ol>
+          <li><strong>Grid</strong>: N × N cells &mdash; <code>N = 4</code> or <code>N = 3</code></li>
+          <li><strong>Shapes</strong>: square · circle · triangle · bar · empty</li>
+          <li><strong>Colors</strong>: ink or terra (terra is the accent)</li>
+          <li><strong>Fill rate</strong>: 6–10 of 16 cells (4×4), 4–6 of 9 cells (3×3)</li>
+          <li><strong>Seed</strong>: stable master identifier &mdash; rendering is deterministic</li>
+        </ol>
+      </aside>
+      <div class="algo-prose">
+        <p>The seed string (master ID, e.g. <span class="pill">m12</span>) is hashed with <strong>FNV-1a</strong> to a 32-bit integer, then fed into a <strong>Mulberry32</strong> PRNG. That gives a reproducible stream of uniform values, used in this order:</p>
+        <p><span class="pill">1</span> pick fill count from the valid range &nbsp; <span class="pill">2</span> partial Fisher–Yates to choose <em>which</em> cells fill &nbsp; <span class="pill">3</span> per filled cell, pick shape &amp; rotation &nbsp; <span class="pill">4</span> pick which of the filled cells get the <span class="pill terra">terra</span> accent (≈20–30%, at least one).</p>
+        <p>Squares fill the cell edge-to-edge so adjacent same-color squares read as one chunky block — the brutalist look. Circles, triangles, and bars sit inside a small inset. Triangles and bars rotate in 90° steps so two cells with the same shape rarely look identical.</p>
+        <p>The <strong>3×3</strong> variant trades variation for legibility — fewer cells mean each one is bigger, so the sigil reads as an icon at small sizes (avatar in a search row, favicon, OG thumbnail). The 4×4 is the canonical specimen: more visual complexity, better for hero use (modal, OG share, business card).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <h2>Specimens · one per master, deterministic</h2>
+
+    <div class="controls" role="group" aria-label="Sigil controls">
+      <label>Grid</label>
+      <div class="toggle" role="tablist" aria-label="Grid size">
+        <button type="button" data-size="4" aria-pressed="true">4 × 4</button>
+        <button type="button" data-size="3" aria-pressed="false">3 × 3</button>
+      </div>
+      <div class="seed-field">
+        <span>seed</span>
+        <input id="seedInput" type="text" value="m12" autocomplete="off" spellcheck="false" />
+      </div>
+    </div>
+
+    <!-- the 6 named specimens from the brand kit -->
+    <div id="specimens" class="specimens-row" aria-label="Named specimens"></div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <h2>Seed playground</h2>
+    <div class="playground">
+      <div class="preview" id="seedPreview" aria-live="polite"></div>
+      <div class="panel">
+        <h3>Try any seed</h3>
+        <p>Edit the seed in the controls above. Anything goes — master ID, phone-hash, telegram ID. Same seed + same grid size → same sigil, forever.</p>
+        <dl>
+          <dt>Seed</dt>           <dd id="dbgSeed">m12</dd>
+          <dt>Grid</dt>           <dd id="dbgGrid">4 × 4</dd>
+          <dt>Hash</dt>           <dd id="dbgHash" class="terra">0x00000000</dd>
+          <dt>Fill</dt>           <dd id="dbgFill">0 / 16</dd>
+          <dt>Terra cells</dt>    <dd id="dbgTerra">0</dd>
+          <dt>Shape mix</dt>      <dd id="dbgShapes">—</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <h2>Variety check · 24 fresh seeds</h2>
+    <p style="margin-bottom: 20px; max-width: 720px;">Just to verify the algorithm doesn't collapse to a few visual archetypes. These are seeded with <code style="font-family: 'JetBrains Mono', monospace; background: var(--cream); padding: 2px 6px; border: 1px solid var(--ink);">master-01 … master-24</code>.</p>
+    <div id="variety" class="variety-grid"></div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <h2>In context · master result cards</h2>
+    <p style="margin-bottom: 24px; max-width: 720px;">How the sigil reads as an avatar substitute on a result card. Each master here has no photo — the sigil <em>is</em> their portrait.</p>
+    <div id="cards" class="cards-row"></div>
+  </section>
+
+  <footer>
+    <span>MAJSTR · sigil generator preview · not production</span>
+  </footer>
+
+</div>
+
+<script>
+'use strict';
+
+/* ════════════════════════════════════════════════════════════════
+   SIGIL GENERATOR — deterministic, seeded, brand-coherent
+   ════════════════════════════════════════════════════════════════ */
+
+const INK   = '#0E0A06';
+const TERRA = '#C84B31';
+const PAPER = '#FFFAF0';
+
+/* ── FNV-1a 32-bit hash ────────────────────────────────────────── */
+function fnv1a(str) {
+  let h = 0x811c9dc5; // FNV offset basis
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193); // FNV prime
+  }
+  return h >>> 0;
+}
+
+/* ── Mulberry32 PRNG ───────────────────────────────────────────── */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const randInt = (rnd, max) => Math.floor(rnd() * max);
+
+/* ── build a sigil spec ────────────────────────────────────────── */
+/**
+ * @param {string} seed  e.g. master ID
+ * @param {3|4}    size
+ * @returns spec { size, fillCount, hash, cells: [{idx,row,col,shape,rotation,color}] }
+ */
+function buildSigil(seed, size) {
+  const total   = size * size;
+  // 4×4: 6–10 (37.5–62.5%);  3×3: 4–6 (44–67%)
+  const minFill = size === 4 ? 6 : 4;
+  const maxFill = size === 4 ? 10 : 6;
+
+  // include size in the hash input so the same seed renders distinct grids
+  const hash = fnv1a(seed + '|' + size);
+  const rnd  = mulberry32(hash);
+
+  // 1) fill count
+  const fillCount = minFill + randInt(rnd, maxFill - minFill + 1);
+
+  // 2) which cells — partial Fisher–Yates
+  const indices = Array.from({ length: total }, (_, i) => i);
+  for (let i = 0; i < fillCount; i++) {
+    const j = i + randInt(rnd, total - i);
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const filled = indices.slice(0, fillCount);
+
+  // 3) terra picks — ~18–36% of filled cells, at least 1
+  const targetTerra = Math.max(1, Math.round(fillCount * (0.18 + rnd() * 0.18)));
+  const filledShuf = filled.slice();
+  for (let i = filledShuf.length - 1; i > 0; i--) {
+    const j = randInt(rnd, i + 1);
+    [filledShuf[i], filledShuf[j]] = [filledShuf[j], filledShuf[i]];
+  }
+  const terraSet = new Set(filledShuf.slice(0, targetTerra));
+
+  // 4) per-cell shape + rotation
+  const SHAPES = ['square', 'circle', 'triangle', 'bar'];
+  const cells = filled.map((idx) => ({
+    idx,
+    row:      Math.floor(idx / size),
+    col:      idx % size,
+    shape:    SHAPES[randInt(rnd, SHAPES.length)],
+    rotation: randInt(rnd, 4), // 0..3 quarter-turns
+    color:    terraSet.has(idx) ? TERRA : INK,
+  }));
+
+  return { size, fillCount, hash, cells };
+}
+
+/* ── render spec → SVG string ──────────────────────────────────── */
+/**
+ * Layout model:
+ *   ┌─ outer padding (gutter from grid edge)
+ *   │   ┌─ cell  ──┐  gap  ┌─ cell  ──┐  gap  ...
+ *   │   │  shape   │       │  shape   │
+ *   │   └──────────┘       └──────────┘
+ *   │   ─── gap ───        ─── gap ───
+ *   │   ┌─ cell  ──┐       ┌─ cell  ──┐
+ *
+ * Both `pad` (outer gutter) and `gap` (between cells) are equal, so the
+ * spacing between two adjacent shapes is identical to the spacing between
+ * any shape and the outer border — no shape ever touches anything.
+ */
+function renderSigil(spec, px = 240) {
+  const { size, cells } = spec;
+
+  // proportional gutters so the look is identical across 3×3 / 4×4
+  // and across small/large render sizes
+  const gap  = px * 0.055; // also = outer pad → uniform breathing room
+  const pad  = gap;
+  const cell = (px - pad * 2 - gap * (size - 1)) / size;
+
+  const cellX = (col) => pad + col * (cell + gap);
+  const cellY = (row) => pad + row * (cell + gap);
+
+  const parts = [];
+
+  for (const c of cells) {
+    const x  = cellX(c.col);
+    const y  = cellY(c.row);
+    const cx = x + cell / 2;
+    const cy = y + cell / 2;
+
+    if (c.shape === 'square') {
+      // shape fills its own cell (gap to neighbours comes from the layout)
+      parts.push(
+        `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" fill="${c.color}"/>`
+      );
+
+    } else if (c.shape === 'circle') {
+      // inscribed circle — exactly fills the cell, no extra inset needed
+      parts.push(
+        `<circle cx="${cx}" cy="${cy}" r="${cell / 2}" fill="${c.color}"/>`
+      );
+
+    } else if (c.shape === 'triangle') {
+      // EQUILATERAL: all three sides equal. Side = cell, height = side·√3/2.
+      // The bounding box (s × s·√3/2) is centered on (cx, cy), so rotation
+      // around (cx, cy) keeps the cell-center-aligned look at every angle.
+      const rot = c.rotation * 90;
+      const s   = cell;
+      const h   = cell * Math.sqrt(3) / 2;
+      const ax  = cx;             const ay = cy - h / 2; // apex
+      const blx = cx - s / 2;     const bly = cy + h / 2; // bottom-left
+      const brx = cx + s / 2;     const bry = cy + h / 2; // bottom-right
+      const pts = `${ax},${ay} ${brx},${bry} ${blx},${bly}`;
+      parts.push(
+        `<polygon points="${pts}" fill="${c.color}" transform="rotate(${rot} ${cx} ${cy})"/>`
+      );
+
+    } else if (c.shape === 'bar') {
+      // exact 1 : 3 ratio — thickness = cell / 3, length = cell
+      const thick = cell / 3;
+      const horizontal = c.rotation % 2 === 0;
+      if (horizontal) {
+        parts.push(
+          `<rect x="${x}" y="${cy - thick / 2}" width="${cell}" height="${thick}" fill="${c.color}"/>`
+        );
+      } else {
+        parts.push(
+          `<rect x="${cx - thick / 2}" y="${y}" width="${thick}" height="${cell}" fill="${c.color}"/>`
+        );
+      }
+    }
+  }
+
+  return `<svg viewBox="0 0 ${px} ${px}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision">
+    <rect width="${px}" height="${px}" fill="${PAPER}"/>
+    ${parts.join('\n    ')}
+  </svg>`;
+}
+
+/* ── exported helper ──────────────────────────────────────────── */
+window.sigil = (seed, size = 4, px = 240) => renderSigil(buildSigil(seed, size), px);
+
+/* ════════════════════════════════════════════════════════════════
+   PAGE WIRING
+   ════════════════════════════════════════════════════════════════ */
+
+const NAMED_SPECIMENS = [
+  { name: 'Marko',     id: 'm01' },
+  { name: 'Yuriy',     id: 'm03' },
+  { name: 'Iryna',     id: 'm06' },
+  { name: 'Kateryna',  id: 'm08' },
+  { name: 'Sofia',     id: 'm10' },
+  { name: 'Mariia',    id: 'm12' },
+];
+
+const CARD_SPECIMENS = [
+  { name: 'Mariia Savchuk',    profession: 'Fotógrafa',     location: 'Lisboa', id: 'm12' },
+  { name: 'Yuriy Kovalenko',   profession: 'Carpenter',     location: 'Milano', id: 'm03' },
+  { name: 'Kateryna Olar',     profession: 'Hair stylist',  location: 'Roma',   id: 'm08' },
+];
+
+let currentSize = 4;
+
+function specimenHTML({ name, id }, size) {
+  return `
+    <div class="specimen">
+      <div class="sigil-wrap">${renderSigil(buildSigil(id, size))}</div>
+      <div class="meta">
+        <span class="name">${name}</span>
+        <span class="id">${id.toUpperCase()}</span>
+      </div>
+    </div>`;
+}
+
+function varietyHTML(seed, size) {
+  return `
+    <div class="specimen">
+      <div class="sigil-wrap">${renderSigil(buildSigil(seed, size), 120)}</div>
+      <div class="meta"><span class="name">${seed}</span></div>
+    </div>`;
+}
+
+function cardHTML(c, size) {
+  return `
+    <div class="master-card">
+      <div class="sigil-slot">${renderSigil(buildSigil(c.id, size), 120)}</div>
+      <div class="body">
+        <span class="profession">${c.profession}</span>
+        <span class="name">${c.name}</span>
+        <span class="location">${c.location}</span>
+        <div class="footer">
+          <span>majstr · <span class="id">${c.id.toUpperCase()}</span></span>
+          <span>open →</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function updateSeedPanel(seed) {
+  const spec = buildSigil(seed, currentSize);
+  document.getElementById('seedPreview').innerHTML = renderSigil(spec, 320);
+
+  const shapeMix = spec.cells.reduce((acc, c) => {
+    acc[c.shape] = (acc[c.shape] || 0) + 1;
+    return acc;
+  }, {});
+  const shapeMixStr = Object.entries(shapeMix)
+    .map(([k, v]) => `${k}·${v}`)
+    .join('  ');
+  const terraCount = spec.cells.filter((c) => c.color === TERRA).length;
+
+  document.getElementById('dbgSeed').textContent  = seed;
+  document.getElementById('dbgGrid').textContent  = `${currentSize} × ${currentSize}`;
+  document.getElementById('dbgHash').textContent  = '0x' + spec.hash.toString(16).padStart(8, '0').toUpperCase();
+  document.getElementById('dbgFill').textContent  = `${spec.fillCount} / ${currentSize * currentSize}`;
+  document.getElementById('dbgTerra').textContent = `${terraCount}`;
+  document.getElementById('dbgShapes').textContent = shapeMixStr;
+}
+
+function rerender() {
+  // named row
+  document.getElementById('specimens').innerHTML =
+    NAMED_SPECIMENS.map((s) => specimenHTML(s, currentSize)).join('');
+
+  // variety stress test
+  const varietySeeds = Array.from({ length: 24 }, (_, i) =>
+    'master-' + String(i + 1).padStart(2, '0')
+  );
+  document.getElementById('variety').innerHTML =
+    varietySeeds.map((seed) => varietyHTML(seed, currentSize)).join('');
+
+  // cards
+  document.getElementById('cards').innerHTML =
+    CARD_SPECIMENS.map((c) => cardHTML(c, currentSize)).join('');
+
+  // panel
+  updateSeedPanel(document.getElementById('seedInput').value || 'm12');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // size toggle
+  document.querySelectorAll('[data-size]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      currentSize = parseInt(btn.dataset.size, 10);
+      document.querySelectorAll('[data-size]').forEach((b) => {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      rerender();
+    });
+  });
+
+  // seed input
+  const seedInput = document.getElementById('seedInput');
+  seedInput.addEventListener('input', () => {
+    updateSeedPanel(seedInput.value || ' ');
+  });
+
+  rerender();
+});
+</script>
+</body>
+</html>

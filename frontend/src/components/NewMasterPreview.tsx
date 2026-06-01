@@ -25,7 +25,7 @@ export default function NewMasterPreview({
       >
         <div>
           <div className="master-card-header">
-            <Avatar img={master.photo} color={"8080ff"} name={name} />
+            <Avatar img={master.photo} name={name} seed={_id} />
             <div className="bookmark-container">
               <img src="/img/icons/bookmark-passive.svg" alt="" />
             </div>

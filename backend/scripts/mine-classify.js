@@ -52,6 +52,7 @@ const CHAT_REGION = {
   '1593295268': 'Milano',
   '1310497068': 'Torino',
   '1786184772': 'Napoli',
+  '1513619004': 'Roma',
 };
 const CONCURRENCY = 4;
 
@@ -259,7 +260,9 @@ async function processChat(chatID, limit) {
 async function main() {
   const limit = arg('--limit') ? parseInt(arg('--limit'), 10) : null;
   const only = arg('--chatId', null);
-  const chats = only ? [only] : ['1780497126', '1593295268', '1310497068', '1786184772'];
+  const chats = only
+    ? [only]
+    : ['1780497126', '1593295268', '1310497068', '1786184772', '1513619004'];
 
   await runDB();
   if (classifier.resetCost) classifier.resetCost();

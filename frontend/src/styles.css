@@ -606,7 +606,13 @@ img {
 
 .masters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  /* Cards start at 320px and stretch (1fr) to fill the column.
+     The horizontal sigil+body layout scales proportionally via
+     container queries (see below), so names and badges stay legible
+     at any width.
+     `min(320px, 100%)` keeps the layout from horizontal-scrolling
+     on viewports narrower than 320px (rare, foldables / 280-300px). */
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   grid-auto-flow: dense;
   gap: 12px;
   padding: 0 32px 32px;
@@ -625,263 +631,258 @@ img {
 
 /* ============================================================
    MASTER CARD — Brutalist
+   Layout matches design mockups/master-card-preview/no-photo-variant.html.
+   Web (≥640px): sigil cell left (200×200), body right with bottom
+   ink strip. Mobile: sigil cell on top, body + strip below.
+
+   NOTE on scoping: `.master-card` is shared with `MasterCardPreview`
+   and `NewMasterPreview` (admin/preview surfaces with their own
+   internal layouts). To avoid trampling those, the search-result
+   card uses the modifier `.master-card--list`, and the bare
+   `.master-card` rule below only carries the shared visual base
+   (border + bg + cursor) that all three components expect.
    ============================================================ */
 .master-card {
   --divider: var(--ink);
   background: var(--paper);
   color: var(--ink);
   border: 2px solid var(--ink);
-  max-width: 480px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
   cursor: pointer;
-  transition:
-    transform 80ms ease,
-    z-index 0ms;
+  overflow: hidden;
 }
-.master-card:hover {
+
+/* Search-result variant — horizontal sigil + body card.
+   Everything inside is sized in `cqi` (container-query inline)
+   so a 320px card is a true miniature of a 560px card: every
+   gap, padding, font size, and badge dimension scales with the
+   card's own width. Brand-kit proportions hold at every size.
+
+   Reference (cqi → px at 560 target):
+     35.71cqi  →  200px  (sigil cell width / card height)
+      6.43cqi  →   36px  (bottom strip height)
+      4.64cqi  →   26px  (name)
+      3.21cqi  →   18px  (body inner padding)
+      2.50cqi  →   14px  (meta line)
+      1.875cqi →   10.5px (tags)
+      1.79cqi  →   10px  (member-since label)
+      2.32cqi  →   13px  (cta)
+      1.61cqi  →   9px   (lang badge font)
+      1.07cqi  →   6px   (badge horiz padding)
+      0.71cqi  →   4px   (badge vert padding)
+
+   Text gets a `max()` floor so labels stay legible at the 320px
+   end of the range (where strict scaling would push some text
+   below ~6px). */
+.master-card--list {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: 35.7142% 1fr;
+  aspect-ratio: 560 / 200;
+  width: 100%;
+  transition: transform 80ms ease, z-index 0ms;
+}
+.master-card--list:hover {
   transform: translate(-2px, -2px);
   z-index: 2;
 }
-.master-card.variant-ink {
-  --divider: var(--paper);
-  background: var(--ink);
-  color: var(--paper);
-}
-.master-card.variant-terra {
-  --divider: var(--paper);
-  background: var(--terra);
-  color: var(--paper);
-}
 
-/* Top row */
-.card-top-row {
-  display: flex;
-  align-items: stretch;
-  border-bottom: 2px solid var(--divider);
-}
-
-.card-photo-block {
-  width: 84px;
-  min-height: 84px;
-  flex-shrink: 0;
-  border-right: 2px solid var(--divider);
-  position: relative;
-  overflow: hidden;
+/* ── sigil cell (left on web, top on mobile) ─────────────────── */
+.master-card__sigil-cell {
+  background: var(--cream);
+  border-right: 2px solid var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
-  font-size: clamp(28px, 3vw, 35px);
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: -0.03em;
+  position: relative;
+  overflow: hidden;
 }
-
-/* Duotone photo — ink shadow + paper highlight overlay */
-.card-photo-block .card-avatar {
+/* Sigil SVG inset — matches the photo's optical inset (156/200 ≈ 78%) */
+.master-card__sigil-cell > svg.sigil {
+  width: 78%;
+  height: 78%;
+  display: block;
+}
+/* Duotone photo treatment when a photo exists */
+.master-card__photo {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 0;
   background-size: cover;
   background-position: center;
   filter: grayscale(100%) contrast(118%) brightness(102%);
   mix-blend-mode: lighten;
+  background-color: var(--ink);
 }
-/* Paper highlight cap — turns ink+lighten into true ink/paper duotone */
-.card-avatar-overlay {
+.master-card__photo-overlay {
   position: absolute;
   inset: 0;
   background: var(--paper);
   mix-blend-mode: darken;
   pointer-events: none;
-  z-index: 1;
 }
-/* Subtle scanlines on gradient placeholders */
-.card-photo-scanlines {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0 3px,
-    rgba(255, 255, 255, 0.05) 3px 4px
-  );
-  pointer-events: none;
-}
-/* Verified badge — bottom-right of photo */
-.card-verified-badge {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  width: 18px;
-  height: 18px;
-  background: var(--paper);
-  color: var(--ink);
-  border: 2px solid var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 10px;
-  line-height: 1;
-  z-index: 3;
+/* When a photo is present the cell flips from cream to ink so the
+   duotone math (ink × lighten + paper × darken) lands as ink/paper. */
+.master-card__sigil-cell:has(.master-card__photo) {
+  background: var(--ink);
 }
 
-.card-identity {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 14px;
+/* ── body column ─────────────────────────────────────────────── */
+.master-card__body {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  min-width: 0;
 }
-
-.card-name {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.card-meta {
-  font-size: 11.5px;
-  font-weight: 600;
-  margin-top: 4px;
-  opacity: 0.65;
-  letter-spacing: 0.01em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.master-card.variant-ink .card-meta {
-  opacity: 0.72;
-}
-
-.card-lang-row {
+.master-card__body-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 18px at 560 → 3.21cqi (proportional across 320-400 range) */
+  padding: 3.21cqi 3.21cqi 0 3.21cqi;
   display: flex;
-  gap: 4px;
-  margin-top: 7px;
+  flex-direction: column;
+}
+
+/* big primary line — master's name (26px at 560) */
+.master-card__name {
+  font-family: var(--font-display);
+  font-size: max(13px, 4.64cqi);
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 900;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* small secondary line — profession · city, city in terra (14px @ 560) */
+.master-card__meta {
+  font-family: var(--font-display);
+  font-size: max(9px, 2.5cqi);
+  line-height: 1.0;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-top: 1.07cqi;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.master-card__meta .master-card__sep,
+.master-card__meta .master-card__city {
+  color: var(--terra);
+}
+
+/* ── badge row: lang codes + optional status ─────────────────── */
+.master-card__badges {
+  display: flex;
+  gap: 0.54cqi;
+  margin-top: 1.61cqi;
+  align-items: center;
   flex-wrap: wrap;
 }
-.card-lang-badge {
+/* badge base: JetBrains Mono per brand kit "Mono for metadata".
+   Asymmetric padding (vertical < horizontal) per Figma spec, but
+   bumped from the literal 2/5 so vertical reads on screen.
+   At 560: 4px × 6px padding, 9px font. */
+.master-card__badge {
+  padding: max(2px, 0.71cqi) max(4px, 1.07cqi);
+  background: var(--ink);
+  color: var(--paper);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: max(7px, 1.61cqi);
   font-weight: 700;
-  background: var(--ink);
-  color: var(--paper);
-  padding: 2px 5px;
   letter-spacing: 0.08em;
-}
-.master-card.variant-ink .card-lang-badge {
-  background: var(--paper);
-  color: var(--ink);
-}
-.master-card.variant-terra .card-lang-badge {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-/* Bottom row */
-.card-bottom-row {
-  display: flex;
-  align-items: stretch;
-  min-height: 50px;
-}
-
-.card-rating-num {
-  width: 84px;
-  flex-shrink: 0;
-  padding: 8px 12px;
-  font-family: var(--font-display);
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 1;
-  color: var(--terra);
-  border-right: 2px solid var(--divider);
-  font-variant-numeric: tabular-nums;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
-.master-card.variant-terra .card-rating-num {
+.master-card__badge--status { margin-left: 0.71cqi; }
+.master-card__badge--verified {
+  background: var(--terra);
   color: var(--paper);
 }
-.card-rating-none {
+.master-card__badge--new {
+  background: var(--paper);
   color: var(--ink);
-  opacity: 0.2;
-}
-.master-card.variant-ink .card-rating-none,
-.master-card.variant-terra .card-rating-none {
-  color: var(--paper);
-  opacity: 0.2;
+  border: 1.5px solid var(--ink);
 }
 
-.card-rating-detail {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 12px;
-  font-size: 10.5px;
-  line-height: 1.3;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.card-stars-row {
+/* tags — muted grey, JetBrains Mono lowercase (10.5px @ 560) */
+.master-card__tags {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: currentColor;
-  opacity: 0.65;
-}
-.master-card.variant-ink .card-stars-row {
-  opacity: 0.75;
-}
-.card-review-count {
-  font-size: 10.5px;
-  opacity: 0.55;
-  margin-top: 2px;
-}
-.master-card.variant-ink .card-review-count {
-  opacity: 0.65;
+  font-size: max(8px, 1.875cqi);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(14, 10, 6, 0.55);
+  line-height: 1.0;
+  margin-top: 1.61cqi;
+  margin-bottom: 2.5cqi;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.card-open-btn {
-  padding: 0 18px;
-  border: none;
-  border-left: 2px solid var(--divider);
+/* ── bottom strip — ink bg, member-since left, CTA right ─────── */
+.master-card__strip {
+  /* 36px @ 560 = 6.43% of width. With aspect-ratio 560:200 the
+     strip stays at 18% of the card's height across all sizes. */
+  height: 6.43cqi;
   background: var(--ink);
   color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3.21cqi;
+  border-top: 2px solid var(--ink);
+  /* nowrap + min-width:0 children: at the 320px end of the range
+     the cumulative width of "MEMBER SINCE <YEAR>" + "OPEN PROFILE →"
+     can exceed the strip — let the member-since label truncate
+     with ellipsis rather than wrap to a second line. */
+  white-space: nowrap;
+  overflow: hidden;
+  gap: 1.07cqi;
+}
+.master-card__member-since {
+  font-family: var(--font-mono);
+  font-size: max(8px, 1.79cqi);
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--paper);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.89cqi;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.master-card__year {
+  color: var(--terra);
+  font-weight: 600;
+}
+.master-card__cta {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: max(9px, 2.32cqi);
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 1;
   cursor: pointer;
-  min-width: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   white-space: nowrap;
 }
-.master-card.variant-ink .card-open-btn {
-  background: var(--paper);
-  color: var(--ink);
-}
-.master-card.variant-terra .card-open-btn {
-  background: var(--ink);
-  color: var(--paper);
-}
+
+/* No separate mobile breakpoint: the horizontal layout scales
+   proportionally via `cqi` from the wide-desktop 400px target down
+   to the narrowest plausible mobile viewport (~280-320px). Below
+   that the text floors kick in via the `max()` clauses above. */
 
 /* legacy preview card used in Add New Record form */
 .card-with-strip {
@@ -1009,9 +1010,9 @@ img {
   background: rgba(14, 10, 6, 0.78);
   z-index: 500;
   display: flex;
-  align-items: flex-start;
+  align-items: safe center;
   justify-content: center;
-  padding: 20px 16px;
+  padding: 24px 16px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1024,6 +1025,490 @@ img {
   background: var(--paper);
   border: var(--border);
   overflow: hidden;
+}
+
+/* ============================================================
+   MASTER-CARD MODAL
+   Layout follows /design mockups/master-card-modal/*.html.
+   Five vertical sections under a wordmark header:
+     identity → speaks → tags → contacts → bio → CTA band
+   ============================================================ */
+.modal-overlay-inside--master {
+  max-width: 660px;
+}
+.modal-master {
+  display: flex;
+  flex-direction: column;
+}
+
+/* — Header — */
+.modal-master__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 18px;
+  border-bottom: var(--border);
+}
+.modal-master__wordmark {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 17px;
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.modal-master__wordmark-dot {
+  color: var(--terra);
+}
+.modal-master__close {
+  width: 26px;
+  height: 26px;
+  border: var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.modal-master__close:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* — Identity row: avatar + name block (which contains
+   name+meta + speaks + tags as a single flex column).
+   On mobile, the name-block dissolves (display: contents) so that
+   name-meta stays beside the avatar but speaks/tags break out as
+   their own full-width rows. */
+.modal-master__identity {
+  display: grid;
+  grid-template-columns: 196px 1fr;
+  border-bottom: var(--border);
+}
+.modal-master__avatar {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+  min-height: 196px;
+  border-right: var(--border);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.modal-master__avatar--sigil {
+  background: var(--cream);
+}
+.modal-master__avatar--sigil > svg.sigil {
+  width: 70%;
+  height: 70%;
+}
+.modal-master__avatar--photo {
+  background: var(--ink);
+}
+.modal-master__photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(100%) contrast(118%) brightness(102%);
+  mix-blend-mode: lighten;
+  background-color: var(--ink);
+}
+.modal-master__photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  mix-blend-mode: darken;
+  pointer-events: none;
+}
+
+/* Registration code (M-XX) — only on sigil variant */
+.modal-master__regcode {
+  position: absolute;
+  top: 11px;
+  left: 14px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--terra);
+  text-transform: uppercase;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.modal-master__regcode-dot {
+  display: inline-block;
+  font-size: 7px;
+  line-height: 1;
+}
+
+/* — Name block (col 2, row 1) — wraps everything in the right column.
+   Flex-column with centered justification so name+meta+speaks+tags
+   sit as one tight, vertically-centered group beside the avatar. */
+.modal-master__name-block {
+  grid-column: 2;
+  grid-row: 1;
+  padding: 11px 18px 13px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 11px;
+  min-width: 0;
+}
+.modal-master__name-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.modal-master__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(24px, 5.9vw, 39px);
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  word-break: break-word;
+}
+.modal-master__name-dot {
+  color: var(--terra);
+}
+.modal-master__meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15.5px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+.modal-master__profession {
+  color: var(--ink);
+}
+.modal-master__divider {
+  width: 5px;
+  height: 5px;
+  background: var(--terra);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.modal-master__city {
+  color: var(--terra);
+}
+
+/* — Speaks row (inside name-block on desktop, grid item on mobile) — */
+.modal-master__speaks-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-master__lang-list {
+  display: inline-flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.modal-master__lang {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 2px 4px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* — Tags row (inside name-block on desktop, grid item on mobile) — */
+.modal-master__tags-row {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  opacity: 0.9;
+  text-transform: lowercase;
+  line-height: 1.4;
+}
+
+.modal-master__row-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+/* Contacts */
+.modal-master__contacts-section {
+  padding: 11px 18px 13px;
+  border-bottom: var(--border);
+}
+.modal-master__contacts-section > .modal-master__row-label {
+  margin-bottom: 8px;
+}
+.modal-master__contacts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.modal-master__contacts--two-col {
+  grid-template-columns: 1fr 1fr;
+  column-gap: 20px;
+}
+.modal-master__contact {
+  border-top: 1px solid rgba(14, 10, 6, 0.12);
+}
+.modal-master__contact:first-child,
+.modal-master__contacts--two-col .modal-master__contact:nth-child(2) {
+  border-top: none;
+}
+.modal-master__contact-link {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  align-items: baseline;
+  padding: 6px 0;
+  text-decoration: none;
+  color: var(--ink);
+}
+.modal-master__contact-link:hover .modal-master__contact-value {
+  color: var(--terra);
+}
+.modal-master__contact-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.modal-master__contact-value {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  word-break: break-word;
+  transition: color 0.12s;
+}
+
+/* Bio */
+.modal-master__bio {
+  padding: 10px 18px 12px;
+  background: var(--cream);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  border-bottom: var(--border);
+}
+
+/* — CTA band — */
+.modal-master__cta-band {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  min-height: 42px;
+  background: var(--ink);
+}
+.modal-master__rate-btn {
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-right: 2px solid var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0 6px;
+}
+.modal-master__rate-btn:hover {
+  background: #1a140d;
+}
+.modal-master__rate-star {
+  font-size: 12px;
+}
+.modal-master__cta {
+  background: var(--terra);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.modal-master__cta:hover {
+  background: var(--terra-dk);
+}
+.modal-master__cta-arrow {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15.5px;
+  line-height: 1;
+  margin-left: 10px;
+}
+.modal-master__cta--disabled {
+  background: var(--cream2);
+  color: var(--ink);
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* — Mobile (≤640) — */
+@media (max-width: 640px) {
+  .modal-overlay-inside--master {
+    max-width: 420px;
+  }
+  .modal-master__header {
+    padding: 10px 16px;
+  }
+  .modal-master__wordmark {
+    font-size: 20px;
+  }
+  .modal-master__identity {
+    grid-template-columns: 132px 1fr;
+  }
+  /* Mobile: dissolve the name-block so its children (name-meta, speaks,
+     tags) participate directly in the identity grid. Name-meta stays in
+     row 1 col 2 beside the avatar; speaks/tags span the full width as
+     their own rows below — matches the mobile mockups. */
+  .modal-master__avatar {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: auto;
+    height: 132px;
+    min-height: 0;
+  }
+  .modal-master__avatar--sigil > svg.sigil {
+    width: 70%;
+    height: 70%;
+  }
+  .modal-master__regcode {
+    top: 9px;
+    left: 11px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    gap: 5px;
+  }
+  .modal-master__name-block {
+    display: contents;
+  }
+  .modal-master__name-meta {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .modal-master__speaks-row {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-top: var(--border);
+    padding: 9px 16px;
+    gap: 10px;
+  }
+  .modal-master__tags-row {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    border-top: var(--border);
+    padding: 9px 16px;
+    font-size: 12px;
+  }
+  .modal-master__name {
+    font-size: clamp(24px, 7vw, 30px);
+  }
+  .modal-master__meta {
+    font-size: 15px;
+    gap: 8px;
+  }
+  .modal-master__divider {
+    width: 5px;
+    height: 5px;
+  }
+  .modal-master__row-label {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+  }
+  .modal-master__contact-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+  .modal-master__contact-value {
+    font-size: 14px;
+  }
+  .modal-master__bio {
+    font-size: 12.5px;
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+  .modal-master__contacts-section,
+  .modal-master__bio {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .modal-master__contacts-section {
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+  .modal-master__contact-link {
+    grid-template-columns: 90px 1fr;
+  }
+  .modal-master__contacts--two-col {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+  }
+  .modal-master__contacts--two-col .modal-master__contact:nth-child(2) {
+    border-top: 1px solid rgba(14, 10, 6, 0.12);
+  }
+  .modal-master__cta-band {
+    grid-template-columns: 80px 1fr;
+    min-height: 60px;
+  }
+  .modal-master__rate-btn {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+  }
+  .modal-master__cta {
+    padding: 0 18px;
+    font-size: 15px;
+  }
+  .modal-master__cta-arrow {
+    font-size: 20px;
+  }
 }
 
 /* "Join as a master" modal — tidy, brutalist, on-brand */
@@ -1114,84 +1599,6 @@ img {
   color: var(--terra);
 }
 
-/* modal header band */
-.modal-top-band {
-  background: var(--terra);
-  color: var(--paper);
-  padding: 20px 20px 16px;
-  border-bottom: var(--border);
-  position: relative;
-  overflow: hidden;
-}
-.modal-top-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.04) 0,
-    rgba(255, 255, 255, 0.04) 1px,
-    transparent 1px,
-    transparent 14px
-  );
-  pointer-events: none;
-}
-.modal-head-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  position: relative;
-  z-index: 1;
-}
-.modal-avatar {
-  width: 80px;
-  height: 80px;
-  flex-shrink: 0;
-  background: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 900;
-  color: var(--paper);
-  overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  letter-spacing: -0.03em;
-}
-.modal-title-area {
-  flex: 1;
-  min-width: 0;
-}
-.modal-name {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-.modal-profession {
-  font-size: 13px;
-  font-weight: 700;
-  margin-top: 6px;
-  opacity: 0.85;
-  letter-spacing: 0.02em;
-}
-.modal-location {
-  font-size: 12px;
-  margin-top: 4px;
-  opacity: 0.72;
-}
-.modal-header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-}
 .share-container,
 .close-container {
   width: 32px;
@@ -1214,84 +1621,6 @@ img {
 }
 .share-container.confirm {
   background: rgba(34, 197, 94, 0.5);
-}
-
-.modal-avail {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  position: relative;
-  z-index: 1;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: rgba(0, 0, 0, 0.22);
-  padding: 4px 10px;
-}
-.modal-avail-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 0;
-}
-
-/* modal body */
-.modal-body {
-  padding: 0;
-}
-.modal-section-title {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  padding: 14px 20px 4px;
-  opacity: 0.5;
-  color: var(--ink);
-}
-.modal-bio {
-  padding: 4px 20px 14px;
-  font-size: 14px;
-  line-height: 1.65;
-  font-weight: 400;
-  color: var(--ink);
-}
-.modal-tags {
-  padding: 4px 20px 14px;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.modal-tag {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  background: var(--cream);
-  border: var(--border);
-  padding: 4px 8px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.modal-langs {
-  padding: 4px 20px 12px;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.modal-lang-badge {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  background: var(--ink);
-  color: var(--paper);
-  padding: 4px 10px;
-  letter-spacing: 0.06em;
-}
-.modal-divider {
-  height: 2px;
-  background: var(--cream2);
 }
 
 /* contact buttons */
@@ -1638,95 +1967,6 @@ img {
 .error a {
   color: var(--terra);
   text-decoration: underline;
-}
-
-/* ============================================================
-   QUOTE CARD (What clients say)
-   ============================================================ */
-.quote-card {
-  display: flex;
-  border: 2px solid var(--ink);
-  flex-direction: column;
-  overflow: hidden;
-  grid-column: -2 / -1;
-  grid-row: span 2;
-}
-
-.quote-card-header {
-  padding: 10px 18px;
-  border-bottom: 2px solid var(--ink);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.quote-card-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-.quote-card-stars {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-/* terra variant: ink header, terra body */
-.quote-card-terra .quote-card-header {
-  background: var(--ink);
-  color: var(--paper);
-}
-.quote-card-terra {
-  background: var(--terra);
-  color: var(--paper);
-}
-/* ink variant: terra header, ink body */
-.quote-card-ink .quote-card-header {
-  background: var(--terra);
-  color: var(--paper);
-}
-.quote-card-ink {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.quote-card-body {
-  flex: 1;
-  padding: 18px 20px 16px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-}
-.quote-card-mark {
-  position: absolute;
-  top: -2px;
-  left: 10px;
-  font-family: var(--font-display);
-  font-size: 100px;
-  line-height: 0.5;
-  opacity: 0.16;
-  pointer-events: none;
-}
-.quote-card-text {
-  font-size: 15px;
-  line-height: 1.5;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  position: relative;
-  z-index: 1;
-  padding-left: 26px;
-}
-.quote-card-attr {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0.7;
-  padding-left: 26px;
 }
 
 /* ============================================================
@@ -2111,7 +2351,6 @@ img {
 
 /* ============================================================
    MEDIA QUERIES — Wide desktop (≥1540): 3-col hero + testimonial
-   Appears at ~4 master-grid columns; QuoteCard in grid hidden here.
    ============================================================ */
 @media (min-width: 1540px) {
   .hero-section {
@@ -2122,9 +2361,6 @@ img {
   }
   .hero-testimonial {
     display: flex;
-  }
-  .quote-card {
-    display: none;
   }
 }
 
@@ -2326,12 +2562,6 @@ img {
   .masters-grid {
     padding: 0 16px 20px;
     grid-template-columns: 1fr;
-  }
-  .quote-card {
-    display: none;
-  }
-  .quote-card-mark {
-    font-size: 56px;
   }
   .search-empty-state {
     padding: 32px 16px;

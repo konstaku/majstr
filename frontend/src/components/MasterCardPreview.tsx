@@ -43,8 +43,8 @@ export default function MasterCardPreview({ masterPreview }: MasterCardPreviewPr
           <div className="card-avatar-wrapper">
             <Avatar
               img={useThisPhoto ? photo : null}
-              color="#c84b31"
               name={name || "?"}
+              seed={name || "preview"}
             />
           </div>
           <div className="card-info">
