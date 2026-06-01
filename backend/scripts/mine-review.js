@@ -46,6 +46,11 @@ const arg = (n, d) => {
 };
 const PORT = parseInt(arg('--port', '4102'), 10);
 const MINING_DB = arg('--miningDb', 'majstr_mining');
+// Optional: restrict the review queue to a single source chat (e.g. Roma).
+// When unset, all chats are reviewed merged (original behavior).
+const CHAT_ID = arg('--chatId', null);
+const candidateFilter = (extra = {}) =>
+  CHAT_ID ? { chatID: CHAT_ID, ...extra } : { ...extra };
 
 const norm = (s) =>
   String(s || '')
@@ -80,8 +85,11 @@ async function reloadRefs() {
 
 async function getData() {
   const [candidatesRaw, counts, liveMasters] = await Promise.all([
-    Candidate.find({ status: 'new' }).sort({ score: -1 }).lean(),
-    Candidate.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
+    Candidate.find(candidateFilter({ status: 'new' })).sort({ score: -1 }).lean(),
+    Candidate.aggregate([
+      ...(CHAT_ID ? [{ $match: { chatID: CHAT_ID } }] : []),
+      { $group: { _id: '$status', n: { $sum: 1 } } },
+    ]),
     // Cross-DB collision check: production Masters this candidate may already
     // duplicate. Only `approved` (live) — declined / pending are not collisions.
     Master.find({ status: 'approved' })
@@ -517,11 +525,12 @@ async function main() {
   if (!professions.length || !locations.length) {
     throw new Error('No reference data in the default DB — wrong DB target?');
   }
-  const pending = await Candidate.countDocuments({ status: 'new' });
+  const pending = await Candidate.countDocuments(candidateFilter({ status: 'new' }));
   server.listen(PORT, () => {
     console.log(`Review UI: http://localhost:${PORT}`);
     console.log(
       `${pending} candidates to review · candidates DB: ${MINING_DB} · ` +
+        (CHAT_ID ? `chat filter: ${CHAT_ID} · ` : '') +
         `Masters write to: production (default DB)`
     );
   });
