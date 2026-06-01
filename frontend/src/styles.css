@@ -1010,9 +1010,9 @@ img {
   background: rgba(14, 10, 6, 0.78);
   z-index: 500;
   display: flex;
-  align-items: flex-start;
+  align-items: safe center;
   justify-content: center;
-  padding: 20px 16px;
+  padding: 24px 16px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1034,7 +1034,7 @@ img {
      identity → speaks → tags → contacts → bio → CTA band
    ============================================================ */
 .modal-overlay-inside--master {
-  max-width: 940px;
+  max-width: 570px;
 }
 .modal-master {
   display: flex;
@@ -1046,13 +1046,13 @@ img {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 22px;
+  padding: 10px 16px;
   border-bottom: var(--border);
 }
 .modal-master__wordmark {
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 24px;
+  font-size: 18px;
   line-height: 0.82;
   letter-spacing: -0.06em;
   text-transform: uppercase;
@@ -1062,13 +1062,13 @@ img {
   color: var(--terra);
 }
 .modal-master__close {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border: var(--border);
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 13px;
   line-height: 1;
   cursor: pointer;
   display: grid;
@@ -1083,12 +1083,12 @@ img {
 /* — Identity row: avatar + name block — */
 .modal-master__identity {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 170px 1fr;
   border-bottom: var(--border);
 }
 .modal-master__avatar {
   position: relative;
-  height: 280px;
+  height: 170px;
   border-right: var(--border);
   overflow: hidden;
   display: grid;
@@ -1098,8 +1098,8 @@ img {
   background: var(--cream);
 }
 .modal-master__avatar--sigil > svg.sigil {
-  width: 67%;
-  height: 67%;
+  width: 70%;
+  height: 70%;
 }
 .modal-master__avatar--photo {
   background: var(--ink);
@@ -1124,8 +1124,8 @@ img {
 /* Registration code (M-XX) — only on sigil variant */
 .modal-master__regcode {
   position: absolute;
-  top: 14px;
-  left: 16px;
+  top: 10px;
+  left: 12px;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
@@ -1135,14 +1135,17 @@ img {
   line-height: 1;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
 }
 .modal-master__regcode-dot {
   display: inline-block;
+  font-size: 8px;
+  line-height: 1;
 }
 
 /* — Name block — */
 .modal-master__name-block {
-  padding: 22px 26px;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1152,7 +1155,7 @@ img {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: clamp(34px, 4.6vw, 56px);
+  font-size: clamp(22px, 3.2vw, 32px);
   line-height: 0.88;
   letter-spacing: -0.05em;
   text-transform: uppercase;
@@ -1163,13 +1166,13 @@ img {
   color: var(--terra);
 }
 .modal-master__meta {
-  margin-top: 16px;
+  margin-top: 8px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 22px;
+  font-size: 14px;
   line-height: 1.05;
   letter-spacing: -0.025em;
   text-transform: uppercase;
@@ -1178,8 +1181,8 @@ img {
   color: var(--ink);
 }
 .modal-master__divider {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   background: var(--terra);
   display: inline-block;
   flex-shrink: 0;
@@ -1188,17 +1191,30 @@ img {
   color: var(--terra);
 }
 
+/* Tags inline under the meta line (not a separate section) */
+.modal-master__tags {
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  opacity: 0.55;
+  text-transform: lowercase;
+  line-height: 1.35;
+}
+
 /* — Section row (speaks/contacts kicker + content) — */
 .modal-master__row {
-  padding: 14px 26px;
+  padding: 10px 18px;
   border-bottom: var(--border);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 .modal-master__row-label {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1209,45 +1225,32 @@ img {
 
 /* Speaks */
 .modal-master__row--speaks {
-  padding: 12px 26px;
+  padding: 9px 18px;
 }
 .modal-master__lang-list {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 .modal-master__lang {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
   background: var(--ink);
   color: var(--paper);
-  padding: 3px 6px;
+  padding: 3px 5px;
   text-transform: uppercase;
-}
-
-/* Tags strip */
-.modal-master__tags {
-  padding: 10px 26px;
-  border-bottom: var(--border);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--ink);
-  opacity: 0.6;
-  text-transform: lowercase;
 }
 
 /* Contacts */
 .modal-master__contacts-section {
-  padding: 14px 26px;
+  padding: 10px 18px;
   border-bottom: var(--border);
 }
 .modal-master__contacts-section > .modal-master__row-label {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .modal-master__contacts {
   list-style: none;
@@ -1258,7 +1261,7 @@ img {
 }
 .modal-master__contacts--two-col {
   grid-template-columns: 1fr 1fr;
-  column-gap: 28px;
+  column-gap: 20px;
 }
 .modal-master__contact {
   border-top: 1px solid rgba(14, 10, 6, 0.12);
@@ -1269,9 +1272,9 @@ img {
 }
 .modal-master__contact-link {
   display: grid;
-  grid-template-columns: 92px 1fr;
+  grid-template-columns: 70px 1fr;
   align-items: baseline;
-  padding: 8px 0;
+  padding: 6px 0;
   text-decoration: none;
   color: var(--ink);
 }
@@ -1280,7 +1283,7 @@ img {
 }
 .modal-master__contact-label {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1288,7 +1291,7 @@ img {
 }
 .modal-master__contact-value {
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.005em;
   color: var(--ink);
@@ -1298,10 +1301,10 @@ img {
 
 /* Bio */
 .modal-master__bio {
-  padding: 14px 26px;
+  padding: 10px 18px;
   background: var(--cream);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 500;
   line-height: 1.5;
   letter-spacing: -0.005em;
@@ -1312,8 +1315,8 @@ img {
 /* — CTA band — */
 .modal-master__cta-band {
   display: grid;
-  grid-template-columns: 100px 1fr;
-  min-height: 64px;
+  grid-template-columns: 70px 1fr;
+  min-height: 44px;
   background: var(--ink);
 }
 .modal-master__rate-btn {
@@ -1324,20 +1327,20 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 5px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0 10px;
+  padding: 0 6px;
 }
 .modal-master__rate-btn:hover {
   background: #1a140d;
 }
 .modal-master__rate-star {
-  font-size: 14px;
+  font-size: 12px;
 }
 .modal-master__cta {
   background: var(--terra);
@@ -1345,10 +1348,10 @@ img {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 22px;
+  padding: 0 16px;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 17px;
+  font-size: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-decoration: none;
@@ -1360,9 +1363,9 @@ img {
 .modal-master__cta-arrow {
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 22px;
+  font-size: 17px;
   line-height: 1;
-  margin-left: 14px;
+  margin-left: 10px;
 }
 .modal-master__cta--disabled {
   background: var(--cream2);
@@ -1377,49 +1380,53 @@ img {
     max-width: 420px;
   }
   .modal-master__header {
-    padding: 12px 18px;
+    padding: 10px 14px;
   }
   .modal-master__wordmark {
-    font-size: 20px;
+    font-size: 16px;
   }
   .modal-master__identity {
-    grid-template-columns: 132px 1fr;
+    grid-template-columns: 122px 1fr;
   }
   .modal-master__avatar {
-    height: 132px;
+    height: 122px;
   }
   .modal-master__avatar--sigil > svg.sigil {
     width: 70%;
     height: 70%;
   }
   .modal-master__regcode {
-    top: 9px;
+    top: 8px;
     left: 10px;
     font-size: 9px;
     letter-spacing: 0.12em;
+    gap: 5px;
   }
   .modal-master__name-block {
-    padding: 12px 16px;
+    padding: 10px 14px;
   }
   .modal-master__name {
-    font-size: clamp(24px, 7vw, 30px);
+    font-size: clamp(20px, 6vw, 26px);
   }
   .modal-master__meta {
-    margin-top: 10px;
-    font-size: 14px;
-    gap: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+    gap: 7px;
   }
   .modal-master__divider {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
+  }
+  .modal-master__tags {
+    margin-top: 6px;
+    font-size: 11px;
   }
   .modal-master__row,
   .modal-master__row--speaks,
-  .modal-master__tags,
   .modal-master__contacts-section,
   .modal-master__bio {
-    padding-left: 18px;
-    padding-right: 18px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
   .modal-master__contacts--two-col {
     grid-template-columns: 1fr;
@@ -1429,15 +1436,15 @@ img {
     border-top: 1px solid rgba(14, 10, 6, 0.12);
   }
   .modal-master__cta-band {
-    grid-template-columns: 88px 1fr;
-    min-height: 60px;
+    grid-template-columns: 64px 1fr;
+    min-height: 44px;
   }
   .modal-master__cta {
-    padding: 0 16px;
-    font-size: 15px;
+    padding: 0 14px;
+    font-size: 12px;
   }
   .modal-master__cta-arrow {
-    font-size: 20px;
+    font-size: 16px;
   }
 }
 

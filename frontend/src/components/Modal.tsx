@@ -81,7 +81,14 @@ export default function Modal({ master, setShowModal }: ModalProps) {
   } = useContext(MasterContext);
   const { t, lang } = useTranslation();
 
-  const { _id: id, languages, contacts, about, photo } = master;
+  const { _id: id, languages, contacts, about, photo, countryID } = master;
+
+  // Mirror MasterCard's fallback so modal always shows language badges.
+  const displayLangs = (languages && languages.length > 0)
+    ? languages
+    : countryID === "IT" ? ["uk", "it"]
+    : countryID === "PT" ? ["uk", "pt"]
+    : ["uk"];
 
   const displayName = lang === "uk" ? master.name : transliterate(master.name);
 
@@ -105,6 +112,12 @@ export default function Modal({ master, setShowModal }: ModalProps) {
   const primaryContact: Contacts | undefined = contacts[0];
   const primaryMeta = primaryContact ? getContactMeta(primaryContact.contactType) : null;
   const primaryHref = primaryContact && primaryMeta ? primaryMeta.href(primaryContact.value) : "#";
+  const primaryIsPhone = primaryContact?.contactType.toLowerCase() === "phone";
+  const ctaText = primaryIsPhone
+    ? "Call"
+    : primaryMeta
+      ? `Message on ${primaryMeta.label}`
+      : "";
 
   const useTwoColContacts = contacts.length >= 4;
 
@@ -158,7 +171,7 @@ export default function Modal({ master, setShowModal }: ModalProps) {
                   <Sigil seed={id} size={3} />
                   <div className="modal-master__regcode">
                     <span className="modal-master__regcode-dot">●</span>
-                    {` M-${regCode}`}
+                    <span>M-{regCode}</span>
                   </div>
                 </>
               )}
@@ -174,29 +187,25 @@ export default function Modal({ master, setShowModal }: ModalProps) {
                 <span className="modal-master__divider" aria-hidden="true" />
                 <span className="modal-master__city">{locName}</span>
               </div>
+              {modalTags.length > 0 && (
+                <div className="modal-master__tags">
+                  {modalTags.slice(0, 4).join(" · ")}
+                </div>
+              )}
             </div>
           </section>
 
           {/* Speaks */}
-          {languages && languages.length > 0 && (
-            <section className="modal-master__row modal-master__row--speaks">
-              <div className="modal-master__row-label">Speaks</div>
-              <div className="modal-master__lang-list">
-                {languages.map((code) => (
-                  <span key={code} className="modal-master__lang">
-                    {LANG_LABELS[code] ?? code.toUpperCase()}
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Tags */}
-          {modalTags.length > 0 && (
-            <section className="modal-master__tags">
-              {modalTags.slice(0, 4).join(" · ")}
-            </section>
-          )}
+          <section className="modal-master__row modal-master__row--speaks">
+            <div className="modal-master__row-label">Speaks</div>
+            <div className="modal-master__lang-list">
+              {displayLangs.slice(0, 4).map((code) => (
+                <span key={code} className="modal-master__lang">
+                  {LANG_LABELS[code] ?? code.toUpperCase()}
+                </span>
+              ))}
+            </div>
+          </section>
 
           {/* Contacts */}
           {contacts.length > 0 && (
@@ -247,9 +256,7 @@ export default function Modal({ master, setShowModal }: ModalProps) {
                 target={primaryContact.contactType === "phone" || primaryContact.contactType === "email" ? undefined : "_blank"}
                 rel="noopener noreferrer"
               >
-                <span className="modal-master__cta-label">
-                  Message on {primaryMeta.label}
-                </span>
+                <span className="modal-master__cta-label">{ctaText}</span>
                 <span className="modal-master__cta-arrow" aria-hidden="true">→</span>
               </a>
             ) : (
