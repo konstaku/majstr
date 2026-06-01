@@ -187,24 +187,24 @@ export default function Modal({ master, setShowModal }: ModalProps) {
                 <span className="modal-master__divider" aria-hidden="true" />
                 <span className="modal-master__city">{locName}</span>
               </div>
-              {modalTags.length > 0 && (
-                <div className="modal-master__tags">
-                  {modalTags.slice(0, 4).join(" · ")}
-                </div>
-              )}
             </div>
-          </section>
 
-          {/* Speaks */}
-          <section className="modal-master__row modal-master__row--speaks">
-            <div className="modal-master__row-label">Speaks</div>
-            <div className="modal-master__lang-list">
-              {displayLangs.slice(0, 4).map((code) => (
-                <span key={code} className="modal-master__lang">
-                  {LANG_LABELS[code] ?? code.toUpperCase()}
-                </span>
-              ))}
+            <div className="modal-master__speaks-row">
+              <span className="modal-master__row-label">Speaks</span>
+              <span className="modal-master__lang-list">
+                {displayLangs.slice(0, 4).map((code) => (
+                  <span key={code} className="modal-master__lang">
+                    {LANG_LABELS[code] ?? code.toUpperCase()}
+                  </span>
+                ))}
+              </span>
             </div>
+
+            {modalTags.length > 0 && (
+              <div className="modal-master__tags-row">
+                {modalTags.slice(0, 4).join(" · ")}
+              </div>
+            )}
           </section>
 
           {/* Contacts */}

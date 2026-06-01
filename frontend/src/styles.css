@@ -1080,7 +1080,10 @@ img {
   color: var(--paper);
 }
 
-/* — Identity row: avatar + name block — */
+/* — Identity row: avatar + name block + speaks + tags
+   On desktop, speaks/tags live in column 2 alongside the name block;
+   the avatar spans all rows. On mobile, speaks/tags break out to span
+   the full width below the avatar (see media query). */
 .modal-master__identity {
   display: grid;
   grid-template-columns: 170px 1fr;
@@ -1088,7 +1091,10 @@ img {
 }
 .modal-master__avatar {
   position: relative;
-  height: 170px;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: stretch;
+  min-height: 170px;
   border-right: var(--border);
   overflow: hidden;
   display: grid;
@@ -1143,9 +1149,11 @@ img {
   line-height: 1;
 }
 
-/* — Name block — */
+/* — Name block (col 2, row 1) — */
 .modal-master__name-block {
-  padding: 14px 18px;
+  grid-column: 2;
+  grid-row: 1;
+  padding: 14px 18px 4px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1191,44 +1199,16 @@ img {
   color: var(--terra);
 }
 
-/* Tags inline under the meta line (not a separate section) */
-.modal-master__tags {
-  margin-top: 8px;
-  font-family: var(--font-body);
-  font-size: 11.5px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  opacity: 0.55;
-  text-transform: lowercase;
-  line-height: 1.35;
-}
-
-/* — Section row (speaks/contacts kicker + content) — */
-.modal-master__row {
-  padding: 10px 18px;
-  border-bottom: var(--border);
+/* — Speaks row (col 2 on desktop, full-width on mobile) — */
+.modal-master__speaks-row {
+  grid-column: 2;
+  padding: 4px 18px;
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-.modal-master__row-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink);
-  opacity: 0.55;
-  flex-shrink: 0;
-}
-
-/* Speaks */
-.modal-master__row--speaks {
-  padding: 9px 18px;
+  gap: 10px;
 }
 .modal-master__lang-list {
-  display: flex;
+  display: inline-flex;
   gap: 5px;
   flex-wrap: wrap;
 }
@@ -1242,6 +1222,31 @@ img {
   color: var(--paper);
   padding: 3px 5px;
   text-transform: uppercase;
+}
+
+/* — Tags row (col 2 on desktop, full-width on mobile) — */
+.modal-master__tags-row {
+  grid-column: 2;
+  padding: 4px 18px 14px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  opacity: 0.6;
+  text-transform: lowercase;
+  line-height: 1.35;
+}
+
+.modal-master__row-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.55;
+  flex-shrink: 0;
 }
 
 /* Contacts */
@@ -1388,8 +1393,14 @@ img {
   .modal-master__identity {
     grid-template-columns: 122px 1fr;
   }
+  /* Mobile: avatar only takes row 1; speaks/tags break out to span
+     full width as their own rows below (matches the mobile mockups). */
   .modal-master__avatar {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: auto;
     height: 122px;
+    min-height: 0;
   }
   .modal-master__avatar--sigil > svg.sigil {
     width: 70%;
@@ -1403,7 +1414,23 @@ img {
     gap: 5px;
   }
   .modal-master__name-block {
+    grid-column: 2;
+    grid-row: 1;
     padding: 10px 14px;
+  }
+  .modal-master__speaks-row {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-top: var(--border);
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  .modal-master__tags-row {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    border-top: var(--border);
+    padding: 8px 14px;
+    font-size: 11px;
   }
   .modal-master__name {
     font-size: clamp(20px, 6vw, 26px);
@@ -1417,12 +1444,6 @@ img {
     width: 4px;
     height: 4px;
   }
-  .modal-master__tags {
-    margin-top: 6px;
-    font-size: 11px;
-  }
-  .modal-master__row,
-  .modal-master__row--speaks,
   .modal-master__contacts-section,
   .modal-master__bio {
     padding-left: 14px;
