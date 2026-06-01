@@ -109,15 +109,22 @@ export default function Modal({ master, setShowModal }: ModalProps) {
     [id, masters]
   );
 
-  const primaryContact: Contacts | undefined = contacts[0];
+  // CTA precedence: Telegram wins over any other channel when present,
+  // otherwise fall back to the first declared contact.
+  const primaryContact: Contacts | undefined =
+    contacts.find((c) => c.contactType.toLowerCase() === "telegram") ?? contacts[0];
   const primaryMeta = primaryContact ? getContactMeta(primaryContact.contactType) : null;
   const primaryHref = primaryContact && primaryMeta ? primaryMeta.href(primaryContact.value) : "#";
-  const primaryIsPhone = primaryContact?.contactType.toLowerCase() === "phone";
+  const primaryType = primaryContact?.contactType.toLowerCase();
+  const primaryIsPhone = primaryType === "phone";
+  const primaryIsTelegram = primaryType === "telegram";
   const ctaText = primaryIsPhone
     ? "Call"
-    : primaryMeta
-      ? `Message on ${primaryMeta.label}`
-      : "";
+    : primaryIsTelegram
+      ? "Write in Telegram"
+      : primaryMeta
+        ? `Message on ${primaryMeta.label}`
+        : "";
 
   const useTwoColContacts = contacts.length >= 4;
 
