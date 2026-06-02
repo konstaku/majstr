@@ -606,13 +606,13 @@ img {
 
 .masters-grid {
   display: grid;
-  /* Cards start at 320px and stretch (1fr) to fill the column.
-     The horizontal sigil+body layout scales proportionally via
-     container queries (see below), so names and badges stay legible
-     at any width.
-     `min(320px, 100%)` keeps the layout from horizontal-scrolling
-     on viewports narrower than 320px (rare, foldables / 280-300px). */
-  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  /* Cards start at 426px (1.33× the original 320px target) and stretch
+     (1fr) to fill the column. The horizontal sigil+body layout scales
+     proportionally via container queries (see below), so names, badges,
+     and interline spacing stay in proportion at any width.
+     `min(426px, 100%)` keeps the layout from horizontal-scrolling
+     on viewports narrower than 426px (the card just goes full-width). */
+  grid-template-columns: repeat(auto-fill, minmax(min(426px, 100%), 1fr));
   grid-auto-flow: dense;
   gap: 12px;
   padding: 0 32px 32px;
