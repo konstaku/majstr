@@ -60,6 +60,35 @@ function dedupKeys(candidate) {
   return contactsToKeys((candidate && candidate.extracted && candidate.extracted.contacts) || []);
 }
 
+// Richness of a candidate's extraction — used to pick the representative when
+// the same person appears across several messages. We want the card with the
+// FULLEST contact set (most contacts, then longest total contact value), then
+// the richest description, then the classifier score. Compared field-by-field.
+function richness(candidate) {
+  const e = (candidate && candidate.extracted) || {};
+  const contacts = (e.contacts || []).filter((c) => c && c.value);
+  const contactLen = contacts.reduce(
+    (n, c) => n + String(c.value || '').length,
+    0
+  );
+  return [
+    contacts.length,
+    contactLen,
+    String(e.description || '').length,
+    Number(candidate && candidate.score) || 0,
+  ];
+}
+
+// Descending lexicographic compare of two richness tuples.
+function compareRichness(a, b) {
+  const ra = richness(a);
+  const rb = richness(b);
+  for (let i = 0; i < ra.length; i++) {
+    if (rb[i] !== ra[i]) return rb[i] - ra[i];
+  }
+  return 0;
+}
+
 // Soft secondary key — used when there is no contact at all. A name without a
 // profession/city is too noisy to dedup on; require all three.
 function softKey(candidate) {
@@ -109,8 +138,9 @@ function isCrossBorderTransport(text) {
 // applyDedup — the main entry point. Given the raw queue + live Masters,
 // returns: { reps[], suppressed: Map<candidateId, reason> }.
 //
-// Candidates must already be sorted by score DESC (the highest-score wins
-// its group). Suppression reasons:
+// The representative of each dedup group is the RICHEST candidate — the one
+// with the fullest contact set (then description, then score), so the admin
+// reviews the most complete card. Suppression reasons:
 //   'existing-master'         — a live Master has this contact already
 //   'cross-border-transport'  — policy filter
 //   'duplicate-of:<cid>'      — another candidate in the queue is the rep
@@ -120,7 +150,9 @@ function applyDedup(candidates, masterIndex) {
   const suppressed = new Map(); // candidateId -> { reason, ... }
   const keyToRepId = new Map(); // dedup key -> repId already kept
 
-  for (const c of candidates) {
+  // Process richest-first so first-claim-wins keeps the fullest card as rep.
+  const ordered = [...candidates].sort(compareRichness);
+  for (const c of ordered) {
     const cid = String(c._id);
 
     // 1. live-Master collision
@@ -179,6 +211,8 @@ module.exports = {
   phoneKey,
   handleKey,
   dedupKeys,
+  richness,
+  compareRichness,
   softKey,
   buildMasterIndex,
   isCrossBorderTransport,

@@ -35,10 +35,19 @@ const {
   createLocationDoc,
   runLexiconRebuild,
 } = require('../routes/referenceAdmin');
+const RawMessageModel = require('../database/schema/RawMessage');
 const { applyDedup, buildMasterIndex } = require('../mining/dedup');
 const {
   fetchAndUploadPhotoForMaster,
 } = require('../helpers/telegramPhotoByHandle');
+const { translateName, translateList } = require('../helpers/ollamaTranslate');
+// Per-profession service-tag suggestions, shared with the TMA onboarding flow.
+// Keyed professionID -> lang -> string[], with a `_default` fallback.
+const tagSuggestions = require('../../frontend/src/data/tag-suggestions.i18n.json');
+
+// Default city per source chat — pre-selected when a candidate has no extracted
+// city. Resolved to a real locationID at startup (chat name -> Location match).
+const CHAT_DEFAULT_CITY_NAME = { '1513619004': 'Roma' };
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
@@ -49,8 +58,13 @@ const MINING_DB = arg('--miningDb', 'majstr_mining');
 // Optional: restrict the review queue to a single source chat (e.g. Roma).
 // When unset, all chats are reviewed merged (original behavior).
 const CHAT_ID = arg('--chatId', null);
+// Optional: force the default-city pre-selection to a specific locationID,
+// overriding the chat-name lookup. Useful when the chat name isn't a city.
+const DEFAULT_CITY = arg('--defaultCity', null);
 const candidateFilter = (extra = {}) =>
   CHAT_ID ? { chatID: CHAT_ID, ...extra } : { ...extra };
+
+let RawMessage; // bound to the mining connection in main()
 
 const norm = (s) =>
   String(s || '')
@@ -105,6 +119,34 @@ async function getData() {
     supByReason[s.reason] = (supByReason[s.reason] || 0) + 1;
   }
 
+  // #8 — surface the poster's Telegram display name. Join the anchor message
+  // (chatID + messageID) of every visible rep; fromName fills the Name field.
+  const fromNameByKey = new Map();
+  const anchorKeys = reps.map((c) => ({ chatID: c.chatID, messageID: c.anchorMessageID }));
+  if (anchorKeys.length) {
+    const rawMsgs = await RawMessage.find({ $or: anchorKeys })
+      .select('chatID messageID fromName')
+      .lean();
+    for (const m of rawMsgs) {
+      fromNameByKey.set(m.chatID + ':' + m.messageID, m.fromName || '');
+    }
+  }
+
+  // #7 — resolve each chat's default city name to a real locationID once.
+  const defaultLocByChat = new Map();
+  const resolveChatDefaultLoc = (chatID) => {
+    if (defaultLocByChat.has(chatID)) return defaultLocByChat.get(chatID);
+    let id = DEFAULT_CITY || '';
+    if (!id) {
+      const cityName = CHAT_DEFAULT_CITY_NAME[chatID];
+      if (cityName) {
+        id = matchRef(cityName, locations, ['en', 'it', 'ua', 'ua_alt', 'ru', 'ru_alt']);
+      }
+    }
+    defaultLocByChat.set(chatID, id);
+    return id;
+  };
+
   return {
     stats: {
       ...counts.reduce((a, c) => ((a[c._id] = c.n), a), {}),
@@ -112,10 +154,11 @@ async function getData() {
       hiddenTotal: suppressed.size,
       hiddenBy: supByReason, // { 'duplicate-of': N, 'existing-master': N, 'cross-border-transport': N }
     },
-    professions: professions.map((p) => ({ id: p.id, name: p.name })),
+    professions: professions.map((p) => ({ id: p.id, categoryID: p.categoryID, name: p.name })),
     locations: locations.map((l) => ({ id: l.id, name: l.name })),
     categories: categories.map((c) => ({ id: c.id, name: c.name })),
     countries: countries.map((c) => ({ id: c.id, name: c.name, flag: c.flag })),
+    tagSuggestions, // professionID -> lang -> string[] (with `_default`)
     candidates: reps.map((c) => ({
       id: String(c._id),
       chatID: c.chatID,
@@ -126,6 +169,7 @@ async function getData() {
       inquiryText: c.inquiryText,
       text: c.text,
       responderName: c.responderName,
+      fromName: fromNameByKey.get(c.chatID + ':' + c.anchorMessageID) || '',
       tgLink: `https://t.me/c/${c.chatID}/${c.anchorMessageID}`,
       extracted: c.extracted || {},
       suggestProfessionID: matchRef(c.extracted && c.extracted.profession, professions, [
@@ -134,6 +178,7 @@ async function getData() {
       suggestLocationID: matchRef(c.extracted && c.extracted.city, locations, [
         'en', 'it', 'ua', 'ua_alt', 'ru', 'ru_alt',
       ]),
+      chatDefaultLocationID: resolveChatDefaultLoc(c.chatID),
     })),
   };
 }
@@ -191,6 +236,14 @@ textarea{min-height:54px;resize:vertical}
 .modal-hint{color:#8b949e;font-size:11px;margin:4px 0 0}
 .btn-go{background:#238636;color:#fff}.btn-go:disabled{background:#21343a;color:#5b6b70;cursor:not-allowed}
 .btn-cancel{background:#21262d;border:1px solid #30363d;color:#e6edf3}
+.tagbox{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid #30363d;background:#0d1117;color:#adbac7;cursor:pointer;user-select:none}
+.chip.on{background:#1f6feb33;border-color:#388bfd;color:#79c0ff}
+.chip.off{opacity:.4;cursor:not-allowed}
+.chip .x{margin-left:6px;color:#8b949e}
+.tagadd{display:flex;gap:6px;margin-top:6px}.tagadd input{flex:1}.tagadd button{width:auto;flex:none}
+.btn-tr{background:#21262d;border:1px solid #30363d;color:#adbac7;border-radius:6px;cursor:pointer;padding:6px 10px;font:inherit;font-size:12px;margin-top:8px}
+.btn-tr:disabled{opacity:.6;cursor:wait}
 </style></head><body>
 <header><div>#<b id="ix">–</b>/<b id="tot">–</b></div>
 <div class="bar"><i id="pg" style="width:0"></i></div>
@@ -205,6 +258,11 @@ const $=x=>document.getElementById(x);
 const esc=s=>{const d=document.createElement('div');d.textContent=s==null?'':s;return d.innerHTML;};
 function opts(list,sel,blank){let h='<option value="">'+(blank||'— select —')+'</option>';
  for(const o of list){const nm=o.name.en||o.name.ua||o.id;h+='<option value="'+o.id+'"'+(o.id===sel?' selected':'')+'>'+esc(nm)+'</option>';}return h;}
+// #2 — professions filtered by category. Empty category => all professions.
+function catOf(profId){const p=(D.professions||[]).find(x=>x.id===profId);return p?p.categoryID||'':'';}
+function profOpts(catID,sel){
+ const list=(D.professions||[]).filter(p=>!catID||p.categoryID===catID);
+ return opts(list,sel,'— select profession —');}
 function contactRow(c){
  const types=['phone','telegram','instagram','whatsapp','viber','other'];
  return '<div class="crow"><select class="ctype">'+types.map(t=>'<option'+(c&&c.contactType===t?' selected':'')+'>'+t+'</option>').join('')+
@@ -225,16 +283,28 @@ function render(){
  h+='<div class="msg">'+esc(c.text)+'</div>';
  h+='<a class="tg" href="'+c.tgLink+'" target="_blank">↗ open original message in Telegram (to fetch a contact)</a></div>';
  h+='<div class="form">';
- h+='<label>Name</label><input id="f_name" value="'+esc(e.name||c.responderName||'')+'">';
- h+='<label>Profession</label><div class="picker-row"><select id="f_prof">'+opts(D.professions,c.suggestProfessionID)+'</select>'+
-   '<button type="button" class="btnsm" onclick="openCreateProf()">+ Add new</button></div>';
+ // #8 — default Name to the poster's Telegram display name.
+ h+='<label>Name</label><input id="f_name" value="'+esc(e.name||c.fromName||c.responderName||'')+'">';
+ if(c.fromName)h+='<div class="hint">Posted by: “'+esc(c.fromName)+'”</div>';
+ // #2 — Category → Profession cascade.
+ const suggCat=catOf(c.suggestProfessionID);
+ h+='<label>Profession</label><div class="picker-row">'+
+   '<select id="f_cat" onchange="onCatChange()">'+opts(D.categories,suggCat,'— category —')+'</select>'+
+   '<select id="f_prof" onchange="onProfChange()">'+profOpts(suggCat,c.suggestProfessionID)+'</select>'+
+   '<button type="button" class="btnsm" onclick="openCreateProf()">+ Add</button></div>';
  if(e.profession)h+='<div class="hint">Classifier read: “'+esc(e.profession)+'”</div>';
- h+='<label>City</label><div class="picker-row"><select id="f_loc">'+opts(D.locations,c.suggestLocationID)+'</select>'+
+ // #7 — default City to the chat's city when none was extracted.
+ const locSel=c.suggestLocationID||c.chatDefaultLocationID||'';
+ h+='<label>City</label><div class="picker-row"><select id="f_loc">'+opts(D.locations,locSel)+'</select>'+
    '<button type="button" class="btnsm" onclick="openCreateLoc()">+ Add new</button></div>';
  if(e.city)h+='<div class="hint">Classifier read: “'+esc(e.city)+'”</div>';
+ else if(!c.suggestLocationID&&c.chatDefaultLocationID)h+='<div class="hint">Defaulted to this chat\\'s city.</div>';
  h+='<label>Contacts</label><div id="contacts">'+
    ((e.contacts&&e.contacts.length?e.contacts:[]).map(contactRow).join('')||'')+'</div>';
  h+='<button class="btnsm add" onclick="addContact()">+ add contact</button>';
+ // #3 — service tags (up to 3), pre-filled from the message.
+ h+='<label>Tags (up to 3)</label><div id="tagbox" class="tagbox"></div>'+
+   '<div class="tagadd"><input id="f_tagnew" placeholder="add a tag"><button type="button" class="btnsm" id="f_tagadd">+ add</button></div>';
  h+='<label>Description (optional)</label><textarea id="f_desc">'+esc(e.description||'')+'</textarea>';
  h+='<div class="warn" id="warn"></div>';
  h+='<div class="actions"><button class="dec" onclick="decline()">Decline</button>'+
@@ -242,8 +312,54 @@ function render(){
    '<button class="app" id="appBtn" onclick="approve()">Approve → publish live</button></div></div>';
  $('main').innerHTML=h;
  ['f_name','f_prof','f_loc'].forEach(id=>$(id).addEventListener('input',sync));
+ // tag input wiring (no inline handlers — avoids attribute-quoting issues)
+ const tn=$('f_tagnew');
+ tn.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();addTag(tn.value);tn.value='';}});
+ $('f_tagadd').addEventListener('click',()=>{addTag(tn.value);tn.value='';tn.focus();});
+ $('tagbox').addEventListener('click',ev=>{const chip=ev.target.closest('.chip');
+  if(chip&&chip.dataset.tag)toggleTag(chip.dataset.tag);});
+ curTags=prefillTags(c,$('f_prof').value);
+ renderTags();
  sync();
 }
+// #3 — tag-picker state + helpers.
+let curTags=[];
+function profTagSuggestions(profId){
+ const dict=(D&&D.tagSuggestions)||{};const byProf=dict[profId]||dict['_default']||{};
+ return byProf.uk||byProf.en||[];
+}
+// Pre-check up to 3 suggested tags whose label appears in the message text.
+function prefillTags(c,profId){
+ const txt=((c.text||'')+' '+(c.inquiryText||'')).toLowerCase();
+ const out=[];
+ for(const t of profTagSuggestions(profId)){
+  if(out.length>=3)break;
+  if(txt.includes(String(t).toLowerCase()))out.push(t);
+ }
+ return out;
+}
+function addTag(t){t=String(t||'').trim();if(!t)return;
+ if(curTags.length>=3){return;}
+ if(!curTags.some(x=>x.toLowerCase()===t.toLowerCase()))curTags.push(t);
+ renderTags();}
+function removeTag(t){curTags=curTags.filter(x=>x!==t);renderTags();}
+function toggleTag(t){if(curTags.some(x=>x.toLowerCase()===t.toLowerCase()))removeTag(t);else addTag(t);}
+function renderTags(){
+ const box=$('tagbox');if(!box)return;
+ const profId=($('f_prof')&&$('f_prof').value)||'';
+ const sugg=profTagSuggestions(profId);
+ const seen=new Set();let h='';
+ // selected first (always shown, removable), then remaining suggestions.
+ // data-tag + delegated click (wired in render) — no inline handlers.
+ for(const t of curTags){seen.add(t.toLowerCase());
+  h+='<span class="chip on" data-tag="'+esc(t)+'">'+esc(t)+'<span class="x">×</span></span>';}
+ const full=curTags.length>=3;
+ for(const t of sugg){if(seen.has(String(t).toLowerCase()))continue;
+  h+='<span class="chip'+(full?' off':'')+'" data-tag="'+esc(t)+'">'+esc(t)+'</span>';}
+ box.innerHTML=h||'<span class="hint">No suggestions — type to add.</span>';
+}
+function onCatChange(){const cat=$('f_cat').value;$('f_prof').innerHTML=profOpts(cat,'');renderTags();sync();}
+function onProfChange(){curTags=prefillTags(Q[i],$('f_prof').value);renderTags();sync();}
 function addContact(){$('contacts').insertAdjacentHTML('beforeend',contactRow(null));
  $('contacts').lastChild.querySelector('.cval').addEventListener('input',sync);sync();}
 function readContacts(){return [...document.querySelectorAll('#contacts .crow')]
@@ -263,7 +379,8 @@ async function decline(){
 async function approve(){
  const c=Q[i];
  const master={name:$('f_name').value.trim(),professionID:$('f_prof').value,
-  locationID:$('f_loc').value,contacts:readContacts(),about:$('f_desc').value.trim()};
+  locationID:$('f_loc').value,contacts:readContacts(),about:$('f_desc').value.trim(),
+  tags:curTags.slice(0,3)};
  const btn=$('appBtn');btn.disabled=true;btn.textContent='saving...';
  const r=await fetch('/api/approve',{method:'POST',headers:{'content-type':'application/json'},
   body:JSON.stringify({id:c.id,master})});
@@ -273,8 +390,26 @@ async function approve(){
 
 // ----- inline-create profession / category / city, + lexicon rebuild ------
 function langInputs(prefix,values){
- return [['en','English (required)'],['ua','Українська'],['ru','Русский'],['it','Italiano']]
-  .map(([k,lab])=>'<label>'+lab+'</label><input id="'+prefix+'_'+k+'" value="'+esc((values&&values[k])||'')+'">').join('');
+ // #6 — type the Ukrainian name, auto-fill the rest. UA is listed first.
+ const rows=[['ua','Українська (type here)'],['en','English (required)'],['ru','Русский'],['it','Italiano']];
+ let h='';
+ for(const [k,lab] of rows){
+  h+='<label>'+lab+'</label><input id="'+prefix+'_'+k+'" value="'+esc((values&&values[k])||'')+'">';
+  if(k==='ua')h+='<button type="button" class="btn-tr" id="'+prefix+'_tr" onclick="autoTranslate(\\''+prefix+'\\')">↻ Auto-translate from Ukrainian</button>';
+ }
+ return h;
+}
+async function autoTranslate(prefix){
+ const ua=(($(prefix+'_ua')||{}).value||'').trim();const btn=$(prefix+'_tr');
+ if(!ua){if(btn)btn.textContent='Type the Ukrainian name first';return;}
+ if(btn){btn.disabled=true;btn.textContent='Translating…';}
+ try{
+  const r=await fetch('/api/translate',{method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({text:ua,langs:['en','ru','it']})});
+  const d=await r.json();
+  for(const k of ['en','ru','it']){if(d[k]&&$(prefix+'_'+k))$(prefix+'_'+k).value=d[k];}
+ }catch(e){}
+ if(btn){btn.disabled=false;btn.textContent='↻ Auto-translate from Ukrainian';}
 }
 function readLangs(prefix){
  const out={};
@@ -296,7 +431,7 @@ function openCreateProf(){
    '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>'+
    '<button type="button" class="btn-go" id="np_go" onclick="submitCreateProf()">Create profession</button></div>';
  $('modal-root').innerHTML=modalShell('New profession',inner);
- setTimeout(()=>$('np_en').focus(),0);
+ setTimeout(()=>$('np_ua').focus(),0);
 }
 async function submitCreateProf(){
  const name=readLangs('np');const categoryID=$('np_cat').value;const err=$('np_err');err.textContent='';
@@ -307,9 +442,12 @@ async function submitCreateProf(){
  const r=await fetch('/api/create-profession',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({categoryID,name})});
  const data=await r.json();btn.disabled=false;btn.textContent='Create profession';
  if(!r.ok){err.textContent='Failed: '+(data.error||r.status);return;}
- D.professions.push({id:data.id,name:data.name});
+ D.professions.push({id:data.id,categoryID,name:data.name});
  closeModal();
- const sel=$('f_prof');if(sel){sel.innerHTML=opts(D.professions,data.id);sel.value=data.id;}
+ // keep the cascade consistent: select the new prof's category, then the prof.
+ if($('f_cat'))$('f_cat').value=categoryID;
+ const sel=$('f_prof');if(sel){sel.innerHTML=profOpts(categoryID,data.id);sel.value=data.id;}
+ renderTags();
  sync();
 }
 function openCreateCat(){
@@ -318,7 +456,7 @@ function openCreateCat(){
    '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>'+
    '<button type="button" class="btn-go" id="nc_go" onclick="submitCreateCat()">Create category</button></div>';
  $('modal-root').innerHTML=modalShell('New category',inner);
- setTimeout(()=>$('nc_en').focus(),0);
+ setTimeout(()=>$('nc_ua').focus(),0);
 }
 async function submitCreateCat(){
  const name=readLangs('nc');const err=$('nc_err');err.textContent='';
@@ -341,7 +479,7 @@ function openCreateLoc(){
    '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>'+
    '<button type="button" class="btn-go" id="nl_go" onclick="submitCreateLoc()">Create city</button></div>';
  $('modal-root').innerHTML=modalShell('New city',inner);
- setTimeout(()=>{$('nl_country').value='IT';$('nl_en').focus();},0);
+ setTimeout(()=>{$('nl_country').value='IT';$('nl_ua').focus();},0);
 }
 async function submitCreateLoc(){
  const name=readLangs('nl');const countryID=$('nl_country').value;const err=$('nl_err');err.textContent='';
@@ -396,6 +534,13 @@ const server = http.createServer(async (req, res) => {
     if (req.url === '/api/data') {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(await getData()));
+    }
+    // #6 — auto-translate a Ukrainian reference name into the other languages.
+    if (req.url === '/api/translate' && req.method === 'POST') {
+      const { text, langs } = await body(req);
+      const out = await translateName(text, langs || ['en', 'ru', 'it']);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify(out));
     }
     // --- inline create reference data ----------------------------------
     if (req.url === '/api/create-category' && req.method === 'POST') {
@@ -462,6 +607,11 @@ const server = http.createServer(async (req, res) => {
         return res.end('{"ok":false}');
       }
       const now = new Date();
+      // #3 — picked service tags (Ukrainian). English is filled best-effort in
+      // the background below so approve stays snappy.
+      const uaTags = Array.isArray(master.tags)
+        ? master.tags.map((t) => String(t || '').trim()).filter(Boolean).slice(0, 3)
+        : [];
       // The review IS the quality gate — publish live (status: 'approved').
       const created = await Master.create({
         name: master.name,
@@ -470,6 +620,7 @@ const server = http.createServer(async (req, res) => {
         countryID: 'IT',
         contacts: master.contacts,
         about: master.about || '',
+        tags: { ua: uaTags, en: [] },
         source: 'scraped',
         status: 'approved',
         claimable: true,
@@ -505,6 +656,18 @@ const server = http.createServer(async (req, res) => {
           if (url) return Master.updateOne({ _id: created._id }, { $set: { photo: url } });
         })
         .catch((e) => console.error('[scraped-photo] post-approve', e.message));
+      // #3 — best-effort English tags in the background (Ollama). Empty on fail.
+      if (uaTags.length) {
+        translateList(uaTags, 'en')
+          .then((enTags) => {
+            if (enTags.length)
+              return Master.updateOne(
+                { _id: created._id },
+                { $set: { 'tags.en': enTags } }
+              );
+          })
+          .catch((e) => console.error('[tag-translate] post-approve', e.message));
+      }
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify({ ok: true, masterId: String(created._id) }));
     }
@@ -521,6 +684,7 @@ async function main() {
   await runDB(); // default connection -> production DB
   const miningConn = mongoose.connection.useDb(MINING_DB);
   Candidate = miningConn.model('Candidate', CandidateModel.schema);
+  RawMessage = miningConn.model('RawMessage', RawMessageModel.schema);
   await reloadRefs();
   if (!professions.length || !locations.length) {
     throw new Error('No reference data in the default DB — wrong DB target?');
