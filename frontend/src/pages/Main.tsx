@@ -350,7 +350,13 @@ function Main() {
               onClick={() => {
                 dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: pendingCity } });
                 dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: pendingTrade } });
-                setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                setTimeout(() => {
+                  if (!resultsRef.current) return;
+                  const headerEl = document.querySelector(".header") as HTMLElement | null;
+                  const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+                  const top = resultsRef.current.getBoundingClientRect().top + window.scrollY - headerHeight;
+                  window.scrollTo({ top, behavior: "smooth" });
+                }, 50);
               }}
             >
               {t("hero.searchBtn")}
