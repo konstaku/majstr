@@ -71,9 +71,8 @@ async function main() {
       await Master.updateOne({ _id: m._id }, { $set: { contacts: corrected } });
       await MasterAudit.create({
         masterID: m._id,
-        action: 'update',
-        from: { contacts: m.contacts },
-        to: { contacts: corrected },
+        action: 'edit',
+        diff: { contacts: { before: m.contacts, after: corrected } },
         reason: 'fix-contact-types-119',
       });
     }
