@@ -105,7 +105,7 @@ export const translations: Record<string, LangTranslations> = {
       found: "Знайдено майстрів:",
       empty: "Майстрів за вашим запитом не знайдено.",
       tryChanging: "Спробуйте змінити місто або категорію.",
-      sortedByRating: "МАЙСТРІВ · ЗА РЕЙТИНГОМ",
+      sortedByRating: "МАЙСТРІВ · НОВІ ПЕРШІ",
     },
     modal: {
       noAbout: "Нажаль, майстер не має детального опису 🤷‍♂️",
@@ -180,7 +180,7 @@ export const translations: Record<string, LangTranslations> = {
       found: "Masters found:",
       empty: "No masters found for your request.",
       tryChanging: "Try changing the city or category.",
-      sortedByRating: "RESULTS · SORTED BY RATING",
+      sortedByRating: "RESULTS · NEWEST FIRST",
     },
     modal: {
       noAbout: "Unfortunately, the master has no detailed description 🤷‍♂️",
@@ -255,7 +255,7 @@ export const translations: Record<string, LangTranslations> = {
       found: "Artigiani trovati:",
       empty: "Nessun artigiano trovato per la tua ricerca.",
       tryChanging: "Prova a cambiare città o categoria.",
-      sortedByRating: "ARTIGIANI · PER VALUTAZIONE",
+      sortedByRating: "ARTIGIANI · PIÙ RECENTI",
     },
     modal: {
       noAbout: "Purtroppo, l'artigiano non ha una descrizione dettagliata 🤷‍♂️",
@@ -330,7 +330,7 @@ export const translations: Record<string, LangTranslations> = {
       found: "Artesãos encontrados:",
       empty: "Nenhum artesão encontrado para a sua pesquisa.",
       tryChanging: "Tente mudar a cidade ou categoria.",
-      sortedByRating: "ARTESÃOS · POR AVALIAÇÃO",
+      sortedByRating: "ARTESÃOS · MAIS RECENTES",
     },
     modal: {
       noAbout: "Infelizmente, o artesão não tem uma descrição detalhada 🤷‍♂️",
@@ -406,7 +406,7 @@ translations.ru = {
     found: "Найдено мастеров:",
     empty: "По вашему запросу мастера не найдены.",
     tryChanging: "Попробуйте изменить город или категорию.",
-    sortedByRating: "МАСТЕРОВ · ПО РЕЙТИНГУ",
+    sortedByRating: "МАСТЕРОВ · НОВЫЕ ПЕРВЫЕ",
   },
   modal: {
     noAbout: "К сожалению, у мастера нет подробного описания 🤷‍♂️",
@@ -481,7 +481,7 @@ translations.de = {
     found: "Gefundene Fachkräfte:",
     empty: "Keine Fachkräfte für deine Anfrage gefunden.",
     tryChanging: "Versuch, die Stadt oder Kategorie zu ändern.",
-    sortedByRating: "ERGEBNISSE · NACH BEWERTUNG",
+    sortedByRating: "ERGEBNISSE · NEUESTE ZUERST",
   },
   modal: {
     noAbout: "Leider hat diese Fachkraft keine ausführliche Beschreibung 🤷‍♂️",
@@ -556,7 +556,7 @@ translations.fr = {
     found: "Artisans trouvés :",
     empty: "Aucun artisan trouvé pour votre recherche.",
     tryChanging: "Essayez de changer de ville ou de catégorie.",
-    sortedByRating: "RÉSULTATS · PAR NOTE",
+    sortedByRating: "RÉSULTATS · LES PLUS RÉCENTS",
   },
   modal: {
     noAbout: "Malheureusement, cet artisan n'a pas de description détaillée 🤷‍♂️",
@@ -631,7 +631,7 @@ translations.tr = {
     found: "Bulunan ustalar:",
     empty: "Aramanız için usta bulunamadı.",
     tryChanging: "Şehri veya kategoriyi değiştirmeyi deneyin.",
-    sortedByRating: "SONUÇLAR · PUANA GÖRE",
+    sortedByRating: "SONUÇLAR · EN YENİLER",
   },
   modal: {
     noAbout: "Maalesef bu ustanın ayrıntılı bir açıklaması yok 🤷‍♂️",
@@ -706,7 +706,7 @@ translations.es = {
     found: "Profesionales encontrados:",
     empty: "No se encontraron profesionales para tu búsqueda.",
     tryChanging: "Prueba a cambiar la ciudad o la categoría.",
-    sortedByRating: "RESULTADOS · POR VALORACIÓN",
+    sortedByRating: "RESULTADOS · MÁS RECIENTES",
   },
   modal: {
     noAbout: "Lamentablemente, este profesional no tiene una descripción detallada 🤷‍♂️",

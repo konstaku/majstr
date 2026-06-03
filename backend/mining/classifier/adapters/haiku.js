@@ -14,11 +14,13 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
+// 1.5.0 — `description` is now always written in Ukrainian regardless of the
+// source-message language (the other extracted fields stay verbatim).
 // 1.4.0 — cross-border passenger / parcel transport between countries excluded
 // (scam-prone, not local). Local moving (trasloco, in-city furniture moves)
 // stays useful. 1.3.0: a bare "I'll DM you the contact" promise (no name, no
 // link) is no longer useful: nothing about a master is captured publicly.
-const VERSION = '1.4.0';
+const VERSION = '1.5.0';
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 512;
 
@@ -67,8 +69,15 @@ const SYSTEM_PROMPT =
   'These are scam-prone and not local. LOCAL moving services within Italy (a trasloco, ' +
   'помічу з переїздом квартири, перевезу меблі по місту) ARE useful — keep those.\n' +
   '- Unanswered questions; comments unrelated to finding a specialist\n\n' +
-  'Extract fields verbatim from the source text; use null when absent. Respond ' +
-  'strictly in the JSON schema.';
+  'Extract name / profession / city / contacts VERBATIM from the source text; ' +
+  'use null when absent.\n' +
+  'CRITICAL — the `description` field is the ONE field you must NOT copy ' +
+  'verbatim: ALWAYS write `description` in UKRAINIAN (українською мовою), a ' +
+  'concise 1–2 sentence summary of the service offered. If the source message ' +
+  'is in Russian, Italian or English, TRANSLATE the summary into Ukrainian — ' +
+  'never leave the description in the original language. name/profession/city/' +
+  'contacts stay verbatim; only `description` is translated.\n' +
+  'Respond strictly in the JSON schema.';
 
 const SCHEMA = {
   type: 'object',
