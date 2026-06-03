@@ -119,7 +119,7 @@ function buildThreads(messages, opts = {}) {
   for (const m of msgs) {
     if (usedInThread.has(m.messageID)) continue;
     const sig = analyze(m.text);
-    if (sig.kind === 'announcement') {
+    if (sig.kind === 'announcement' || (sig.kind === 'recommendation' && sig.contacts.length)) {
       announcements.push({
         messageID: m.messageID,
         text: m.text,

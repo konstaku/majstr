@@ -47,6 +47,10 @@ const arg = (n, d) => {
   const i = process.argv.indexOf(n);
   return i !== -1 ? process.argv[i + 1] : d;
 };
+// Pan-Italian national chat uses a stricter gate (announcements only — no
+// third-party recommendations). Regional chats keep recommendations.
+const ITALIA_CHAT_ID = '1441030224';
+
 const CHAT_REGION = {
   '1780497126': 'Veneto',
   '1593295268': 'Milano',
@@ -206,7 +210,8 @@ async function processChat(chatID, limit) {
             return;
           }
         }
-        if (cls.kind !== 'announcement') return; // only self-declaring specialists become Candidates
+        const useful = chatID === ITALIA_CHAT_ID ? cls.kind === 'announcement' : cls.kind !== 'unknown';
+        if (!useful) return;
         const extracted = { ...(cls.extracted || {}) };
         if (!extracted.city) extracted.city = region; // default city from chat region
         await Candidate.updateOne(

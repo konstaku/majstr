@@ -21,12 +21,7 @@ const lexicon = require('../../data/profession-lexicon.json');
 const aliases = require('../../data/profession-aliases.json');
 
 const CONFIG = {
-  // 1.3.0 — third-party recommendations are no longer surfaced as candidates;
-  // only specialists who personally declare their own service (announcement) pass.
-  // classify() maps kind:'recommendation' -> 'unknown' so the pipeline treats
-  // it as noise. analyze() still returns the raw 'recommendation' kind so the
-  // thread builder can filter correctly.
-  version: '1.3.0',
+  version: '1.2.0',
   threshold: 0.3,
   weights: {
     profession: 0.45,
@@ -206,13 +201,10 @@ function analyze(rawText) {
 
 async function classify(message) {
   const a = analyze(message && message.text);
-  // Only a specialist's own declaration (announcement) is a useful candidate.
-  // Third-party recommendations collapse to unknown so they never reach the queue.
-  const kind = a.kind === 'recommendation' ? 'unknown' : a.kind;
   const extracted = {};
   if (a.profId) extracted.profession = a.profId;
   if (a.contacts.length) extracted.contacts = a.contacts;
-  return { kind, score: a.score, extracted };
+  return { kind: a.kind, score: a.score, extracted };
 }
 
 module.exports = {
