@@ -307,9 +307,12 @@ function render(){
    '<div class="tagadd"><input id="f_tagnew" placeholder="add a tag"><button type="button" class="btnsm" id="f_tagadd">+ add</button></div>';
  h+='<label>Description (optional)</label><textarea id="f_desc">'+esc(e.description||'')+'</textarea>';
  h+='<div class="warn" id="warn"></div>';
- h+='<div class="actions"><button class="dec" onclick="decline()">Decline</button>'+
+ h+='<div class="actions"><button class="dec" onclick="decline()">Decline ×user</button>'+
    '<button class="skip" onclick="i++;render()">Skip</button>'+
-   '<button class="app" id="appBtn" onclick="approve()">Approve → publish live</button></div></div>';
+   '<button class="app" id="appBtn" onclick="approve()">Approve → publish live</button></div>';
+ if(c.fromName)h+='<label class="hint" style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer">'+
+   '<input type="checkbox" id="skipOthers"><span>Decline all other posts from "<b>'+esc(c.fromName)+'</b>" too</span></label>';
+ h+='</div>';
  $('main').innerHTML=h;
  ['f_name','f_prof','f_loc'].forEach(id=>$(id).addEventListener('input',sync));
  // tag input wiring (no inline handlers — avoids attribute-quoting issues)
@@ -370,22 +373,41 @@ function sync(){
  $('appBtn').disabled=!ok;
  $('warn').textContent=ok?'':'Approve needs: name + profession + city + at least one contact.';
 }
+async function declineUser(id,fromName,chatID){
+ return fetch('/api/decline-user',{method:'POST',headers:{'content-type':'application/json'},
+  body:JSON.stringify({id,fromName:fromName||'',chatID:chatID||''})});
+}
 async function decline(){
  const c=Q[i];
- await fetch('/api/decline',{method:'POST',headers:{'content-type':'application/json'},
-  body:JSON.stringify({id:c.id})});
- declined++;i++;render();
+ await declineUser(c.id,c.fromName,c.chatID);
+ declined++;
+ if(c.fromName){
+  // remove current + every other visible candidate from the same poster
+  const others=Q.slice(i+1).filter(x=>x.fromName===c.fromName).length;
+  declined+=others;
+  Q=Q.filter((x,idx)=>idx!==i&&x.fromName!==c.fromName);
+ }else{Q.splice(i,1);}
+ render();
 }
 async function approve(){
  const c=Q[i];
+ const skipOthers=!!($('skipOthers')&&$('skipOthers').checked&&c.fromName);
  const master={name:$('f_name').value.trim(),professionID:$('f_prof').value,
   locationID:$('f_loc').value,contacts:readContacts(),about:$('f_desc').value.trim(),
   tags:curTags.slice(0,3)};
  const btn=$('appBtn');btn.disabled=true;btn.textContent='saving...';
  const r=await fetch('/api/approve',{method:'POST',headers:{'content-type':'application/json'},
   body:JSON.stringify({id:c.id,master})});
- if(r.ok){approved++;i++;render();}
- else{btn.textContent='FAILED — retry';btn.disabled=false;}
+ if(r.ok){
+  approved++;
+  if(skipOthers){
+   declineUser(c.id,c.fromName,c.chatID); // fire-and-forget; primary is already carded
+   const others=Q.slice(i+1).filter(x=>x.fromName===c.fromName).length;
+   declined+=others;
+   Q=Q.filter((x,idx)=>idx!==i&&x.fromName!==c.fromName);
+  }else{Q.splice(i,1);}
+  render();
+ }else{btn.textContent='FAILED — retry';btn.disabled=false;}
 }
 
 // ----- inline-create profession / category / city, + lexicon rebuild ------
@@ -598,6 +620,25 @@ const server = http.createServer(async (req, res) => {
       await Candidate.updateOne({ _id: id }, { $set: { status: 'declined' } });
       res.writeHead(200);
       return res.end('{"ok":true}');
+    }
+    if (req.url === '/api/decline-user' && req.method === 'POST') {
+      const { id, fromName, chatID } = await body(req);
+      // Decline the primary (guard: only if still new — safe to call after approve too).
+      await Candidate.updateOne({ _id: id, status: 'new' }, { $set: { status: 'declined' } });
+      let otherCount = 0;
+      if (fromName && chatID) {
+        const userMsgs = await RawMessage.find({ chatID, fromName }).select('messageID').lean();
+        const msgIds = userMsgs.map((m) => m.messageID);
+        if (msgIds.length) {
+          const result = await Candidate.updateMany(
+            { chatID, anchorMessageID: { $in: msgIds }, status: 'new', _id: { $ne: id } },
+            { $set: { status: 'declined' } }
+          );
+          otherCount = result.modifiedCount;
+        }
+      }
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true, otherCount }));
     }
     if (req.url === '/api/approve' && req.method === 'POST') {
       const { id, master } = await body(req);
