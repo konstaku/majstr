@@ -14,13 +14,13 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
-// 1.5.0 — `description` is now always written in Ukrainian regardless of the
-// source-message language (the other extracted fields stay verbatim).
-// 1.4.0 — cross-border passenger / parcel transport between countries excluded
-// (scam-prone, not local). Local moving (trasloco, in-city furniture moves)
-// stays useful. 1.3.0: a bare "I'll DM you the contact" promise (no name, no
-// link) is no longer useful: nothing about a master is captured publicly.
-const VERSION = '1.5.0';
+// 1.6.0 — only specialists who personally declare their own service are useful
+// (kind:'announcement'). Third-party recommendations ("Maxim is great",
+// "contact Olena") are now excluded even when a phone or link is present.
+// 1.5.0 — `description` always written in Ukrainian.
+// 1.4.0 — cross-border transport excluded.
+// 1.3.0 — bare private-DM promise excluded.
+const VERSION = '1.6.0';
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 512;
 
@@ -37,19 +37,20 @@ const SYSTEM_PROMPT =
   'find leads for a directory of INDIVIDUAL tradespeople / specialists ' +
   '("masters"). Languages mix freely: Ukrainian, Russian, Italian, sometimes ' +
   'English.\n\n' +
-  'USEFUL = an individual specialist offering their personal service ' +
-  '(announcement), OR a specific named master being recommended (recommendation). ' +
+  'USEFUL = an individual specialist personally declaring their OWN service ' +
+  '(announcement ONLY). This is the only useful kind. ' +
   'Minimum bar: a profession + EITHER a contact (phone, @handle, t.me/, wa.me/, ' +
-  'Instagram/profile link) OR a clear personal recommendation with a name. ' +
+  'Instagram/profile link) OR a clear self-description of the service. ' +
   'Service-list adverts with profession + location count as useful even without ' +
   'a phone (an admin can fetch the contact from the original post).\n\n' +
-  'When the input is an inquiry + a bundled reply, ALSO flag as useful when ' +
-  'the reply PUBLICLY surfaces a specific master — naming a person ("Maxim is ' +
-  'great") or attaching their profile/URL. A reply where the responder only ' +
-  'PROMISES to share a contact privately ("написала вам", "пишу в особисті", ' +
-  '"можу дати контакт", "скину в приват") WITHOUT naming the specialist or ' +
-  'posting a link is NOT useful — nothing about a master is captured, and the ' +
-  'exchange happens off-channel where it cannot be recorded.\n\n' +
+  'When the input is an inquiry + a bundled reply, flag as useful ONLY when the ' +
+  'responder offers their OWN service (see SELF-OFFERING RESPONDER below). A reply ' +
+  'that names or links to another person ("Maxim is great", "contact Olena", ' +
+  '"there\'s a master called ...") is NOT useful — only the specialist\'s own ' +
+  'personal declaration counts, regardless of whether a phone or link is present. ' +
+  'A reply where the responder only PROMISES to share a contact privately ' +
+  '("написала вам", "пишу в особисті", "можу дати контакт", "скину в приват") ' +
+  'is also NOT useful.\n\n' +
   'SELF-OFFERING RESPONDER: when the responder offers their OWN service in ' +
   'reply to an inquiry ("я можу допомогти", "я майстер", "пишіть мені", "роблю ' +
   'це сам") they ARE the specialist. Flag as useful and set extracted.name to ' +
@@ -57,6 +58,9 @@ const SYSTEM_PROMPT =
   'admin — never invent one; leave contacts empty if none is in the text. The ' +
   'profession usually comes from the inquiry itself.\n\n' +
   'NOT USEFUL — exclude all of these even if a phone or link appears:\n' +
+  '- Third-party recommendations — a reply (or standalone post) naming or linking ' +
+  'to another person ("Maxim is great", "contact Olena", "there\'s a master at @handle", ' +
+  '"recommend X") — only the specialist\'s OWN declaration is useful\n' +
   '- Job listings (employer hiring workers, "потрібен/шукаємо", "робота в...")\n' +
   '- Courses, schools, training programs, autoshcools\n' +
   '- Retail shops / store recommendations / generic product tips\n' +
@@ -161,8 +165,8 @@ function tallyCost(usage) {
 // ollama adapter so both engines map identically.
 function mapResult(parsed) {
   let kind = 'unknown';
-  if (parsed.is_useful && (parsed.kind === 'announcement' || parsed.kind === 'recommendation')) {
-    kind = parsed.kind;
+  if (parsed.is_useful && parsed.kind === 'announcement') {
+    kind = 'announcement';
   }
   // Normalize confidence to the 0..1 the classifier interface promises. Haiku
   // emits 0..1 already; some local models (e.g. Qwen) emit a 0..100 percentage

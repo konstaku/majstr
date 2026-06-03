@@ -54,6 +54,7 @@ const CHAT_REGION = {
   '1786184772': 'Napoli',
   '1513619004': 'Roma',
   '1685394644': 'Florence', // Українці в Тоскані — Tuscany regional capital
+  '1441030224': 'Italia',   // УКРАЇНЦІ В ІТАЛІЇ — national chat (pre-filtered via italy-prefilter.js)
 };
 const CONCURRENCY = 4;
 
@@ -205,7 +206,7 @@ async function processChat(chatID, limit) {
             return;
           }
         }
-        if (cls.kind === 'unknown') return; // only useful units become Candidates
+        if (cls.kind !== 'announcement') return; // only self-declaring specialists become Candidates
         const extracted = { ...(cls.extracted || {}) };
         if (!extracted.city) extracted.city = region; // default city from chat region
         await Candidate.updateOne(
