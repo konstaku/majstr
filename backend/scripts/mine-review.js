@@ -48,7 +48,7 @@ const tagSuggestions = require('../../frontend/src/data/tag-suggestions.i18n.jso
 
 // Default city per source chat — pre-selected when a candidate has no extracted
 // city. Resolved to a real locationID at startup (chat name -> Location match).
-const CHAT_DEFAULT_CITY_NAME = { '1513619004': 'Roma', '1685394644': 'Florence' };
+const CHAT_DEFAULT_CITY_NAME = { '1513619004': 'Roma', '1685394644': 'Florence', '1620936389': 'Genova', '1739258156': 'Genova', '1698155646': 'Sanremo', '2181477220': 'Sanremo' };
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
@@ -576,6 +576,10 @@ const CHAT_REGION = {
   '1513619004': 'Roma',
   '1685394644': 'Florence',
   '1441030224': 'Italia',
+  '1620936389': 'Genova',
+  '1739258156': 'Genova',
+  '1698155646': 'Sanremo',
+  '2181477220': 'Sanremo',
 };
 
 async function getMetrics() {

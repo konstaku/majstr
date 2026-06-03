@@ -59,6 +59,10 @@ const CHAT_REGION = {
   '1513619004': 'Roma',
   '1685394644': 'Florence', // Українці в Тоскані — Tuscany regional capital
   '1441030224': 'Italia',   // УКРАЇНЦІ В ІТАЛІЇ — national chat (pre-filtered via italy-prefilter.js)
+  '1620936389': 'Genova',   // Українці в Генуї | Ucraini a Genova
+  '1739258156': 'Genova',   // Українці в Генуя 🇮🇹
+  '1698155646': 'Sanremo',  // Украинцы в Сан-Ремо
+  '2181477220': 'Sanremo',  // Наші в Санремо
 };
 const CONCURRENCY = 4;
 
@@ -269,7 +273,7 @@ async function main() {
   const only = arg('--chatId', null);
   const chats = only
     ? [only]
-    : ['1780497126', '1593295268', '1310497068', '1786184772', '1513619004', '1685394644'];
+    : ['1780497126', '1593295268', '1310497068', '1786184772', '1513619004', '1685394644', '1620936389', '1739258156', '1698155646', '2181477220'];
 
   await runDB();
   if (classifier.resetCost) classifier.resetCost();
