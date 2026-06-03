@@ -1,6 +1,6 @@
 import "./../styles.css";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import Select, {
   CSSObjectWithLabel,
   GroupBase,
@@ -120,6 +120,7 @@ function Main() {
   const [showModal, setShowModal] = useState<string | null | boolean>(null);
   const [pendingCity, setPendingCity] = useState(selectedCity);
   const [pendingTrade, setPendingTrade] = useState(selectedProfessionCategory);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Sync pending state when external reset/navigation changes applied filters
   useEffect(() => {
@@ -224,21 +225,25 @@ function Main() {
     ? { value: "", label: t("main.allCountry", { country: countryDisplayName }) }
     : { value: "", label: "..." };
 
+  const countryMastersForCity = masters.filter((m) => m.countryID === countryID);
+  const masterCountByCity = countryMastersForCity.reduce<Record<string, number>>((acc, m) => {
+    acc[m.locationID] = (acc[m.locationID] ?? 0) + 1;
+    return acc;
+  }, {});
+
   const availableLocations = [locationPlaceholder].concat(
-    [...new Set(
-      masters
-        .filter((m) => m.countryID === countryID)
-        .map((m) => m.locationID)
-    )].map((locId) => {
-      const loc = locations.find((l) => l.id === locId);
-      return {
-        value: locId,
-        label:
-          lang === "uk"
-            ? loc?.name.ua_alt ?? localizedName(loc?.name, "uk", locId)
-            : localizedName(loc?.name, lang, locId),
-      };
-    })
+    [...new Set(countryMastersForCity.map((m) => m.locationID))]
+      .sort((a, b) => (masterCountByCity[b] ?? 0) - (masterCountByCity[a] ?? 0))
+      .map((locId) => {
+        const loc = locations.find((l) => l.id === locId);
+        return {
+          value: locId,
+          label:
+            lang === "uk"
+              ? loc?.name.ua_alt ?? localizedName(loc?.name, "uk", locId)
+              : localizedName(loc?.name, lang, locId),
+        };
+      })
   );
 
   const allTradesOption = { value: "", label: t("browse.allCategories") };
@@ -345,6 +350,13 @@ function Main() {
               onClick={() => {
                 dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: pendingCity } });
                 dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: pendingTrade } });
+                setTimeout(() => {
+                  if (!resultsRef.current) return;
+                  const headerEl = document.querySelector(".header") as HTMLElement | null;
+                  const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+                  const top = resultsRef.current.getBoundingClientRect().top + window.scrollY - headerHeight;
+                  window.scrollTo({ top, behavior: "smooth" });
+                }, 50);
               }}
             >
               {t("hero.searchBtn")}
@@ -365,7 +377,7 @@ function Main() {
       <HowItWorks t={t} />
 
       {/* ── Results ── */}
-      <div className="results-section">
+      <div className="results-section" ref={resultsRef}>
         {loading || isNavigating ? (
           <SkeletonGrid />
         ) : (

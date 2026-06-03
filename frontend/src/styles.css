@@ -2543,11 +2543,16 @@ img {
     font-size: clamp(26px, 8vw, 40px);
   }
   .hero-filter-row {
-    flex-direction: row;
+    flex-direction: column;
   }
   .hero-filter-row .filter-toggle-wrap {
+    border-right: none;
+    border-bottom: var(--border);
+    min-height: 76px;
+    padding: 14px 16px 12px;
+  }
+  .hero-filter-row .filter-toggle-wrap.filter-toggle-noright {
     border-bottom: none;
-    min-height: 56px;
   }
   .hero-main-panel {
     padding: 16px;
@@ -2601,16 +2606,16 @@ img {
     opacity: 0.5;
   }
 
-  /* Mobile filter select — slightly smaller values */
+  /* Mobile filter select — larger values to match mockup */
   .filter-toggle-wrap .headline-select .majstr-select__single-value {
-    font-size: 17px !important;
-  }
-  .hero-filter-row .filter-toggle-wrap.filter-toggle-noright {
-    border-right: none;
+    font-size: 22px !important;
   }
   .filter-search-btn {
-    padding: 0 14px;
-    font-size: 12px;
+    width: 100%;
+    border-left: none;
+    min-height: 56px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
   }
 
   .card-photo-block {
