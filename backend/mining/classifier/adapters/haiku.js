@@ -14,13 +14,11 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
-// 1.6.0 — only specialists who personally declare their own service are useful
-// (kind:'announcement'). Third-party recommendations ("Maxim is great",
-// "contact Olena") are now excluded even when a phone or link is present.
-// 1.5.0 — `description` always written in Ukrainian.
-// 1.4.0 — cross-border transport excluded.
-// 1.3.0 — bare private-DM promise excluded.
-const VERSION = '1.6.0';
+// 1.7.0 — contact-type disambiguation: phone numbers are always contactType:'phone',
+// Telegram @usernames are always contactType:'telegram' — never mix them.
+// 1.6.0 — announcement-only (third-party recs excluded).
+// 1.5.0 — description always Ukrainian. 1.4.0 — cross-border excluded. 1.3.0 — DM promise excluded.
+const VERSION = '1.7.0';
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 512;
 
@@ -75,6 +73,13 @@ const SYSTEM_PROMPT =
   '- Unanswered questions; comments unrelated to finding a specialist\n\n' +
   'Extract name / profession / city / contacts VERBATIM from the source text; ' +
   'use null when absent.\n' +
+  'CONTACT TYPE RULES — never mix phone and telegram:\n' +
+  '- A phone number (digits, optional country code, spaces/dashes) → contactType:"phone". ' +
+  'Even if the source says "+380 50 123 4567 — Telegram", the value is a phone number → phone.\n' +
+  '- A Telegram @username (letters/digits/underscore, 5–32 chars, no +, no dashes, ' +
+  'does not start with a digit) → contactType:"telegram".\n' +
+  '- Never assign contactType:"telegram" to a phone-shaped value, and never assign ' +
+  'contactType:"phone" to a @handle.\n' +
   'CRITICAL — the `description` field is the ONE field you must NOT copy ' +
   'verbatim: ALWAYS write `description` in UKRAINIAN (українською мовою), a ' +
   'concise 1–2 sentence summary of the service offered. If the source message ' +

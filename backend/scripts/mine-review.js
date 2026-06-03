@@ -53,6 +53,25 @@ const arg = (n, d) => {
   const i = process.argv.indexOf(n);
   return i !== -1 ? process.argv[i + 1] : d;
 };
+
+// #119 — auto-correct obvious contactType mismatches before persisting.
+// A phone-shaped value filed under 'telegram' is swapped to 'phone'; the
+// reverse (a handle filed under 'phone') is swapped to 'telegram'.
+const TG_HANDLE_RE = /^@?[A-Za-z][A-Za-z0-9_]{4,31}$/;
+function autoCorrectContacts(contacts) {
+  return (contacts || []).map((c) => {
+    const digits = String(c.value || '').replace(/\D/g, '');
+    const looksLikePhone = digits.length >= 8;
+    const looksLikeTg = TG_HANDLE_RE.test(String(c.value || '').trim());
+    if (c.contactType === 'telegram' && looksLikePhone && !looksLikeTg) {
+      return { contactType: 'phone', value: String(c.value).replace(/^@/, '') };
+    }
+    if ((c.contactType === 'phone' || c.contactType === 'whatsapp' || c.contactType === 'viber') && looksLikeTg && !looksLikePhone) {
+      return { contactType: 'telegram', value: c.value };
+    }
+    return c;
+  });
+}
 const PORT = parseInt(arg('--port', '4102'), 10);
 const MINING_DB = arg('--miningDb', 'majstr_mining');
 // Optional: restrict the review queue to a single source chat (e.g. Roma).
@@ -647,6 +666,8 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(404);
         return res.end('{"ok":false}');
       }
+      // #119 — silently fix phone/telegram contactType swaps before persisting.
+      master.contacts = autoCorrectContacts(master.contacts);
       const now = new Date();
       // #3 — picked service tags (Ukrainian). English is filled best-effort in
       // the background below so approve stays snappy.
