@@ -60,12 +60,14 @@ export default function SearchResults({
     .filter((p: Profession) => (!professionCategory ? true : p.categoryID === professionCategory))
     .map((p: Profession) => p.id);
 
-  const filteredMasters = masters.filter(
-    (m) =>
-      m.countryID === countryID &&
-      m.locationID.includes(city) &&
-      availableProfessionIDs.includes(m.professionID)
-  );
+  const filteredMasters = masters
+    .filter(
+      (m) =>
+        m.countryID === countryID &&
+        m.locationID.includes(city) &&
+        availableProfessionIDs.includes(m.professionID)
+    )
+    .sort((a, b) => getCreatedMs(b._id) - getCreatedMs(a._id));
 
   const countryMasters = masters.filter(m => m.countryID === countryID);
   const newSet = buildNewSet(countryMasters);
