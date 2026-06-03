@@ -47,7 +47,7 @@ const tagSuggestions = require('../../frontend/src/data/tag-suggestions.i18n.jso
 
 // Default city per source chat — pre-selected when a candidate has no extracted
 // city. Resolved to a real locationID at startup (chat name -> Location match).
-const CHAT_DEFAULT_CITY_NAME = { '1513619004': 'Roma' };
+const CHAT_DEFAULT_CITY_NAME = { '1513619004': 'Roma', '1685394644': 'Florence' };
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);

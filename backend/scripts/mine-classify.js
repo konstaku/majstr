@@ -53,6 +53,7 @@ const CHAT_REGION = {
   '1310497068': 'Torino',
   '1786184772': 'Napoli',
   '1513619004': 'Roma',
+  '1685394644': 'Florence', // Українці в Тоскані — Tuscany regional capital
 };
 const CONCURRENCY = 4;
 
@@ -262,7 +263,7 @@ async function main() {
   const only = arg('--chatId', null);
   const chats = only
     ? [only]
-    : ['1780497126', '1593295268', '1310497068', '1786184772', '1513619004'];
+    : ['1780497126', '1593295268', '1310497068', '1786184772', '1513619004', '1685394644'];
 
   await runDB();
   if (classifier.resetCost) classifier.resetCost();
