@@ -1,4 +1,5 @@
 import { mastersCount, type Lang } from "./i18n";
+import { CITY_REGION, PROFESSION_TIPS } from "./seo-data";
 
 // On-page copy builders. Strategy (from RU/UK keyword research):
 //  • <title> uses city NOMINATIVE + count  ("Маникюр Милан — 24 мастера")
@@ -46,19 +47,50 @@ export function landingDescription(
     : `${lead} ${cityPrep}. Перевірені україномовні майстри: портфоліо, ціни, відгуки та запис напряму в Telegram. Безкоштовно, без посередників.`;
 }
 
+// A truthful, city-specific sentence (region varies per city) so landing pages
+// don't read as near-duplicates — important for Yandex text-originality.
+function regionSentence(lang: Lang, cityPrep: string, cityId: string): string {
+  const region = CITY_REGION[cityId]?.[lang];
+  if (!region) return "";
+  return lang === "ru"
+    ? `Мастера работают ${cityPrep} и в соседних городах региона ${region}.`
+    : `Майстри працюють ${cityPrep} та в сусідніх містах регіону ${region}.`;
+}
+
 export function landingIntro(
   lang: Lang,
   lead: string,
   cityPrep: string,
+  cityId: string,
   count: number,
   sub?: string
 ): string {
-  const countClause =
-    count > 0 ? ` — ${lang === "ru" ? "это" : "це"} ${mastersCount(count, lang)} ${lang === "ru" ? "в каталоге" : "у каталозі"} Majstr` : "";
+  // Count-aware opener (avoids "1 мастеров" and the thin "— 2 мастера" look).
+  const opener =
+    count >= 5
+      ? lang === "ru"
+        ? `${lead} ${cityPrep} — ${mastersCount(count, lang)} в каталоге Majstr.`
+        : `${lead} ${cityPrep} — ${mastersCount(count, lang)} у каталозі Majstr.`
+      : lang === "ru"
+        ? `${lead} ${cityPrep}. Проверенные русскоязычные мастера в каталоге Majstr.`
+        : `${lead} ${cityPrep}. Перевірені україномовні майстри в каталозі Majstr.`;
+  const region = regionSentence(lang, cityPrep, cityId);
   if (lang === "ru") {
-    return `${lead} ${cityPrep}${countClause}. Все мастера говорят по-русски и по-украински и понимают клиентов из Украины и стран СНГ.${sub ? " " + sub : ""} Смотрите портфолио, цены и реальные отзывы, сравнивайте специалистов и записывайтесь напрямую через Telegram — бесплатно и без посредников.`;
+    return `${opener} Все мастера говорят по-русски и по-украински и понимают клиентов из Украины и стран СНГ. ${region}${sub ? " " + sub : ""} Смотрите портфолио, цены и реальные отзывы, сравнивайте специалистов и записывайтесь напрямую через Telegram — бесплатно и без посредников.`;
   }
-  return `${lead} ${cityPrep}${countClause}. Усі майстри говорять українською та російською і розуміють потреби клієнтів з України.${sub ? " " + sub : ""} Дивіться портфоліо, ціни та реальні відгуки, порівнюйте спеціалістів і записуйтесь напряму через Telegram — безкоштовно й без посередників.`;
+  return `${opener} Усі майстри говорять українською та російською і розуміють потреби клієнтів з України. ${region}${sub ? " " + sub : ""} Дивіться портфоліо, ціни та реальні відгуки, порівнюйте спеціалістів і записуйтесь напряму через Telegram — безкоштовно й без посередників.`;
+}
+
+// Second body paragraph — profession-specific "how to choose" guidance.
+export function landingBody(lang: Lang, professionID: string): string {
+  const tip =
+    PROFESSION_TIPS[professionID]?.[lang] ??
+    (lang === "ru"
+      ? "напишите мастеру в Telegram, опишите задачу и уточните цену и сроки."
+      : "напишіть майстру в Telegram, опишіть завдання та уточніть ціну й терміни.");
+  return lang === "ru"
+    ? `Как выбрать мастера: ${tip} На Majstr вы пишете напрямую в Telegram — без посредников и комиссии — и обсуждаете все детали на родном языке.`
+    : `Як обрати майстра: ${tip} На Majstr ви пишете напряму в Telegram — без посередників і комісії — та обговорюєте всі деталі рідною мовою.`;
 }
 
 export function landingFaq(

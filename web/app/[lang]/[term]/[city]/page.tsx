@@ -22,6 +22,7 @@ import {
   landingDescription,
   landingH1,
   landingIntro,
+  landingBody,
   landingFaq,
 } from "@/lib/content";
 import { abs, landingPath, hubPath, masterPath, languageAlternates } from "@/lib/urls";
@@ -105,7 +106,8 @@ export default async function LandingPage({
   const lead = professionLead(prof, lang);
   const prep = cityPrep(loc, lang);
   const h1 = landingH1(lead, prep);
-  const intro = landingIntro(lang, lead, prep, list.length, professionSub(prof.id, lang));
+  const intro = landingIntro(lang, lead, prep, loc.id, list.length, professionSub(prof.id, lang));
+  const body = landingBody(lang, prof.id);
   const faq = landingFaq(lang, lead, prep);
   const profTitle = nomName(prof.name, lang) || lead;
 
@@ -159,6 +161,7 @@ export default async function LandingPage({
 
         <section className="prose" style={{ marginTop: 28 }}>
           <p>{intro}</p>
+          <p>{body}</p>
         </section>
 
         {otherProfs.length > 0 && (
