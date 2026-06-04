@@ -72,32 +72,40 @@ async function fetchProfilePhotoByInstagram(handle) {
   const username = normalizeInstagramHandle(handle);
   if (!username) return { ok: false, reason: 'invalid_handle' };
 
+  const sessionId = process.env.INSTAGRAM_SESSION_ID;
+  const igHeaders = {
+    'User-Agent': USER_AGENT,
+    ...(sessionId ? { Cookie: `sessionid=${sessionId}` } : {}),
+  };
+
   const pageRes = await fetch(`https://www.instagram.com/${username}/`, {
-    headers: { 'User-Agent': USER_AGENT },
+    headers: igHeaders,
     redirect: 'follow',
   });
   if (!pageRes.ok) return { ok: false, reason: 'page_' + pageRes.status };
 
   const html = await pageRes.text();
-  // Login-wall detection — Instagram sometimes serves a login redirect
-  if (/Log in to Instagram|login_required/i.test(html.slice(0, 3000))) {
+  // Login-wall: no session or session expired
+  if (/Log in to Instagram|login_required/i.test(html.slice(0, 3000)) && html.length < 50000) {
     return { ok: false, reason: 'login_required' };
   }
-  // Instagram often puts content before property — handle both attribute orderings.
-  const photoUrl =
-    (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-     html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+  // Profile pic URL is embedded in the page's JS data blob (og:image no longer served).
+  // Unescape JSON unicode escapes before use.
+  const raw =
+    (html.match(/"profile_pic_url_hd":"([^"]+)"/) ||
+     html.match(/"profile_pic_url":"([^"]+)"/) ||
      [])[1];
-  if (!photoUrl) return { ok: false, reason: 'no_og_image' };
+  if (!raw) return { ok: false, reason: 'no_profile_pic' };
+  const photoUrl = raw.replace(/\\u0025/g, '%').replace(/\\/g, '');
 
-  // Instagram's default avatar fingerprint
-  if (/44884218_345707102882519|instagram.*static.*default/i.test(photoUrl)) {
+  // Default/empty avatar fingerprint
+  if (/44884218_345707102882519|static.*default_profile/i.test(photoUrl)) {
     return { ok: false, reason: 'default_avatar' };
   }
 
-  const r = await fetch(photoUrl, { headers: { 'User-Agent': USER_AGENT } });
-  if (!r.ok) return { ok: false, reason: 'download_' + r.status };
-  const buffer = Buffer.from(await r.arrayBuffer());
+  const imgRes = await fetch(photoUrl, { headers: igHeaders });
+  if (!imgRes.ok) return { ok: false, reason: 'download_' + imgRes.status };
+  const buffer = Buffer.from(await imgRes.arrayBuffer());
   return { ok: true, buffer, handle: username, sourceUrl: photoUrl };
 }
 
