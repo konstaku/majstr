@@ -69,7 +69,12 @@ function normalizeInstagramHandle(value) {
 }
 
 async function fetchProfilePhotoByInstagram(handle) {
-  const username = normalizeInstagramHandle(handle);
+  // Instagram's profile data is JS-rendered — the static HTML only embeds the
+  // logged-in viewer's own profile pic, not the target's. Server-side scraping
+  // always returns the wrong photo. Disabled until a headless-browser path exists.
+  return { ok: false, reason: 'not_supported' };
+
+  const username = normalizeInstagramHandle(handle); // eslint-disable-line no-unreachable
   if (!username) return { ok: false, reason: 'invalid_handle' };
 
   const sessionId = process.env.INSTAGRAM_SESSION_ID;
