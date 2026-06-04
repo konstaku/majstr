@@ -56,13 +56,54 @@
     <meta name="twitter:title" content="Majstr — find a craftsman who speaks your language" />
     <meta name="twitter:description" content="2,400+ vetted Ukrainian-speaking masters across Italy. No middlemen, free to use." />
     <meta name="twitter:image" content="https://majstr.xyz/og-image.png" />
-    <meta content="noarchive, max-image-preview:large" name="robots" />
+    <meta content="index, follow, max-image-preview:large, max-snippet:-1" name="robots" />
     <title>Majstr — find a craftsman who speaks your language</title>
+    <link rel="canonical" href="https://majstr.xyz/" />
+    <!-- Search engine verification — paste tokens once the accounts exist.
+         Google Search Console (HTML-tag method) and Yandex Webmaster. -->
+    <!-- <meta name="google-site-verification" content="REPLACE_WITH_GSC_TOKEN" /> -->
+    <!-- <meta name="yandex-verification" content="REPLACE_WITH_YANDEX_TOKEN" /> -->
+    <link rel="alternate" hreflang="ru" href="https://majstr.xyz/?lang=ru" />
     <link rel="alternate" hreflang="uk" href="https://majstr.xyz/?lang=uk" />
     <link rel="alternate" hreflang="en" href="https://majstr.xyz/?lang=en" />
     <link rel="alternate" hreflang="it" href="https://majstr.xyz/?lang=it" />
     <link rel="alternate" hreflang="pt" href="https://majstr.xyz/?lang=pt" />
     <link rel="alternate" hreflang="x-default" href="https://majstr.xyz/" />
+
+    <!-- Organization + WebSite structured data (homepage). Per-page JSON-LD
+         (landing/master pages) is emitted server-side by the Next.js layer. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://majstr.xyz/#organization",
+          "name": "Majstr",
+          "url": "https://majstr.xyz/",
+          "logo": "https://majstr.xyz/img/icons/apple-app-icon.png",
+          "description": "Directory of Ukrainian- and Russian-speaking masters and craftsmen across Italy.",
+          "areaServed": "IT"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://majstr.xyz/#website",
+          "url": "https://majstr.xyz/",
+          "name": "Majstr",
+          "publisher": { "@id": "https://majstr.xyz/#organization" },
+          "inLanguage": ["uk", "ru", "en"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://majstr.xyz/?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
 </head>
 
 <body>
