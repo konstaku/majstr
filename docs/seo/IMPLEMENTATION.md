@@ -38,26 +38,71 @@ curl -s https://majstr.xyz/ru/manikyur/milan | grep -E '<h1|<title'
 # <h1 class="title">Маникюр в Милане</h1>
 ```
 
-## Deploy (Vercel multi-zone)
+## Deploy (Vercel multi-zone) — step by step
 
-The Next app (`web/`) becomes the **apex** project; the existing Vite SPA keeps running and is
-rewritten in for the interactive/authed routes.
+Model: the existing **Vite SPA moves to a subdomain** (`app.majstr.xyz`); the new **Next app takes
+the apex** (`majstr.xyz`). The Next app *redirects* app/auth routes to the SPA (no rewrites → no
+Vite asset-path problems; query strings preserved). Nothing breaks if done in this order.
 
-1. **New Vercel project** → root directory `web/`, framework Next.js. Env vars:
-   - `NEXT_PUBLIC_SITE_URL=https://majstr.xyz`
-   - `API_BASE=https://api.majstr.xyz`
-   - `SPA_ORIGIN=` the existing SPA deployment origin (e.g. `https://app.majstr.xyz` or its
-     `*.vercel.app`) — enables the `/login /profile /admin /add /onboard` rewrites.
-   - `REVALIDATE_SECRET=` a random string (also set in the bot, step 4).
-2. **Domain swap:** move `majstr.xyz` to the Next project. Give the existing SPA project a stable
-   origin (subdomain or vercel.app) and put that in `SPA_ORIGIN`. The Telegram Mini App keeps
-   working at `majstr.xyz/onboard` (rewritten to the SPA).
-3. **Submit:** add the property in Google Search Console + Yandex Webmaster (paste tokens into
-   `frontend/index.html` placeholders *and* set Next metadata `verification` if desired), submit
-   `https://majstr.xyz/sitemap.xml`, set Yandex region (Milan = 10448, Rome = 10445).
-4. **On-demand ISR:** in `backend/bot.js`, after a master is approved, fire
-   `POST https://majstr.xyz/api/revalidate?secret=$REVALIDATE_SECRET` so the new master appears
-   within seconds (otherwise picked up at the 1h revalidate).
+### Step 0 — Phase 1 is independent
+Merging Phase 1 (`frontend/`) to `main` deploys the robots.txt + metadata to the live SPA. It does
+**not** touch routing or the domain — safe to do first, and it starts indexing.
+
+### Step 1 — give the SPA its own domain (existing Vercel project)
+In the **existing** SPA Vercel project → Settings → Domains → add `app.majstr.xyz`. Leave
+`majstr.xyz` attached for now. Confirm `https://app.majstr.xyz` loads the app, login, and `/onboard`.
+
+### Step 2 — point Telegram + bot at the SPA subdomain (CRITICAL — or the Mini App breaks)
+The Telegram Mini App's registered Web App URL is currently the **apex root**, which the Next app
+will take over. Before swapping:
+- **BotFather** → your bot → Mini App / Web App URL → set to `https://app.majstr.xyz/onboard`.
+- **Bot env** `FRONTEND_URL=https://app.majstr.xyz` so Telegram login links
+  (`/login?token=…`) point straight at the SPA. (As a safety net the apex also redirects
+  `/login?token=…` → `app.majstr.xyz/login?token=…` with the query preserved.)
+
+### Step 3 — create the Next project (`web/`)
+New Vercel project → import the repo → **Root Directory = `web`**, framework Next.js.
+Environment variables (set for **Production**, available at **build time**):
+- `NEXT_PUBLIC_SITE_URL=https://majstr.xyz`
+- `API_BASE=https://api.majstr.xyz`
+- `SPA_ORIGIN=https://app.majstr.xyz`  ← **must exist at build time** (redirects are baked at build)
+- `REVALIDATE_SECRET=<random string>` (also set in the bot, step 6)
+
+Deploy and test on the project's `*.vercel.app` URL **before** swapping the domain:
+```
+curl -s <preview>/ru/manikyur/milan | grep -E '<h1|<title'   # real HTML
+curl -sI <preview>/onboard            # 307 -> https://app.majstr.xyz/onboard
+curl -sI '<preview>/?card=<known-id>' # 307 -> /uk/m/<slug>
+```
+
+### Step 4 — swap the apex domain
+Move `majstr.xyz` (and `www`) from the SPA project to the Next project. DNS/SSL propagates in
+minutes. The SPA keeps serving on `app.majstr.xyz`.
+
+### Step 5 — submit to search engines
+Google Search Console + Yandex Webmaster: verify (paste tokens into `frontend/index.html`
+placeholders, or add Next metadata `verification`), submit `https://majstr.xyz/sitemap.xml`, set
+Yandex site region (Milan = 10448). Optionally create a Yandex Business card.
+
+### Step 6 — on-demand ISR (optional but nice)
+In `backend/bot.js`, after a master is approved, fire
+`POST https://majstr.xyz/api/revalidate?secret=$REVALIDATE_SECRET` so the new master appears in
+seconds instead of at the hourly revalidate.
+
+### Link-preservation matrix
+| Link / entry point | After swap | Handled by |
+|---|---|---|
+| `majstr.xyz/ru/manikyur/milan` etc. | served by Next (SEO) | new app |
+| `majstr.xyz/?card=<id>` (old shares) | 307 → `/uk/m/<slug>` | `web/app/page.tsx` |
+| `majstr.xyz/login?token=…` | 307 → `app.majstr.xyz/login?token=…` | `next.config` redirects |
+| `/profile /admin /add /onboard` | 307 → `app.majstr.xyz/…` | `next.config` redirects |
+| Telegram Mini App | opens `app.majstr.xyz/onboard` directly | BotFather (step 2) |
+| Telegram login deep link | `app.majstr.xyz/login?token=…` | bot `FRONTEND_URL` (step 2) |
+| `api.majstr.xyz/*` | unchanged (separate VPS) | — |
+
+### Rollback
+Move `majstr.xyz` back to the SPA project and revert the BotFather URL + `FRONTEND_URL`. Full
+restore in minutes; the Next project keeps running on its `*.vercel.app`.
 
 ## Open decisions / follow-ups
 - **Contact gating:** master pages currently expose a `nofollow` Telegram CTA (`t.me/<handle>`)
