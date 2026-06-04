@@ -15,11 +15,12 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const { runDB } = require('../database/db');
 const Master = require('../database/schema/Master');
-const { fetchAndUploadPhotoForMaster } = require('../helpers/telegramPhotoByHandle');
+const { fetchAndUploadPhotoForMaster, closeBrowser } = require('../helpers/telegramPhotoByHandle');
 
 const FORCE = process.argv.includes('--force');
 const DRY_RUN = process.argv.includes('--dry-run');
-const CONCURRENCY = 5;
+// Reduced from 5: Playwright pages are heavier than plain fetch calls.
+const CONCURRENCY = 3;
 
 async function main() {
   await runDB();
@@ -63,6 +64,7 @@ async function main() {
   }
 
   console.log(`\nDone. ok:${ok} failed:${failed} skipped:${skipped}`);
+  await closeBrowser();
   await mongoose.disconnect();
 }
 

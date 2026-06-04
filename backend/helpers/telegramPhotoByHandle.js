@@ -1,19 +1,17 @@
 'use strict';
 
 // Fetch a profile photo for scraped masters. Priority:
-//   1. Telegram (@handle) — t.me public page og:image scrape
-//   2. Instagram (@handle) — instagram.com public page og:image scrape (fallback)
+//   1. Telegram (@handle) — t.me public page og:image scrape (HTTP, no browser)
+//   2. Instagram (@handle) — headless Chromium via Playwright (JS-rendered page)
 //
-// Telegram: the t.me profile page serves an og:image pointing to the CDN photo.
-// Users with no public photo get Telegram's default logo — filtered out.
-// Bot API can't be used: getChat returns chat_not_found for users who haven't
-// started the bot (verified against 49 handles — 0 of 49 succeeded).
-//
-// Instagram: public profiles serve og:image in HTML. Best-effort — Instagram's
-// anti-bot protection may block or return a login-wall on some requests.
+// Telegram: t.me serves og:image in static HTML — simple fetch is enough.
+// Instagram: profile data is JS-rendered; static HTML only embeds the viewer's
+// own pic. A real browser is required. We use a singleton Playwright Chromium
+// instance with the session cookie pre-loaded so it starts only once per process.
 //
 // Failure reasons (ok:false): invalid_handle, page_<status>, no_og_image,
-// default_logo/default_avatar, download_<status>, login_required.
+// default_logo, no_profile_pic, default_avatar, download_<status>,
+// login_required, not_supported, browser_error.
 
 const AWS = require('aws-sdk');
 
@@ -68,51 +66,97 @@ function normalizeInstagramHandle(value) {
   return m ? m[1].toLowerCase() : null;
 }
 
-async function fetchProfilePhotoByInstagram(handle) {
-  // Instagram's profile data is JS-rendered — the static HTML only embeds the
-  // logged-in viewer's own profile pic, not the target's. Server-side scraping
-  // always returns the wrong photo. Disabled until a headless-browser path exists.
-  return { ok: false, reason: 'not_supported' };
+// ---------------------------------------------------------------------------
+// Singleton Playwright browser — launched once per process, shared across calls.
+// ---------------------------------------------------------------------------
+let _browser = null;
+let _context = null;
 
-  const username = normalizeInstagramHandle(handle); // eslint-disable-line no-unreachable
+async function getBrowserContext() {
+  if (_context) return _context;
+  const { chromium } = require('playwright');
+  _browser = await chromium.launch({ headless: true });
+  const sessionId = process.env.INSTAGRAM_SESSION_ID;
+  _context = await _browser.newContext({
+    userAgent: USER_AGENT,
+    locale: 'uk-UA',
+    ...(sessionId ? {
+      storageState: {
+        cookies: [{
+          name: 'sessionid',
+          value: sessionId,
+          domain: '.instagram.com',
+          path: '/',
+          httpOnly: true,
+          secure: true,
+          sameSite: 'Lax',
+        }],
+      },
+    } : {}),
+  });
+  return _context;
+}
+
+// Close the browser when the process is done (call from backfill scripts).
+async function closeBrowser() {
+  if (_browser) { await _browser.close(); _browser = null; _context = null; }
+}
+
+async function fetchProfilePhotoByInstagram(handle) {
+  const username = normalizeInstagramHandle(handle);
   if (!username) return { ok: false, reason: 'invalid_handle' };
 
-  const sessionId = process.env.INSTAGRAM_SESSION_ID;
-  const igHeaders = {
-    'User-Agent': USER_AGENT,
-    ...(sessionId ? { Cookie: `sessionid=${sessionId}` } : {}),
-  };
+  let page;
+  try {
+    const ctx = await getBrowserContext();
+    page = await ctx.newPage();
 
-  const pageRes = await fetch(`https://www.instagram.com/${username}/`, {
-    headers: igHeaders,
-    redirect: 'follow',
-  });
-  if (!pageRes.ok) return { ok: false, reason: 'page_' + pageRes.status };
+    // Navigate to instagram.com to establish same-origin context (required for
+    // the API call — server-side fetch is blocked by Sec-Fetch policy).
+    await page.goto('https://www.instagram.com/', {
+      waitUntil: 'domcontentloaded',
+      timeout: 20000,
+    });
 
-  const html = await pageRes.text();
-  // Login-wall: no session or session expired
-  if (/Log in to Instagram|login_required/i.test(html.slice(0, 3000)) && html.length < 50000) {
-    return { ok: false, reason: 'login_required' };
+    // Call the internal profile API from within the browser — the real browser
+    // sets correct Sec-Fetch-Site/Mode headers that the server requires.
+    const apiResult = await page.evaluate(async (uname) => {
+      try {
+        const r = await fetch('/api/v1/users/web_profile_info/?username=' + uname, {
+          headers: { 'X-IG-App-ID': '936619743392459' },
+          credentials: 'include',
+        });
+        if (!r.ok) return { ok: false, status: r.status };
+        const data = await r.json();
+        const user = data?.data?.user;
+        if (!user) return { ok: false, status: r.status, reason: 'no_user' };
+        return { ok: true, pic: user.profile_pic_url_hd || user.profile_pic_url };
+      } catch (e) {
+        return { ok: false, reason: e.message };
+      }
+    }, username);
+
+    if (!apiResult.ok) {
+      return { ok: false, reason: apiResult.reason || 'api_' + apiResult.status };
+    }
+    const picUrl = apiResult.pic;
+    if (!picUrl) return { ok: false, reason: 'no_profile_pic' };
+
+    if (/44884218_345707102882519|static.*default_profile/i.test(picUrl)) {
+      return { ok: false, reason: 'default_avatar' };
+    }
+
+    const r = await fetch(picUrl, { headers: { 'User-Agent': USER_AGENT } });
+    if (!r.ok) return { ok: false, reason: 'download_' + r.status };
+    const buffer = Buffer.from(await r.arrayBuffer());
+    return { ok: true, buffer, handle: username, sourceUrl: picUrl };
+  } catch (e) {
+    return { ok: false, reason: 'browser_error', detail: e.message };
+  } finally {
+    if (page) await page.close().catch(() => {});
   }
-  // Profile pic URL is embedded in the page's JS data blob (og:image no longer served).
-  // Unescape JSON unicode escapes before use.
-  const raw =
-    (html.match(/"profile_pic_url_hd":"([^"]+)"/) ||
-     html.match(/"profile_pic_url":"([^"]+)"/) ||
-     [])[1];
-  if (!raw) return { ok: false, reason: 'no_profile_pic' };
-  const photoUrl = raw.replace(/\\u0025/g, '%').replace(/\\/g, '');
-
-  // Default/empty avatar fingerprint
-  if (/44884218_345707102882519|static.*default_profile/i.test(photoUrl)) {
-    return { ok: false, reason: 'default_avatar' };
-  }
-
-  const imgRes = await fetch(photoUrl, { headers: igHeaders });
-  if (!imgRes.ok) return { ok: false, reason: 'download_' + imgRes.status };
-  const buffer = Buffer.from(await imgRes.arrayBuffer());
-  return { ok: true, buffer, handle: username, sourceUrl: photoUrl };
 }
+
 
 // Telegram's default profile logo for users with no public photo / private
 // account. Looks like `https://telegram.org/img/t_logo_2x.png`.
@@ -208,6 +252,7 @@ module.exports = {
   fetchProfilePhotoByInstagram,
   uploadMasterPhoto,
   fetchAndUploadPhotoForMaster,
+  closeBrowser,
   normalizeHandle,
   normalizeInstagramHandle,
   firstTelegramContact,
