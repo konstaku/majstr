@@ -75,6 +75,16 @@ curl -sI <preview>/onboard            # 307 -> https://app.majstr.xyz/onboard
 curl -sI '<preview>/?card=<known-id>' # 307 -> /uk/m/<slug>
 ```
 
+### Host canonicalization (decide once — www vs non-www)
+Today the apex `majstr.xyz` **307-redirects to `www.majstr.xyz`** (www is primary in Vercel), yet
+the page tags point to non-www. Pick one canonical host and make everything agree:
+- **Recommended: non-www canonical.** In the Vercel project Domains, make `majstr.xyz` primary so
+  `www` → `majstr.xyz`. Then keep `NEXT_PUBLIC_SITE_URL=https://majstr.xyz` (matches all current
+  code/tags). 
+- Or keep www: set `NEXT_PUBLIC_SITE_URL=https://www.majstr.xyz` and update the `frontend/index.html`
+  canonical/og/hreflang to `www`.
+Apply the same primary-host choice to both the SPA project and the new Next project.
+
 ### Step 4 — swap the apex domain
 Move `majstr.xyz` (and `www`) from the SPA project to the Next project. DNS/SSL propagates in
 minutes. The SPA keeps serving on `app.majstr.xyz`.
