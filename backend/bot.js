@@ -140,15 +140,20 @@ async function handleWebhook(req, res, bot) {
 }
 
 async function handleMessage(message) {
+  // Mini App data submissions are not user text commands — ignore silently.
+  if (message.web_app_data) return;
+
   const chatId = message.chat.id;
   const text = message.text || '';
 
-  switch (true) {
-    case text === '/start' || text.startsWith('/start '): {
-      const payload = text.startsWith('/start ') ? text.slice(7).trim() : null;
-      await handleStart(message, payload);
-      break;
-    }
+  // /start may carry a payload after a space — handle before the switch.
+  if (text === '/start' || text.startsWith('/start ')) {
+    const payload = text.startsWith('/start ') ? text.slice(7).trim() : null;
+    await handleStart(message, payload);
+    return;
+  }
+
+  switch (text) {
     case '/available':
       await setAvailability(chatId, 'available');
       break;
@@ -499,7 +504,7 @@ async function handleMasterCallback(queryId, message, data, from) {
       bot.sendMessage(
         master.telegramID,
         i18n.t(oLang, 'owner.approved', {
-          url: masterWebUrl(master, oLang, PUBLIC_WEB_URL),
+          url: `${PUBLIC_WEB_URL}/?card=${master._id}`,
         })
       ).catch(() => {});
     }

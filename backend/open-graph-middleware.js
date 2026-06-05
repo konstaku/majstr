@@ -41,21 +41,28 @@ async function runOpenGraphMiddleware() {
       return res.redirect('/');
     }
 
-    // Generate a custom page title for a master
     console.log('Incoming SSR request for card #', id);
-    const newTitle = `${master.name}: ${
-      professions.find((p) => p.id === master.professionID).name.ua
-    } в ${locations.find((l) => l.id === master.locationID).name.ua_alt}`;
 
-    // Meta tags for update
+    const profEntry = professions.find((p) => p.id === master.professionID);
+    const locEntry  = locations.find((l) => l.id === master.locationID);
+    const profName  = profEntry?.name?.ua || master.professionID || '';
+    const locName   = locEntry?.name?.ua_alt || locEntry?.name?.ua || master.locationID || '';
+    const newTitle  = [master.name, profName, locName].filter(Boolean).join(' · ');
+
+    // Prefer the stored OGimage URL; fall back to the conventional S3 key.
+    const ogImageUrl = master.OGimage ||
+      `https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${id}.jpg`;
+
     const metaTags = `
-  <meta property="og:image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg">
-  <meta property="og:image:type" content="image/png" />
+  <meta property="og:title" content="${newTitle}" />
+  <meta property="og:image" content="${ogImageUrl}">
+  <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="627" />
-  <meta itemProp="image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg" />
+  <meta property="og:image:height" content="630" />
+  <meta itemProp="image" content="${ogImageUrl}" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="https://chupakabra-test.s3.eu-west-3.amazonaws.com/user-og/${req.query.card}.jpg" />
+  <meta name="twitter:title" content="${newTitle}" />
+  <meta name="twitter:image" content="${ogImageUrl}" />
   <meta content="noarchive, max-image-preview:large" name="robots" />`;
 
     // Get latest index HTML file from frontend directory
