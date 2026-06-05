@@ -11,6 +11,7 @@ import {
 } from "@/lib/data";
 import { masterTitle, masterDescription } from "@/lib/content";
 import { abs, masterPath, languageAlternates } from "@/lib/urls";
+import { SITE_URL } from "@/lib/config";
 import { buildSeed } from "@/lib/seed";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
@@ -40,7 +41,6 @@ export async function generateMetadata({
   const profTitle = nomName(prof.name, lang) || professionLead(prof, lang);
   const title = masterTitle(lang, master.name, profTitle, cityPrep(loc, lang));
   const description = masterDescription(lang, master.name, profTitle, cityPrep(loc, lang));
-  const img = master.OGimage || master.photo;
   return {
     title,
     description,
@@ -54,7 +54,7 @@ export async function generateMetadata({
       url: abs(masterPath(lang, canonical)),
       locale: OG_LOCALE[lang],
       type: "profile",
-      images: [img || "/og-image.png"],
+      images: [`${SITE_URL}/api/og?id=${master._id}`],
     },
   };
 }

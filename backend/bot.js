@@ -10,6 +10,7 @@ const Master = require('./database/schema/Master');
 const MasterClaim = require('./database/schema/MasterClaim');
 const MasterAudit = require('./database/schema/MasterAudit');
 const i18n = require('./i18n');
+const { masterWebUrl } = require('./helpers/masterUrl');
 
 // Pull a known UI language out of a /start or startapp payload, e.g.
 // "add-it" -> "it", "onboard_en" -> "en", "ru" -> "ru". null if none.
@@ -498,7 +499,7 @@ async function handleMasterCallback(queryId, message, data, from) {
       bot.sendMessage(
         master.telegramID,
         i18n.t(oLang, 'owner.approved', {
-          url: `${PUBLIC_WEB_URL}/?card=${master._id}`,
+          url: masterWebUrl(master, oLang, PUBLIC_WEB_URL),
         })
       ).catch(() => {});
     }
