@@ -1,10 +1,64 @@
 const Master = require('../database/schema/Master');
 const MasterAudit = require('../database/schema/MasterAudit');
+const Profession = require('../database/schema/Profession');
+const Location = require('../database/schema/Location');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
+const { localizedName } = require('../lang');
 const { bot } = require('../bot');
 
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
 const PUBLIC_WEB_URL = process.env.PUBLIC_WEB_URL || 'https://majstr.xyz';
+
+const AVAILABILITY_EMOJI = { available: '🟢', next_week: '🟡', busy: '🔴' };
+const LANG_LABELS = {
+  uk:'UA',en:'EN',it:'IT',pt:'PT',es:'ES',de:'DE',fr:'FR',pl:'PL',ru:'RU',
+};
+
+async function buildAdminNotificationText(draft) {
+  const [profEntry, locEntry] = await Promise.all([
+    Profession.findOne({ id: draft.professionID }).lean(),
+    Location.findOne({ id: draft.locationID }).lean(),
+  ]);
+  const profName = localizedName(profEntry?.name, 'uk', draft.professionID);
+  const locName = localizedName(locEntry?.name, 'uk', draft.locationID);
+
+  const lines = [
+    `🆕 Нова картка майстра на модерації`,
+    ``,
+    `👤 ${draft.name || '—'}`,
+    `🔧 ${profName}`,
+    `📍 ${locName}`,
+  ];
+
+  if (draft.availability) {
+    const emoji = AVAILABILITY_EMOJI[draft.availability] || '';
+    lines.push(`${emoji} ${draft.availability}`);
+  }
+
+  if (draft.languages && draft.languages.length) {
+    const badges = draft.languages.map(l => LANG_LABELS[l] || l.toUpperCase()).join(' · ');
+    lines.push(`🗣 ${badges}`);
+  }
+
+  if (draft.contacts && draft.contacts.length) {
+    lines.push(``, `📞 Контакти:`);
+    for (const c of draft.contacts) {
+      lines.push(`  ${c.contactType}: ${c.value}`);
+    }
+  }
+
+  const tags = draft.tags?.ua?.length ? draft.tags.ua : draft.tags?.en ?? [];
+  if (tags.length) {
+    lines.push(``, `🏷 ${tags.slice(0, 6).join(' · ')}`);
+  }
+
+  if (draft.about) {
+    const snippet = draft.about.length > 200 ? draft.about.slice(0, 200) + '…' : draft.about;
+    lines.push(``, `📝 ${snippet}`);
+  }
+
+  return lines.join('\n');
+}
 
 const DRAFT_FIELDS = [
   'name', 'professionID', 'locationID', 'countryID',
@@ -189,23 +243,24 @@ async function submitDraft(req, res) {
 
   // Non-admin: queue for review with an actionable admin keyboard.
   if (TELEGRAM_ADMIN_CHAT_ID) {
-    const cardUrl = `${PUBLIC_WEB_URL}/?card=${draft._id}`;
-    bot.sendMessage(
-      TELEGRAM_ADMIN_CHAT_ID,
-      `🆕 Нова картка майстра на модерації\n\n` +
-        `👤 ${draft.name || '—'}\n` +
-        `🔗 ${cardUrl}\n${draft.OGimage || ''}`,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: '✅ Схвалити', callback_data: `master:approve:${draft._id}` },
-              { text: '❌ Відхилити', callback_data: `master:decline:${draft._id}` },
-            ],
-          ],
-        },
-      }
-    ).catch(err => console.error('Failed to notify admin:', err));
+    const approveKeyboard = {
+      inline_keyboard: [[
+        { text: '✅ Схвалити', callback_data: `master:approve:${draft._id}` },
+        { text: '❌ Відхилити', callback_data: `master:decline:${draft._id}` },
+      ]],
+    };
+    const caption = await buildAdminNotificationText(draft).catch(() => `🆕 ${draft.name || '—'}`);
+
+    if (draft.photo) {
+      bot.sendPhoto(TELEGRAM_ADMIN_CHAT_ID, draft.photo, {
+        caption,
+        reply_markup: approveKeyboard,
+      }).catch(err => console.error('Failed to notify admin (photo):', err));
+    } else {
+      bot.sendMessage(TELEGRAM_ADMIN_CHAT_ID, caption, {
+        reply_markup: approveKeyboard,
+      }).catch(err => console.error('Failed to notify admin:', err));
+    }
   }
 
   return res.json({ masterID: draft._id, status: 'pending' });

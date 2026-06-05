@@ -21,10 +21,6 @@ const lexicon = require('../../data/profession-lexicon.json');
 const aliases = require('../../data/profession-aliases.json');
 
 const CONFIG = {
-  // 1.2.0 — fix #115: a specialist self-announcement that happens to contain a
-  // request cue ("я роблю манікюр, шукаю клієнтів", "Знімаю в Мілані... Шукаю
-  // моделей") is no longer treated as an inquiry. Adds first-person offer
-  // verbs (роблю / займа / делаю / знімаю) so the offer signal actually fires.
   version: '1.2.0',
   threshold: 0.3,
   weights: {

@@ -14,6 +14,8 @@ const Location = require('./database/schema/Location');
 const Review = require('./database/schema/Review');
 
 const requireAuth = require('./middleware/requireAuth');
+const i18n = require('./i18n');
+const { masterWebUrl } = require('./helpers/masterUrl');
 const requireAdmin = require('./middleware/requireAdmin');
 const requireUser = require('./middleware/requireUser');
 const { getDraft, patchDraft, deleteDraft, submitDraft, getMine } = require('./routes/draft');
@@ -295,10 +297,28 @@ async function addMaster(req, res) {
   }
 
   if (TELEGRAM_ADMIN_CHAT_ID) {
-    bot.sendMessage(
-      TELEGRAM_ADMIN_CHAT_ID,
-      `New master added, check it: https://majstr.xyz/admin\n${master.OGimage}`
-    );
+    const contactLines = (master.contacts || []).map(c => `  ${c.contactType}: ${c.value}`).join('\n');
+    const adminText =
+      `🆕 Нова картка майстра на модерації\n\n` +
+      `👤 ${master.name || '—'}\n` +
+      (contactLines ? `📞 Контакти:\n${contactLines}\n` : '') +
+      (master.about ? `📝 ${master.about.slice(0, 200)}\n` : '');
+    const approveKeyboard = {
+      inline_keyboard: [[
+        { text: '✅ Схвалити', callback_data: `master:approve:${master._id}` },
+        { text: '❌ Відхилити', callback_data: `master:decline:${master._id}` },
+      ]],
+    };
+    if (master.photo) {
+      bot.sendPhoto(TELEGRAM_ADMIN_CHAT_ID, master.photo, {
+        caption: adminText,
+        reply_markup: approveKeyboard,
+      }).catch(console.error);
+    } else {
+      bot.sendMessage(TELEGRAM_ADMIN_CHAT_ID, adminText, {
+        reply_markup: approveKeyboard,
+      }).catch(console.error);
+    }
   }
 
   res.status(200).json({ success: true, masterID: master._id });
@@ -334,15 +354,13 @@ async function handleApproveMaster(req, res) {
       });
 
       if (telegramId) {
+        const ownerUser = await User.findOne({ telegramID: telegramId }).select('uiLanguage').lean();
+        const oLang = i18n.normalizeLang(ownerUser?.uiLanguage);
         await bot.sendMessage(
           telegramId,
-          `✅ Картку майстра додано на сайт: https://majstr.xyz/?card=${masterID}\n\n` +
-            'Управляйте своїм профілем через бот:\n' +
-            '/available — доступний зараз\n' +
-            '/nextweek — з наступного тижня\n' +
-            '/busy — зайнятий\n' +
-            '/status — переглянути статус\n' +
-            '/languages — мови спілкування'
+          i18n.t(oLang, 'owner.approved', {
+            url: masterWebUrl(master, oLang, `https://majstr.xyz`),
+          })
         );
       }
 
@@ -366,10 +384,9 @@ async function handleApproveMaster(req, res) {
       });
 
       if (telegramId) {
-        await bot.sendMessage(
-          telegramId,
-          `На жаль, заявка не відповідає правилам сайту, або заповнена із помилками. Щоб зʼясувати подробиці, звʼяжіться із підтримкою за контактами, вказаними на сайті`
-        );
+        const ownerUser = await User.findOne({ telegramID: telegramId }).select('uiLanguage').lean();
+        const oLang = i18n.normalizeLang(ownerUser?.uiLanguage);
+        await bot.sendMessage(telegramId, i18n.t(oLang, 'owner.declined'));
       }
 
       return res.status(200).json({ success: true });

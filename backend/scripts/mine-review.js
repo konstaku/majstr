@@ -27,6 +27,7 @@ const Location = require('../database/schema/Location');
 const Country = require('../database/schema/Country');
 const MasterAudit = require('../database/schema/MasterAudit');
 const CandidateModel = require('../database/schema/Candidate');
+const MiningRunModel = require('../database/schema/MiningRun');
 // Reuse the same create logic the API uses, so the CLI and dashboard stay in
 // sync on validation, slugging, duplicate-detection and the rebuild mutex.
 const {
@@ -47,12 +48,31 @@ const tagSuggestions = require('../../frontend/src/data/tag-suggestions.i18n.jso
 
 // Default city per source chat — pre-selected when a candidate has no extracted
 // city. Resolved to a real locationID at startup (chat name -> Location match).
-const CHAT_DEFAULT_CITY_NAME = { '1513619004': 'Roma', '1685394644': 'Florence' };
+const CHAT_DEFAULT_CITY_NAME = { '1513619004': 'Roma', '1685394644': 'Florence', '1620936389': 'Genova', '1739258156': 'Genova', '1698155646': 'Sanremo', '2181477220': 'Sanremo' };
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
   return i !== -1 ? process.argv[i + 1] : d;
 };
+
+// #119 — auto-correct obvious contactType mismatches before persisting.
+// A phone-shaped value filed under 'telegram' is swapped to 'phone'; the
+// reverse (a handle filed under 'phone') is swapped to 'telegram'.
+const TG_HANDLE_RE = /^@?[A-Za-z][A-Za-z0-9_]{4,31}$/;
+function autoCorrectContacts(contacts) {
+  return (contacts || []).map((c) => {
+    const digits = String(c.value || '').replace(/\D/g, '');
+    const looksLikePhone = digits.length >= 8;
+    const looksLikeTg = TG_HANDLE_RE.test(String(c.value || '').trim());
+    if (c.contactType === 'telegram' && looksLikePhone && !looksLikeTg) {
+      return { contactType: 'phone', value: String(c.value).replace(/^@/, '') };
+    }
+    if ((c.contactType === 'phone' || c.contactType === 'whatsapp' || c.contactType === 'viber') && looksLikeTg && !looksLikePhone) {
+      return { contactType: 'telegram', value: c.value };
+    }
+    return c;
+  });
+}
 const PORT = parseInt(arg('--port', '4102'), 10);
 const MINING_DB = arg('--miningDb', 'majstr_mining');
 // Optional: restrict the review queue to a single source chat (e.g. Roma).
@@ -64,7 +84,7 @@ const DEFAULT_CITY = arg('--defaultCity', null);
 const candidateFilter = (extra = {}) =>
   CHAT_ID ? { chatID: CHAT_ID, ...extra } : { ...extra };
 
-let RawMessage; // bound to the mining connection in main()
+let RawMessage, MiningRun; // bound to the mining connection in main()
 
 const norm = (s) =>
   String(s || '')
@@ -248,6 +268,7 @@ textarea{min-height:54px;resize:vertical}
 <header><div>#<b id="ix">–</b>/<b id="tot">–</b></div>
 <div class="bar"><i id="pg" style="width:0"></i></div>
 <div>approved <b id="cc">0</b> · declined <b id="cd">0</b> · left <b id="cl">0</b></div>
+<a href="/metrics" target="_blank" class="btnsm" style="text-decoration:none;font-size:12px">Metrics</a>
 <button class="btnsm" id="rebuildBtn" onclick="rebuildLex()" title="Regenerate the profession lexicon after creating new professions">Rebuild lexicon</button></header>
 <div id="hidden-bar" class="hidden-bar"></div>
 <main id="main"></main>
@@ -307,9 +328,12 @@ function render(){
    '<div class="tagadd"><input id="f_tagnew" placeholder="add a tag"><button type="button" class="btnsm" id="f_tagadd">+ add</button></div>';
  h+='<label>Description (optional)</label><textarea id="f_desc">'+esc(e.description||'')+'</textarea>';
  h+='<div class="warn" id="warn"></div>';
- h+='<div class="actions"><button class="dec" onclick="decline()">Decline</button>'+
+ h+='<div class="actions"><button class="dec" onclick="decline()">Decline ×user</button>'+
    '<button class="skip" onclick="i++;render()">Skip</button>'+
-   '<button class="app" id="appBtn" onclick="approve()">Approve → publish live</button></div></div>';
+   '<button class="app" id="appBtn" onclick="approve()">Approve → publish live</button></div>';
+ if(c.fromName)h+='<label class="hint" style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer">'+
+   '<input type="checkbox" id="skipOthers"><span>Decline all other posts from "<b>'+esc(c.fromName)+'</b>" too</span></label>';
+ h+='</div>';
  $('main').innerHTML=h;
  ['f_name','f_prof','f_loc'].forEach(id=>$(id).addEventListener('input',sync));
  // tag input wiring (no inline handlers — avoids attribute-quoting issues)
@@ -370,22 +394,41 @@ function sync(){
  $('appBtn').disabled=!ok;
  $('warn').textContent=ok?'':'Approve needs: name + profession + city + at least one contact.';
 }
+async function declineUser(id,fromName,chatID){
+ return fetch('/api/decline-user',{method:'POST',headers:{'content-type':'application/json'},
+  body:JSON.stringify({id,fromName:fromName||'',chatID:chatID||''})});
+}
 async function decline(){
  const c=Q[i];
- await fetch('/api/decline',{method:'POST',headers:{'content-type':'application/json'},
-  body:JSON.stringify({id:c.id})});
- declined++;i++;render();
+ await declineUser(c.id,c.fromName,c.chatID);
+ declined++;
+ if(c.fromName){
+  // remove current + every other visible candidate from the same poster
+  const others=Q.slice(i+1).filter(x=>x.fromName===c.fromName).length;
+  declined+=others;
+  Q=Q.filter((x,idx)=>idx!==i&&x.fromName!==c.fromName);
+ }else{Q.splice(i,1);}
+ render();
 }
 async function approve(){
  const c=Q[i];
+ const skipOthers=!!($('skipOthers')&&$('skipOthers').checked&&c.fromName);
  const master={name:$('f_name').value.trim(),professionID:$('f_prof').value,
   locationID:$('f_loc').value,contacts:readContacts(),about:$('f_desc').value.trim(),
   tags:curTags.slice(0,3)};
  const btn=$('appBtn');btn.disabled=true;btn.textContent='saving...';
  const r=await fetch('/api/approve',{method:'POST',headers:{'content-type':'application/json'},
   body:JSON.stringify({id:c.id,master})});
- if(r.ok){approved++;i++;render();}
- else{btn.textContent='FAILED — retry';btn.disabled=false;}
+ if(r.ok){
+  approved++;
+  if(skipOthers){
+   declineUser(c.id,c.fromName,c.chatID); // fire-and-forget; primary is already carded
+   const others=Q.slice(i+1).filter(x=>x.fromName===c.fromName).length;
+   declined+=others;
+   Q=Q.filter((x,idx)=>idx!==i&&x.fromName!==c.fromName);
+  }else{Q.splice(i,1);}
+  render();
+ }else{btn.textContent='FAILED — retry';btn.disabled=false;}
 }
 
 // ----- inline-create profession / category / city, + lexicon rebuild ------
@@ -525,11 +568,136 @@ function updateHiddenBar(){
 fetch('/api/data').then(r=>r.json()).then(d=>{D=d;Q=d.candidates;updateHiddenBar();render();});
 </script></body></html>`;
 
+const CHAT_REGION = {
+  '1780497126': 'Veneto',
+  '1593295268': 'Milano',
+  '1310497068': 'Torino',
+  '1786184772': 'Napoli',
+  '1513619004': 'Roma',
+  '1685394644': 'Florence',
+  '1441030224': 'Italia',
+  '1620936389': 'Genova',
+  '1739258156': 'Genova',
+  '1698155646': 'Sanremo',
+  '2181477220': 'Sanremo',
+};
+
+async function getMetrics() {
+  const [candByVersion, runAgg, queueByChat] = await Promise.all([
+    // Accept/decline counts per classifier version
+    Candidate.aggregate([
+      { $group: { _id: { v: '$classifierVersion', name: '$classifierName', status: '$status' }, n: { $sum: 1 } } },
+      { $sort: { '_id.v': 1 } },
+    ]),
+    // Cost + classified counts per classifier version
+    MiningRun.aggregate([
+      { $group: { _id: { v: '$classifierVersion', name: '$classifierName' }, cost: { $sum: '$costUSD' }, classified: { $sum: '$counts.classified' }, runs: { $sum: 1 } } },
+      { $sort: { '_id.v': 1 } },
+    ]),
+    // Queue depth per chat
+    Candidate.aggregate([
+      { $group: { _id: { chatID: '$chatID', status: '$status' }, n: { $sum: 1 } } },
+    ]),
+  ]);
+
+  // Roll up candidate stats by version
+  const byVersion = {};
+  for (const r of candByVersion) {
+    const key = r._id.name + ' ' + r._id.v;
+    if (!byVersion[key]) byVersion[key] = { name: r._id.name, version: r._id.v, carded: 0, declined: 0, new: 0 };
+    byVersion[key][r._id.status] = (byVersion[key][r._id.status] || 0) + r.n;
+  }
+  const runByVersion = {};
+  for (const r of runAgg) {
+    const key = r._id.name + ' ' + r._id.v;
+    runByVersion[key] = { cost: r.cost || 0, classified: r.classified || 0, runs: r.runs || 0 };
+  }
+  const versions = Object.entries(byVersion).map(([key, v]) => {
+    const run = runByVersion[key] || {};
+    const reviewed = v.carded + v.declined;
+    return { ...v, reviewed, acceptRate: reviewed ? (v.carded / reviewed) : null, cost: run.cost, classified: run.classified, runs: run.runs };
+  });
+
+  // Roll up queue by chat
+  const byChat = {};
+  for (const r of queueByChat) {
+    const chat = CHAT_REGION[r._id.chatID] || r._id.chatID;
+    if (!byChat[chat]) byChat[chat] = { carded: 0, declined: 0, new: 0 };
+    byChat[chat][r._id.status] = (byChat[chat][r._id.status] || 0) + r.n;
+  }
+
+  // Totals
+  const totals = versions.reduce((a, v) => {
+    a.carded += v.carded; a.declined += v.declined; a.new += v.new; a.cost += v.cost || 0;
+    return a;
+  }, { carded: 0, declined: 0, new: 0, cost: 0 });
+  totals.reviewed = totals.carded + totals.declined;
+  totals.acceptRate = totals.reviewed ? totals.carded / totals.reviewed : null;
+
+  return { versions, byChat, totals };
+}
+
+const METRICS_HTML = `<!doctype html><html><head><meta charset="utf-8"><title>Mining metrics</title><style>
+*{box-sizing:border-box}body{margin:0;font:14px/1.55 system-ui,sans-serif;background:#0d1117;color:#e6edf3}
+header{background:#0d1117;border-bottom:1px solid #30363d;padding:10px 18px;display:flex;gap:18px;align-items:center;font-size:13px;color:#8b949e}
+header a{color:#79c0ff;text-decoration:none}header b{color:#e6edf3}
+main{max-width:900px;margin:0 auto;padding:24px}
+h2{font-size:15px;color:#e6edf3;margin:24px 0 10px;border-bottom:1px solid #21262d;padding-bottom:6px}
+.kpi{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+.kpi-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 18px;min-width:130px}
+.kpi-card .val{font-size:22px;font-weight:700;color:#e6edf3}
+.kpi-card .lbl{font-size:11px;color:#8b949e;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:#8b949e;font-weight:500;padding:6px 10px;border-bottom:1px solid #21262d}
+td{padding:7px 10px;border-bottom:1px solid #161b22}
+tr:hover td{background:#161b22}
+.good{color:#3fb950}.mid{color:#e3b341}.bad{color:#f85149}.dim{color:#8b949e}
+</style></head><body>
+<header><b>Mining metrics</b><span style="flex:1"></span><a href="/">← Back to review</a></header>
+<main id="main"><p style="color:#8b949e">Loading…</p></main>
+<script>
+function pct(n){return n==null?'—':(n*100).toFixed(1)+'%';}
+function usd(n){return n==null||n===0?'$0.000':'$'+n.toFixed(3);}
+function cls(rate){if(rate==null)return 'dim';if(rate>=0.6)return 'good';if(rate>=0.4)return 'mid';return 'bad';}
+fetch('/api/metrics').then(r=>r.json()).then(d=>{
+  const t=d.totals;
+  let h='<h2>Overall</h2><div class="kpi">';
+  h+='<div class="kpi-card"><div class="val">'+t.carded+'</div><div class="lbl">Published live</div></div>';
+  h+='<div class="kpi-card"><div class="val">'+t.reviewed+'</div><div class="lbl">Reviewed total</div></div>';
+  h+='<div class="kpi-card"><div class="val '+cls(t.acceptRate)+'">'+pct(t.acceptRate)+'</div><div class="lbl">Accept rate</div></div>';
+  h+='<div class="kpi-card"><div class="val">'+t.new+'</div><div class="lbl">Queue remaining</div></div>';
+  h+='<div class="kpi-card"><div class="val">'+usd(t.cost)+'</div><div class="lbl">Classifier cost</div></div>';
+  h+='</div>';
+  h+='<h2>By classifier version</h2><table><tr><th>Classifier</th><th>Reviewed</th><th>Published</th><th>Declined</th><th>Accept rate</th><th>Classified</th><th>Cost</th></tr>';
+  for(const v of d.versions){
+    h+='<tr><td>'+v.name+' '+v.version+'</td><td>'+v.reviewed+'</td><td>'+v.carded+'</td><td>'+v.declined+'</td>'+
+      '<td class="'+cls(v.acceptRate)+'">'+pct(v.acceptRate)+'</td>'+
+      '<td>'+(v.classified||'—')+'</td><td class="dim">'+usd(v.cost)+'</td></tr>';
+  }
+  h+='</table>';
+  h+='<h2>Queue by chat</h2><table><tr><th>Chat</th><th>Published</th><th>Declined</th><th>Remaining (new)</th><th>Accept rate</th></tr>';
+  for(const [chat,c] of Object.entries(d.byChat).sort((a,b)=>b[1].carded-a[1].carded)){
+    const rev=c.carded+c.declined;const rate=rev?c.carded/rev:null;
+    h+='<tr><td>'+chat+'</td><td>'+c.carded+'</td><td>'+c.declined+'</td><td class="dim">'+c.new+'</td><td class="'+cls(rate)+'">'+pct(rate)+'</td></tr>';
+  }
+  h+='</table>';
+  document.getElementById('main').innerHTML=h;
+});
+</script></body></html>`;
+
 const server = http.createServer(async (req, res) => {
   try {
     if (req.url === '/') {
       res.writeHead(200, { 'content-type': 'text/html' });
       return res.end(HTML);
+    }
+    if (req.url === '/metrics') {
+      res.writeHead(200, { 'content-type': 'text/html' });
+      return res.end(METRICS_HTML);
+    }
+    if (req.url === '/api/metrics') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify(await getMetrics()));
     }
     if (req.url === '/api/data') {
       res.writeHead(200, { 'content-type': 'application/json' });
@@ -599,6 +767,25 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200);
       return res.end('{"ok":true}');
     }
+    if (req.url === '/api/decline-user' && req.method === 'POST') {
+      const { id, fromName, chatID } = await body(req);
+      // Decline the primary (guard: only if still new — safe to call after approve too).
+      await Candidate.updateOne({ _id: id, status: 'new' }, { $set: { status: 'declined' } });
+      let otherCount = 0;
+      if (fromName && chatID) {
+        const userMsgs = await RawMessage.find({ chatID, fromName }).select('messageID').lean();
+        const msgIds = userMsgs.map((m) => m.messageID);
+        if (msgIds.length) {
+          const result = await Candidate.updateMany(
+            { chatID, anchorMessageID: { $in: msgIds }, status: 'new', _id: { $ne: id } },
+            { $set: { status: 'declined' } }
+          );
+          otherCount = result.modifiedCount;
+        }
+      }
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true, otherCount }));
+    }
     if (req.url === '/api/approve' && req.method === 'POST') {
       const { id, master } = await body(req);
       const cand = await Candidate.findById(id).lean();
@@ -606,6 +793,8 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(404);
         return res.end('{"ok":false}');
       }
+      // #119 — silently fix phone/telegram contactType swaps before persisting.
+      master.contacts = autoCorrectContacts(master.contacts);
       const now = new Date();
       // #3 — picked service tags (Ukrainian). English is filled best-effort in
       // the background below so approve stays snappy.
@@ -684,6 +873,7 @@ async function main() {
   await runDB(); // default connection -> production DB
   const miningConn = mongoose.connection.useDb(MINING_DB);
   Candidate = miningConn.model('Candidate', CandidateModel.schema);
+  MiningRun = miningConn.model('MiningRun', MiningRunModel.schema);
   RawMessage = miningConn.model('RawMessage', RawMessageModel.schema);
   await reloadRefs();
   if (!professions.length || !locations.length) {
