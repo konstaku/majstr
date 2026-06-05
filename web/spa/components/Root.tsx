@@ -24,6 +24,7 @@ import {
   type AppLang,
 } from "../i18n/lang";
 import { apiFetch } from "../api/client";
+import AddMasterModal from "./AddMasterModal";
 
 import type { Country } from "../schema/state/state.schema";
 
@@ -39,6 +40,7 @@ export default function Root({ children }: { children?: ReactNode }) {
   const { state, dispatch } = useContext(MasterContext);
   const { countryID, countries } = state;
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
+  const [showAddMasterModal, setShowAddMasterModal] = useState(false);
   const { t, lang } = useTranslation();
   const pathname = usePathname();
   const IS_DEV =
@@ -111,10 +113,9 @@ export default function Root({ children }: { children?: ReactNode }) {
     };
   }, [showBurgerMenu]);
 
-  // Onboarding/add-master lives on the SPA in Phase A — route to the wizard.
-  const openAddMasterModal = () => {
-    if (typeof window !== "undefined") window.location.href = "/onboard";
-  };
+  // Show the join modal — it forwards to the Telegram bot (Mini App wizard),
+  // matching the original SPA behavior.
+  const openAddMasterModal = () => setShowAddMasterModal(true);
 
   const AddMasterLink = (
     <button type="button" className="nav-item" onClick={openAddMasterModal}>
@@ -225,6 +226,10 @@ export default function Root({ children }: { children?: ReactNode }) {
       <footer className="footer">
         <FooterContent onAddMasterClick={openAddMasterModal} />
       </footer>
+
+      {showAddMasterModal && (
+        <AddMasterModal onClose={() => setShowAddMasterModal(false)} />
+      )}
 
     </>
   );
