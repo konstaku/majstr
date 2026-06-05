@@ -123,6 +123,12 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
   const [pendingTrade, setPendingTrade] = useState(selectedProfessionCategory);
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  // Portal the select menus to <body> only AFTER mount, so the server and the
+  // first client render match (both undefined) — avoids a hydration mismatch
+  // that would leave the selects/modal non-interactive.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // Sync pending state when external reset/navigation changes applied filters
   useEffect(() => {
     setPendingCity(selectedCity);
@@ -292,11 +298,12 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
             <div className="filter-toggle-wrap">
               <span className="filter-kicker">{t("main.cityKicker")}</span>
               <Select
+                instanceId="majstr-city"
                 className="headline-select"
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
-                menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                menuPortalTarget={mounted ? document.body : undefined}
                 menuPosition="fixed"
                 value={
                   pendingCity
@@ -325,11 +332,12 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
             <div className="filter-toggle-wrap filter-toggle-noright">
               <span className="filter-kicker">{t("main.tradeKicker")}</span>
               <Select
+                instanceId="majstr-trade"
                 className="headline-select"
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
-                menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                menuPortalTarget={mounted ? document.body : undefined}
                 menuPosition="fixed"
                 value={
                   pendingTrade
