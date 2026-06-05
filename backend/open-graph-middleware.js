@@ -20,11 +20,10 @@ title node is replaced and new tags are appended to meta section
 */
 
 async function runOpenGraphMiddleware() {
-  const app = express();
-
-  app.listen(PORT_NUMBER, () => {
-    console.log(`Middleware server running on port ${PORT_NUMBER}`);
-  });
+  // OG tags are now handled natively by the Next.js SSR layer (web/).
+  // This middleware is kept for reference but no longer starts a server.
+  console.log('[og-middleware] disabled — Next.js handles OG natively');
+  return;
 
   app.get('/', async (req, res) => {
     if (!req.query.card) {

@@ -40,6 +40,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 // both to its own domain to fully isolate the dev bot.
 const TMA_BASE_URL = process.env.TMA_BASE_URL || 'https://app.majstr.xyz';
 const PUBLIC_WEB_URL = process.env.PUBLIC_WEB_URL || 'https://majstr.xyz';
+const REVALIDATE_SECRET = process.env.REVALIDATE_SECRET || '';
 const PORT_NUMBER = 8443;
 
 const s3 = new AWS.S3({
@@ -499,12 +500,18 @@ async function handleMasterCallback(queryId, message, data, from) {
       { chat_id: message.chat.id, message_id: message.message_id }
     ).catch(() => {});
 
+    // Flush the Next.js ISR cache so the new master page is live immediately.
+    if (REVALIDATE_SECRET) {
+      fetch(`${PUBLIC_WEB_URL}/api/revalidate?secret=${REVALIDATE_SECRET}`, { method: 'POST' })
+        .catch(err => console.error('[revalidate] failed:', err.message));
+    }
+
     if (master.telegramID) {
       const oLang = await getUserLang(master.telegramID);
       bot.sendMessage(
         master.telegramID,
         i18n.t(oLang, 'owner.approved', {
-          url: `${PUBLIC_WEB_URL}/?card=${master._id}`,
+          url: masterWebUrl(master, oLang, PUBLIC_WEB_URL),
         })
       ).catch(() => {});
     }
