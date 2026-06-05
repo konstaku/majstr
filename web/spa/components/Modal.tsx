@@ -1,9 +1,12 @@
+"use client";
+
 import { useContext, useEffect, useMemo } from "react";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
 import { transliterate } from "../helpers/transliterate";
 import Sigil from "./Sigil";
+import { masterSlug } from "@/lib/data";
 
 import type { Master, Contacts } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
@@ -128,15 +131,18 @@ export default function Modal({ master, setShowModal }: ModalProps) {
 
   const useTwoColContacts = contacts.length >= 4;
 
-  // Sync URL param
+  // While the modal is open, reflect it in the URL as the master page
+  // (/{lang}/m/{slug}) so it's shareable, indexable, and back-button closes it.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    params.set("card", id);
-    window.history.pushState({}, "", `${window.location.pathname}?${params}`);
+    const prevPath = window.location.pathname + window.location.search;
+    const prof = professions.find((p: Profession) => p.id === master.professionID);
+    const loc = locations.find((l: Location) => l.id === master.locationID);
+    const target = `/${lang}/m/${masterSlug(master, prof, loc)}`;
+    window.history.pushState(null, "", target);
     return () => {
-      window.history.pushState({}, "", `${window.location.pathname}`);
+      window.history.pushState(null, "", prevPath);
     };
-  }, [id]);
+  }, [id, lang, master, professions, locations]);
 
   return (
     <div className="modal-overlay">

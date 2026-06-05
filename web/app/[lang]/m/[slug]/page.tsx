@@ -1,5 +1,4 @@
 import { notFound, permanentRedirect } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { isLang, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
@@ -7,16 +6,14 @@ import {
   allMasterParams,
   getDataset,
   professionLead,
-  professionSlug,
   cityNom,
   cityPrep,
 } from "@/lib/data";
 import { masterTitle, masterDescription } from "@/lib/content";
-import { abs, masterPath, landingPath, hubPath, languageAlternates } from "@/lib/urls";
+import { abs, masterPath, languageAlternates } from "@/lib/urls";
 import { buildSeed } from "@/lib/seed";
 import AppShell from "@/spa/AppShell";
-import MasterDetail from "@/spa/components/MasterDetail";
-import Breadcrumbs from "@/components/Breadcrumbs";
+import Main from "@/spa/pages/Main";
 import JsonLd from "@/components/JsonLd";
 
 export const revalidate = 3600;
@@ -79,31 +76,17 @@ export default async function MasterPage({
   const profTitle = nomName(prof.name, lang) || professionLead(prof, lang);
   const hasRating = typeof master.rating === "number" && master.rating > 0;
 
+  // Open this master's modal on the main page, with its city + category
+  // filters pre-set — exactly the SPA experience.
+  const seed = buildSeed(lang, ds, {
+    selectedCity: loc.id,
+    selectedProfessionCategory: prof.categoryID ?? "",
+  });
+
   return (
     <>
-      <AppShell seed={buildSeed(lang, ds, [master])}>
-        <div className="master-page-wrap">
-          <Breadcrumbs
-            items={[
-              { name: "Majstr", href: `/${lang}` },
-              { name: cityNom(loc, lang), href: hubPath(lang, loc.id) },
-              {
-                name: professionLead(prof, lang),
-                href: landingPath(lang, professionSlug(prof.id, lang), loc.id),
-              },
-              { name: master.name, href: masterPath(lang, canonical) },
-            ]}
-          />
-          <MasterDetail master={master as never} />
-          <p style={{ marginTop: 18 }}>
-            <Link
-              href={landingPath(lang, professionSlug(prof.id, lang), loc.id)}
-              className="seo-pill"
-            >
-              ← {professionLead(prof, lang)} {cityPrep(loc, lang)}
-            </Link>
-          </p>
-        </div>
+      <AppShell seed={seed}>
+        <Main initialCard={master._id} />
       </AppShell>
 
       <JsonLd

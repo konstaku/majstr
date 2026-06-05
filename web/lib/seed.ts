@@ -1,15 +1,22 @@
 import type { Dataset } from "./data";
 import type { Lang } from "./i18n";
 
-// Build the MasterContext seed for a page. Pass a `masters` subset to keep the
-// embedded payload small on landing/master pages (home seeds all for its filter).
+export interface SeedSearchParams {
+  selectedCity?: string;
+  selectedProfession?: string;
+  selectedProfessionCategory?: string;
+}
+
+// Seed the MasterContext for a page. Always seeds ALL masters + reference data
+// (so the selects work exactly like the SPA), plus the filter state parsed from
+// the URL so the very first server render already shows the filtered grid.
 export function buildSeed(
   lang: Lang,
   ds: Dataset,
-  masters?: unknown[]
+  sp?: SeedSearchParams
 ): Record<string, unknown> {
   return {
-    masters: masters ?? ds.masters,
+    masters: ds.masters,
     professions: ds.professions,
     locations: ds.locations,
     profCategories: ds.profCategories,
@@ -18,5 +25,10 @@ export function buildSeed(
     loading: false,
     countryID: "IT",
     countrySet: true,
+    searchParams: {
+      selectedCity: sp?.selectedCity ?? "",
+      selectedProfession: sp?.selectedProfession ?? "",
+      selectedProfessionCategory: sp?.selectedProfessionCategory ?? "",
+    },
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Select, {
   CSSObjectWithLabel,
   GroupBase,
@@ -102,8 +103,9 @@ export const baseSelectStyles = lightSelectStyles;
 // ── Main component ────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line react-refresh/only-export-components
-function Main() {
+function Main({ initialCard }: { initialCard?: string } = {}) {
   const { state, dispatch } = useContext(MasterContext);
+  const router = useRouter();
   const {
     masters,
     professions,
@@ -116,7 +118,7 @@ function Main() {
     loading,
   } = state;
   const { selectedCity, selectedProfessionCategory } = searchParams;
-  const [showModal, setShowModal] = useState<string | null | boolean>(null);
+  const [showModal, setShowModal] = useState<string | null | boolean>(initialCard ?? null);
   const [pendingCity, setPendingCity] = useState(selectedCity);
   const [pendingTrade, setPendingTrade] = useState(selectedProfessionCategory);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -348,6 +350,11 @@ function Main() {
               onClick={() => {
                 dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: pendingCity } });
                 dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: pendingTrade } });
+                // Filters drive the URL: /{lang}/{city}/{category} (each part optional).
+                const segs = [lang];
+                if (pendingCity) segs.push(pendingCity);
+                if (pendingTrade) segs.push(pendingTrade);
+                router.push("/" + segs.join("/"));
                 setTimeout(() => {
                   if (!resultsRef.current) return;
                   const headerEl = document.querySelector(".header") as HTMLElement | null;

@@ -3,9 +3,6 @@ import { SITE_URL } from "@/lib/config";
 // The REAL design system, imported once globally (variables first).
 import "@/spa/ui/tokens.css";
 import "@/spa/styles.css";
-// Minimal styling for SEO-only blocks that don't exist in the app design
-// (intro paragraph, FAQ, breadcrumbs, related-links). On-brand via tokens.
-import "./seo.css";
 
 const GTM_ID = "GTM-MB2CPXFD";
 
