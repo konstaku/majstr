@@ -7,7 +7,7 @@ export default function FaqBlock({ items, lang }: { items: Faq[]; lang: Lang }) 
   if (items.length === 0) return null;
   return (
     <section className="faq">
-      <h2 className="section">{T[lang].faqTitle}</h2>
+      <h2 className="seo-section-title">{T[lang].faqTitle}</h2>
       {items.map((f) => (
         <div className="faq-item" key={f.q}>
           <div className="faq-q">{f.q}</div>

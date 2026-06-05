@@ -50,6 +50,8 @@ export interface Master {
   locationID: string;
   contacts?: Contact[];
   about?: string;
+  photo?: string;
+  languages?: string[];
   OGimage?: string;
   rating?: number | null;
   reviewCount?: number;
@@ -75,19 +77,19 @@ async function getJSON<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// `cache()` dedupes within a single render/build pass; `next.revalidate`
-// keeps the data fresh across requests via ISR.
+// Use the SAME endpoints the SPA's Root uses, so the data shape matches what
+// the reused components expect (photo, contacts, languages, tags…).
+// `cache()` dedupes within a render/build; `next.revalidate` drives ISR.
 export const getApprovedMasters = cache(async (): Promise<Master[]> => {
-  const all = await getJSON<Master[]>("/?q=masters");
+  const all = await getJSON<Master[]>("/?q=masters&country=IT");
   return all.filter((m) => m.approved);
 });
 
 export const getLocations = cache(() =>
-  getJSON<Location[]>("/api/reference/locations")
+  getJSON<Location[]>("/?q=locations&country=IT")
 );
-export const getProfessions = cache(() =>
-  getJSON<Profession[]>("/api/reference/professions")
+export const getProfessions = cache(() => getJSON<Profession[]>("/?q=professions"));
+export const getProfCategories = cache(() =>
+  getJSON<unknown[]>("/?q=prof-categories")
 );
-export const getCountries = cache(() =>
-  getJSON<Country[]>("/api/reference/countries")
-);
+export const getCountries = cache(() => getJSON<Country[]>("/?q=countries"));

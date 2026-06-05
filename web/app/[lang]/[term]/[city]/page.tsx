@@ -13,9 +13,9 @@ import {
   professionSub,
   cityNom,
   cityPrep,
-  masterSlug,
   citiesOfProfession,
   professionsInCity,
+  masterSlug,
 } from "@/lib/data";
 import {
   landingTitle,
@@ -26,9 +26,10 @@ import {
   landingFaq,
 } from "@/lib/content";
 import { abs, landingPath, hubPath, masterPath, languageAlternates } from "@/lib/urls";
-import { Header, Footer } from "@/components/Chrome";
+import { buildSeed } from "@/lib/seed";
+import AppShell from "@/spa/AppShell";
+import LandingResults from "@/spa/components/LandingResults";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import MasterCard from "@/components/MasterCard";
 import FaqBlock from "@/components/Faq";
 import JsonLd from "@/components/JsonLd";
 
@@ -83,13 +84,7 @@ export async function generateMetadata({
         landingPath(l, professionSlug(prof.id, l), loc.id)
       ),
     },
-    openGraph: {
-      title,
-      description,
-      url: abs(canonical),
-      locale: OG_LOCALE[lang],
-      type: "website",
-    },
+    openGraph: { title, description, url: abs(canonical), locale: OG_LOCALE[lang], type: "website" },
   };
 }
 
@@ -101,7 +96,8 @@ export default async function LandingPage({
   const r = await resolve(await params);
   if (!r) notFound();
   const { lang, prof, loc, list } = r;
-  const { profById, locById } = await getDataset();
+  const ds = await getDataset();
+  const { profById, locById, masters } = ds;
 
   const lead = professionLead(prof, lang);
   const prep = cityPrep(loc, lang);
@@ -109,16 +105,7 @@ export default async function LandingPage({
   const intro = landingIntro(lang, lead, prep, loc.id, list.length, professionSub(prof.id, lang));
   const body = landingBody(lang, prof.id);
   const faq = landingFaq(lang, lead, prep);
-  const profTitle = nomName(prof.name, lang) || lead;
 
-  // Cards with precomputed slugs
-  const cards = list.map((m) => ({
-    master: m,
-    slug: masterSlug(m, prof, loc),
-  }));
-
-  // Link mesh
-  const { masters } = await getDataset();
   const otherProfs = professionsInCity(masters, loc.id)
     .filter((x) => x.professionID !== prof.id)
     .slice(0, 12);
@@ -126,105 +113,90 @@ export default async function LandingPage({
     .filter((x) => x.locationID !== loc.id)
     .slice(0, 12);
 
-  const switchHref = (l: Lang) =>
-    landingPath(l, professionSlug(prof.id, l), loc.id);
-
   return (
     <>
-      <Header lang={lang} switchHref={switchHref} />
-      <main className="wrap" lang={lang}>
-        <Breadcrumbs
-          items={[
-            { name: "Majstr", href: `/${lang}` },
-            { name: cityNom(loc, lang), href: hubPath(lang, loc.id) },
-            { name: lead, href: landingPath(lang, professionSlug(prof.id, lang), loc.id) },
-          ]}
-        />
+      <AppShell seed={buildSeed(lang, ds, list)}>
+        <div className="seo-wrap">
+          <Breadcrumbs
+            items={[
+              { name: "Majstr", href: `/${lang}` },
+              { name: cityNom(loc, lang), href: hubPath(lang, loc.id) },
+              { name: lead, href: landingPath(lang, professionSlug(prof.id, lang), loc.id) },
+            ]}
+          />
+          <div className="seo-head">
+            <span className="seo-kicker">{T[lang].masonryTagline}</span>
+            <h1 className="seo-h1">{h1}</h1>
+          </div>
 
-        <div className="page-head">
-          <span className="kicker">{T[lang].masonryTagline}</span>
-          <h1 className="title">{h1}</h1>
-          <p className="speaks-note">{T[lang].speaksNote}</p>
+          <LandingResults masters={list as never} />
+
+          <section className="seo-prose" style={{ marginTop: 28 }}>
+            <p>{intro}</p>
+            <p>{body}</p>
+          </section>
+
+          {otherProfs.length > 0 && (
+            <>
+              <h2 className="seo-section-title">
+                {T[lang].otherProfessions} {cityNom(loc, lang)}
+              </h2>
+              <div className="seo-related">
+                {otherProfs.map((x) => {
+                  const op = profById.get(x.professionID);
+                  if (!op) return null;
+                  return (
+                    <Link
+                      key={x.professionID}
+                      className="seo-pill"
+                      href={landingPath(lang, professionSlug(op.id, lang), loc.id)}
+                    >
+                      {professionLead(op, lang)} <b>· {x.count}</b>
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {otherCities.length > 0 && (
+            <>
+              <h2 className="seo-section-title">
+                {lead} — {T[lang].otherCities}
+              </h2>
+              <div className="seo-related">
+                {otherCities.map((x) => {
+                  const oc = locById.get(x.locationID);
+                  if (!oc) return null;
+                  return (
+                    <Link
+                      key={x.locationID}
+                      className="seo-pill"
+                      href={landingPath(lang, professionSlug(prof.id, lang), oc.id)}
+                    >
+                      {cityNom(oc, lang)} <b>· {x.count}</b>
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          <FaqBlock items={faq} lang={lang} />
         </div>
-
-        <section className="grid">
-          {cards.map(({ master, slug }) => (
-            <MasterCard
-              key={master._id}
-              master={master}
-              slug={slug}
-              profName={profTitle}
-              lang={lang}
-            />
-          ))}
-        </section>
-
-        <section className="prose" style={{ marginTop: 28 }}>
-          <p>{intro}</p>
-          <p>{body}</p>
-        </section>
-
-        {otherProfs.length > 0 && (
-          <>
-            <h2 className="section">
-              {T[lang].otherProfessions} {cityNom(loc, lang)}
-            </h2>
-            <div className="pills">
-              {otherProfs.map((x) => {
-                const op = profById.get(x.professionID);
-                if (!op) return null;
-                return (
-                  <Link
-                    key={x.professionID}
-                    className="pill"
-                    href={landingPath(lang, professionSlug(op.id, lang), loc.id)}
-                  >
-                    {professionLead(op, lang)} <b>· {x.count}</b>
-                  </Link>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {otherCities.length > 0 && (
-          <>
-            <h2 className="section">
-              {lead} — {T[lang].otherCities}
-            </h2>
-            <div className="pills">
-              {otherCities.map((x) => {
-                const oc = locById.get(x.locationID);
-                if (!oc) return null;
-                return (
-                  <Link
-                    key={x.locationID}
-                    className="pill"
-                    href={landingPath(lang, professionSlug(prof.id, lang), oc.id)}
-                  >
-                    {cityNom(oc, lang)} <b>· {x.count}</b>
-                  </Link>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        <FaqBlock items={faq} lang={lang} />
-      </main>
-      <Footer lang={lang} />
+      </AppShell>
 
       <JsonLd
         data={{
           "@context": "https://schema.org",
           "@type": "ItemList",
           name: h1,
-          numberOfItems: cards.length,
-          itemListElement: cards.map((c, i) => ({
+          numberOfItems: list.length,
+          itemListElement: list.map((m, i) => ({
             "@type": "ListItem",
             position: i + 1,
-            url: abs(masterPath(lang, c.slug)),
-            name: c.master.name,
+            url: abs(masterPath(lang, masterSlug(m, prof, loc))),
+            name: m.name,
           })),
         }}
       />

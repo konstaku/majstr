@@ -1,0 +1,2696 @@
+/* ============================================================
+   DESIGN TOKENS — Majstr Brutalist
+   ============================================================ */
+:root {
+  --ink: #0e0a06;
+  --paper: #fffaf0;
+  --cream: #f4ede0;
+  --cream2: #ebe1ce;
+  --terra: #c84b31;
+  --terra-dk: #a83a20;
+  --green: #22c55e;
+  --amber: #d97706;
+  --red: #ef4444;
+  --star: #f59e0b;
+
+  --border: 2px solid var(--ink);
+
+  /* Mobile sticky-bar height — keep in sync with the burger overlay top
+     offset (@media max-width:640px). */
+  --bar-h: 56px;
+
+  --font-display: 'Archivo Black', 'Golos Text', 'DM Sans', sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* form vars */
+  --text: var(--ink);
+  --text2: #3a3028;
+  --text3: #6a5e54;
+  --text4: #9a8e84;
+  --sage: #5a7a5c;
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+ul,
+ol {
+  list-style: none;
+}
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--paper);
+}
+
+/* top meta strip */
+.header-meta {
+  display: flex;
+  align-items: center;
+  padding: 14px 32px;
+  background: var(--paper);
+  border-bottom: var(--border);
+  justify-content: space-between;
+}
+.header-meta-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* nav inside meta strip */
+.header-nav {
+  display: flex;
+}
+.header-nav a,
+.header-nav .nav-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-left: var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.header-nav a.active,
+.header-nav a:first-child {
+  background: var(--ink);
+  color: var(--paper);
+}
+.header-nav .inactive {
+  opacity: 0.38;
+  cursor: default;
+}
+/* "Add master" is a <button> styled identically to the <span> nav items
+   (uppercase via the shared rule); strip default button chrome, keep the
+   shared border-left divider. */
+.header-nav button.nav-item {
+  appearance: none;
+  border: none;
+  border-left: var(--border);
+  margin: 0;
+}
+
+/* controls (country + lang + cta) */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Country toggle + Language switcher */
+.country-toggle,
+.lang-switcher {
+  display: flex;
+  gap: 6px;
+}
+.ctry-btn,
+.lang-btn {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: var(--border);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ctry-btn.active,
+.lang-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Language disclosure (popover) */
+.lang-switcher {
+  align-items: center;
+}
+.lang-more {
+  position: relative;
+}
+.lang-more-trigger {
+  font-size: 11px;
+}
+.lang-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  border: var(--border);
+  background: var(--paper);
+}
+.lang-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: none;
+  border-bottom: var(--border);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: left;
+}
+.lang-popover-item:last-child {
+  border-bottom: none;
+}
+.lang-popover-item:hover,
+.lang-popover-item.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.lang-endo {
+  margin-left: auto;
+  opacity: 0.6;
+  text-transform: none;
+  font-weight: 400;
+}
+.lang-popover-item.active .lang-endo {
+  opacity: 0.85;
+}
+
+/* CTA button */
+.cta-header {
+  display: flex;
+  align-items: center;
+  padding: 7px 14px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--terra);
+  color: var(--paper);
+  border: var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cta-header:hover {
+  background: var(--terra-dk);
+}
+
+/* wordmark band */
+.header-wordmark {
+  padding: 32px 32px 32px;
+  border-bottom: var(--border);
+  background: var(--cream);
+  display: block;
+  overflow: hidden;
+}
+.header-wordmark a {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: clamp(52px, 10.8vw, 156px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.82;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.wordmark-dot {
+  color: var(--terra);
+}
+
+/* burger */
+.burger-open {
+  display: none;
+  width: 36px;
+  height: 36px;
+  background: var(--ink);
+  color: var(--paper);
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 900;
+  font-family: var(--font-display);
+  border: var(--border);
+  cursor: pointer;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+/* Compact wordmark + mobile bar actions — hidden by default (desktop and
+   the 641–860px tier). Only shown inside @media (max-width: 640px). */
+.header-logo-compact {
+  display: none;
+}
+.header-bar-actions {
+  display: none;
+}
+
+.menu-burger {
+  display: none;
+  background: var(--paper);
+  border-bottom: var(--border);
+  position: relative;
+  z-index: 99;
+}
+.menu-burger ul {
+  padding: 0;
+}
+.menu-burger li {
+  border-bottom: var(--border);
+}
+.menu-burger li a,
+.menu-burger li span,
+.menu-burger li .burger-link {
+  display: block;
+  padding: 16px 24px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+/* "Add master" is a <button> styled identically to the burger links
+   (e.g. "Search") — strip default button chrome. */
+.menu-burger li .burger-link {
+  appearance: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.menu-burger li .inactive {
+  opacity: 0.4;
+}
+
+/* ============================================================
+   HERO SECTION — default 2-col; 3-col only at ≥1540
+   ============================================================ */
+.hero-section {
+  display: grid;
+  grid-template-columns: minmax(240px, 29fr) minmax(0, 71fr);
+  border-bottom: var(--border);
+  min-height: 334px;
+}
+
+/* Left: terra stat panel */
+.hero-terra-panel {
+  background: var(--terra);
+  color: var(--paper);
+  padding: 22px 24px;
+  border-right: var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.hero-live-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+.hero-stat-number {
+  font-family: var(--font-display);
+  font-size: clamp(72px, 10vw, 148px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.88;
+  font-variant-numeric: tabular-nums;
+}
+.hero-stat-desc {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* Center: main panel with headline + filters */
+.hero-main-panel {
+  background: var(--paper);
+  color: var(--ink);
+  padding: 22px 28px;
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+.hero-headline {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4.2vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+.hero-headline-terra {
+  color: var(--terra);
+}
+
+/* Filter row inside hero panel */
+.hero-filter-row {
+  display: flex;
+  align-items: stretch;
+  border: var(--border);
+}
+.hero-filter-row .filter-toggle-wrap {
+  border: none;
+  border-right: var(--border);
+  flex: 1;
+  min-height: 64px;
+}
+.hero-filter-row .filter-toggle-wrap.filter-toggle-noright {
+  border-right: none;
+}
+
+/* Search button — ink-colored, last element in filter row */
+.filter-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 22px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: none;
+  border-left: var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.filter-search-btn:hover {
+  background: var(--terra);
+}
+
+/* How-it-works compact strip — mobile only */
+.how-compact-mobile {
+  display: none;
+}
+
+/* Right: "What clients say" — ink panel, shown only at ≥1540 */
+.hero-testimonial {
+  display: none; /* shown via @media (min-width: 1440px) */
+  background: var(--ink);
+  color: var(--paper);
+  padding: 22px 24px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hero-testimonial-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--terra);
+}
+.hero-testimonial-q {
+  font-family: var(--font-display);
+  font-size: 60px;
+  font-weight: 900;
+  color: var(--terra);
+  line-height: 0.5;
+  margin-top: auto;
+}
+.hero-testimonial-text {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  margin-top: -12px;
+}
+.hero-testimonial-attr {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* ============================================================
+   FILTER TOGGLES (inside hero-filter-row)
+   ============================================================ */
+
+.filter-toggle-wrap {
+  padding: 12px 16px 10px;
+  background: var(--paper);
+  border-right: var(--border);
+  cursor: pointer;
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+.filter-toggle-wrap.dark {
+  background: var(--ink);
+  color: var(--paper);
+}
+.filter-kicker {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.55;
+  margin-bottom: 3px;
+  display: block;
+}
+.filter-toggle-wrap.dark .filter-kicker {
+  opacity: 0.62;
+}
+
+/* Override react-select inside filter-toggle-wrap */
+.filter-toggle-wrap .headline-select .majstr-select__control {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  min-height: auto !important;
+  cursor: pointer !important;
+}
+.filter-toggle-wrap .headline-select .majstr-select__value-container {
+  padding: 0 !important;
+}
+.filter-toggle-wrap .headline-select .majstr-select__single-value {
+  font-family: var(--font-display) !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.03em !important;
+  color: inherit !important;
+  text-transform: uppercase !important;
+}
+.filter-toggle-wrap .headline-select .majstr-select__indicator-separator {
+  display: none !important;
+}
+.filter-toggle-wrap .headline-select .majstr-select__dropdown-indicator {
+  padding: 0 0 0 4px !important;
+  color: inherit !important;
+  opacity: 0.5 !important;
+}
+.filter-toggle-wrap .headline-select .majstr-select__menu {
+  border-radius: 0 !important;
+  border: var(--border) !important;
+  box-shadow: 4px 4px 0 var(--ink) !important;
+  background: var(--paper) !important;
+  margin-top: 2px !important;
+}
+.filter-toggle-wrap .headline-select .majstr-select__option {
+  font-family: var(--font-display) !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+}
+.filter-toggle-wrap .headline-select .majstr-select__option--is-focused {
+  background: var(--terra) !important;
+  color: var(--paper) !important;
+}
+.filter-toggle-wrap .headline-select .majstr-select__option--is-selected {
+  background: var(--ink) !important;
+  color: var(--paper) !important;
+}
+
+/* ============================================================
+   RESULTS SECTION
+   ============================================================ */
+.results-section {
+  background: var(--cream);
+}
+
+.results-top {
+  padding: 14px 32px;
+  background: var(--cream);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.search-results-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.search-results-header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+.found-amount {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 900;
+  color: var(--terra);
+  display: inline-block;
+  animation: count-pop 0.35s ease-out both;
+}
+
+.masters-grid {
+  display: grid;
+  /* Cards start at 426px (1.33× the original 320px target) and stretch
+     (1fr) to fill the column. The horizontal sigil+body layout scales
+     proportionally via container queries (see below), so names, badges,
+     and interline spacing stay in proportion at any width.
+     `min(426px, 100%)` keeps the layout from horizontal-scrolling
+     on viewports narrower than 426px (the card just goes full-width). */
+  grid-template-columns: repeat(auto-fill, minmax(min(426px, 100%), 1fr));
+  grid-auto-flow: dense;
+  gap: 12px;
+  padding: 0 32px 32px;
+}
+
+.search-empty-state {
+  padding: 48px 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.search-empty-state p {
+  opacity: 0.5;
+}
+
+/* ============================================================
+   MASTER CARD — Brutalist
+   Layout matches design mockups/master-card-preview/no-photo-variant.html.
+   Web (≥640px): sigil cell left (200×200), body right with bottom
+   ink strip. Mobile: sigil cell on top, body + strip below.
+
+   NOTE on scoping: `.master-card` is shared with `MasterCardPreview`
+   and `NewMasterPreview` (admin/preview surfaces with their own
+   internal layouts). To avoid trampling those, the search-result
+   card uses the modifier `.master-card--list`, and the bare
+   `.master-card` rule below only carries the shared visual base
+   (border + bg + cursor) that all three components expect.
+   ============================================================ */
+.master-card {
+  --divider: var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+/* Search-result variant — horizontal sigil + body card.
+   Everything inside is sized in `cqi` (container-query inline)
+   so a 320px card is a true miniature of a 560px card: every
+   gap, padding, font size, and badge dimension scales with the
+   card's own width. Brand-kit proportions hold at every size.
+
+   Reference (cqi → px at 560 target):
+     35.71cqi  →  200px  (sigil cell width / card height)
+      6.43cqi  →   36px  (bottom strip height)
+      4.64cqi  →   26px  (name)
+      3.21cqi  →   18px  (body inner padding)
+      2.50cqi  →   14px  (meta line)
+      1.875cqi →   10.5px (tags)
+      1.79cqi  →   10px  (member-since label)
+      2.32cqi  →   13px  (cta)
+      1.61cqi  →   9px   (lang badge font)
+      1.07cqi  →   6px   (badge horiz padding)
+      0.71cqi  →   4px   (badge vert padding)
+
+   Text gets a `max()` floor so labels stay legible at the 320px
+   end of the range (where strict scaling would push some text
+   below ~6px). */
+.master-card--list {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: 35.7142% 1fr;
+  aspect-ratio: 560 / 200;
+  width: 100%;
+  transition: transform 80ms ease, z-index 0ms;
+}
+.master-card--list:hover {
+  transform: translate(-2px, -2px);
+  z-index: 2;
+}
+
+/* ── sigil cell (left on web, top on mobile) ─────────────────── */
+.master-card__sigil-cell {
+  background: var(--cream);
+  border-right: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+/* Sigil SVG inset — matches the photo's optical inset (156/200 ≈ 78%) */
+.master-card__sigil-cell > svg.sigil {
+  width: 78%;
+  height: 78%;
+  display: block;
+}
+/* Duotone photo treatment when a photo exists */
+.master-card__photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(100%) contrast(118%) brightness(102%);
+  mix-blend-mode: lighten;
+  background-color: var(--ink);
+}
+.master-card__photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  mix-blend-mode: darken;
+  pointer-events: none;
+}
+/* When a photo is present the cell flips from cream to ink so the
+   duotone math (ink × lighten + paper × darken) lands as ink/paper. */
+.master-card__sigil-cell:has(.master-card__photo) {
+  background: var(--ink);
+}
+
+/* ── body column ─────────────────────────────────────────────── */
+.master-card__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.master-card__body-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 18px at 560 → 3.21cqi (proportional across 320-400 range) */
+  padding: 3.21cqi 3.21cqi 0 3.21cqi;
+  display: flex;
+  flex-direction: column;
+}
+
+/* big primary line — master's name (26px at 560) */
+.master-card__name {
+  font-family: var(--font-display);
+  font-size: max(13px, 4.64cqi);
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 900;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* small secondary line — profession · city, city in terra (14px @ 560) */
+.master-card__meta {
+  font-family: var(--font-display);
+  font-size: max(9px, 2.5cqi);
+  line-height: 1.0;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-top: 1.07cqi;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.master-card__meta .master-card__sep,
+.master-card__meta .master-card__city {
+  color: var(--terra);
+}
+
+/* ── badge row: lang codes + optional status ─────────────────── */
+.master-card__badges {
+  display: flex;
+  gap: 0.54cqi;
+  margin-top: 1.61cqi;
+  align-items: center;
+  flex-wrap: wrap;
+}
+/* badge base: JetBrains Mono per brand kit "Mono for metadata".
+   Asymmetric padding (vertical < horizontal) per Figma spec, but
+   bumped from the literal 2/5 so vertical reads on screen.
+   At 560: 4px × 6px padding, 9px font. */
+.master-card__badge {
+  padding: max(2px, 0.71cqi) max(4px, 1.07cqi);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: max(7px, 1.61cqi);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.master-card__badge--status { margin-left: 0.71cqi; }
+.master-card__badge--verified {
+  background: var(--terra);
+  color: var(--paper);
+}
+.master-card__badge--new {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+}
+
+/* tags — muted grey, JetBrains Mono lowercase (10.5px @ 560) */
+.master-card__tags {
+  font-family: var(--font-mono);
+  font-size: max(8px, 1.875cqi);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(14, 10, 6, 0.55);
+  line-height: 1.0;
+  margin-top: 1.61cqi;
+  margin-bottom: 2.5cqi;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── bottom strip — ink bg, member-since left, CTA right ─────── */
+.master-card__strip {
+  /* 36px @ 560 = 6.43% of width. With aspect-ratio 560:200 the
+     strip stays at 18% of the card's height across all sizes. */
+  height: 6.43cqi;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3.21cqi;
+  border-top: 2px solid var(--ink);
+  /* nowrap + min-width:0 children: at the 320px end of the range
+     the cumulative width of "MEMBER SINCE <YEAR>" + "OPEN PROFILE →"
+     can exceed the strip — let the member-since label truncate
+     with ellipsis rather than wrap to a second line. */
+  white-space: nowrap;
+  overflow: hidden;
+  gap: 1.07cqi;
+}
+.master-card__member-since {
+  font-family: var(--font-mono);
+  font-size: max(8px, 1.79cqi);
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--paper);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.89cqi;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.master-card__year {
+  color: var(--terra);
+  font-weight: 600;
+}
+.master-card__cta {
+  font-family: var(--font-display);
+  font-size: max(9px, 2.32cqi);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* No separate mobile breakpoint: the horizontal layout scales
+   proportionally via `cqi` from the wide-desktop 400px target down
+   to the narrowest plausible mobile viewport (~280-320px). Below
+   that the text floors kick in via the `max()` clauses above. */
+
+/* legacy preview card used in Add New Record form */
+.card-with-strip {
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border);
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+.card-left-strip {
+  width: 5px;
+  background: var(--terra);
+  flex-shrink: 0;
+}
+.card-inner {
+  flex: 1;
+  padding: 14px 16px;
+}
+.card-top {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.card-avatar-wrapper {
+  position: relative;
+}
+.card-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+.card-info .card-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-profession {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+  opacity: 0.65;
+}
+.card-location {
+  font-size: 11px;
+  margin-top: 2px;
+  opacity: 0.55;
+}
+
+.tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.tag {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--cream2);
+  border-radius: 4px;
+  padding: 3px 7px;
+  color: var(--text2);
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.details-btn {
+  background: var(--terra);
+  color: var(--paper);
+  border: none;
+  padding: 6px 14px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.details-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* master-preview-container used in AddNewRecord */
+.master-preview-container {
+  width: 45%;
+  flex-shrink: 0;
+}
+.master-card.preview {
+  position: sticky;
+  top: 30%;
+  max-width: 320px;
+  align-self: flex-start;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 10, 6, 0.78);
+  z-index: 500;
+  display: flex;
+  align-items: safe center;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.modal-overlay-inside {
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+}
+.modal-content {
+  background: var(--paper);
+  border: var(--border);
+  overflow: hidden;
+}
+
+/* ============================================================
+   MASTER-CARD MODAL
+   Layout follows /design mockups/master-card-modal/*.html.
+   Five vertical sections under a wordmark header:
+     identity → speaks → tags → contacts → bio → CTA band
+   ============================================================ */
+.modal-overlay-inside--master {
+  max-width: 660px;
+}
+.modal-master {
+  display: flex;
+  flex-direction: column;
+}
+
+/* — Header — */
+.modal-master__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 18px;
+  border-bottom: var(--border);
+}
+.modal-master__wordmark {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 17px;
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.modal-master__wordmark-dot {
+  color: var(--terra);
+}
+.modal-master__close {
+  width: 26px;
+  height: 26px;
+  border: var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.modal-master__close:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* — Identity row: avatar + name block (which contains
+   name+meta + speaks + tags as a single flex column).
+   On mobile, the name-block dissolves (display: contents) so that
+   name-meta stays beside the avatar but speaks/tags break out as
+   their own full-width rows. */
+.modal-master__identity {
+  display: grid;
+  grid-template-columns: 196px 1fr;
+  border-bottom: var(--border);
+}
+.modal-master__avatar {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+  min-height: 196px;
+  border-right: var(--border);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.modal-master__avatar--sigil {
+  background: var(--cream);
+}
+.modal-master__avatar--sigil > svg.sigil {
+  width: 70%;
+  height: 70%;
+}
+.modal-master__avatar--photo {
+  background: var(--ink);
+}
+.modal-master__photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(100%) contrast(118%) brightness(102%);
+  mix-blend-mode: lighten;
+  background-color: var(--ink);
+}
+.modal-master__photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  mix-blend-mode: darken;
+  pointer-events: none;
+}
+
+/* Registration code (M-XX) — only on sigil variant */
+.modal-master__regcode {
+  position: absolute;
+  top: 11px;
+  left: 14px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--terra);
+  text-transform: uppercase;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.modal-master__regcode-dot {
+  display: inline-block;
+  font-size: 7px;
+  line-height: 1;
+}
+
+/* — Name block (col 2, row 1) — wraps everything in the right column.
+   Flex-column with centered justification so name+meta+speaks+tags
+   sit as one tight, vertically-centered group beside the avatar. */
+.modal-master__name-block {
+  grid-column: 2;
+  grid-row: 1;
+  padding: 11px 18px 13px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 11px;
+  min-width: 0;
+}
+.modal-master__name-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.modal-master__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(24px, 5.9vw, 39px);
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  word-break: break-word;
+}
+.modal-master__name-dot {
+  color: var(--terra);
+}
+.modal-master__meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15.5px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+.modal-master__profession {
+  color: var(--ink);
+}
+.modal-master__divider {
+  width: 5px;
+  height: 5px;
+  background: var(--terra);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.modal-master__city {
+  color: var(--terra);
+}
+
+/* — Speaks row (inside name-block on desktop, grid item on mobile) — */
+.modal-master__speaks-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-master__lang-list {
+  display: inline-flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.modal-master__lang {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 2px 4px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* — Tags row (inside name-block on desktop, grid item on mobile) — */
+.modal-master__tags-row {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  opacity: 0.9;
+  text-transform: lowercase;
+  line-height: 1.4;
+}
+
+.modal-master__row-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+/* Contacts */
+.modal-master__contacts-section {
+  padding: 11px 18px 13px;
+  border-bottom: var(--border);
+}
+.modal-master__contacts-section > .modal-master__row-label {
+  margin-bottom: 8px;
+}
+.modal-master__contacts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.modal-master__contacts--two-col {
+  grid-template-columns: 1fr 1fr;
+  column-gap: 20px;
+}
+.modal-master__contact {
+  border-top: 1px solid rgba(14, 10, 6, 0.12);
+}
+.modal-master__contact:first-child,
+.modal-master__contacts--two-col .modal-master__contact:nth-child(2) {
+  border-top: none;
+}
+.modal-master__contact-link {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  align-items: baseline;
+  padding: 6px 0;
+  text-decoration: none;
+  color: var(--ink);
+}
+.modal-master__contact-link:hover .modal-master__contact-value {
+  color: var(--terra);
+}
+.modal-master__contact-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.modal-master__contact-value {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  word-break: break-word;
+  transition: color 0.12s;
+}
+
+/* Bio */
+.modal-master__bio {
+  padding: 10px 18px 12px;
+  background: var(--cream);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  border-bottom: var(--border);
+}
+
+/* — CTA band — */
+.modal-master__cta-band {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  min-height: 42px;
+  background: var(--ink);
+}
+.modal-master__rate-btn {
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-right: 2px solid var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0 6px;
+}
+.modal-master__rate-btn:hover {
+  background: #1a140d;
+}
+.modal-master__rate-star {
+  font-size: 12px;
+}
+.modal-master__cta {
+  background: var(--terra);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.modal-master__cta:hover {
+  background: var(--terra-dk);
+}
+.modal-master__cta-arrow {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15.5px;
+  line-height: 1;
+  margin-left: 10px;
+}
+.modal-master__cta--disabled {
+  background: var(--cream2);
+  color: var(--ink);
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* — Mobile (≤640) — */
+@media (max-width: 640px) {
+  .modal-overlay-inside--master {
+    max-width: 420px;
+  }
+  .modal-master__header {
+    padding: 10px 16px;
+  }
+  .modal-master__wordmark {
+    font-size: 20px;
+  }
+  .modal-master__identity {
+    grid-template-columns: 132px 1fr;
+  }
+  /* Mobile: dissolve the name-block so its children (name-meta, speaks,
+     tags) participate directly in the identity grid. Name-meta stays in
+     row 1 col 2 beside the avatar; speaks/tags span the full width as
+     their own rows below — matches the mobile mockups. */
+  .modal-master__avatar {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: auto;
+    height: 132px;
+    min-height: 0;
+  }
+  .modal-master__avatar--sigil > svg.sigil {
+    width: 70%;
+    height: 70%;
+  }
+  .modal-master__regcode {
+    top: 9px;
+    left: 11px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    gap: 5px;
+  }
+  .modal-master__name-block {
+    display: contents;
+  }
+  .modal-master__name-meta {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .modal-master__speaks-row {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-top: var(--border);
+    padding: 9px 16px;
+    gap: 10px;
+  }
+  .modal-master__tags-row {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    border-top: var(--border);
+    padding: 9px 16px;
+    font-size: 12px;
+  }
+  .modal-master__name {
+    font-size: clamp(24px, 7vw, 30px);
+  }
+  .modal-master__meta {
+    font-size: 15px;
+    gap: 8px;
+  }
+  .modal-master__divider {
+    width: 5px;
+    height: 5px;
+  }
+  .modal-master__row-label {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+  }
+  .modal-master__contact-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+  .modal-master__contact-value {
+    font-size: 14px;
+  }
+  .modal-master__bio {
+    font-size: 12.5px;
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+  .modal-master__contacts-section,
+  .modal-master__bio {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .modal-master__contacts-section {
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+  .modal-master__contact-link {
+    grid-template-columns: 90px 1fr;
+  }
+  .modal-master__contacts--two-col {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+  }
+  .modal-master__contacts--two-col .modal-master__contact:nth-child(2) {
+    border-top: 1px solid rgba(14, 10, 6, 0.12);
+  }
+  .modal-master__cta-band {
+    grid-template-columns: 80px 1fr;
+    min-height: 60px;
+  }
+  .modal-master__rate-btn {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+  }
+  .modal-master__cta {
+    padding: 0 18px;
+    font-size: 15px;
+  }
+  .modal-master__cta-arrow {
+    font-size: 20px;
+  }
+}
+
+/* "Join as a master" modal — tidy, brutalist, on-brand */
+.join-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 10vh auto 24px;
+  background: var(--paper);
+  border: var(--border);
+  padding: 32px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.join-modal-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-left: var(--border);
+  border-bottom: var(--border);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  cursor: pointer;
+}
+.join-modal-close:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+.join-modal-title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.join-modal-intro {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.join-modal-time {
+  margin: 0;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border: var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.join-modal-cta {
+  display: block;
+  text-align: center;
+  padding: 15px 18px;
+  background: var(--terra);
+  color: var(--paper);
+  border: var(--border);
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.join-modal-cta:hover {
+  background: var(--ink);
+}
+.join-modal-fallback {
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  text-decoration: underline;
+}
+.join-modal-fallback:hover {
+  color: var(--terra);
+}
+
+.share-container,
+.close-container {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.share-container:hover,
+.close-container:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.share-container img,
+.close-container img {
+  filter: invert(1);
+  width: 16px;
+}
+.share-container.confirm {
+  background: rgba(34, 197, 94, 0.5);
+}
+
+/* contact buttons */
+.contact-btns {
+  padding: 12px 20px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.contact-btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: var(--border);
+  cursor: pointer;
+}
+.contact-btn-link.primary {
+  background: var(--terra);
+  color: var(--paper);
+}
+.contact-btn-link.secondary {
+  background: var(--paper);
+  color: var(--ink);
+}
+.contact-btn-link:hover {
+  opacity: 0.85;
+}
+
+/* success modal variant */
+.modal-content#success {
+  border-radius: 0;
+}
+.master-card-body.success {
+  padding: 24px;
+  text-align: center;
+}
+.master-card-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  background: var(--ink);
+  color: var(--paper);
+  border-top: var(--border);
+}
+.footer-big {
+  padding: 28px 32px 24px;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4.5vw, 64px);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.footer-terra {
+  color: var(--terra);
+}
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  font-weight: 400;
+  opacity: 0.55;
+  display: block;
+  margin-top: 14px;
+  text-transform: uppercase;
+}
+
+.footer-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+.footer-col:last-child {
+  border-right: none;
+}
+.footer-col h4 {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  margin-bottom: 4px;
+}
+.footer-col a,
+.footer-col span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--paper);
+  opacity: 0.7;
+  cursor: pointer;
+}
+.footer-col a:hover,
+.footer-col .footer-link:hover {
+  opacity: 1;
+}
+/* "Add master" is a <button> styled identically to the footer links
+   (e.g. "Search") — strip default button chrome. */
+.footer-col .footer-link {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--paper);
+  opacity: 0.7;
+  cursor: pointer;
+  text-align: left;
+}
+.footer-col .inactive {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.footer-bottom {
+  padding: 14px 32px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ============================================================
+   LOGIN / AUTH PAGE
+   ============================================================ */
+.login-page {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+}
+.login-page h1 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  margin-bottom: 12px;
+}
+.login-page p {
+  font-size: 15px;
+  opacity: 0.7;
+  max-width: 380px;
+}
+
+/* ============================================================
+   ADD NEW RECORD FORM
+   ============================================================ */
+.required {
+  margin-left: 0.25rem;
+  color: rgb(255, 77, 77);
+}
+
+.create-user-container {
+  width: 90%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.create-user-form {
+  display: flex;
+  width: 55%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 0;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.create-user-form form {
+  width: 100%;
+}
+
+.create-record-header {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.create-user-form label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text2);
+}
+
+.input-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.create-user-form .create-user-photo {
+  height: 80px;
+  width: 80px;
+  border: var(--border);
+  border-radius: 0;
+  background-size: cover;
+  margin: 0.75rem 0;
+}
+
+.input-field {
+  margin-top: 0.875rem;
+  width: 100%;
+}
+
+.create-user-form .create-user-input {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 9px 12px;
+  border: var(--border);
+  border-radius: 0;
+  background-color: var(--cream);
+  font-size: 14px;
+  font-weight: 400;
+  font-family: var(--font-body);
+  color: var(--text);
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.create-user-form .create-user-input:focus {
+  border-color: var(--terra);
+}
+.create-user-input.error {
+  border-color: rgb(255, 77, 77);
+}
+
+.contact-type-container {
+  display: flex;
+  gap: 1rem;
+}
+
+.error-message {
+  color: rgb(255, 77, 77);
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.btn {
+  width: 100%;
+  border: var(--border);
+  outline: none;
+  background-color: var(--terra);
+  color: var(--paper);
+  border-radius: 0;
+  padding: 12px 16px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btn:hover:not(:disabled) {
+  background-color: var(--terra-dk);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.create-user-form .btn {
+  margin-top: 1.25rem;
+}
+.create-user-form .btn.is-loading {
+  background-color: var(--text4);
+}
+.create-user-form .btn.is-loaded {
+  background-color: var(--sage);
+}
+
+.input {
+  font-size: 14px;
+  padding: 8px 12px;
+  border: var(--border);
+  border-radius: 0;
+  font-family: var(--font-body);
+}
+
+/* ============================================================
+   ERROR / MISC
+   ============================================================ */
+.error {
+  padding: 3rem 2rem;
+  text-align: center;
+}
+.error h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+.error a {
+  color: var(--terra);
+  text-decoration: underline;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes count-pop {
+  0% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -600px 0;
+  }
+  100% {
+    background-position: 600px 0;
+  }
+}
+
+/* ============================================================
+   HOW IT WORKS — inline (desktop/tablet) / stacked (mobile)
+   ============================================================ */
+.how-it-works {
+  border-bottom: var(--border);
+  background: var(--paper);
+}
+.how-works-inner {
+  display: flex;
+}
+/* "HOW IT WORKS" label — ink block on left */
+.how-works-label {
+  background: var(--ink);
+  color: var(--terra);
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+/* 3-column step grid */
+.how-works-steps {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+/* Individual step */
+.how-step {
+  border-left: var(--border);
+  background: var(--paper);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.how-step-mid {
+  background: var(--cream);
+}
+
+/* Mobile number column — hidden on desktop */
+.how-step-num-col {
+  display: none;
+}
+
+/* Desktop: num + title on one baseline */
+.how-step-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+.how-step-num {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--terra);
+  font-variant-numeric: tabular-nums;
+}
+.how-step-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.how-step-desc {
+  font-size: 13px;
+  line-height: 1.35;
+  opacity: 0.68;
+}
+.how-step-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+.skeleton-block {
+  background: linear-gradient(
+    90deg,
+    var(--cream) 25%,
+    var(--cream2) 50%,
+    var(--cream) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.skeleton-card {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  max-width: 480px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.skeleton-card-top {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 2px solid var(--ink);
+}
+.skeleton-photo {
+  width: 84px;
+  min-height: 84px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--ink);
+}
+.skeleton-card-identity {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.skeleton-card-bottom {
+  display: flex;
+  align-items: stretch;
+  min-height: 50px;
+}
+.skeleton-rating {
+  width: 84px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--ink);
+}
+.skeleton-btn {
+  width: 70px;
+  flex-shrink: 0;
+}
+.results-top-skeleton {
+  border-bottom: none;
+}
+
+/* ============================================================
+   HERO STAT LOADING
+   ============================================================ */
+.hero-stat-loading {
+  opacity: 0.3;
+  font-size: 0.55em;
+  letter-spacing: 0;
+}
+
+/* ============================================================
+   CARD BADGE
+   ============================================================ */
+.card-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--terra);
+  color: var(--paper);
+  padding: 2px 6px;
+}
+.master-card.variant-ink .card-badge {
+  background: var(--paper);
+  color: var(--ink);
+}
+.master-card.variant-terra .card-badge {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ============================================================
+   CARD MEMBER-SINCE ROW (for unrated masters)
+   ============================================================ */
+.card-member-row {
+  flex: 1;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.card-member-info {
+  min-width: 0;
+}
+.card-member-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  display: block;
+}
+.master-card.variant-ink .card-member-label {
+  opacity: 0.65;
+}
+.card-member-date {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+.card-verified-pill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--terra);
+  color: var(--paper);
+  padding: 3px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.master-card.variant-ink .card-verified-pill {
+  background: var(--paper);
+  color: var(--ink);
+}
+.master-card.variant-terra .card-verified-pill {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ============================================================
+   RESULTS EXTRAS
+   ============================================================ */
+.results-telegram-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  white-space: nowrap;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.empty-state-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--paper);
+  border: var(--border);
+  cursor: pointer;
+  opacity: 1;
+}
+.empty-state-btn:hover {
+  background: var(--terra);
+  border-color: var(--terra);
+}
+.empty-state-btn-secondary {
+  background: transparent;
+  color: var(--ink);
+}
+.empty-state-btn-secondary:hover {
+  background: var(--cream2);
+  border-color: var(--ink);
+}
+
+/* ============================================================
+   CTA MICROCOPY WRAP
+   ============================================================ */
+.cta-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.cta-microcopy {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.48;
+  margin-top: 3px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   BURGER CONTROLS (country + lang in mobile menu)
+   ============================================================ */
+.burger-controls {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border-bottom: var(--border);
+}
+
+/* Lang switcher inside burger — looks like other burger items, not a pill */
+.burger-controls .lang-switcher {
+  width: 100%;
+}
+.burger-controls .lang-more {
+  position: static;
+  width: 100%;
+}
+.burger-controls .lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 16px 24px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-top: var(--border);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.burger-controls .lang-btn.active {
+  background: transparent;
+  color: var(--ink);
+}
+/* Inline language list — no floating popover */
+.burger-controls .lang-popover {
+  position: static;
+  border: none;
+  border-top: var(--border);
+  min-width: unset;
+  width: 100%;
+  background: var(--cream);
+}
+.burger-controls .lang-popover-item {
+  padding: 14px 24px;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+.burger-controls .lang-popover-item:hover,
+.burger-controls .lang-popover-item.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ============================================================
+   MEDIA QUERIES — Wide desktop (≥1540): 3-col hero + testimonial
+   ============================================================ */
+@media (min-width: 1540px) {
+  .hero-section {
+    grid-template-columns: 420px 1fr 360px;
+  }
+  .hero-main-panel {
+    border-right: var(--border);
+  }
+  .hero-testimonial {
+    display: flex;
+  }
+}
+
+/* ============================================================
+   MEDIA QUERIES — Tablet
+   ============================================================ */
+@media (max-width: 1100px) {
+  .masters-grid {
+    padding: 0 24px 28px;
+  }
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+  }
+  .how-step-num {
+    font-size: 26px;
+  }
+  .how-step-title {
+    font-size: 15px;
+  }
+  .how-step {
+    padding: 10px 14px;
+  }
+  .how-works-label {
+    padding: 0 14px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 860px) {
+  .header-meta {
+    padding: 10px 20px;
+  }
+  .header-nav {
+    display: none;
+  }
+  .header-wordmark {
+    padding: 10px 20px 10px;
+  }
+  .hero-section {
+    grid-template-columns: minmax(0, 30fr) minmax(0, 70fr);
+    min-height: auto;
+  }
+  .hero-terra-panel {
+    padding: 18px 20px;
+  }
+  .hero-main-panel {
+    padding: 18px 20px;
+    border-right: none;
+  }
+  .filter-toggle-wrap {
+    padding: 10px 14px 8px;
+  }
+  .results-top {
+    padding: 12px 20px;
+  }
+  .masters-grid {
+    padding: 0 20px 24px;
+  }
+  .footer-big {
+    padding: 24px 20px 20px;
+  }
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+    padding: 0;
+  }
+  .footer-col {
+    padding: 16px 20px;
+  }
+  .footer-bottom {
+    padding: 12px 20px;
+  }
+}
+
+/* ============================================================
+   MEDIA QUERIES — Mobile
+   ============================================================ */
+@media (max-width: 640px) {
+  /* ---- Mobile header: compact FIXED bar (always on screen) ---- */
+  /* A sticky child un-sticks once its parent scrolls past, so the whole
+     header is viewport-fixed and page content is offset by its height.
+     The big wordmark band is dropped on mobile (the logo is in the bar). */
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+  }
+  body {
+    padding-top: var(--bar-h);
+  }
+
+  .header-meta {
+    position: static;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: var(--bar-h);
+    padding: 0 14px;
+  }
+
+  /* "EST. 2023 · WEEK …" label hidden — frees the left slot for the logo. */
+  .header-meta-label {
+    display: none;
+  }
+
+  /* Desktop CTA cluster stays hidden on mobile; the CTA is lifted into
+     .header-bar-actions instead. */
+  .header-controls {
+    display: none;
+  }
+
+  /* Compact wordmark Link, left of the bar. Lowest priority on overflow:
+     it truncates before the CTA (which must never shrink/wrap). */
+  .header-logo-compact {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  /* Mobile-only right cluster: burger then CTA. Never shrinks. */
+  .header-bar-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .burger-open {
+    display: flex;
+    width: 44px;
+    height: 44px;
+    margin-left: 0;
+  }
+
+  /* Tighter CTA on mobile; enforce ≥44px tap target, never wrap. */
+  .header-bar-actions .cta-header {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    font-size: 12px;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  /* Big MAJSTR. band removed on mobile — the logo is in the fixed bar. */
+  .header-wordmark {
+    display: none;
+  }
+
+  /* Mobile: single column hero */
+  .hero-section {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .hero-testimonial {
+    display: none;
+  }
+  .hero-terra-panel {
+    padding: 16px;
+    border-right: none;
+    border-bottom: var(--border);
+  }
+  .hero-main-panel {
+    padding: 16px;
+    border-right: none;
+  }
+  .hero-headline {
+    font-size: clamp(26px, 8vw, 40px);
+  }
+  .hero-filter-row {
+    flex-direction: column;
+  }
+  .hero-filter-row .filter-toggle-wrap {
+    border-right: none;
+    border-bottom: var(--border);
+    min-height: 76px;
+    padding: 14px 16px 12px;
+  }
+  .hero-filter-row .filter-toggle-wrap.filter-toggle-noright {
+    border-bottom: none;
+  }
+  .hero-main-panel {
+    padding: 16px;
+  }
+
+  .results-top {
+    padding: 10px 16px;
+  }
+  .results-telegram-note {
+    display: none;
+  }
+  .masters-grid {
+    padding: 0 16px 20px;
+    grid-template-columns: 1fr;
+  }
+  .search-empty-state {
+    padding: 32px 16px;
+  }
+
+  /* HowItWorks — replace stacked layout with compact strip on mobile */
+  .how-works-full {
+    display: none;
+  }
+  .how-compact-mobile {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 10px 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+    opacity: 0.45;
+    background: var(--paper);
+  }
+  .how-compact-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .how-compact-n {
+    color: var(--terra);
+    opacity: 1;
+  }
+  .how-compact-sep {
+    margin: 0 4px;
+    opacity: 0.5;
+  }
+
+  /* Mobile filter select — larger values to match mockup */
+  .filter-toggle-wrap .headline-select .majstr-select__single-value {
+    font-size: 22px !important;
+  }
+  .filter-search-btn {
+    width: 100%;
+    border-left: none;
+    min-height: 56px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+
+  .card-photo-block {
+    width: 70px;
+    min-height: 70px;
+  }
+  .card-rating-num {
+    font-size: 28px;
+    padding: 6px 10px;
+  }
+  .card-open-btn {
+    padding: 0 14px;
+    font-size: 11px;
+    min-width: 56px;
+  }
+
+  .modal-overlay {
+    padding: 12px 8px;
+  }
+  .modal-name {
+    font-size: 20px;
+  }
+  .modal-avatar {
+    width: 68px;
+    height: 68px;
+    font-size: 26px;
+  }
+
+  .footer-big {
+    padding: 20px 16px 18px;
+  }
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+  }
+  .footer-col {
+    padding: 14px 16px;
+  }
+  .footer-bottom {
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .create-user-container {
+    flex-direction: column;
+    width: 100%;
+    padding: 1rem;
+  }
+  .create-user-form {
+    width: 100%;
+  }
+  .master-card.preview {
+    display: none;
+  }
+  .master-preview-container {
+    display: none;
+  }
+
+  /* ---- Burger overlay: viewport-fixed, anchored under the sticky bar ----
+     The inline style={{display}} in Root.tsx is the show/hide source of
+     truth; .open here only adds positioning so a scrolled-down menu no
+     longer renders off-screen at the top of the document. */
+  .menu-burger.open {
+    display: block;
+    position: fixed;
+    top: var(--bar-h); /* must match the bar height (--bar-h) */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 190; /* below the bar (200) so the ✕ toggle stays tappable */
+    background: var(--paper);
+    border-top: var(--border);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
