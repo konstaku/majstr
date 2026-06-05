@@ -111,9 +111,9 @@ export default function Root({ children }: { children?: ReactNode }) {
     };
   }, [showBurgerMenu]);
 
-  // Onboarding/add-master lives on the SPA in Phase A — route there.
+  // Onboarding/add-master lives on the SPA in Phase A — route to the wizard.
   const openAddMasterModal = () => {
-    if (typeof window !== "undefined") window.location.href = "/add";
+    if (typeof window !== "undefined") window.location.href = "/onboard";
   };
 
   const AddMasterLink = (
