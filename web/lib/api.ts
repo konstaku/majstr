@@ -37,6 +37,12 @@ export interface Country {
   name: LocName;
 }
 
+export interface ProfCategory {
+  _id: string;
+  id: string;
+  name: LocName;
+}
+
 export interface Contact {
   contactType: string;
   value: string;
@@ -90,6 +96,6 @@ export const getLocations = cache(() =>
 );
 export const getProfessions = cache(() => getJSON<Profession[]>("/?q=professions"));
 export const getProfCategories = cache(() =>
-  getJSON<unknown[]>("/?q=prof-categories")
+  getJSON<ProfCategory[]>("/?q=prof-categories")
 );
 export const getCountries = cache(() => getJSON<Country[]>("/?q=countries"));

@@ -8,6 +8,7 @@ import {
   type Location,
   type Profession,
   type Master,
+  type ProfCategory,
 } from "./api";
 import { nomName, type Lang } from "./i18n";
 import { PROFESSION_SEO, CITY_PREP } from "./seo-data";
@@ -39,7 +40,7 @@ export interface Dataset {
   profById: Map<string, Profession>;
   professions: Profession[];
   locations: Location[];
-  profCategories: unknown[];
+  profCategories: ProfCategory[];
   countries: unknown[];
 }
 
@@ -207,4 +208,51 @@ export async function allMasterParams(): Promise<{ slug: string }[]> {
   return masters.map((m) => ({
     slug: masterSlug(m, profById.get(m.professionID), locById.get(m.locationID)),
   }));
+}
+
+// ── Category helpers (filter dimension = profession category) ─────────────────
+export function resolveCategoryBySlug(
+  slug: string,
+  cats: ProfCategory[]
+): ProfCategory | undefined {
+  return cats.find((c) => c.id === slug);
+}
+
+export function categoryIdOfProfession(
+  professionID: string,
+  professions: Profession[]
+): string | undefined {
+  return professions.find((p) => p.id === professionID)?.categoryID;
+}
+
+// Distinct (city, category) pairs that have ≥1 master, with counts.
+export function cityCategoryCombos(
+  masters: Master[],
+  professions: Profession[]
+): Array<{ locationID: string; categoryID: string; count: number }> {
+  const profCat = new Map(professions.map((p) => [p.id, p.categoryID]));
+  const counts = new Map<string, number>();
+  for (const m of masters) {
+    const cat = profCat.get(m.professionID);
+    if (!cat) continue;
+    const k = `${m.locationID}__${cat}`;
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return [...counts].map(([k, count]) => {
+    const [locationID, categoryID] = k.split("__");
+    return { locationID, categoryID, count };
+  });
+}
+
+export function categoriesWithMasters(
+  masters: Master[],
+  professions: Profession[]
+): Set<string> {
+  const profCat = new Map(professions.map((p) => [p.id, p.categoryID]));
+  const set = new Set<string>();
+  for (const m of masters) {
+    const c = profCat.get(m.professionID);
+    if (c) set.add(c);
+  }
+  return set;
 }
