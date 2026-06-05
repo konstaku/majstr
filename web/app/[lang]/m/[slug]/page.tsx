@@ -1,11 +1,11 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { isLang, LANGS, nomName, OG_LOCALE, T, type Lang } from "@/lib/i18n";
-import type { Contact } from "@/lib/api";
+import { isLang, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
   findMasterBySlug,
   allMasterParams,
+  getDataset,
   professionLead,
   professionSlug,
   cityNom,
@@ -13,7 +13,9 @@ import {
 } from "@/lib/data";
 import { masterTitle, masterDescription } from "@/lib/content";
 import { abs, masterPath, landingPath, hubPath, languageAlternates } from "@/lib/urls";
-import { Header, Footer } from "@/components/Chrome";
+import { buildSeed } from "@/lib/seed";
+import AppShell from "@/spa/AppShell";
+import MasterDetail from "@/spa/components/MasterDetail";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import JsonLd from "@/components/JsonLd";
 
@@ -25,22 +27,6 @@ type Params = { lang: string; slug: string };
 export async function generateStaticParams(): Promise<Params[]> {
   const slugs = await allMasterParams();
   return LANGS.flatMap((lang) => slugs.map((s) => ({ lang, slug: s.slug })));
-}
-
-function contactHref(c: Contact): string | null {
-  const v = (c.value || "").trim();
-  switch (c.contactType) {
-    case "telegram":
-      return `https://t.me/${v.replace(/^@/, "")}`;
-    case "instagram":
-      return `https://instagram.com/${v.replace(/^@/, "")}`;
-    case "phone":
-      return `tel:${v.replace(/\s+/g, "")}`;
-    case "whatsapp":
-      return `https://wa.me/${v.replace(/[^\d]/g, "")}`;
-    default:
-      return v.startsWith("http") ? v : null;
-  }
 }
 
 export async function generateMetadata({
@@ -57,6 +43,7 @@ export async function generateMetadata({
   const profTitle = nomName(prof.name, lang) || professionLead(prof, lang);
   const title = masterTitle(lang, master.name, profTitle, cityPrep(loc, lang));
   const description = masterDescription(lang, master.name, profTitle, cityPrep(loc, lang));
+  const img = master.OGimage || master.photo;
   return {
     title,
     description,
@@ -70,7 +57,7 @@ export async function generateMetadata({
       url: abs(masterPath(lang, canonical)),
       locale: OG_LOCALE[lang],
       type: "profile",
-      images: master.OGimage ? [master.OGimage] : ["/og-image.png"],
+      images: [img || "/og-image.png"],
     },
   };
 }
@@ -88,82 +75,36 @@ export default async function MasterPage({
   const { master, prof, loc, canonical } = found;
   if (canonical !== slug) permanentRedirect(masterPath(lang, canonical));
 
+  const ds = await getDataset();
   const profTitle = nomName(prof.name, lang) || professionLead(prof, lang);
-  const prep = cityPrep(loc, lang);
-  const initial = (master.name || "•").trim().charAt(0).toUpperCase();
-  const tags = master.tags?.[lang === "uk" ? "ua" : "ru"] ?? master.tags?.ua ?? [];
   const hasRating = typeof master.rating === "number" && master.rating > 0;
-
-  const primary = (master.contacts ?? []).find((c) => c.contactType === "telegram") ??
-    (master.contacts ?? [])[0];
-  const cta = primary ? contactHref(primary) : null;
 
   return (
     <>
-      <Header lang={lang} switchHref={(l) => masterPath(l, canonical)} />
-      <main className="wrap" lang={lang}>
-        <Breadcrumbs
-          items={[
-            { name: "Majstr", href: `/${lang}` },
-            { name: cityNom(loc, lang), href: hubPath(lang, loc.id) },
-            {
-              name: professionLead(prof, lang),
-              href: landingPath(lang, professionSlug(prof.id, lang), loc.id),
-            },
-            { name: master.name, href: masterPath(lang, canonical) },
-          ]}
-        />
-
-        <div className="master-hero">
-          <div className="avatar" aria-hidden>
-            {initial}
-          </div>
-          <div>
-            <h1 className="title" style={{ fontSize: "clamp(26px,5vw,40px)" }}>
-              {master.name}
-            </h1>
-            <p className="card-prof" style={{ fontSize: 16 }}>
-              {profTitle} · {prep}
-            </p>
-            {hasRating && (
-              <p className="card-meta">
-                <span className="rating">★ {master.rating!.toFixed(1)}</span>
-                {master.reviewCount ? <span>·&nbsp;{master.reviewCount}</span> : null}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {master.about && <p className="master-about">{master.about}</p>}
-
-        {tags.length > 0 && (
-          <div className="tag-row" style={{ marginBottom: 18 }}>
-            {tags.map((t, i) => (
-              <span className="tag" key={i}>
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {cta && (
-          <p>
-            <a className="cta-btn" href={cta} target="_blank" rel="nofollow noopener">
-              {T[lang].bookTelegram}
-            </a>
+      <AppShell seed={buildSeed(lang, ds, [master])}>
+        <div className="master-page-wrap">
+          <Breadcrumbs
+            items={[
+              { name: "Majstr", href: `/${lang}` },
+              { name: cityNom(loc, lang), href: hubPath(lang, loc.id) },
+              {
+                name: professionLead(prof, lang),
+                href: landingPath(lang, professionSlug(prof.id, lang), loc.id),
+              },
+              { name: master.name, href: masterPath(lang, canonical) },
+            ]}
+          />
+          <MasterDetail master={master as never} />
+          <p style={{ marginTop: 18 }}>
+            <Link
+              href={landingPath(lang, professionSlug(prof.id, lang), loc.id)}
+              className="seo-pill"
+            >
+              ← {professionLead(prof, lang)} {cityPrep(loc, lang)}
+            </Link>
           </p>
-        )}
-
-        <p>
-          <Link
-            href={landingPath(lang, professionSlug(prof.id, lang), loc.id)}
-            className="card-cta"
-          >
-            ← {professionLead(prof, lang)} {prep}
-          </Link>
-        </p>
-      </main>
-      <Footer lang={lang} />
+        </div>
+      </AppShell>
 
       <JsonLd
         data={{
@@ -174,6 +115,7 @@ export default async function MasterPage({
           knowsLanguage: ["uk", "ru"],
           areaServed: cityNom(loc, lang),
           ...(master.about ? { description: master.about } : {}),
+          ...(master.photo ? { image: master.photo } : {}),
           address: {
             "@type": "PostalAddress",
             addressLocality: cityNom(loc, lang),

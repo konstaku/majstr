@@ -3,6 +3,8 @@ import {
   getApprovedMasters,
   getLocations,
   getProfessions,
+  getProfCategories,
+  getCountries,
   type Location,
   type Profession,
   type Master,
@@ -37,18 +39,25 @@ export interface Dataset {
   profById: Map<string, Profession>;
   professions: Profession[];
   locations: Location[];
+  profCategories: unknown[];
+  countries: unknown[];
 }
 
 export const getDataset = cache(async (): Promise<Dataset> => {
-  const [masters, locations, professions] = await Promise.all([
-    getApprovedMasters(),
-    getLocations(),
-    getProfessions(),
-  ]);
+  const [masters, locations, professions, profCategories, countries] =
+    await Promise.all([
+      getApprovedMasters(),
+      getLocations(),
+      getProfessions(),
+      getProfCategories(),
+      getCountries(),
+    ]);
   return {
     masters,
     locations,
     professions,
+    profCategories,
+    countries,
     locById: new Map(locations.map((l) => [l.id, l])),
     profById: new Map(professions.map((p) => [p.id, p])),
   };
@@ -80,9 +89,9 @@ export function cityPrep(loc: Location, lang: Lang): string {
 // Master-page slug is language-independent (one canonical URL per master):
 //   <translit-name>-<professionId>-<cityId>-<id6>
 export function masterSlug(
-  m: Master,
-  prof?: Profession,
-  loc?: Location
+  m: { _id: string; name: string; professionID?: string; locationID?: string },
+  prof?: { id: string },
+  loc?: { id: string }
 ): string {
   const name = slugify(m.name) || "master";
   return `${name}-${prof?.id ?? m.professionID}-${loc?.id ?? m.locationID}-${m._id.slice(-6)}`;

@@ -1,0 +1,30 @@
+/*
+ * Single source of UI color tokens. Components MUST only use --app-*.
+ * Web uses the brand palette below. Inside Telegram we remap --app-*
+ * onto Telegram's theme (set as --tg-theme-* by ThemeBridge) so the
+ * Mini App feels native and follows the user's Telegram theme.
+ */
+
+:root {
+    --app-bg: #ffffff;
+    --app-secondary-bg: #f4f4f5;
+    --app-fg: #111111;
+    --app-hint: #707579;
+    --app-link: #2481cc;
+    --app-accent: #2481cc;
+    --app-accent-fg: #ffffff;
+    --app-destructive: #e53935;
+    --app-border: #e4e4e7;
+}
+
+:root[data-surface="tma"] {
+    --app-bg: var(--tg-theme-bg-color, #ffffff);
+    --app-secondary-bg: var(--tg-theme-secondary-bg-color, #f4f4f5);
+    --app-fg: var(--tg-theme-text-color, #111111);
+    --app-hint: var(--tg-theme-hint-color, #707579);
+    --app-link: var(--tg-theme-link-color, #2481cc);
+    --app-accent: var(--tg-theme-button-color, #2481cc);
+    --app-accent-fg: var(--tg-theme-button-text-color, #ffffff);
+    --app-destructive: var(--tg-theme-destructive-text-color, #e53935);
+    --app-border: var(--tg-theme-section-separator-color, #e4e4e7);
+}
