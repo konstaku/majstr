@@ -1,295 +1,432 @@
-const mongoose = require('mongoose');
-const AWS = require('aws-sdk');
+'use strict';
+
 require('dotenv').config();
-const Master = require('./../database/schema/Master');
-const { localizedName } = require('./../lang');
 
-const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
-// const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
-const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
-const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const path    = require('path');
+const AWS     = require('aws-sdk');
+const { createCanvas, loadImage, registerFont } = require('canvas');
 
-const { createCanvas, loadImage } = require('canvas');
-// const fs = require('fs');
-const colorPalette = require('./../data/colors.json');
-const Profession = require('./../database/schema/Profession');
+const Profession = require('../database/schema/Profession');
+const Location   = require('../database/schema/Location');
+const { localizedName } = require('../lang');
+const { drawSigilOnCanvas } = require('./sigil');
 
-// New S3 connection
+// ── Fonts ─────────────────────────────────────────────────────────────────────
+const FONTS = path.resolve(__dirname, '../data/fonts');
+registerFont(path.join(FONTS, 'ArchivoBlack.ttf'),      { family: 'ArchivoBlack' });
+registerFont(path.join(FONTS, 'JetBrainsMono-Bold.ttf'), { family: 'JetBrainsMono', weight: '700' });
+
+// ── Brand tokens ──────────────────────────────────────────────────────────────
+const INK   = '#0e0a06';
+const PAPER = '#fffaf0';
+const CREAM = '#f4ede0';
+const TERRA = '#c84b31';
+
+// ── Layout constants (1200 × 630) ─────────────────────────────────────────────
+const W  = 1200;
+const H  = 630;
+const BD = 2;          // border thickness
+
+const HEADER_H   = 52;
+const IDENTITY_H = 320;
+const CONTACTS_H = 182;
+const CTA_H      = 72;
+// Total: 52 + 2 + 320 + 2 + 182 + 2 + 72 = 632 → round to 630 by absorbing 2px in CTA
+// Actual CTA_H = 70 → 52+2+320+2+182+2+70 = 630 ✓
+const CTA_H_ACTUAL = 70;
+
+const IDENTITY_Y  = HEADER_H + BD;                                  // 54
+const CONTACTS_Y  = IDENTITY_Y + IDENTITY_H + BD;                   // 376
+const CTA_Y       = CONTACTS_Y + CONTACTS_H + BD;                   // 560
+
+const AVATAR_W    = 360;                                             // left column
+const NAME_X      = AVATAR_W + BD + 28;                             // text start in right col
+const NAME_W      = W - AVATAR_W - BD - 28 - 24;                   // usable name width
+
+// Language code → display badge label (matches Modal.tsx)
+const LANG_LABELS = { uk:'UA', en:'EN', it:'IT', pt:'PT', es:'ES', de:'DE', fr:'FR', pl:'PL', ru:'RU' };
+
+// ── AWS ───────────────────────────────────────────────────────────────────────
 const s3 = new AWS.S3({
-  accessKeyId: AWS_ACCESS_KEY,
-  secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  accessKeyId:     process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
-async function createOGimageForMaster(master) {
-  console.log('Generating OG image for master:', JSON.stringify(master));
-  const professions = await Profession.find();
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-  // Filter out websites and facebook addresses
-  const contactsToShow = master.contacts.filter(
-    (contact) =>
-      contact.contactType !== 'facebook' && contact.contactType !== 'website'
-  );
-
-  // Get styles for image
-  const {
-    dimensions: { width, height, cornerRadius, margin },
-    fontStyles: { fontName, fontColor, textMarginLeft, h1, h2, contacts },
-  } = generateImageStyles(contactsToShow.length);
-
-  // Logo style
-  const logoPosition = {
-    w: 239,
-    h: 34,
-    x: 900,
-    y: height - margin - 36 - 24,
-  };
-
-  // Create canvas
-  const canvas = createCanvas(width, height);
-  const context = canvas.getContext('2d');
-
-  // Background fill
-  context.fillStyle = '#ffffff';
-  context.fillRect(0, 0, width, height);
-
-  // Card fill
-  context.fillStyle = getColorFromId(master._id);
-  FillRoundedRect(
-    context,
-    margin,
-    margin,
-    width - margin * 2,
-    height - margin * 2,
-    cornerRadius
-  );
-
-  // Put a name on a picture
-  context.font = `${h1.weight} ${h1.size}px ${fontName}`;
-  context.fillStyle = fontColor;
-  const name = removeLastWordIfLong(master.name);
-  context.fillText(name, textMarginLeft, h1.marginTop);
-
-  // Put a profession on a picture
-  context.font = `${h2.weight} ${h2.size}px ${fontName}`;
-  const profEntry = professions.find(
-    (profession) => profession.id === master.professionID
-  );
-  const profession = localizedName(profEntry?.name, 'uk', master.professionID);
-  context.fillText(profession, textMarginLeft, h2.marginTop);
-
-  // Put contacts names on a picture
-  context.font = `${contacts.weight} ${contacts.size}px ${fontName}`;
-  const contactsNames = contactsToShow
-    .map((contact) => contact.contactType + ':')
-    .join('\n');
-  context.fillText(contactsNames, textMarginLeft, contacts.marginTop);
-
-  // Put contacts values on a picture
-  const contactsValues = contactsToShow
-    .map((contact) =>
-      ['whatsapp', 'viber', 'phone'].includes(contact.contactType)
-        ? formatPhoneNumber(contact.value)
-        : contact.value
-    )
-    .join('\n');
-  context.fillText(
-    contactsValues,
-    contacts.valuesMarginLeft,
-    contacts.marginTop
-  );
-
-  // Render logo and save image
-  const logo = await loadImage('./data/img/logo/og-logo.png').catch((err) => {
-    console.log('Error loading logo');
-    throw err;
-  });
-  const { w, h, x, y } = logoPosition;
-  context.drawImage(logo, x, y, w, h);
-
-  // Upload image to s3
-  const imageUrl = await uploadImageToS3(canvas, master);
-
-  // Update master profile
-  await Master.findByIdAndUpdate(master._id, {
-    OGimage: imageUrl,
-  })
-    .then(() => console.log(`User ${master._id} OG image updated successfully`))
-    .catch(console.error);
-
-  return imageUrl;
+/** Wrap text to multiple lines, each ≤ maxWidth px at the current ctx font. */
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }
 
-// Helper function to fill a rectangle with rounded corners
-function FillRoundedRect(ctx, x, y, width, height, radius) {
+/** Clip ctx to a rect, run fn, restore. */
+function withClip(ctx, x, y, w, h, fn) {
+  ctx.save();
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + width, y, x + width, y + height, radius);
-  ctx.arcTo(x + width, y + height, x, y + height, radius);
-  ctx.arcTo(x, y + height, x, y, radius);
-  ctx.arcTo(x, y, x + width, y, radius);
-  ctx.closePath();
-  ctx.fill();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  fn();
+  ctx.restore();
 }
 
-// Derives a color from palette based on an ID
-function getColorFromId(id) {
-  if (!id) return '#ffffff';
-  const seed = parseInt(id.toString().slice(-2), 16) % colorPalette.length;
-  return colorPalette[seed] + '35';
+/**
+ * Draw the master's photo in duotone style matching the modal:
+ *   ink background → greyscale photo (lighten blend) → paper overlay (darken blend).
+ * Falls back to CREAM fill if the photo can't be loaded.
+ */
+async function drawPhoto(ctx, photoUrl, x, y, w, h) {
+  try {
+    const img = await loadImage(photoUrl);
+    // 1. Ink background
+    ctx.fillStyle = INK;
+    ctx.fillRect(x, y, w, h);
+
+    // 2. Greyscale photo, lighten blend — makes photo highlights pop on dark bg
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighten';
+    try { ctx.filter = 'grayscale(100%) contrast(118%) brightness(102%)'; } catch (_) { /* unsupported */ }
+    withClip(ctx, x, y, w, h, () => {
+      const scale = Math.max(w / img.width, h / img.height);
+      const sw = w / scale;
+      const sh = h / scale;
+      const sx = (img.width  - sw) / 2;
+      const sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    });
+    ctx.restore();
+
+    // 3. Paper overlay, darken blend — turns the photo into an ink-toned duotone
+    ctx.save();
+    ctx.globalCompositeOperation = 'darken';
+    try { ctx.filter = 'none'; } catch (_) { /* noop */ }
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  } catch (err) {
+    console.warn('[OG] photo load failed, using sigil fallback:', err.message);
+    ctx.fillStyle = CREAM;
+    ctx.fillRect(x, y, w, h);
+    const pad  = Math.round(Math.min(w, h) * 0.13);
+    const size = Math.min(w, h) - pad * 2;
+    drawSigilOnCanvas(ctx, 'fallback', x + pad, y + (h - size) / 2, size, { size: 3, background: false });
+  }
 }
 
-// Formats any phone number to a readable format
-function formatPhoneNumber(phoneNumber) {
-  const cleaned = phoneNumber.replace(/\D/g, ''); // Remove all non-numeric characters
+/** Registration ordinal code (matches Modal.tsx formatRegCode logic). */
+function regCode(masterId, allIds) {
+  const sorted = allIds.slice().sort((a, b) => String(a).localeCompare(String(b)));
+  const n = sorted.indexOf(String(masterId)) + 1;
+  return n < 10 ? `0${n}` : String(n);
+}
 
-  const lastTwoBlocksLength = 4; // Length of the last two blocks (XX XX)
-  const remainingLength = cleaned.length - lastTwoBlocksLength;
+// ── Section renderers ─────────────────────────────────────────────────────────
 
-  if (remainingLength > 0) {
-    let formattedNumber = cleaned.slice(0, remainingLength);
-    const lastTwoBlocks = cleaned.slice(remainingLength);
+function drawHeader(ctx) {
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, HEADER_H);
 
-    // Break the remaining part into chunks of max 3 digits
-    const chunks = [];
-    while (formattedNumber.length > 0) {
-      const chunkLength = Math.min(3, formattedNumber.length);
-      chunks.unshift(
-        formattedNumber.slice(formattedNumber.length - chunkLength)
-      );
-      formattedNumber = formattedNumber.slice(
-        0,
-        formattedNumber.length - chunkLength
-      );
-    }
+  ctx.font = `900 20px ArchivoBlack`;
+  const baseline = Math.round(HEADER_H / 2 + 8);
 
-    // Construct the final formatted number
-    return `+${chunks.join(' ')} ${lastTwoBlocks.match(/\d{2}/g).join(' ')}`;
+  ctx.fillStyle = INK;
+  const wm = 'MAJSTR';
+  ctx.fillText(wm, 20, baseline);
+  const wmW = ctx.measureText(wm).width;
+  ctx.fillStyle = TERRA;
+  ctx.fillText('.', 20 + wmW, baseline);
+
+  // Bottom border
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, HEADER_H, W, BD);
+}
+
+function drawAvatar(ctx, master) {
+  const x = 0;
+  const y = IDENTITY_Y;
+  const w = AVATAR_W;
+  const h = IDENTITY_H;
+
+  // Right border
+  ctx.fillStyle = INK;
+  ctx.fillRect(w, y, BD, h);
+
+  // Registration code badge (sigil variant only — photo variant just has the photo)
+  if (!master.photo) {
+    const codeText = `● M-${master._regCode || '??'}`;
+    ctx.font = '700 9px JetBrainsMono';
+    ctx.fillStyle = TERRA;
+    ctx.fillText(codeText, x + 14, y + 20);
+  }
+}
+
+async function drawAvatarContent(ctx, master) {
+  const x = 0;
+  const y = IDENTITY_Y;
+  const w = AVATAR_W;
+  const h = IDENTITY_H;
+
+  if (master.photo) {
+    await drawPhoto(ctx, master.photo, x, y, w, h);
+  } else {
+    ctx.fillStyle = CREAM;
+    ctx.fillRect(x, y, w, h);
+    const pad  = Math.round(Math.min(w, h) * 0.13);
+    const size = Math.min(w, h) - pad * 2;
+    drawSigilOnCanvas(ctx, String(master._id), x + pad, y + (h - size) / 2, size, { size: 3, background: false });
   }
 
-  // Return the original input if it doesn't match the criteria
-  return phoneNumber;
+  // Overlay borders and reg code badge after photo draw so they're on top
+  drawAvatar(ctx, master);
 }
 
-// Removes last piece of name if it won't fit
-function removeLastWordIfLong(str) {
-  if (str.length > 20) {
-    // Split the string into words
-    const words = str.split(' ');
+function drawNameBlock(ctx, master, profName, locName) {
+  const y    = IDENTITY_Y;
+  let   textY = y + 52;
 
-    if (words.length > 1) {
-      // Remove the last word from the array
-      words.pop();
+  // ── Name ──────────────────────────────────────────────────────────────────
+  ctx.font = '900 56px ArchivoBlack';
+  ctx.fillStyle = INK;
+  const name  = (master.name || '—').toUpperCase();
+  const lines = wrapText(ctx, name, NAME_W);
+  const lineH = 58;
+  for (let i = 0; i < Math.min(lines.length, 2); i++) {
+    ctx.fillText(lines[i], NAME_X, textY);
+    textY += lineH;
+  }
+  // Terra dot at end of last name line
+  const lastLine   = lines[Math.min(lines.length - 1, 1)];
+  const lastLineW  = ctx.measureText(lastLine).width;
+  ctx.fillStyle    = TERRA;
+  ctx.font         = '900 56px ArchivoBlack';
+  ctx.fillText('.', NAME_X + lastLineW, textY - lineH);
+  textY += 14;
 
-      // Join the remaining words back into a string
-      return words.join(' ');
+  // ── Profession · City ─────────────────────────────────────────────────────
+  if (profName || locName) {
+    ctx.font = '900 17px ArchivoBlack';
+    let lineX = NAME_X;
+
+    if (profName) {
+      ctx.fillStyle = INK;
+      const pText = profName.toUpperCase();
+      ctx.fillText(pText, lineX, textY);
+      lineX += ctx.measureText(pText).width;
     }
+    if (profName && locName) {
+      lineX += 11;
+      ctx.fillStyle = TERRA;
+      ctx.fillRect(lineX, textY - 9, 7, 7);  // square dot
+      lineX += 18;
+    }
+    if (locName) {
+      ctx.fillStyle = TERRA;
+      ctx.fillText(locName.toUpperCase(), lineX, textY);
+    }
+    textY += 34;
   }
 
-  // Return the original string if it's not longer than 20 characters or has only one word
-  return str;
+  // ── Language badges ───────────────────────────────────────────────────────
+  const langs = (master.languages && master.languages.length > 0)
+    ? master.languages
+    : master.countryID === 'IT' ? ['uk', 'it']
+    : master.countryID === 'PT' ? ['uk', 'pt']
+    : ['uk'];
+
+  ctx.font = '700 11px JetBrainsMono';
+  let bx = NAME_X;
+  for (const code of langs.slice(0, 4)) {
+    const label = LANG_LABELS[code] || code.toUpperCase();
+    const bw    = ctx.measureText(label).width + 10;
+    const bh    = 18;
+    ctx.fillStyle = INK;
+    ctx.fillRect(bx, textY - bh + 3, bw, bh);
+    ctx.fillStyle = PAPER;
+    ctx.fillText(label, bx + 5, textY);
+    bx += bw + 5;
+  }
+  textY += 26;
+
+  // ── Tags ──────────────────────────────────────────────────────────────────
+  const tags = (master.tags?.ua || master.tags?.en || []).slice(0, 4);
+  if (tags.length) {
+    ctx.font = '400 12px sans-serif';
+    ctx.fillStyle = INK;
+    ctx.globalAlpha = 0.65;
+    ctx.fillText(tags.join(' · ').toLowerCase(), NAME_X, textY);
+    ctx.globalAlpha = 1;
+  }
 }
 
-// Calculate styles for a contact
-function generateImageStyles(numberOfContacts) {
-  // Dimensions and margins
-  const width = 1200;
-  const height = 627;
-  const margin = 24;
-  const cornerRadius = 40;
+function drawContacts(ctx, master) {
+  const y = CONTACTS_Y;
 
-  // Font styles
-  const fontName = 'Unbounded';
-  const fontColor = '#171923';
-  const textMarginLeft = margin + 36;
-  // h1
-  const h1Size = 72;
-  const h1Weight = 600;
-  const h1MarginTop = 72 + h1Size;
-  // h2
-  const h2Size = 48;
-  const h2Weight = 400;
-  const h2MarginTop = h1MarginTop + margin + h2Size;
-  // contacts
-  const contactsSize = 32;
-  const contactsWeight = 400;
-  const contactsMarginTop =
-    height - margin - 36 - numberOfContacts * contactsSize;
-  const contactsValuesMarginLeft = 240 + textMarginLeft;
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, y, W, CONTACTS_H);
 
-  return {
-    dimensions: {
-      width,
-      height,
-      margin,
-      cornerRadius,
-    },
-    fontStyles: {
-      fontName,
-      fontColor,
-      textMarginLeft,
-      h1: {
-        size: h1Size,
-        weight: h1Weight,
-        marginTop: h1MarginTop,
-      },
-      h2: {
-        size: h2Size,
-        weight: h2Weight,
-        marginTop: h2MarginTop,
-      },
-      contacts: {
-        size: contactsSize,
-        weight: contactsWeight,
-        marginTop: contactsMarginTop,
-        valuesMarginLeft: contactsValuesMarginLeft,
-      },
-    },
-  };
+  // "CONTACTS" section label
+  ctx.font = '700 9px JetBrainsMono';
+  ctx.fillStyle = INK;
+  ctx.globalAlpha = 0.85;
+  ctx.fillText('CONTACTS', 22, y + 22);
+  ctx.globalAlpha = 1;
+
+  const contacts = (master.contacts || [])
+    .filter(c => c.contactType !== 'facebook' && c.contactType !== 'website')
+    .slice(0, 4);
+
+  if (!contacts.length) {
+    ctx.font = '700 12px JetBrainsMono';
+    ctx.fillStyle = INK;
+    ctx.globalAlpha = 0.3;
+    ctx.fillText('—', 22, y + 52);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = INK;
+    ctx.fillRect(0, y + CONTACTS_H, W, BD);
+    return;
+  }
+
+  // Layout: up to 4 contacts in 2 columns
+  const colW    = (W - 44) / 2;
+  const rowH    = 38;
+  const startY  = y + 42;
+
+  for (let i = 0; i < contacts.length; i++) {
+    const c    = contacts[i];
+    const col  = i % 2;
+    const row  = Math.floor(i / 2);
+    const cx   = 22 + col * (colW + 22);
+    const cy   = startY + row * rowH;
+
+    // Type label (small mono, dimmed)
+    ctx.font = '700 10px JetBrainsMono';
+    ctx.fillStyle = INK;
+    ctx.globalAlpha = 0.45;
+    ctx.fillText(c.contactType.toUpperCase() + ':', cx, cy);
+    ctx.globalAlpha = 1;
+
+    // Value (larger mono)
+    ctx.font = '700 15px JetBrainsMono';
+    ctx.fillStyle = INK;
+    const val = c.value.startsWith('@') || c.contactType === 'telegram'
+      ? (c.value.startsWith('@') ? c.value : `@${c.value}`)
+      : c.value;
+    // Clip value to column width
+    const maxValW = colW - 10;
+    let   display = val;
+    while (display.length > 4 && ctx.measureText(display + '…').width > maxValW) {
+      display = display.slice(0, -1);
+    }
+    if (display !== val) display += '…';
+    ctx.fillText(display, cx + 90, cy);
+  }
+
+  // Bottom border
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, y + CONTACTS_H, W, BD);
 }
 
-// Uploader function
-async function uploadImageToS3(canvas, master) {
-  const buffer = canvas.toBuffer('image/png');
-  const uploadParams = {
-    Bucket: 'chupakabra-test',
-    Key: `user-og/${master._id}.jpg`,
-    Body: buffer,
+function drawCTABand(ctx, master) {
+  const y = CTA_Y;
+
+  // Full ink background
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, y, W, CTA_H_ACTUAL);
+
+  // Left cell — Rate button (matches modal .modal-master__rate-btn)
+  const rateBtnW = 88;
+  ctx.strokeStyle = PAPER;
+  ctx.lineWidth   = BD;
+  ctx.strokeRect(BD, y + BD, rateBtnW - BD * 2, CTA_H_ACTUAL - BD * 2);
+  ctx.font      = '700 9px JetBrainsMono';
+  ctx.fillStyle = PAPER;
+  ctx.fillText('☆  RATE', 16, y + CTA_H_ACTUAL / 2 + 4);
+
+  // Right side — terra CTA
+  ctx.fillStyle = TERRA;
+  ctx.fillRect(rateBtnW, y, W - rateBtnW, CTA_H_ACTUAL);
+
+  const primary   = (master.contacts || []).find(c => c.contactType === 'telegram') || (master.contacts || [])[0];
+  const ctaLabel  = !primary                            ? 'CONTACT'
+    : primary.contactType === 'telegram'                ? 'WRITE IN TELEGRAM'
+    : primary.contactType === 'phone'                   ? 'CALL'
+    : `MESSAGE ON ${primary.contactType.toUpperCase()}`;
+
+  ctx.font      = '900 15px ArchivoBlack';
+  ctx.fillStyle = PAPER;
+  const labelW  = ctx.measureText(ctaLabel).width;
+  const arrowW  = ctx.measureText(' →').width;
+  const totalW  = labelW + arrowW + 16;
+  const tx      = rateBtnW + Math.round((W - rateBtnW - totalW) / 2);
+  ctx.fillText(ctaLabel, tx, y + CTA_H_ACTUAL / 2 + 6);
+  ctx.fillText('→', tx + labelW + 16, y + CTA_H_ACTUAL / 2 + 6);
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
+async function createOGimageForMaster(master) {
+  console.log('[OG] Generating for master:', master._id);
+
+  const [professions, locations] = await Promise.all([
+    Profession.find(),
+    Location.find(),
+  ]);
+
+  const profEntry = professions.find(p => p.id === master.professionID);
+  const locEntry  = locations.find(l  => l.id === master.locationID);
+  const profName  = localizedName(profEntry?.name, 'uk', master.professionID);
+  const locName   = localizedName(locEntry?.name,  'uk', master.locationID);
+
+  const canvas = createCanvas(W, H);
+  const ctx    = canvas.getContext('2d');
+
+  // Full paper background
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw sections
+  drawHeader(ctx);
+  await drawAvatarContent(ctx, master);
+  drawNameBlock(ctx, master, profName, locName);
+  drawContacts(ctx, master);
+  drawCTABand(ctx, master);
+
+  // Outer 2px border
+  ctx.strokeStyle = INK;
+  ctx.lineWidth   = BD * 2;
+  ctx.strokeRect(BD, BD, W - BD * 2, H - BD * 2);
+
+  return uploadToS3(canvas, master);
+}
+
+async function uploadToS3(canvas, master) {
+  const buffer = canvas.toBuffer('image/jpeg', { quality: 0.93 });
+  const params = {
+    Bucket:      'chupakabra-test',
+    Key:         `user-og/${master._id}.jpg`,
+    Body:        buffer,
+    ContentType: 'image/jpeg',
   };
 
   return new Promise((resolve, reject) => {
-    s3.upload(uploadParams, (err, data) => {
-      if (err) {
-        reject(err);
-        throw new Error(err);
-      }
-      console.log('Upload to s3 successful');
+    s3.upload(params, (err, data) => {
+      if (err) { reject(err); return; }
+      console.log('[OG] Upload ok:', data.Location);
       resolve(data.Location);
     });
-  }).catch(console.error);
+  });
 }
-
-// for (const master of masters) {
-//   createOGimageForMaster(master);
-// }
-
-// Create images for all masters
-// fetch('https://api.konstaku.com:5000/?q=masters')
-//   .then((response) => {
-//     if (response.ok) {
-//       return response.json();
-//     } else {
-//       return Promise.reject(response);
-//     }
-//   })
-//   .then((masters) => {
-//     for (const master of masters) {
-//       createOGimageForMaster(master);
-//     }
-//   })
-//   .catch((error) => {
-//     if (error.name === 'AbortError') return;
-//     console.error(error);
-//     setIsError(true);
-//   });
 
 module.exports = createOGimageForMaster;
