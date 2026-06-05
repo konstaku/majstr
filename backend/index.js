@@ -18,9 +18,7 @@ const i18n = require('./i18n');
 const { masterWebUrl } = require('./helpers/masterUrl');
 const requireAdmin = require('./middleware/requireAdmin');
 const requireUser = require('./middleware/requireUser');
-const loadOwnedMaster = require('./middleware/loadOwnedMaster');
 const { getDraft, patchDraft, deleteDraft, submitDraft, getMine } = require('./routes/draft');
-const { editOwnedMaster, setVisibility, deleteOwnedMaster } = require('./routes/ownedMaster');
 const { uploadDraftPhoto, uploadDraftPhotoFromTelegram } = require('./routes/photo');
 const { patchDraftLimiter, submitDraftLimiter, photoUploadLimiter, claimsLimiter } = require('./middleware/draftRateLimiter');
 const { submitClaim, getMyClaims, withdrawClaim } = require('./routes/claims');
@@ -106,12 +104,6 @@ async function main() {
   app.post('/api/claims', requireUser, claimsLimiter, submitClaim);
   app.get('/api/claims/mine', requireUser, getMyClaims);
   app.delete('/api/claims/:id', requireUser, withdrawClaim);
-
-  // Owned master management (claim → edit / hide / delete)
-  // Static routes (draft, mine) must be registered above :id to take precedence.
-  app.patch('/api/masters/:id', requireUser, loadOwnedMaster, editOwnedMaster);
-  app.patch('/api/masters/:id/visibility', requireUser, loadOwnedMaster, setVisibility);
-  app.delete('/api/masters/:id', requireUser, loadOwnedMaster, deleteOwnedMaster);
 
   // Mini App bootstrap + reference data (legacy /?q= aliases kept below)
   app.get('/api/me', requireUser, (req, res) => res.json(req.user));

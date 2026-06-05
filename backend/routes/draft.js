@@ -270,4 +270,4 @@ async function getMine(req, res) {
   res.json({ masters });
 }
 
-module.exports = { getDraft, patchDraft, deleteDraft, submitDraft, getMine, validatePatch, DRAFT_FIELDS };
+module.exports = { getDraft, patchDraft, deleteDraft, submitDraft, getMine };
