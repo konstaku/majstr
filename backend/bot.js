@@ -171,6 +171,9 @@ async function handleMessage(message) {
       await showLanguageSelector(chatId);
       break;
     default: {
+      // Only reply to messages that look like commands (/foo). Ignore plain
+      // text, stickers, media, service messages, and empty strings from TMA.
+      if (!text.startsWith('/')) break;
       console.log('Unknown command:', text);
       const lang = await getUserLang(chatId);
       bot.sendMessage(chatId, i18n.t(lang, 'unknownCommand'));
@@ -501,8 +504,9 @@ async function handleMasterCallback(queryId, message, data, from) {
     ).catch(() => {});
 
     // Flush the Next.js ISR cache so the new master page is live immediately.
+    // Awaited so the cache is warm before the notification URL is sent.
     if (REVALIDATE_SECRET) {
-      fetch(`${PUBLIC_WEB_URL}/api/revalidate?secret=${REVALIDATE_SECRET}`, { method: 'POST' })
+      await fetch(`${PUBLIC_WEB_URL}/api/revalidate?secret=${REVALIDATE_SECRET}`, { method: 'POST' })
         .catch(err => console.error('[revalidate] failed:', err.message));
     }
 

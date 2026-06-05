@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { API_BASE } from "@/lib/config";
+import { DATA_TAG } from "@/lib/api";
 import type { Master, Profession, Location } from "@/lib/api";
 import { nomName } from "@/lib/i18n";
 
@@ -33,13 +34,13 @@ export async function GET(req: NextRequest) {
   if (!id) return new Response("Missing id", { status: 400 });
 
   const [mastersRaw, profsRaw, locsRaw] = await Promise.all([
-    fetch(`${API_BASE}/?q=masters`, { next: { revalidate: 3600 } }).then(
+    fetch(`${API_BASE}/?q=masters`, { next: { revalidate: 3600, tags: [DATA_TAG] } }).then(
       (r) => r.json() as Promise<Master[]>
     ),
-    fetch(`${API_BASE}/?q=professions`, { next: { revalidate: 3600 } }).then(
+    fetch(`${API_BASE}/?q=professions`, { next: { revalidate: 3600, tags: [DATA_TAG] } }).then(
       (r) => r.json() as Promise<Profession[]>
     ),
-    fetch(`${API_BASE}/?q=locations`, { next: { revalidate: 3600 } }).then(
+    fetch(`${API_BASE}/?q=locations`, { next: { revalidate: 3600, tags: [DATA_TAG] } }).then(
       (r) => r.json() as Promise<Location[]>
     ),
   ]);
