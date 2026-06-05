@@ -199,14 +199,12 @@ async function submitDraft(req, res) {
     return res.status(422).json({ errors: fieldErrors });
   }
 
-  // Generate OG image before changing status so the draft stays intact on failure
-  let ogUrl;
+  // OG image is best-effort — failure must not block master creation.
   try {
-    ogUrl = await createOGimageForMaster(draft);
+    const ogUrl = await createOGimageForMaster(draft);
     draft.OGimage = ogUrl.toString();
   } catch (err) {
-    console.error('OG image generation failed:', err);
-    return res.status(500).json({ error: 'og_generation_failed' });
+    console.error('[OG] generation failed, continuing without image:', err.message);
   }
 
   draft.status = 'pending';
@@ -272,4 +270,4 @@ async function getMine(req, res) {
   res.json({ masters });
 }
 
-module.exports = { getDraft, patchDraft, deleteDraft, submitDraft, getMine };
+module.exports = { getDraft, patchDraft, deleteDraft, submitDraft, getMine, validatePatch, DRAFT_FIELDS };
