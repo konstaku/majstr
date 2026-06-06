@@ -50,7 +50,7 @@ const PORT_NUMBER = 8443;
 // Telegram delivers each forwarded message as its own update, so a Q+A pair
 // arrives as a rapid burst. We buffer per chat and flush once the burst goes
 // quiet, bundling the messages into a single Candidate.
-const FORWARD_DEBOUNCE_MS = 4000;
+const FORWARD_DEBOUNCE_MS = 9000;
 // Spam guard for non-admin submitters: max bundles per rolling window.
 const FORWARD_RATELIMIT_MAX = 12;
 const FORWARD_RATELIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -215,7 +215,8 @@ function isForwarded(message) {
     message.forward_origin ||
     message.forward_from ||
     message.forward_from_chat ||
-    message.forward_sender_name
+    message.forward_sender_name ||
+    message.contact // a shared/forwarded contact card is a lead too
   );
 }
 
@@ -241,7 +242,18 @@ function readForwardOrigin(message) {
 // one bundle. Flush runs after the burst goes quiet.
 function bufferForward(message) {
   const chatId = message.chat.id;
-  const text = message.text || message.caption || '';
+  let text = message.text || message.caption || '';
+  // A forwarded Telegram contact card (often the "answer" with the master's
+  // number) has no text — pull the name + phone out of message.contact so the
+  // extractor still sees it.
+  if (!text && message.contact) {
+    const ct = message.contact;
+    text =
+      [[ct.first_name, ct.last_name].filter(Boolean).join(' '), ct.phone_number]
+        .filter(Boolean)
+        .join(' — ')
+        .trim();
+  }
   const origin = readForwardOrigin(message);
 
   // Largest photo size, or an image sent as a document. Stored as file_id; the
