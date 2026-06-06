@@ -364,12 +364,17 @@ function renderCurrent(force){
   area.innerHTML=''; area.appendChild(card(c));
 }
 
-function profOptions(s){ return '<option value="">— profession —</option>'+professions.map(p=>'<option value="'+p.id+'"'+(p.id===s?' selected':'')+'>'+esc(pickName(p.name))+'</option>').join(''); }
+function catSelectOptions(s){ return '<option value="">— all categories —</option>'+categories.map(c=>'<option value="'+c.id+'"'+(c.id===s?' selected':'')+'>'+esc(pickName(c.name))+'</option>').join(''); }
+// Profession options, optionally filtered to a category. Empty category = all.
+function profOptions(catId,s){ const list=catId?professions.filter(p=>p.categoryID===catId):professions;
+  return '<option value="">— profession —</option>'+list.map(p=>'<option value="'+p.id+'"'+(p.id===s?' selected':'')+'>'+esc(pickName(p.name))+'</option>').join(''); }
 function locOptions(s){ return '<option value="">— city —</option>'+locations.map(l=>'<option value="'+l.id+'"'+(l.id===s?' selected':'')+'>'+esc(pickName(l.name))+'</option>').join(''); }
+function catOfProfession(profId){ const p=professions.find(x=>x.id===profId); return p?p.categoryID:''; }
 
 function card(c){
   const ex=c.extracted||{}; const el=document.createElement('div'); el.className='card';
   const dups=c.duplicateMasters||[];
+  const suggestedCat=catOfProfession(c.suggestProfessionID); // pre-filter category from the suggested profession
   el.innerHTML=
     '<div class="meta"><span class="tag">'+esc(c.kind)+'</span><span class="tag">'+esc(c.sourceType)+'</span>'+
       '<span class="tag">score '+(c.score||0).toFixed(2)+'</span><span class="tag">'+esc(c.classifierName)+' '+esc(c.classifierVersion)+'</span></div>'+
@@ -380,7 +385,8 @@ function card(c){
     (dups.length?'<div class="dup"><b>⚠ Possible duplicate — live master already has this contact:</b><ul>'+
       dups.map(d=>'<li>'+esc(d.name||'(no name)')+' · '+esc(d.status)+'/'+esc(d.source)+' · '+esc((d.contacts||[]).map(x=>x.value).join(', '))+'</li>').join('')+'</ul></div>':'')+
     '<label>Name</label><input class="f-name" value="'+esc(ex.name||c.responderName||'')+'">'+
-    '<div class="grid2"><div><label>Profession</label><div class="row-pair"><select class="f-prof">'+profOptions(c.suggestProfessionID)+'</select><button type="button" class="addbtn addProf">+ Add</button></div>'+
+    '<label>Category</label><select class="f-cat">'+catSelectOptions(suggestedCat)+'</select>'+
+    '<div class="grid2"><div><label>Profession</label><div class="row-pair"><select class="f-prof">'+profOptions(suggestedCat,c.suggestProfessionID)+'</select><button type="button" class="addbtn addProf">+ Add</button></div>'+
       (ex.profession?'<div class="mut small">read: "'+esc(ex.profession)+'"</div>':'')+'</div>'+
     '<div><label>City</label><div class="row-pair"><select class="f-loc">'+locOptions(c.suggestLocationID)+'</select><button type="button" class="addbtn addCity">+ Add</button></div>'+
       (ex.city?'<div class="mut small">read: "'+esc(ex.city)+'"</div>':'')+'</div></div>'+
@@ -405,7 +411,10 @@ function card(c){
   }
   drawContacts();
   el.querySelector('.addc').onclick=()=>{contacts.push({contactType:'phone',value:''});drawContacts();};
-  el.querySelector('.addProf').onclick=()=>openAddProfession((p)=>{ professions.push(p); el.querySelector('.f-prof').innerHTML=profOptions(p.id); });
+  el.querySelector('.f-cat').onchange=(e)=>{ el.querySelector('.f-prof').innerHTML=profOptions(e.target.value,''); };
+  el.querySelector('.addProf').onclick=()=>openAddProfession((p)=>{ professions.push(p);
+    el.querySelector('.f-cat').innerHTML=catSelectOptions(p.categoryID);
+    el.querySelector('.f-prof').innerHTML=profOptions(p.categoryID,p.id); });
   el.querySelector('.addCity').onclick=()=>openAddCity((l)=>{ locations.push(l); el.querySelector('.f-loc').innerHTML=locOptions(l.id); });
 
   function payload(){ const split=s=>s.split(',').map(t=>t.trim()).filter(Boolean);
