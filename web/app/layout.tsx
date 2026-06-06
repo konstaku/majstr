@@ -25,7 +25,14 @@ const archivo = Archivo_Black({
   variable: "--font-archivo",
   adjustFontFallback: false,
 });
+// Pinned to 800 (ExtraBold), matching the original `Golos+Text:wght@800` link.
+// Golos is the Cyrillic companion to Archivo Black (a single-weight black face)
+// in --font-display; display elements don't set an explicit font-weight, so
+// loading the full variable range would render Cyrillic at the 400 default —
+// noticeably thinner than the Latin Archivo Black. A single 800 face keeps
+// Cyrillic display text heavy regardless of the inherited weight.
 const golos = Golos_Text({
+  weight: "800",
   subsets: ["latin", "latin-ext", "cyrillic"],
   display: "swap",
   variable: "--font-golos",
