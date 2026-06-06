@@ -36,7 +36,12 @@ const {
   acceptCandidate,
   declineCandidate,
 } = require('../routes/miningReview');
-const { createProfession, createLocation } = require('../routes/referenceAdmin');
+const {
+  createProfession,
+  createLocation,
+  createProfCategory,
+  rebuildLexicon,
+} = require('../routes/referenceAdmin');
 const { storeRawForward, processCandidate } = require('../mining/forwardIntake');
 const miningDb = require('../database/miningDb');
 const CHAT_REGION = require('../mining/chatRegions');
@@ -72,6 +77,8 @@ async function main() {
   app.get('/api/reference/countries', async (_req, res) => res.json(await Country.find()));
   app.post('/api/reference/professions', createProfession);
   app.post('/api/reference/locations', createLocation);
+  app.post('/api/reference/prof-categories', createProfCategory);
+  app.post('/api/admin/lexicon/rebuild', rebuildLexicon);
 
   // Source dropdown: distinct origins in the reviewable queue (raw+new).
   // 'forwarded' = bot-sent leads; otherwise one entry per mined chat (by chatID).
@@ -193,6 +200,15 @@ const HTML = /* html */ `<!doctype html>
   .nav { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
   .empty { text-align:center; color:var(--mut); padding:24px 0; }
   .x { width:34px; text-align:center; }
+  .row-pair { display:flex; gap:6px; align-items:center; }
+  .row-pair select { flex:1; }
+  .addbtn { white-space:nowrap; padding:7px 10px; }
+  .backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; z-index:20; overflow:auto; }
+  .modal { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; width:100%; max-width:440px; }
+  .modal h3 { margin:0 0 10px; font-size:15px; }
+  .modal .mlrow { display:grid; grid-template-columns:140px 1fr; gap:8px; align-items:center; margin-bottom:6px; }
+  .modal .mlrow span { font-size:12px; color:var(--mut); }
+  .modal .acts { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
 </style>
 </head>
 <body>
@@ -206,6 +222,7 @@ const HTML = /* html */ `<!doctype html>
     <button id="procAll" class="small primary">Process all raw</button>
     <label class="small" style="margin:0"><input type="checkbox" id="auto" checked style="width:auto;display:inline"> auto-refresh</label>
     <button id="reload" class="small">Reload</button>
+    <button id="rebuild" class="small" title="Rebuild the mining lexicon after adding professions">Rebuild lexicon</button>
   </div>
   <div class="row" style="margin-top:8px">
     <label class="small" style="margin:0">Source
@@ -235,6 +252,7 @@ const HTML = /* html */ `<!doctype html>
   </div>
   <div id="review"></div>
 </main>
+<div id="modalRoot"></div>
 
 <script>
 // Languages a master speaks (per-card checkboxes, flags). UA + RU default-checked.
@@ -242,7 +260,7 @@ const SPEAK_LANGS = [['ua','🇺🇦'],['ru','🇷🇺'],['en','🇬🇧'],['it'
 const SPEAK_DEFAULT = ['ua','ru'];
 // Fixed display preference for profession/city dropdown labels.
 const NAME_PREF = ['ua','ru','en','it'];
-let professions = [], locations = [];
+let professions = [], locations = [], categories = [], countries = [];
 let rawC = [], newC = [];
 let idx = 0, currentId = null; // one-card-at-a-time review pointer
 let counters = { acc:0, dec:0 };
@@ -268,9 +286,11 @@ async function loadSources(){
   }catch(e){}
 }
 async function loadRefs(){
-  [professions,locations]=await Promise.all([
+  [professions,locations,categories,countries]=await Promise.all([
     fetch('/api/reference/professions').then(r=>r.json()),
     fetch('/api/reference/locations').then(r=>r.json()),
+    fetch('/api/reference/prof-categories').then(r=>r.json()),
+    fetch('/api/reference/countries').then(r=>r.json()),
   ]);
 }
 async function loadQueue(){
@@ -360,9 +380,9 @@ function card(c){
     (dups.length?'<div class="dup"><b>⚠ Possible duplicate — live master already has this contact:</b><ul>'+
       dups.map(d=>'<li>'+esc(d.name||'(no name)')+' · '+esc(d.status)+'/'+esc(d.source)+' · '+esc((d.contacts||[]).map(x=>x.value).join(', '))+'</li>').join('')+'</ul></div>':'')+
     '<label>Name</label><input class="f-name" value="'+esc(ex.name||c.responderName||'')+'">'+
-    '<div class="grid2"><div><label>Profession</label><select class="f-prof">'+profOptions(c.suggestProfessionID)+'</select>'+
+    '<div class="grid2"><div><label>Profession</label><div class="row-pair"><select class="f-prof">'+profOptions(c.suggestProfessionID)+'</select><button type="button" class="addbtn addProf">+ Add</button></div>'+
       (ex.profession?'<div class="mut small">read: "'+esc(ex.profession)+'"</div>':'')+'</div>'+
-    '<div><label>City</label><select class="f-loc">'+locOptions(c.suggestLocationID)+'</select>'+
+    '<div><label>City</label><div class="row-pair"><select class="f-loc">'+locOptions(c.suggestLocationID)+'</select><button type="button" class="addbtn addCity">+ Add</button></div>'+
       (ex.city?'<div class="mut small">read: "'+esc(ex.city)+'"</div>':'')+'</div></div>'+
     '<label>Contacts</label><div class="f-contacts"></div><button class="addc small" style="margin-top:4px">+ contact</button>'+
     '<label>Tags (UA, comma — from the announcement)</label><input class="f-tua" value="'+esc((ex.tags&&ex.tags.ua||[]).join(', '))+'">'+
@@ -385,6 +405,8 @@ function card(c){
   }
   drawContacts();
   el.querySelector('.addc').onclick=()=>{contacts.push({contactType:'phone',value:''});drawContacts();};
+  el.querySelector('.addProf').onclick=()=>openAddProfession((p)=>{ professions.push(p); el.querySelector('.f-prof').innerHTML=profOptions(p.id); });
+  el.querySelector('.addCity').onclick=()=>openAddCity((l)=>{ locations.push(l); el.querySelector('.f-loc').innerHTML=locOptions(l.id); });
 
   function payload(){ const split=s=>s.split(',').map(t=>t.trim()).filter(Boolean);
     const tua=split(el.querySelector('.f-tua').value);
@@ -440,6 +462,73 @@ document.getElementById('pRun').onclick=async()=>{
     loadQueue();
   }catch(e){ msg.innerHTML='<span class="err">'+esc(e.message)+'</span>'; }
 };
+// ---- inline create: profession (w/ category) + city, stacked modals ----
+function pushModal(title, inner){
+  const root=document.getElementById('modalRoot');
+  const wrap=document.createElement('div'); wrap.className='backdrop';
+  wrap.innerHTML='<div class="modal"><h3>'+esc(title)+'</h3>'+inner+
+    '<div class="err merr"></div><div class="acts"><button class="cancel">Cancel</button><button class="primary ok"></button></div></div>';
+  wrap.onclick=(e)=>{ if(e.target===wrap) wrap.remove(); };
+  wrap.querySelector('.cancel').onclick=()=>wrap.remove();
+  root.appendChild(wrap);
+  return wrap;
+}
+function nameRows(){
+  return [['en','English (required)'],['ua','Українська'],['ru','Русский'],['it','Italiano']]
+    .map(([c,l])=>'<div class="mlrow"><span>'+l+'</span><input class="m-'+c+'"'+(c==='en'?' autofocus':'')+'></div>').join('');
+}
+function readName(box){ const n={}; for(const c of ['en','ua','ru','it']){ const v=box.querySelector('.m-'+c).value.trim(); if(v) n[c]=v; } return n; }
+async function postJSON(url,body){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const b=await r.json().catch(()=>({})); if(!r.ok) throw new Error(b.error||('HTTP '+r.status)); return b; }
+
+function openAddCategory(cb){
+  const wrap=pushModal('New category', nameRows());
+  const box=wrap.querySelector('.modal'); box.querySelector('.ok').textContent='Create category';
+  box.querySelector('.ok').onclick=async()=>{
+    const name=readName(box); if(!name.en){ box.querySelector('.merr').textContent='English name required.'; return; }
+    try{ const c=await postJSON('/api/reference/prof-categories',{name}); categories.push(c); wrap.remove(); cb&&cb(c); }
+    catch(e){ box.querySelector('.merr').textContent=e.message; }
+  };
+}
+function catOptions(selId){ return '<option value="">— select —</option>'+categories.map(c=>'<option value="'+c.id+'"'+(c.id===selId?' selected':'')+'>'+esc(pickName(c.name))+'</option>').join(''); }
+
+function openAddProfession(cb){
+  const inner=nameRows()+
+    '<div class="mlrow"><span>Category</span><div class="row-pair"><select class="m-cat">'+catOptions('')+'</select><button class="addbtn addcat">+ Add</button></div></div>'+
+    '<div class="mut small" style="margin-top:6px">At least one of UA / RU is required for the mining lexicon.</div>';
+  const wrap=pushModal('New profession', inner);
+  const box=wrap.querySelector('.modal'); box.querySelector('.ok').textContent='Create profession';
+  box.querySelector('.addcat').onclick=()=>openAddCategory((c)=>{ box.querySelector('.m-cat').innerHTML=catOptions(c.id); });
+  box.querySelector('.ok').onclick=async()=>{
+    const name=readName(box); const categoryID=box.querySelector('.m-cat').value;
+    if(!name.en){ box.querySelector('.merr').textContent='English name required.'; return; }
+    if(!categoryID){ box.querySelector('.merr').textContent='Pick or add a category.'; return; }
+    if(!name.ua&&!name.ru){ box.querySelector('.merr').textContent='Add UA or RU (for the lexicon).'; return; }
+    try{ const p=await postJSON('/api/reference/professions',{categoryID,name}); wrap.remove(); cb&&cb(p); }
+    catch(e){ box.querySelector('.merr').textContent=e.message; }
+  };
+}
+
+function countryOptions(selId){ return '<option value="">— select —</option>'+countries.map(c=>'<option value="'+c.id+'"'+(c.id===selId?' selected':'')+'>'+(c.flag?c.flag+' ':'')+esc(pickName(c.name))+'</option>').join(''); }
+function openAddCity(cb){
+  const inner=nameRows()+'<div class="mlrow"><span>Country</span><select class="m-country">'+countryOptions('IT')+'</select></div>';
+  const wrap=pushModal('New city', inner);
+  const box=wrap.querySelector('.modal'); box.querySelector('.ok').textContent='Create city';
+  box.querySelector('.ok').onclick=async()=>{
+    const name=readName(box); const countryID=box.querySelector('.m-country').value;
+    if(!name.en){ box.querySelector('.merr').textContent='English name required.'; return; }
+    if(!countryID){ box.querySelector('.merr').textContent='Pick a country.'; return; }
+    try{ const l=await postJSON('/api/reference/locations',{countryID,name}); wrap.remove(); cb&&cb(l); }
+    catch(e){ box.querySelector('.merr').textContent=e.message; }
+  };
+}
+
+document.getElementById('rebuild').onclick=async(ev)=>{
+  ev.target.disabled=true; const t=ev.target.textContent; ev.target.textContent='Rebuilding…';
+  try{ const r=await postJSON('/api/admin/lexicon/rebuild',{}); document.getElementById('procMsg').textContent='Lexicon rebuilt: '+r.professions+' professions → '+r.terms+' terms.'; }
+  catch(e){ document.getElementById('procMsg').textContent='Rebuild failed: '+e.message; }
+  finally{ ev.target.disabled=false; ev.target.textContent=t; }
+};
+
 document.getElementById('reload').onclick=loadQueue;
 document.getElementById('prev').onclick=()=>{ if(idx>0){ idx--; renderCurrent(true); } };
 document.getElementById('next').onclick=()=>{ if(idx<newC.length-1){ idx++; renderCurrent(true); } };
