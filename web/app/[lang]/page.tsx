@@ -24,13 +24,16 @@ function homeTitle(lang: Lang) {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<{ card?: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isLang(lang)) return {};
+  const { card } = await searchParams;
   const title = homeTitle(lang);
-  return {
+  const base: Metadata = {
     title,
     alternates: {
       canonical: abs(homePath(lang)),
@@ -38,6 +41,22 @@ export async function generateMetadata({
     },
     openGraph: { title, url: abs(homePath(lang)), locale: OG_LOCALE[lang], type: "website" },
   };
+
+  // When a card modal is open (?card=<id>), inject its OG image so sharing
+  // the URL shows the master's card image rather than a blank preview.
+  if (card) {
+    const { master } = await getDataset().then(ds => ({
+      master: ds.masters.find(m => m._id === card),
+    }));
+    if (master) {
+      base.openGraph = {
+        ...base.openGraph,
+        images: [`${SITE_URL}/api/og?id=${card}`],
+      };
+    }
+  }
+
+  return base;
 }
 
 export default async function Home({
