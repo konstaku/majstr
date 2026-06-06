@@ -2694,3 +2694,111 @@ img {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* ============================================================
+   PRIVACY POLICY PAGE
+   ============================================================ */
+.privacy-page {
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 0 0 80px;
+}
+.privacy-page__inner {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 32px;
+}
+.privacy-page__back {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border: var(--border);
+  padding: 6px 12px;
+  margin-bottom: 40px;
+  text-decoration: none;
+}
+.privacy-page__back:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+.privacy-page__header {
+  border-top: var(--border);
+  border-bottom: var(--border);
+  padding: 24px 0;
+  margin-bottom: 48px;
+}
+.privacy-page__title {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.privacy-page__meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.55;
+}
+.privacy-page__section {
+  border-bottom: var(--border);
+  padding-bottom: 36px;
+  margin-bottom: 36px;
+}
+.privacy-page__section:last-of-type {
+  border-bottom: none;
+}
+.privacy-page__section-title {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 2.4vw, 22px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.privacy-page__section-body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.privacy-page__body-para {
+  margin-bottom: 14px;
+}
+.privacy-page__body-para:last-child {
+  margin-bottom: 0;
+}
+.privacy-page__body-para strong {
+  font-weight: 700;
+}
+.privacy-page__footer {
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: var(--border);
+}
+
+@media (max-width: 640px) {
+  .privacy-page__inner {
+    padding: 24px 20px;
+  }
+  .privacy-page__header {
+    margin-bottom: 32px;
+  }
+  .privacy-page__section {
+    padding-bottom: 28px;
+    margin-bottom: 28px;
+  }
+}

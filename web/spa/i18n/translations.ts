@@ -1,6 +1,7 @@
 export type LangTranslations = {
   nav: { search: string; addMaster: string; joinAsMaster: string; faq: string; howItWorks: string; forBusiness: string };
   footer: {
+    privacy: string;
     terms: string;
     faq: string;
     moderation: string;
@@ -58,6 +59,7 @@ export const translations: Record<string, LangTranslations> = {
   uk: {
     nav: { search: "Пошук", addMaster: "Додати майстра", joinAsMaster: "Доєднатися", faq: "FAQ", howItWorks: "Як це працює", forBusiness: "Для бізнесу" },
     footer: {
+      privacy: "Політика конфіденційності",
       terms: "Умови використання",
       faq: "Питання та відповіді",
       moderation: "Політика модерації",
@@ -133,6 +135,7 @@ export const translations: Record<string, LangTranslations> = {
   en: {
     nav: { search: "Search", addMaster: "Add master", joinAsMaster: "Join as master", faq: "FAQ", howItWorks: "How it works", forBusiness: "For business" },
     footer: {
+      privacy: "Privacy Policy",
       terms: "Terms of use",
       faq: "FAQ",
       moderation: "Moderation policy",
@@ -208,6 +211,7 @@ export const translations: Record<string, LangTranslations> = {
   it: {
     nav: { search: "Cerca", addMaster: "Aggiungi artigiano", joinAsMaster: "Crea il tuo profilo", faq: "FAQ", howItWorks: "Come funziona", forBusiness: "Per le aziende" },
     footer: {
+      privacy: "Privacy",
       terms: "Termini di utilizzo",
       faq: "Domande frequenti",
       moderation: "Politica di moderazione",
@@ -283,6 +287,7 @@ export const translations: Record<string, LangTranslations> = {
   pt: {
     nav: { search: "Pesquisar", addMaster: "Adicionar artesão", joinAsMaster: "Junte-se como profissional", faq: "FAQ", howItWorks: "Como funciona", forBusiness: "Para empresas" },
     footer: {
+      privacy: "Política de privacidade",
       terms: "Termos de uso",
       faq: "Perguntas frequentes",
       moderation: "Política de moderação",
@@ -359,6 +364,7 @@ export const translations: Record<string, LangTranslations> = {
 translations.ru = {
   nav: { search: "Поиск", addMaster: "Добавить мастера", joinAsMaster: "Стать мастером", faq: "FAQ", howItWorks: "Как это работает", forBusiness: "Для бизнеса" },
   footer: {
+    privacy: "Политика конфиденциальности",
     terms: "Условия использования",
     faq: "Вопросы и ответы",
     moderation: "Политика модерации",
@@ -434,6 +440,7 @@ translations.ru = {
 translations.de = {
   nav: { search: "Suchen", addMaster: "Fachkraft hinzufügen", joinAsMaster: "Mitmachen", faq: "FAQ", howItWorks: "So funktioniert's", forBusiness: "Für Unternehmen" },
   footer: {
+    privacy: "Datenschutzrichtlinie",
     terms: "Nutzungsbedingungen",
     faq: "Häufige Fragen",
     moderation: "Moderationsrichtlinie",
@@ -509,6 +516,7 @@ translations.de = {
 translations.fr = {
   nav: { search: "Rechercher", addMaster: "Ajouter un artisan", joinAsMaster: "Devenir artisan", faq: "FAQ", howItWorks: "Comment ça marche", forBusiness: "Pour les entreprises" },
   footer: {
+    privacy: "Politique de confidentialité",
     terms: "Conditions d'utilisation",
     faq: "Questions fréquentes",
     moderation: "Politique de modération",
@@ -584,6 +592,7 @@ translations.fr = {
 translations.tr = {
   nav: { search: "Ara", addMaster: "Usta ekle", joinAsMaster: "Usta olarak katıl", faq: "SSS", howItWorks: "Nasıl çalışır", forBusiness: "İşletmeler için" },
   footer: {
+    privacy: "Gizlilik politikası",
     terms: "Kullanım koşulları",
     faq: "Sıkça sorulan sorular",
     moderation: "Moderasyon politikası",
@@ -659,6 +668,7 @@ translations.tr = {
 translations.es = {
   nav: { search: "Buscar", addMaster: "Añadir profesional", joinAsMaster: "Únete como profesional", faq: "Preguntas frecuentes", howItWorks: "Cómo funciona", forBusiness: "Para empresas" },
   footer: {
+    privacy: "Política de privacidad",
     terms: "Condiciones de uso",
     faq: "Preguntas frecuentes",
     moderation: "Política de moderación",

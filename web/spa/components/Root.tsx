@@ -344,7 +344,7 @@ function LanguageSwitcher({ onClose }: { onClose?: () => void }) {
 const FOOTER_NATIONALITIES = ["UKRAINIAN", "GEORGIAN", "BELORUSSIAN", "RUSSIAN"];
 
 function FooterContent({ onAddMasterClick }: { onAddMasterClick: () => void }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [natIdx, setNatIdx] = useState(0);
   const [fading, setFading] = useState(false);
   const busy = useRef(false);
@@ -412,6 +412,7 @@ function FooterContent({ onAddMasterClick }: { onAddMasterClick: () => void }) {
         </div>
         <div className="footer-col">
           <h4>Legal</h4>
+          <Link href={`/${lang}/privacy`}>{t("footer.privacy")}</Link>
           <span>{t("footer.terms")}</span>
           <span>{t("footer.moderation")}</span>
           <span>{t("footer.feedback")}</span>
