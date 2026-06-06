@@ -14,11 +14,16 @@ import "@/spa/styles.css";
 // Self-hosted, preloaded, swap-rendered fonts. Replaces the render-blocking
 // Google Fonts <link> (two extra round-trips on the critical path) with files
 // served from our own origin and a zero-layout-shift fallback metric.
+// adjustFontFallback:false — Archivo Black is latin-only, and next/font's
+// auto-injected metric fallback has no unicode-range, so it would otherwise
+// catch Cyrillic glyphs (rendering them as Arial) before the stack reaches
+// Golos Text. Disabling it lets Cyrillic display text fall through to Golos.
 const archivo = Archivo_Black({
   weight: "400",
   subsets: ["latin", "latin-ext"],
   display: "swap",
   variable: "--font-archivo",
+  adjustFontFallback: false,
 });
 const golos = Golos_Text({
   subsets: ["latin", "latin-ext", "cyrillic"],
