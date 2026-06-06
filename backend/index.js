@@ -107,6 +107,18 @@ async function main() {
 
   // Mini App bootstrap + reference data (legacy /?q= aliases kept below)
   app.get('/api/me', requireUser, (req, res) => res.json(req.user));
+
+  // Legal content — served from static JSON, no auth required.
+  app.get('/api/legal/:doc', (req, res) => {
+    const allowed = ['privacy-policy'];
+    if (!allowed.includes(req.params.doc)) return res.status(404).json({ error: 'not_found' });
+    try {
+      const content = require(`./data/legal/${req.params.doc}.json`);
+      res.json(content);
+    } catch {
+      res.status(404).json({ error: 'not_found' });
+    }
+  });
   app.get('/api/reference/professions', async (req, res) =>
     res.json(await Profession.find())
   );

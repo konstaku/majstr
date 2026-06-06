@@ -1,0 +1,107 @@
+{
+  "id": "privacy-policy",
+  "version": "1.0.0",
+  "effectiveDate": "2026-06-06",
+  "lastUpdated": "2026-06-06",
+  "sections": [
+    {
+      "id": "controller",
+      "title": {
+        "uk": "Хто відповідає за ваші дані",
+        "en": "Data Controller"
+      },
+      "body": {
+        "uk": "Оператором персональних даних є Majstr (majstr.xyz). З питань конфіденційності звертайтесь за адресою: privacy@majstr.xyz.",
+        "en": "The data controller is Majstr (majstr.xyz). For all privacy-related enquiries contact: privacy@majstr.xyz."
+      }
+    },
+    {
+      "id": "legal-basis",
+      "title": {
+        "uk": "Правова підстава для обробки",
+        "en": "Legal Basis for Processing"
+      },
+      "body": {
+        "uk": "Персональні дані на цьому сайті обробляються на підставі законного інтересу (стаття 6(1)(f) GDPR). Наш законний інтерес полягає у підтримці некомерційного каталогу майстрів серед україно- та російськомовної діаспори в Італії, що допомагає спільноті знаходити людей, які надають допомогу рідною мовою. Ми провели оцінку балансу інтересів і дійшли висновку, що цей інтерес не переважає над правами та свободами суб'єктів даних з огляду на обмежений обсяг даних (лише публічно доступна інформація) та можливість зупинення обробки в будь-який момент.",
+        "en": "Personal data on this site is processed on the basis of legitimate interest (Article 6(1)(f) GDPR). Our legitimate interest is maintaining a non-commercial directory of craftsmen within the Ukrainian- and Russian-speaking diaspora in Italy, helping the community find people who offer assistance in their native language. We have conducted a balancing test and concluded that this interest does not override the rights and freedoms of data subjects, given the limited scope of data used (publicly available information only) and the ability for any individual to stop processing at any time."
+      }
+    },
+    {
+      "id": "data-source",
+      "title": {
+        "uk": "Джерело даних",
+        "en": "Source of Data"
+      },
+      "body": {
+        "uk": "Картки майстрів формуються на основі рекомендацій учасників публічних онлайн-спільнот (наприклад, відкритих Telegram-груп). До каталогу включаються лише ті персональні дані, якими люди самостійно поділились публічно: ім'я, ніктнейм у Telegram, аватар профілю, місто та сфера діяльності. Ми не проводимо додаткових досліджень та не використовуємо дані з закритих або приватних джерел. Первинний збір даних здійснюється волонтерами-людьми вручну — автоматизовані боти чи скрейпери для первинного збору не застосовуються. Хоча зібрана інформація зберігається в базі даних (що є необхідним для роботи каталогу), ніяких автоматизованих рішень щодо суб'єктів даних не приймається.",
+        "en": "Master cards are created based on recommendations shared in public online communities (for example, open Telegram groups). Only personal data that individuals have voluntarily shared publicly is included: name, Telegram handle, profile photo, city, and field of activity. No additional research is conducted and no data from closed or private sources is used. Initial data collection is carried out manually by human volunteers — no automated bots or scrapers are used for initial gathering. Although the collected information is stored in a database (necessary for the directory to function), no automated decision-making regarding data subjects takes place."
+      }
+    },
+    {
+      "id": "community-disclaimer",
+      "title": {
+        "uk": "Точність даних та відповідальність спільноти",
+        "en": "Data Accuracy and Community Responsibility"
+      },
+      "body": {
+        "uk": "Картка майстра може бути додана спільнотою як рекомендація. У таких випадках, незважаючи на базову перевірку, яку ми проводимо, ми не можемо гарантувати ні повну точність інформації, ні те, що майстер знає про наявність свого профілю на сайті. Ми прагнемо до максимальної точності та оновлюємо базу даних раз на кілька тижнів для мінімізації застарілої інформації. Якщо ви виявили неточність — будь ласка, зв'яжіться з нами або скористайтесь функцією «Це моя картка».",
+        "en": "A master card may be added by the community as a recommendation. In such cases, although we perform a basic check, we cannot guarantee either the full accuracy of the information or that the master is aware of their profile on the site. We strive for maximum accuracy and update the database every few weeks to minimise outdated information. If you find an inaccuracy, please contact us or use the 'This is my card' feature."
+      }
+    },
+    {
+      "id": "no-commercial-implication",
+      "title": {
+        "uk": "Відсутність підтвердження комерційної діяльності",
+        "en": "No Implication of Commercial Activity"
+      },
+      "body": {
+        "uk": "Послуги, зазначені на сайті, не означають комерційної чи підприємницької діяльності майстра. Частина майстрів може надавати послуги на платній основі, інші — безкоштовно або з доброї волі. Жодна інформація, розміщена на цьому сайті, не може за жодних обставин використовуватись як доказ того, що особа здійснює фінансову або підприємницьку діяльність в Італії чи будь-якій іншій країні.",
+        "en": "The services listed on this site do not imply commercial or professional activity by a master. Some masters may offer services on a commercial basis; others may offer pro bono help or assistance out of goodwill. Under no circumstances may any information published on this site be used as evidence that an individual is conducting financial or business activity in Italy or any other country."
+      }
+    },
+    {
+      "id": "your-rights",
+      "title": {
+        "uk": "Ваші права",
+        "en": "Your Rights"
+      },
+      "body": {
+        "uk": "Відповідно до GDPR ви маєте такі права:\n\n• **Право на доступ** (стаття 15) — ви можете запросити підтвердження того, які саме ваші персональні дані ми обробляємо.\n• **Право на виправлення** (стаття 16) — ви можете вимагати виправлення неточних даних. Авторизовані майстри можуть редагувати свою картку безпосередньо на сайті.\n• **Право на видалення** (стаття 17) — ви можете вимагати видалення своїх даних (докладніше — у розділі «Видалення картки»).\n• **Право на заперечення** (стаття 21) — ви можете заперечити проти обробки ваших персональних даних на підставі законного інтересу. У разі обґрунтованого заперечення ми припинимо обробку.\n• **Право на подання скарги** — ви маєте право подати скаргу до органу захисту даних у вашій країні (в Україні — УАЗПД, в Італії — Garante per la protezione dei dati personali).\n\nДля реалізації будь-якого з цих прав зверніться за адресою privacy@majstr.xyz.",
+        "en": "Under GDPR you have the following rights:\n\n• **Right of access** (Article 15) — you may request confirmation of what personal data we process about you.\n• **Right to rectification** (Article 16) — you may request correction of inaccurate data. Verified masters can edit their card directly on the site.\n• **Right to erasure** (Article 17) — you may request deletion of your data (see 'Card Removal' section for details).\n• **Right to object** (Article 21) — you may object to processing of your personal data on the grounds of legitimate interest. If your objection is substantiated we will cease processing.\n• **Right to lodge a complaint** — you have the right to complain to the supervisory authority in your country (in Italy: Garante per la protezione dei dati personali).\n\nTo exercise any of these rights contact privacy@majstr.xyz."
+      }
+    },
+    {
+      "id": "claim-and-edit",
+      "title": {
+        "uk": "Підтвердження картки та редагування",
+        "en": "Claiming and Editing Your Card"
+      },
+      "body": {
+        "uk": "Якщо ви знайшли свою картку на сайті, ви можете підтвердити право власності на неї. Після підтвердження ви зможете редагувати, оновлювати та просувати свою картку на сайті. Ваш Telegram-акаунт є механізмом верифікації: якщо ваш нікнейм збігається з даними картки, підтвердження відбувається автоматично. В іншому випадку заявка надсилається на розгляд до нашої команди.",
+        "en": "If you find your card on the site, you can claim ownership of it. Once claimed, you can edit, update, and promote your card on the site. Your Telegram account is the verification mechanism: if your handle matches the card data, the claim is approved automatically. Otherwise the request is sent to our team for review."
+      }
+    },
+    {
+      "id": "card-removal",
+      "title": {
+        "uk": "Видалення картки",
+        "en": "Card Removal"
+      },
+      "body": {
+        "uk": "Якщо ваша картка розміщена без вашого відома і ви хочете її видалити — ви можете зробити це негайно, скориставшись функцією «Це моя картка» і обравши «Приховати». Картка буде негайно прихована з каталогу. Наша команда розгляне надіслані вами підтвердні дані (достатньо мінімального підтвердження, що інформація на картці стосується вас) і назавжди видалить картку та всі пов'язані дані з нашого сервісу протягом 30 днів. Ми проводимо цю перевірку виключно для запобігання зловживанням. Для термінових звернень: privacy@majstr.xyz.",
+        "en": "If your card is listed without your knowledge and you wish to remove it, you can do so immediately using the 'This is my card' feature and choosing 'Take down'. The card will be hidden from the directory immediately. Our team will review the minimal confirmation you provide (sufficient to confirm the card data relates to you) and permanently delete the card and all related data from our service within 30 days. We perform this check solely to prevent abuse. For urgent requests: privacy@majstr.xyz."
+      }
+    },
+    {
+      "id": "data-retention",
+      "title": {
+        "uk": "Зберігання даних",
+        "en": "Data Retention"
+      },
+      "body": {
+        "uk": "Персональні дані зберігаються доти, доки картка активна в каталозі, або до отримання запиту на видалення. Після підтвердженого запиту на видалення всі персональні дані, включно з фотографіями, видаляються з наших систем та резервних копій протягом 30 днів.",
+        "en": "Personal data is retained for as long as a card is active in the directory, or until a removal request is received. Following a confirmed removal request, all personal data including photographs is deleted from our systems and backups within 30 days."
+      }
+    }
+  ]
+}
