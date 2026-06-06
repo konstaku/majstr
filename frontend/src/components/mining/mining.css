@@ -217,6 +217,22 @@
   color: var(--red);
   margin: 0;
 }
+.mining-dup {
+  border: 1px solid var(--amber);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mining-dup ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+.mining-dup button {
+  align-self: flex-start;
+}
 
 /* ----- action buttons ----------------------------------------------------- */
 

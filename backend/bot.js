@@ -11,6 +11,8 @@ const MasterClaim = require('./database/schema/MasterClaim');
 const MasterAudit = require('./database/schema/MasterAudit');
 const i18n = require('./i18n');
 const { masterWebUrl } = require('./helpers/masterUrl');
+const { storeRawForward, EmptyForwardError } = require('./mining/forwardIntake');
+const { forwardPhotoToS3 } = require('./helpers/telegramFileToS3');
 
 // Pull a known UI language out of a /start or startapp payload, e.g.
 // "add-it" -> "it", "onboard_en" -> "en", "ru" -> "ru". null if none.
@@ -41,7 +43,19 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const TMA_BASE_URL = process.env.TMA_BASE_URL || 'https://app.majstr.xyz';
 const PUBLIC_WEB_URL = process.env.PUBLIC_WEB_URL || 'https://majstr.xyz';
 const REVALIDATE_SECRET = process.env.REVALIDATE_SECRET || '';
+const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
 const PORT_NUMBER = 8443;
+
+// --- Forwarded-lead intake (forward chat messages -> review queue) ---
+// Telegram delivers each forwarded message as its own update, so a Q+A pair
+// arrives as a rapid burst. We buffer per chat and flush once the burst goes
+// quiet, bundling the messages into a single Candidate.
+const FORWARD_DEBOUNCE_MS = 4000;
+// Spam guard for non-admin submitters: max bundles per rolling window.
+const FORWARD_RATELIMIT_MAX = 12;
+const FORWARD_RATELIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const _forwardBuffers = new Map(); // chatId -> { items:[], timer, from }
+const _forwardRateLog = new Map(); // telegramID -> [timestamps]
 
 const s3 = new AWS.S3({
   accessKeyId: AWS_ACCESS_KEY,
@@ -144,6 +158,13 @@ async function handleMessage(message) {
   // Mini App data submissions are not user text commands — ignore silently.
   if (message.web_app_data) return;
 
+  // Forwarded message(s) are leads to mine, not commands. Route before the
+  // command switch so a forwarded "/start" can't be misread as a command.
+  if (isForwarded(message)) {
+    bufferForward(message);
+    return;
+  }
+
   const chatId = message.chat.id;
   const text = message.text || '';
 
@@ -179,6 +200,175 @@ async function handleMessage(message) {
       bot.sendMessage(chatId, i18n.t(lang, 'unknownCommand'));
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Forwarded-lead intake
+// ---------------------------------------------------------------------------
+
+// forward_date is set on EVERY forward regardless of the origin's privacy
+// settings, so it is the reliable detector; the rest cover older/newer Bot API
+// field shapes.
+function isForwarded(message) {
+  return !!(
+    message.forward_date ||
+    message.forward_origin ||
+    message.forward_from ||
+    message.forward_from_chat ||
+    message.forward_sender_name
+  );
+}
+
+// Best-effort origin: chat id + title (the city hint) and the source message
+// id. Present for channels / public supergroups; absent for private groups and
+// users who hide their account, in which case the admin sets the city in review.
+function readForwardOrigin(message) {
+  const o = message.forward_origin;
+  if (o && o.chat) {
+    return { chatID: o.chat.id, chatTitle: o.chat.title || null, messageID: o.message_id || null };
+  }
+  if (message.forward_from_chat) {
+    return {
+      chatID: message.forward_from_chat.id,
+      chatTitle: message.forward_from_chat.title || null,
+      messageID: message.forward_from_message_id || null,
+    };
+  }
+  return { chatID: null, chatTitle: null, messageID: null };
+}
+
+// Buffer a forwarded message and (re)arm the debounce so a Q+A burst lands as
+// one bundle. Flush runs after the burst goes quiet.
+function bufferForward(message) {
+  const chatId = message.chat.id;
+  const text = message.text || message.caption || '';
+  const origin = readForwardOrigin(message);
+
+  // Largest photo size, or an image sent as a document. Stored as file_id; the
+  // bytes are downloaded to S3 at flush time.
+  const photo =
+    Array.isArray(message.photo) && message.photo.length
+      ? message.photo[message.photo.length - 1]
+      : null;
+  const photoFileId = photo
+    ? photo.file_id
+    : message.document && /^image\//.test(message.document.mime_type || '')
+      ? message.document.file_id
+      : null;
+
+  let entry = _forwardBuffers.get(chatId);
+  if (!entry) {
+    entry = { items: [], timer: null, from: message.from || null };
+    _forwardBuffers.set(chatId, entry);
+  }
+  entry.items.push({ text, messageID: message.message_id, origin, photoFileId });
+  if (entry.timer) clearTimeout(entry.timer);
+  entry.timer = setTimeout(() => {
+    _forwardBuffers.delete(chatId);
+    flushForwardBundle(chatId, entry).catch((err) =>
+      console.error('[forward] flush failed:', err)
+    );
+  }, FORWARD_DEBOUNCE_MS);
+}
+
+// Sliding-window rate check. Admins are exempt (passed isAdmin=true).
+function allowForward(telegramID, isAdmin) {
+  if (isAdmin) return true;
+  const now = Date.now();
+  const log = (_forwardRateLog.get(telegramID) || []).filter(
+    (t) => now - t < FORWARD_RATELIMIT_WINDOW_MS
+  );
+  if (log.length >= FORWARD_RATELIMIT_MAX) {
+    _forwardRateLog.set(telegramID, log);
+    return false;
+  }
+  log.push(now);
+  _forwardRateLog.set(telegramID, log);
+  return true;
+}
+
+async function flushForwardBundle(chatId, entry) {
+  const lang = await getUserLang(chatId);
+
+  const user = await User.findOne({ telegramID: chatId })
+    .select('isAdmin')
+    .lean()
+    .catch(() => null);
+  const isAdmin =
+    !!(user && user.isAdmin) ||
+    (TELEGRAM_ADMIN_CHAT_ID && String(chatId) === String(TELEGRAM_ADMIN_CHAT_ID));
+
+  if (!allowForward(chatId, isAdmin)) {
+    return void bot.sendMessage(chatId, i18n.t(lang, 'forward.ratelimited'));
+  }
+
+  const from = entry.from || {};
+  const submitterName =
+    [from.first_name, from.last_name].filter(Boolean).join(' ') ||
+    from.username ||
+    null;
+
+  // The first item carrying an origin chat wins as the city hint / anchor.
+  const origin =
+    entry.items.map((i) => i.origin).find((o) => o && (o.chatID || o.chatTitle)) ||
+    entry.items[0].origin;
+
+  // Persist any forwarded screenshots to S3 now — the temporary Telegram file
+  // URL would be gone by the time the reviewer's machine OCRs them.
+  const images = [];
+  for (const it of entry.items) {
+    if (it.photoFileId) {
+      const up = await forwardPhotoToS3(it.photoFileId, 'fwd' + chatId);
+      if (up) images.push(up);
+    }
+  }
+
+  try {
+    // Store RAW only — no LLM here. The bot runs on a server with no Ollama;
+    // extraction happens later on the reviewer's machine (npm run review).
+    const { duplicate } = await storeRawForward({
+      texts: entry.items.map((i) => i.text),
+      receivedMessageIDs: entry.items.map((i) => i.messageID),
+      origin,
+      submitter: { telegramID: chatId, name: submitterName, isAdmin },
+      images,
+    });
+
+    if (duplicate) {
+      return void bot.sendMessage(chatId, i18n.t(lang, 'forward.duplicate'));
+    }
+
+    await bot.sendMessage(
+      chatId,
+      i18n.t(lang, 'forward.savedRaw', {
+        count: entry.items.length,
+        images: images.length,
+      })
+    );
+
+    notifyAdminOfForward(submitterName, isAdmin, images.length).catch((e) =>
+      console.error('[forward] admin notify failed:', e.message)
+    );
+  } catch (err) {
+    if (err instanceof EmptyForwardError) {
+      return void bot.sendMessage(chatId, i18n.t(lang, 'forward.empty'));
+    }
+    console.error('[forward] intake error:', err);
+    bot.sendMessage(chatId, i18n.t(lang, 'forward.error'));
+  }
+}
+
+// Ping the admin chat so forwarded leads get processed/reviewed. Skipped when
+// the admin is the one who forwarded (no self-ping) or when no admin chat is set.
+async function notifyAdminOfForward(submitterName, submitterIsAdmin, imageCount) {
+  if (!TELEGRAM_ADMIN_CHAT_ID || submitterIsAdmin) return;
+  const lines = [
+    '🆕 Lead forwarded for review',
+    `From: ${submitterName || 'unknown'}`,
+    imageCount ? `Screenshots: ${imageCount}` : '',
+    'Open the local review tool to process it (npm run review).',
+  ].filter(Boolean);
+  await bot.sendMessage(TELEGRAM_ADMIN_CHAT_ID, lines.join('\n'));
 }
 
 async function handleStart(message, payload) {

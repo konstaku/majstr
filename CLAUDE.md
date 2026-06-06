@@ -67,6 +67,9 @@ Save the note before ending the session. No need to ask for permission.
 cd backend
 npm run devStart   # Start with nodemon (auto-reload)
 node index.js      # Start without auto-reload
+npm run review     # Local LLM review queue (http://127.0.0.1:4300) — auth-free,
+                   # localhost-only. Paste chat text → Ollama → review/publish.
+                   # Needs `ollama serve` running (OLLAMA_MODEL, default qwen2.5:14b).
 ```
 
 ### Frontend

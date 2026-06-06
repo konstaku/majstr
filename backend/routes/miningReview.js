@@ -20,6 +20,11 @@ const Location = require('../database/schema/Location');
 const {
   fetchAndUploadPhotoForMaster,
 } = require('../helpers/telegramPhotoByHandle');
+const {
+  findDuplicateMasters,
+  summarizeDuplicate,
+} = require('../helpers/masterDuplicates');
+const dedup = require('../mining/dedup');
 
 const DECLINE_REASONS = CandidateModel.DECLINE_REASONS; // shared enum
 const STATUSES = CandidateModel.STATUS;
@@ -75,6 +80,9 @@ function matchRef(text, refs, langs) {
 // its HTML UI, so the new React/whatever dashboard can adopt the same fields.
 
 function serializeCandidate(c, refs) {
+  // Synthetic forward chat ids ("forward:123") can't form a real t.me link; only
+  // numeric chat ids (auto-mined, or forwards from a known channel) get one.
+  const numericChat = /^\d+$/.test(String(c.chatID));
   return {
     id: String(c._id),
     chatID: c.chatID,
@@ -89,7 +97,16 @@ function serializeCandidate(c, refs) {
     inquiryText: c.inquiryText,
     responderName: c.responderName,
     text: c.text,
-    tgLink: `https://t.me/c/${c.chatID}/${c.anchorMessageID}`,
+    tgLink: numericChat ? `https://t.me/c/${c.chatID}/${c.anchorMessageID}` : null,
+    // Forwarded-lead provenance (null/absent on auto-mined candidates).
+    submittedBy: c.submittedBy || null,
+    originChatTitle: c.originChatTitle || null,
+    reviewPriority: typeof c.reviewPriority === 'number' ? c.reviewPriority : 0,
+    images: (c.images || []).map((im) => ({
+      url: im.url,
+      ocrText: im.ocrText || null,
+    })),
+    processedAt: c.processedAt || null,
     extracted: c.extracted || {},
     classifierName: c.classifierName,
     classifierVersion: c.classifierVersion,
@@ -123,25 +140,71 @@ async function listCandidates(req, res) {
   }
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 20));
-  const sortKey = req.query.sort === 'created' ? { createdAt: -1 } : { score: -1, createdAt: -1 };
+  // reviewPriority leads every ordering so deprioritized forwards (non-admin
+  // submissions, priority < 0) sink below trusted/auto-mined candidates.
+  // $ifNull defaults legacy docs (no field) to 0 so they sort in the normal
+  // tier rather than below the deprioritized ones.
+  const secondary =
+    req.query.sort === 'created'
+      ? { createdAt: -1 }
+      : { score: -1, createdAt: -1 };
+  const sortKey = { _prio: -1, ...secondary };
 
   const query = { status };
   if (kindFilter) query.kind = kindFilter;
 
   const Candidate = miningDb.Candidate();
   const [items, total, queueDepth, refs] = await Promise.all([
-    Candidate.find(query).sort(sortKey).skip((page - 1) * pageSize).limit(pageSize).lean(),
+    Candidate.aggregate([
+      { $match: query },
+      { $addFields: { _prio: { $ifNull: ['$reviewPriority', 0] } } },
+      { $sort: sortKey },
+      { $skip: (page - 1) * pageSize },
+      { $limit: pageSize },
+      { $project: { _prio: 0 } },
+    ]),
     Candidate.countDocuments(query),
     Candidate.countDocuments({ status: 'new' }),
     getRefs(),
   ]);
+
+  // Annotate each candidate with live masters that already share a contact, so
+  // the admin sees a duplicate before publishing. One extra query per page:
+  // gather every candidate's contact keys, fetch matching masters once, index.
+  const candKeys = items.map((c) =>
+    [...dedup.contactsToKeys((c.extracted && c.extracted.contacts) || [])]
+  );
+  const allKeys = [...new Set(candKeys.flat())];
+  let masterIdx = new Map();
+  if (allKeys.length) {
+    const liveMasters = await Master.find({
+      contactKeys: { $in: allKeys },
+      status: { $in: Master.ACTIVE_STATUSES },
+    })
+      .select('name professionID locationID contacts status source claimable')
+      .lean();
+    masterIdx = dedup.buildMasterIndex(liveMasters);
+  }
 
   res.json({
     page,
     pageSize,
     total,
     queueDepth, // always reflects the `new` queue, regardless of filters
-    candidates: items.map((c) => serializeCandidate(c, refs)),
+    candidates: items.map((c, i) => {
+      const s = serializeCandidate(c, refs);
+      const seen = new Set();
+      const matches = [];
+      for (const k of candKeys[i]) {
+        const m = masterIdx.get(k);
+        if (m && !seen.has(String(m._id))) {
+          seen.add(String(m._id));
+          matches.push(summarizeDuplicate(m));
+        }
+      }
+      s.duplicateMasters = matches;
+      return s;
+    }),
   });
 }
 
@@ -150,6 +213,20 @@ async function listCandidates(req, res) {
 // Body: { master: { name, professionID, locationID, contacts:[{contactType,value}],
 //                   about?, countryID? (default 'IT') } }
 // Publishes a live Master, marks the Candidate carded, writes MiningFeedback.
+
+// Coerce a tags input ({ua:[], en:[]}) into clean string arrays. Returns null
+// when there are no usable tags, so the caller can omit the field entirely.
+function normalizeTags(t) {
+  if (!t || typeof t !== 'object') return null;
+  const clean = (arr) =>
+    (Array.isArray(arr) ? arr : [])
+      .map((s) => String(s || '').trim())
+      .filter(Boolean);
+  const ua = clean(t.ua);
+  const en = clean(t.en);
+  if (!ua.length && !en.length) return null;
+  return { ua, en };
+}
 
 function validateMasterPayload(m) {
   if (!m || typeof m !== 'object') return 'master object required';
@@ -180,7 +257,24 @@ async function acceptCandidate(req, res) {
     return res.status(409).json({ error: 'already_carded', masterRef: cand.masterRef });
   }
 
+  // Duplicate guard: refuse to publish a master that shares a contact (phone /
+  // @handle / link) with an existing live one, unless the admin forces it.
+  if (!req.body.force) {
+    const dups = await findDuplicateMasters(master.contacts);
+    if (dups.length) {
+      return res.status(409).json({
+        error: 'duplicate_master',
+        duplicates: dups.map(summarizeDuplicate),
+      });
+    }
+  }
+
   const now = new Date();
+  // Human-forwarded leads are community-sourced; auto-mined ones stay 'scraped'.
+  const source = cand.sourceType === 'forwarded' ? 'community' : 'scraped';
+  const tags = normalizeTags(
+    master.tags || (cand.extracted && cand.extracted.tags)
+  );
   const created = await Master.create({
     name: String(master.name).trim(),
     professionID: master.professionID,
@@ -191,7 +285,8 @@ async function acceptCandidate(req, res) {
       value: String(c.value).trim(),
     })),
     about: (master.about || '').toString(),
-    source: 'scraped',
+    ...(tags ? { tags } : {}),
+    source,
     status: 'approved', // the review IS the quality gate
     claimable: true,
     submittedAt: now,
@@ -200,8 +295,13 @@ async function acceptCandidate(req, res) {
       chatID: cand.chatID,
       anchorMessageID: cand.anchorMessageID,
       candidateRef: String(cand._id),
+      sourceType: cand.sourceType,
       classifierName: cand.classifierName,
       classifierVersion: cand.classifierVersion,
+      submittedByTelegramID:
+        cand.submittedBy && cand.submittedBy.telegramID != null
+          ? cand.submittedBy.telegramID
+          : undefined,
       scrapedAt: now,
     },
   });
@@ -296,4 +396,5 @@ module.exports = {
   // Exported for tests / introspection.
   _matchRef: matchRef,
   _validateMasterPayload: validateMasterPayload,
+  _normalizeTags: normalizeTags,
 };

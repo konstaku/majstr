@@ -1,8 +1,12 @@
 const mongoose = require('mongoose');
+const { contactsToKeys } = require('../../mining/dedup');
 
 const STATUS_VALUES = ['draft', 'pending', 'approved', 'rejected', 'archived'];
 const ACTIVE_STATUSES = ['draft', 'pending', 'approved'];
-const SOURCE_VALUES = ['self_submitted', 'scraped', 'admin_created'];
+// 'community' = a lead a human forwarded to the bot from a chat (third-party
+// recommendation), published after manual review. Distinct from 'scraped'
+// (auto-mined announcements) and 'self_submitted'.
+const SOURCE_VALUES = ['self_submitted', 'scraped', 'admin_created', 'community'];
 
 const masterSchema = new mongoose.Schema(
   {
@@ -13,6 +17,10 @@ const masterSchema = new mongoose.Schema(
     countryID: { type: String, default: 'IT' },
     locationID: String,
     contacts: [{ contactType: String, value: String }],
+    // Normalized contact fingerprints (phone last-9 / @handle / instagram),
+    // auto-derived from `contacts` on save. Used to detect duplicate masters
+    // sharing a phone / handle / link. See helpers/masterDuplicates.js.
+    contactKeys: { type: [String], default: [], index: true },
     about: String,
     photo: String,
     OGimage: { type: String, default: '' },
@@ -70,6 +78,10 @@ masterSchema.index(
 
 masterSchema.pre('save', function (next) {
   this.approved = this.status === 'approved';
+  // Keep contactKeys in sync whenever contacts change (covers create + edit).
+  if (this.isNew || this.isModified('contacts')) {
+    this.contactKeys = [...contactsToKeys(this.contacts || [])];
+  }
   next();
 });
 

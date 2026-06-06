@@ -37,9 +37,12 @@ function handleKey(value) {
 
 function classifyContact(type) {
   const t = String(type || '').toLowerCase();
-  if (/phone|tel|whatsapp|viber/.test(t)) return 'phone';
+  // Telegram / Instagram FIRST: "telegram" contains the substring "tel", so a
+  // naive /tel/ phone test would mis-bucket Telegram handles as phones (then
+  // phoneKey strips the @handle to null and the contact is lost). Order matters.
   if (/telegram|tg/.test(t)) return 'tg';
   if (/instagram|insta|ig/.test(t)) return 'ig';
+  if (/phone|tel|whatsapp|viber/.test(t)) return 'phone';
   return 'other:' + t;
 }
 
@@ -210,6 +213,8 @@ function applyDedup(candidates, masterIndex) {
 module.exports = {
   phoneKey,
   handleKey,
+  classifyContact,
+  contactsToKeys,
   dedupKeys,
   richness,
   compareRichness,

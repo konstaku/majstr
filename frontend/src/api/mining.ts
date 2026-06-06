@@ -52,12 +52,17 @@ export interface LocationRef {
   name: LocalizedName;
 }
 
-export type CandidateStatus = "new" | "accepted" | "declined" | "carded";
+export type CandidateStatus = "raw" | "new" | "accepted" | "declined" | "carded";
 export type CandidateKind = "recommendation" | "announcement" | "unknown";
 
 export interface CandidateContact {
   contactType: string;
   value: string;
+}
+
+export interface CandidateTags {
+  ua: string[];
+  en: string[];
 }
 
 export interface CandidateExtracted {
@@ -66,6 +71,27 @@ export interface CandidateExtracted {
   city?: string | null;
   contacts?: CandidateContact[];
   description?: string | null;
+  tags?: CandidateTags;
+}
+
+export type CandidateSourceType = "thread_answer" | "announcement" | "forwarded";
+
+export interface CandidateSubmitter {
+  telegramID: number | null;
+  name: string | null;
+  isAdmin: boolean;
+}
+
+// A live master that shares a contact with this candidate (likely duplicate).
+export interface DuplicateMaster {
+  id: string;
+  name: string | null;
+  professionID: string | null;
+  locationID: string | null;
+  status: string;
+  source: string;
+  claimable: boolean;
+  contacts: CandidateContact[];
 }
 
 export interface MiningCandidate {
@@ -75,14 +101,25 @@ export interface MiningCandidate {
   score: number;
   status: CandidateStatus;
   declineReason: string | null;
-  sourceType: "thread_answer" | "announcement";
+  sourceType: CandidateSourceType;
   anchorMessageID: number;
   messageIDs: number[];
   inquiryMessageID: number | null;
   inquiryText: string | null;
   responderName: string | null;
   text: string;
-  tgLink: string;
+  // null for forwarded leads with no linkable origin (synthetic chat id).
+  tgLink: string | null;
+  // Forwarded-lead provenance (null on auto-mined candidates).
+  submittedBy: CandidateSubmitter | null;
+  originChatTitle: string | null;
+  reviewPriority: number;
+  // Live masters already sharing a contact with this candidate (server-annotated).
+  duplicateMasters: DuplicateMaster[];
+  // Forwarded screenshots (S3 URLs) + OCR text filled at process time.
+  images: { url: string; ocrText: string | null }[];
+  // Set when a raw forward has been run through the local LLM.
+  processedAt: string | null;
   extracted: CandidateExtracted;
   classifierName: string;
   classifierVersion: string;
@@ -118,6 +155,7 @@ export interface MasterPayload {
   countryID?: string;
   contacts: CandidateContact[];
   about?: string;
+  tags?: CandidateTags;
 }
 
 // ---------------------------------------------------------------------------
@@ -159,12 +197,14 @@ export async function listCandidates(
 
 export async function acceptCandidate(
   id: string,
-  master: MasterPayload
+  master: MasterPayload,
+  // force=true publishes despite a duplicate_master 409.
+  force = false
 ): Promise<{ ok: true; masterID: string; candidateID: string }> {
   const res = await apiFetch(`/api/mining/candidates/${id}/accept`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ master }),
+    body: JSON.stringify({ master, force }),
   });
   return asJson(res);
 }

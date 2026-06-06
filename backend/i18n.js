@@ -40,6 +40,19 @@ const DICT = {
       '✅ Вашу картку майстра схвалено та опубліковано!\n\nПереглянути: {url}',
     'owner.declined':
       '❌ На жаль, вашу картку майстра не схвалено. Ви можете відредагувати дані та надіслати її повторно через бота.',
+    'forward.savedRaw':
+      '✅ Зберіг у чергу. Оброблю локальною моделлю і покажу картку, коли відкрию інструмент перегляду.',
+    'forward.received':
+      '✅ Додав до черги на модерацію:\n{summary}\n\nПереглянемо і опублікуємо картку майстра.',
+    'forward.weak':
+      '📥 Зберіг у чергу, але не вдалося впевнено розпізнати дані ({summary}). Передивлюся вручну.',
+    'forward.duplicate': 'ℹ️ Це повідомлення вже є в черзі на модерацію.',
+    'forward.alreadyListed': 'ℹ️ Цей майстер уже є в каталозі ({name}) — той самий контакт. Нову картку не створював.',
+    'forward.empty':
+      'Перешліть повідомлення з текстом (рекомендацію майстра), щоб я міг його опрацювати.',
+    'forward.error': '⚠️ Не вдалося опрацювати пересилання. Спробуйте пізніше.',
+    'forward.ratelimited': 'Забагато пересилань поспіль. Спробуйте трохи згодом.',
+    'forward.nodata': 'дані не розпізнано',
   },
   en: {
     'welcome.body':
@@ -63,6 +76,19 @@ const DICT = {
       '✅ Your master card has been approved and published!\n\nView it: {url}',
     'owner.declined':
       '❌ Unfortunately your master card was not approved. You can edit the details and resubmit it via the bot.',
+    'forward.savedRaw':
+      '✅ Saved to the queue. I’ll run it through the local model and show the card when you open the review tool.',
+    'forward.received':
+      '✅ Added to the review queue:\n{summary}\n\nI’ll review it and publish the master card.',
+    'forward.weak':
+      '📥 Saved to the queue, but I couldn’t confidently parse the details ({summary}). I’ll review it manually.',
+    'forward.duplicate': 'ℹ️ This message is already in the review queue.',
+    'forward.alreadyListed': 'ℹ️ This master is already in the directory ({name}) — same contact. No new card created.',
+    'forward.empty':
+      'Forward a message that contains text (a master recommendation) so I can process it.',
+    'forward.error': '⚠️ Couldn’t process the forward. Please try again later.',
+    'forward.ratelimited': 'Too many forwards in a row. Please try again a bit later.',
+    'forward.nodata': 'no details parsed',
   },
   it: {
     'welcome.body':
@@ -86,6 +112,19 @@ const DICT = {
       '✅ La tua scheda è stata approvata e pubblicata!\n\nVisualizzala: {url}',
     'owner.declined':
       '❌ Purtroppo la tua scheda non è stata approvata. Puoi modificare i dati e inviarla di nuovo tramite il bot.',
+    'forward.savedRaw':
+      '✅ Salvato in coda. Lo elaboro con il modello locale e mostro la scheda quando apri lo strumento di revisione.',
+    'forward.received':
+      '✅ Aggiunto alla coda di revisione:\n{summary}\n\nLo controllo e pubblico la scheda.',
+    'forward.weak':
+      '📥 Salvato in coda, ma non sono riuscito a leggere bene i dati ({summary}). Controllo a mano.',
+    'forward.duplicate': 'ℹ️ Questo messaggio è già in coda di revisione.',
+    'forward.alreadyListed': 'ℹ️ Questo professionista è già nel catalogo ({name}) — stesso contatto. Nessuna nuova scheda creata.',
+    'forward.empty':
+      'Inoltra un messaggio che contiene testo (una raccomandazione) così posso elaborarlo.',
+    'forward.error': '⚠️ Impossibile elaborare l’inoltro. Riprova più tardi.',
+    'forward.ratelimited': 'Troppi inoltri di seguito. Riprova tra poco.',
+    'forward.nodata': 'nessun dato letto',
   },
   ru: {
     'welcome.body':
@@ -109,6 +148,19 @@ const DICT = {
       '✅ Ваша карточка мастера одобрена и опубликована!\n\nПосмотреть: {url}',
     'owner.declined':
       '❌ К сожалению, ваша карточка не одобрена. Вы можете отредактировать данные и отправить её повторно через бота.',
+    'forward.savedRaw':
+      '✅ Сохранил в очередь. Обработаю локальной моделью и покажу карточку, когда открою инструмент проверки.',
+    'forward.received':
+      '✅ Добавил в очередь на модерацию:\n{summary}\n\nПросмотрю и опубликую карточку мастера.',
+    'forward.weak':
+      '📥 Сохранил в очередь, но не удалось уверенно распознать данные ({summary}). Просмотрю вручную.',
+    'forward.duplicate': 'ℹ️ Это сообщение уже есть в очереди на модерацию.',
+    'forward.alreadyListed': 'ℹ️ Этот мастер уже есть в каталоге ({name}) — тот же контакт. Новую карточку не создавал.',
+    'forward.empty':
+      'Перешлите сообщение с текстом (рекомендацию мастера), чтобы я мог его обработать.',
+    'forward.error': '⚠️ Не удалось обработать пересылку. Попробуйте позже.',
+    'forward.ratelimited': 'Слишком много пересылок подряд. Попробуйте чуть позже.',
+    'forward.nodata': 'данные не распознаны',
   },
   pt: {
     'welcome.body':

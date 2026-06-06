@@ -27,6 +27,7 @@ import {
   type ProfCategory,
   type Profession,
   type CandidateKind,
+  type DuplicateMaster,
 } from "../api/mining";
 import {
   CreateLocationModal,
@@ -49,13 +50,33 @@ interface FormState {
   locationID: string;
   contacts: CandidateContact[];
   about: string;
+  // Tags edited as comma-separated strings; split into arrays on submit.
+  tagsUa: string;
+  tagsEn: string;
 }
 
 function emptyForm(): FormState {
-  return { name: "", professionID: "", locationID: "", contacts: [], about: "" };
+  return {
+    name: "",
+    professionID: "",
+    locationID: "",
+    contacts: [],
+    about: "",
+    tagsUa: "",
+    tagsEn: "",
+  };
+}
+
+// "a, b , c" -> ["a","b","c"]; arrays -> trimmed/filtered.
+function splitTags(s: string): string[] {
+  return s
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 }
 
 function formFromCandidate(c: MiningCandidate): FormState {
+  const tags = c.extracted.tags || { ua: [], en: [] };
   return {
     name: (c.extracted.name || c.responderName || "").trim(),
     professionID: c.suggestProfessionID || "",
@@ -65,6 +86,8 @@ function formFromCandidate(c: MiningCandidate): FormState {
       value: x.value,
     })),
     about: (c.extracted.description || "").trim(),
+    tagsUa: (tags.ua || []).join(", "),
+    tagsEn: (tags.en || []).join(", "),
   };
 }
 
@@ -87,6 +110,9 @@ export default function MiningReview() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set when the server blocks an accept with duplicate_master (409); holds the
+  // conflicting live masters and unlocks the "publish anyway" override.
+  const [dupConflict, setDupConflict] = useState<DuplicateMaster[] | null>(null);
 
   const [showCreateProfession, setShowCreateProfession] = useState(false);
   const [showCreateLocation, setShowCreateLocation] = useState(false);
@@ -140,6 +166,7 @@ export default function MiningReview() {
   // Reset the form whenever the candidate changes.
   useEffect(() => {
     setError(null);
+    setDupConflict(null);
     setForm(current ? formFromCandidate(current) : emptyForm());
   }, [current]);
 
@@ -153,12 +180,10 @@ export default function MiningReview() {
     setIdx((i) => i + 1);
   }
 
-  async function handleAccept(e: FormEvent) {
-    e.preventDefault();
-    if (!current || !canSubmit) return;
-    setBusy(true);
-    setError(null);
-    const payload: MasterPayload = {
+  function buildPayload(): MasterPayload {
+    const tagsUa = splitTags(form.tagsUa);
+    const tagsEn = splitTags(form.tagsEn);
+    return {
       name: form.name.trim(),
       professionID: form.professionID,
       locationID: form.locationID,
@@ -167,17 +192,40 @@ export default function MiningReview() {
       contacts: form.contacts
         .map((c) => ({ contactType: c.contactType, value: c.value.trim() }))
         .filter((c) => c.value),
+      ...(tagsUa.length || tagsEn.length
+        ? { tags: { ua: tagsUa, en: tagsEn } }
+        : {}),
     };
+  }
+
+  async function doAccept(force: boolean) {
+    if (!current || !canSubmit) return;
+    setBusy(true);
+    setError(null);
     try {
-      await acceptCandidate(current.id, payload);
+      await acceptCandidate(current.id, buildPayload(), force);
       setCounters((c) => ({ ...c, accepted: c.accepted + 1 }));
       setQueueDepth((q) => Math.max(0, q - 1));
+      setDupConflict(null);
       advance();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Accept failed");
+      // duplicate_master (409) is recoverable: surface the conflicts + offer
+      // "publish anyway" instead of a generic error.
+      const body = (e as { body?: { error?: string; duplicates?: DuplicateMaster[] } })
+        .body;
+      if (body?.error === "duplicate_master" && body.duplicates) {
+        setDupConflict(body.duplicates);
+      } else {
+        setError(e instanceof Error ? e.message : "Accept failed");
+      }
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleAccept(e: FormEvent) {
+    e.preventDefault();
+    await doAccept(false);
   }
 
   async function handleDecline(reasonCode: DeclineReason, note?: string) {
@@ -315,6 +363,23 @@ export default function MiningReview() {
             </span>
           </div>
 
+          {current.sourceType === "forwarded" && (
+            <div className="mining-inquiry">
+              <span className="mining-inquiry-label">
+                FORWARDED LEAD
+                {current.submittedBy?.name
+                  ? ` · by ${current.submittedBy.name}`
+                  : ""}
+                {current.submittedBy && !current.submittedBy.isAdmin
+                  ? " (community)"
+                  : ""}
+              </span>
+              {current.originChatTitle && (
+                <p>from chat: {current.originChatTitle}</p>
+              )}
+            </div>
+          )}
+
           {current.inquiryText && (
             <div className="mining-inquiry">
               <span className="mining-inquiry-label">
@@ -327,14 +392,16 @@ export default function MiningReview() {
 
           <div className="mining-message">{current.text}</div>
 
-          <a
-            className="mining-tg-link"
-            href={current.tgLink}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            ↗ open original message in Telegram (to fetch a contact)
-          </a>
+          {current.tgLink && (
+            <a
+              className="mining-tg-link"
+              href={current.tgLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              ↗ open original message in Telegram (to fetch a contact)
+            </a>
+          )}
 
           <form className="mining-form" onSubmit={handleAccept}>
             <label className="mining-field">
@@ -465,6 +532,57 @@ export default function MiningReview() {
                 onChange={(e) => setForm({ ...form, about: e.target.value })}
               />
             </label>
+
+            <label className="mining-field">
+              <span>Tags · UA (comma-separated)</span>
+              <input
+                type="text"
+                placeholder="заміна екрана, акумулятор"
+                value={form.tagsUa}
+                onChange={(e) => setForm({ ...form, tagsUa: e.target.value })}
+              />
+            </label>
+            <label className="mining-field">
+              <span>Tags · EN (comma-separated)</span>
+              <input
+                type="text"
+                placeholder="screen replacement, battery"
+                value={form.tagsEn}
+                onChange={(e) => setForm({ ...form, tagsEn: e.target.value })}
+              />
+            </label>
+
+            {(() => {
+              const dupList = dupConflict ?? current.duplicateMasters ?? [];
+              if (!dupList.length) return null;
+              return (
+                <div className="mining-warn mining-dup">
+                  <strong>
+                    ⚠ Possible duplicate — a live master already has this contact:
+                  </strong>
+                  <ul>
+                    {dupList.map((d) => (
+                      <li key={d.id}>
+                        {d.name || "(no name)"} · {d.status}/{d.source}
+                        {d.contacts.length
+                          ? ` · ${d.contacts.map((c) => c.value).join(", ")}`
+                          : ""}
+                      </li>
+                    ))}
+                  </ul>
+                  {dupConflict && (
+                    <button
+                      type="button"
+                      className="btn-decline"
+                      disabled={busy}
+                      onClick={() => void doAccept(true)}
+                    >
+                      Publish anyway
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             {!canSubmit && (
               <p className="mining-warn">

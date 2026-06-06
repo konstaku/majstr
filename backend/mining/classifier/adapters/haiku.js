@@ -14,11 +14,15 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
+// 2.0.0 — third-party recommendations are USEFUL again (kind:'recommendation').
+// The earlier announcement-only rule was only ever meant for the one huge chat
+// (ITALIA_CHAT_ID); that scope still lives in mine-classify.js, so this prompt
+// no longer rejects recommendations globally.
 // 1.7.0 — contact-type disambiguation: phone numbers are always contactType:'phone',
 // Telegram @usernames are always contactType:'telegram' — never mix them.
 // 1.6.0 — announcement-only (third-party recs excluded).
 // 1.5.0 — description always Ukrainian. 1.4.0 — cross-border excluded. 1.3.0 — DM promise excluded.
-const VERSION = '1.7.0';
+const VERSION = '2.0.0';
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 512;
 
@@ -35,30 +39,30 @@ const SYSTEM_PROMPT =
   'find leads for a directory of INDIVIDUAL tradespeople / specialists ' +
   '("masters"). Languages mix freely: Ukrainian, Russian, Italian, sometimes ' +
   'English.\n\n' +
-  'USEFUL = an individual specialist personally declaring their OWN service ' +
-  '(announcement ONLY). This is the only useful kind. ' +
+  'USEFUL = a lead pointing to a specific INDIVIDUAL specialist. Two useful ' +
+  'kinds:\n' +
+  '- ANNOUNCEMENT (kind:"announcement"): an individual specialist personally ' +
+  'declaring their OWN service ("я майстер", "роблю це сам", a self-advert).\n' +
+  '- RECOMMENDATION (kind:"recommendation"): someone naming or linking to a ' +
+  'specific specialist, usually in reply to an inquiry ("ask Georgy, +39…", ' +
+  '"contact Olena", "Maxim is great, @handle", "there\'s a master who does this"). ' +
+  'The recommended person is the lead — extract THEIR name/contact, not the ' +
+  'recommender\'s.\n' +
   'Minimum bar: a profession + EITHER a contact (phone, @handle, t.me/, wa.me/, ' +
-  'Instagram/profile link) OR a clear self-description of the service. ' +
-  'Service-list adverts with profession + location count as useful even without ' +
-  'a phone (an admin can fetch the contact from the original post).\n\n' +
-  'When the input is an inquiry + a bundled reply, flag as useful ONLY when the ' +
-  'responder offers their OWN service (see SELF-OFFERING RESPONDER below). A reply ' +
-  'that names or links to another person ("Maxim is great", "contact Olena", ' +
-  '"there\'s a master called ...") is NOT useful — only the specialist\'s own ' +
-  'personal declaration counts, regardless of whether a phone or link is present. ' +
-  'A reply where the responder only PROMISES to share a contact privately ' +
-  '("написала вам", "пишу в особисті", "можу дати контакт", "скину в приват") ' +
-  'is also NOT useful.\n\n' +
-  'SELF-OFFERING RESPONDER: when the responder offers their OWN service in ' +
-  'reply to an inquiry ("я можу допомогти", "я майстер", "пишіть мені", "роблю ' +
-  'це сам") they ARE the specialist. Flag as useful and set extracted.name to ' +
-  'the provided RESPONDER display name. Their contact is obtained later by an ' +
-  'admin — never invent one; leave contacts empty if none is in the text. The ' +
-  'profession usually comes from the inquiry itself.\n\n' +
+  'Instagram/profile link) OR enough to identify the specialist (a name, or a ' +
+  'clear self-description of the service). Service-list adverts with profession + ' +
+  'location count as useful even without a phone (an admin can fetch the contact ' +
+  'from the original post).\n\n' +
+  'When the input is an inquiry + a bundled reply, use the inquiry for context ' +
+  '(it usually states the profession) and the reply for the lead. A reply where ' +
+  'the responder offers their OWN service is an ANNOUNCEMENT (set extracted.name ' +
+  'to the RESPONDER display name); a reply naming someone else is a ' +
+  'RECOMMENDATION (extract the named person). Never invent a contact — leave ' +
+  'contacts empty if none is in the text.\n' +
+  'A reply that only PROMISES to share a contact privately with NO name and NO ' +
+  'link ("написала вам", "пишу в особисті", "скину в приват") is NOT useful — ' +
+  'there is no identifiable specialist to card.\n\n' +
   'NOT USEFUL — exclude all of these even if a phone or link appears:\n' +
-  '- Third-party recommendations — a reply (or standalone post) naming or linking ' +
-  'to another person ("Maxim is great", "contact Olena", "there\'s a master at @handle", ' +
-  '"recommend X") — only the specialist\'s OWN declaration is useful\n' +
   '- Job listings (employer hiring workers, "потрібен/шукаємо", "робота в...")\n' +
   '- Courses, schools, training programs, autoshcools\n' +
   '- Retail shops / store recommendations / generic product tips\n' +
@@ -170,8 +174,9 @@ function tallyCost(usage) {
 // ollama adapter so both engines map identically.
 function mapResult(parsed) {
   let kind = 'unknown';
-  if (parsed.is_useful && parsed.kind === 'announcement') {
-    kind = 'announcement';
+  if (parsed.is_useful) {
+    if (parsed.kind === 'announcement') kind = 'announcement';
+    else if (parsed.kind === 'recommendation') kind = 'recommendation';
   }
   // Normalize confidence to the 0..1 the classifier interface promises. Haiku
   // emits 0..1 already; some local models (e.g. Qwen) emit a 0..100 percentage
