@@ -156,6 +156,7 @@ export interface MasterPayload {
   contacts: CandidateContact[];
   about?: string;
   tags?: CandidateTags;
+  languages?: string[];
 }
 
 // ---------------------------------------------------------------------------

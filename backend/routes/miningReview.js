@@ -152,6 +152,10 @@ async function listCandidates(req, res) {
 
   const query = { status };
   if (kindFilter) query.kind = kindFilter;
+  // Source filters for the review tool's dropdown: 'forwarded' (bot-sent) vs a
+  // specific mined chat by chatID.
+  if (req.query.sourceType) query.sourceType = req.query.sourceType;
+  if (req.query.chatID) query.chatID = req.query.chatID;
 
   const Candidate = miningDb.Candidate();
   const [items, total, queueDepth, refs] = await Promise.all([
@@ -275,6 +279,10 @@ async function acceptCandidate(req, res) {
   const tags = normalizeTags(
     master.tags || (cand.extracted && cand.extracted.tags)
   );
+  // Spoken languages the reviewer ticked (e.g. ['ua','ru']).
+  const languages = Array.isArray(master.languages)
+    ? master.languages.map((l) => String(l).trim()).filter(Boolean)
+    : [];
   const created = await Master.create({
     name: String(master.name).trim(),
     professionID: master.professionID,
@@ -284,6 +292,7 @@ async function acceptCandidate(req, res) {
       contactType: c.contactType,
       value: String(c.value).trim(),
     })),
+    ...(languages.length ? { languages } : {}),
     about: (master.about || '').toString(),
     ...(tags ? { tags } : {}),
     source,

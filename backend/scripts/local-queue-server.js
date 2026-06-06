@@ -38,6 +38,8 @@ const {
 } = require('../routes/miningReview');
 const { createProfession, createLocation } = require('../routes/referenceAdmin');
 const { storeRawForward, processCandidate } = require('../mining/forwardIntake');
+const miningDb = require('../database/miningDb');
+const CHAT_REGION = require('../mining/chatRegions');
 
 function arg(flag, def) {
   const i = process.argv.indexOf(flag);
@@ -71,7 +73,33 @@ async function main() {
   app.post('/api/reference/professions', createProfession);
   app.post('/api/reference/locations', createLocation);
 
-  // Run the local LLM (+ screenshot OCR) on a raw candidate -> status 'new'.
+  // Source dropdown: distinct origins in the reviewable queue (raw+new).
+  // 'forwarded' = bot-sent leads; otherwise one entry per mined chat (by chatID).
+  app.get('/api/local/sources', async (_req, res) => {
+    try {
+      const Candidate = miningDb.Candidate();
+      const rows = await Candidate.aggregate([
+        { $match: { status: { $in: ['raw', 'new'] } } },
+        { $group: { _id: { sourceType: '$sourceType', chatID: '$chatID' }, count: { $sum: 1 } } },
+      ]);
+      let forwarded = 0;
+      const chats = new Map(); // chatID -> count
+      for (const r of rows) {
+        if (r._id.sourceType === 'forwarded') forwarded += r.count;
+        else chats.set(r._id.chatID, (chats.get(r._id.chatID) || 0) + r.count);
+      }
+      const sources = [];
+      if (forwarded) sources.push({ key: 'forwarded', label: '📨 Forwarded (bot)', count: forwarded });
+      for (const [chatID, count] of [...chats.entries()].sort((a, b) => b[1] - a[1])) {
+        sources.push({ key: 'chat:' + chatID, label: CHAT_REGION[chatID] || ('chat ' + chatID), count });
+      }
+      res.json({ sources });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Run the local LLM on a raw candidate's text -> status 'new'.
   app.post('/api/local/process/:id', async (req, res) => {
     try {
       const r = await processCandidate(req.params.id);
@@ -177,7 +205,9 @@ const HTML = /* html */ `<!doctype html>
     <button id="reload" class="small">Reload</button>
   </div>
   <div class="row" style="margin-top:8px">
-    <span class="mut small">Display languages:</span><span class="langbox" id="langs"></span>
+    <label class="small" style="margin:0">Source
+      <select id="fSource" style="width:auto;display:inline-block;margin-left:4px;min-width:180px"></select>
+    </label>
     <span class="mut small" id="procMsg"></span>
   </div>
 </header>
@@ -199,27 +229,34 @@ const HTML = /* html */ `<!doctype html>
 </main>
 
 <script>
-const LANGS = ['ua','ru','en','it'];
-const LANG_LABEL = { ua:'UA', ru:'RU', en:'EN', it:'IT' };
-let sel = JSON.parse(localStorage.getItem('reviewLangs') || '["ua","ru"]');
+// Languages a master speaks (per-card checkboxes). UA + RU default-checked.
+const SPEAK_LANGS = [['ua','UA'],['ru','RU'],['en','EN'],['it','IT']];
+const SPEAK_DEFAULT = ['ua','ru'];
+// Fixed display preference for profession/city dropdown labels.
+const NAME_PREF = ['ua','ru','en','it'];
 let professions = [], locations = [];
 let rawC = [], newC = [];
 let counters = { acc:0, dec:0 };
+let sourceFilter = localStorage.getItem('reviewSource') || 'forwarded'; // 'all' | 'forwarded' | 'chat:<id>'
 
-function langPref(){ return [...sel, ...LANGS.filter(l=>!sel.includes(l))]; }
-function pickName(n){ if(!n) return ''; for(const l of langPref()) if(n[l]&&String(n[l]).trim()) return n[l];
+function pickName(n){ if(!n) return ''; for(const l of NAME_PREF) if(n[l]&&String(n[l]).trim()) return n[l];
   for(const k in n) if(n[k]&&String(n[k]).trim()) return n[k]; return ''; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-function renderLangs(){
-  const box=document.getElementById('langs'); box.innerHTML='';
-  for(const l of LANGS){
-    const w=document.createElement('label');
-    w.innerHTML='<input type="checkbox" '+(sel.includes(l)?'checked':'')+'> '+LANG_LABEL[l];
-    w.querySelector('input').onchange=e=>{ if(e.target.checked){if(!sel.includes(l))sel.push(l);} else sel=sel.filter(x=>x!==l);
-      localStorage.setItem('reviewLangs',JSON.stringify(sel)); render(); };
-    box.appendChild(w);
-  }
+// Turn the source filter into query params for /api/mining/candidates.
+function sourceParams(){
+  if(sourceFilter==='forwarded') return '&sourceType=forwarded';
+  if(sourceFilter.startsWith('chat:')) return '&chatID='+encodeURIComponent(sourceFilter.slice(5));
+  return '';
+}
+async function loadSources(){
+  try{
+    const { sources } = await fetch('/api/local/sources').then(r=>r.json());
+    const sel=document.getElementById('fSource');
+    const opts=[{key:'all',label:'All sources'},...(sources||[]).map(s=>({key:s.key,label:s.label+' ('+s.count+')'}))];
+    if(!opts.find(o=>o.key===sourceFilter)) sourceFilter='all';
+    sel.innerHTML=opts.map(o=>'<option value="'+esc(o.key)+'"'+(o.key===sourceFilter?' selected':'')+'>'+esc(o.label)+'</option>').join('');
+  }catch(e){}
 }
 async function loadRefs(){
   [professions,locations]=await Promise.all([
@@ -229,22 +266,23 @@ async function loadRefs(){
 }
 async function loadQueue(){
   try{
+    const sp=sourceParams();
     const [raw,nw]=await Promise.all([
-      fetch('/api/mining/candidates?status=raw&sort=created&pageSize=50').then(r=>r.json()),
-      fetch('/api/mining/candidates?status=new&sort=created&pageSize=50').then(r=>r.json()),
+      fetch('/api/mining/candidates?status=raw&sort=created&pageSize=50'+sp).then(r=>r.json()),
+      fetch('/api/mining/candidates?status=new&sort=created&pageSize=50'+sp).then(r=>r.json()),
     ]);
     rawC=raw.candidates||[]; newC=nw.candidates||[];
     document.getElementById('qRaw').textContent=raw.total??rawC.length;
-    document.getElementById('qNew').textContent=nw.queueDepth??newC.length;
+    document.getElementById('qNew').textContent=nw.total??newC.length;
     document.getElementById('conn').textContent='· connected';
+    loadSources();
     render();
   }catch(e){ document.getElementById('conn').textContent='· offline'; }
 }
 
 function shots(c){
   if(!c.images||!c.images.length) return '';
-  return '<div class="shots">'+c.images.map(im=>'<a href="'+esc(im.url)+'" target="_blank"><img src="'+esc(im.url)+'"></a>').join('')+'</div>'+
-    c.images.filter(im=>im.ocrText).map(im=>'<div class="ocr">OCR: '+esc(im.ocrText)+'</div>').join('');
+  return '<div class="shots">'+c.images.map(im=>'<a href="'+esc(im.url)+'" target="_blank"><img src="'+esc(im.url)+'"></a>').join('')+'</div>';
 }
 function provenance(c){
   return c.sourceType==='forwarded'
@@ -268,7 +306,7 @@ function rawCard(c){
   el.innerHTML='<div class="meta"><span class="tag">raw</span><span class="tag">'+esc(c.sourceType)+'</span>'+
     (c.images&&c.images.length?'<span class="tag">'+c.images.length+' image(s)</span>':'')+'</div>'+
     provenance(c)+ shots(c)+
-    (c.text?'<div class="msg">'+esc(c.text)+'</div>':'<div class="mut small">(no text — will OCR the screenshot)</div>')+
+    (c.text?'<div class="msg">'+esc(c.text)+'</div>':'<div class="mut small">(no text — read the contact from the screenshot above)</div>')+
     '<div class="btns"><button class="primary go">Process with Ollama</button>'+
     '<button class="danger del">Discard</button></div><div class="err pe"></div>';
   el.querySelector('.go').onclick=async(ev)=>{
@@ -306,8 +344,9 @@ function card(c){
     '<div><label>City</label><select class="f-loc">'+locOptions(c.suggestLocationID)+'</select>'+
       (ex.city?'<div class="mut small">read: "'+esc(ex.city)+'"</div>':'')+'</div></div>'+
     '<label>Contacts</label><div class="f-contacts"></div><button class="addc small" style="margin-top:4px">+ contact</button>'+
-    '<div class="grid2"><div><label>Tags · UA (comma)</label><input class="f-tua" value="'+esc((ex.tags&&ex.tags.ua||[]).join(', '))+'"></div>'+
-      '<div><label>Tags · EN (comma)</label><input class="f-ten" value="'+esc((ex.tags&&ex.tags.en||[]).join(', '))+'"></div></div>'+
+    '<label>Tags (UA, comma — from the announcement)</label><input class="f-tua" value="'+esc((ex.tags&&ex.tags.ua||[]).join(', '))+'">'+
+    '<label>Languages spoken</label><div class="langbox">'+
+      SPEAK_LANGS.map(([code,lab])=>'<label><input type="checkbox" class="f-lang" value="'+code+'"'+(SPEAK_DEFAULT.includes(code)?' checked':'')+'> '+lab+'</label>').join('')+'</div>'+
     '<label>Description</label><textarea class="f-about">'+esc(ex.description||'')+'</textarea>'+
     '<div class="msg-err err"></div>'+
     '<div class="btns"><button class="primary act-accept">Approve → publish</button>'+
@@ -327,11 +366,13 @@ function card(c){
   el.querySelector('.addc').onclick=()=>{contacts.push({contactType:'phone',value:''});drawContacts();};
 
   function payload(){ const split=s=>s.split(',').map(t=>t.trim()).filter(Boolean);
-    const tua=split(el.querySelector('.f-tua').value), ten=split(el.querySelector('.f-ten').value);
+    const tua=split(el.querySelector('.f-tua').value);
+    const languages=[...el.querySelectorAll('.f-lang:checked')].map(x=>x.value);
     return { name:el.querySelector('.f-name').value.trim(), professionID:el.querySelector('.f-prof').value,
       locationID:el.querySelector('.f-loc').value, countryID:'IT', about:el.querySelector('.f-about').value.trim()||undefined,
       contacts:contacts.map(x=>({contactType:x.contactType,value:x.value.trim()})).filter(x=>x.value),
-      ...((tua.length||ten.length)?{tags:{ua:tua,en:ten}}:{}) }; }
+      ...(tua.length?{tags:{ua:tua,en:[]}}:{}),
+      ...(languages.length?{languages}:{}) }; }
   const errEl=el.querySelector('.msg-err');
   async function accept(force){ const m=payload();
     if(!m.name||!m.professionID||!m.locationID||!m.contacts.length){ errEl.textContent='Need name + profession + city + ≥1 contact.'; return; }
@@ -379,8 +420,8 @@ document.getElementById('pRun').onclick=async()=>{
   }catch(e){ msg.innerHTML='<span class="err">'+esc(e.message)+'</span>'; }
 };
 document.getElementById('reload').onclick=loadQueue;
-renderLangs();
-loadRefs().then(loadQueue);
+document.getElementById('fSource').onchange=(e)=>{ sourceFilter=e.target.value; localStorage.setItem('reviewSource',sourceFilter); loadQueue(); };
+loadSources().then(loadRefs).then(loadQueue);
 setInterval(()=>{ if(document.getElementById('auto').checked) loadQueue(); }, 6000);
 </script>
 </body>
