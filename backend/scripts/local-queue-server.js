@@ -166,6 +166,7 @@ const HTML = /* html */ `<!doctype html>
   main { padding:18px; max-width:780px; margin:0 auto; }
   .paste { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:6px; }
   textarea, input, select { background:#11141a; color:var(--fg); border:1px solid var(--line); border-radius:7px; padding:7px 9px; font:inherit; width:100%; }
+  input[type=checkbox] { width:auto; padding:0; margin:0; flex:none; }
   textarea { min-height:70px; resize:vertical; }
   label { display:block; font-size:12px; color:var(--mut); margin:8px 0 3px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:14px; }
@@ -187,7 +188,9 @@ const HTML = /* html */ `<!doctype html>
   button:hover { border-color:#3a4150; } button:disabled { opacity:.5; cursor:default; }
   .primary { background:var(--accent); color:#06122b; border-color:var(--accent); font-weight:600; }
   .danger { color:var(--red); } .warn { color:var(--amber); font-size:12px; } .err { color:var(--red); font-size:12px; }
-  .langbox label { display:inline-flex; align-items:center; gap:4px; margin:0 8px 0 0; color:var(--fg); }
+  .langbox { display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin:4px 0 2px; }
+  .langbox label { display:inline-flex; align-items:center; gap:7px; margin:0; color:var(--fg); font-size:18px; cursor:pointer; }
+  .nav { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
   .empty { text-align:center; color:var(--mut); padding:24px 0; }
   .x { width:34px; text-align:center; }
 </style>
@@ -222,20 +225,26 @@ const HTML = /* html */ `<!doctype html>
     <div id="pMsg" class="small" style="margin-top:6px"></div>
   </div>
 
-  <h2>Unprocessed (raw) — run the LLM</h2>
-  <div id="rawList"></div>
-  <h2>Ready to review</h2>
-  <div id="newList"></div>
+  <h2>Raw — process next</h2>
+  <div id="rawArea"></div>
+
+  <h2>Review <span id="pos" class="mut small"></span></h2>
+  <div class="nav">
+    <button id="prev">← Prev</button>
+    <button id="next">Next →</button>
+  </div>
+  <div id="review"></div>
 </main>
 
 <script>
-// Languages a master speaks (per-card checkboxes). UA + RU default-checked.
-const SPEAK_LANGS = [['ua','UA'],['ru','RU'],['en','EN'],['it','IT']];
+// Languages a master speaks (per-card checkboxes, flags). UA + RU default-checked.
+const SPEAK_LANGS = [['ua','🇺🇦'],['ru','🇷🇺'],['en','🇬🇧'],['it','🇮🇹']];
 const SPEAK_DEFAULT = ['ua','ru'];
 // Fixed display preference for profession/city dropdown labels.
 const NAME_PREF = ['ua','ru','en','it'];
 let professions = [], locations = [];
 let rawC = [], newC = [];
+let idx = 0, currentId = null; // one-card-at-a-time review pointer
 let counters = { acc:0, dec:0 };
 let sourceFilter = localStorage.getItem('reviewSource') || 'forwarded'; // 'all' | 'forwarded' | 'chat:<id>'
 
@@ -269,14 +278,19 @@ async function loadQueue(){
     const sp=sourceParams();
     const [raw,nw]=await Promise.all([
       fetch('/api/mining/candidates?status=raw&sort=created&pageSize=50'+sp).then(r=>r.json()),
-      fetch('/api/mining/candidates?status=new&sort=created&pageSize=50'+sp).then(r=>r.json()),
+      fetch('/api/mining/candidates?status=new&sort=created&pageSize=100'+sp).then(r=>r.json()),
     ]);
     rawC=raw.candidates||[]; newC=nw.candidates||[];
     document.getElementById('qRaw').textContent=raw.total??rawC.length;
     document.getElementById('qNew').textContent=nw.total??newC.length;
     document.getElementById('conn').textContent='· connected';
+    // Preserve the review position across refreshes: keep showing the same
+    // candidate if it's still in the queue (so auto-refresh doesn't wipe edits).
+    if(currentId){ const pos=newC.findIndex(c=>c.id===currentId); if(pos>=0) idx=pos; else currentId=null; }
+    if(idx>=newC.length) idx=Math.max(0,newC.length-1);
     loadSources();
-    render();
+    renderRaw();
+    renderCurrent(false);
   }catch(e){ document.getElementById('conn').textContent='· offline'; }
 }
 
@@ -289,30 +303,24 @@ function provenance(c){
     ? '<div class="src">forwarded'+(c.submittedBy&&c.submittedBy.name?(' by '+esc(c.submittedBy.name)):'')+(c.originChatTitle?(' · chat: '+esc(c.originChatTitle)):'')+'</div>' : '';
 }
 
-function render(){
-  // raw
-  const rl=document.getElementById('rawList'); rl.innerHTML='';
-  if(!rawC.length) rl.innerHTML='<div class="empty">No raw items. Forward to the bot or paste above.</div>';
-  for(const c of rawC) rl.appendChild(rawCard(c));
-  // processed
-  const nl=document.getElementById('newList'); nl.innerHTML='';
-  if(!newC.length) nl.innerHTML='<div class="empty">Nothing to review yet. Process raw items above.</div>';
-  for(const c of newC) nl.appendChild(card(c));
+// Raw area: show the NEXT raw item only (one at a time) with Process / Discard.
+function renderRaw(){
+  const area=document.getElementById('rawArea');
   document.getElementById('procAll').textContent='Process all raw'+(rawC.length?(' ('+rawC.length+')'):'');
-}
-
-function rawCard(c){
+  document.getElementById('procAll').style.display=rawC.length?'inline-block':'none';
+  if(!rawC.length){ area.innerHTML='<div class="mut small">No raw items to process.</div>'; return; }
+  const c=rawC[0];
   const el=document.createElement('div'); el.className='card raw';
-  el.innerHTML='<div class="meta"><span class="tag">raw</span><span class="tag">'+esc(c.sourceType)+'</span>'+
+  el.innerHTML='<div class="meta"><span class="tag">raw 1 / '+rawC.length+'</span><span class="tag">'+esc(c.sourceType)+'</span>'+
     (c.images&&c.images.length?'<span class="tag">'+c.images.length+' image(s)</span>':'')+'</div>'+
     provenance(c)+ shots(c)+
-    (c.text?'<div class="msg">'+esc(c.text)+'</div>':'<div class="mut small">(no text — read the contact from the screenshot above)</div>')+
+    (c.text?'<div class="msg">'+esc(c.text)+'</div>':'<div class="mut small">(no text — read the contact from the screenshot)</div>')+
     '<div class="btns"><button class="primary go">Process with Ollama</button>'+
     '<button class="danger del">Discard</button></div><div class="err pe"></div>';
   el.querySelector('.go').onclick=async(ev)=>{
     ev.target.disabled=true; ev.target.textContent='Running Ollama…';
     try{ const r=await fetch('/api/local/process/'+c.id,{method:'POST'});
-      const b=await r.json(); if(!r.ok) throw new Error(b.error||'failed'); loadQueue(); }
+      const b=await r.json(); if(!r.ok) throw new Error(b.error||'failed'); currentId=c.id; loadQueue(); }
     catch(e){ el.querySelector('.pe').textContent=e.message; ev.target.disabled=false; ev.target.textContent='Process with Ollama'; }
   };
   el.querySelector('.del').onclick=async()=>{
@@ -320,7 +328,20 @@ function rawCard(c){
     await fetch('/api/mining/candidates/'+c.id+'/decline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reasonCode:'other',note:'discarded raw'})});
     loadQueue();
   };
-  return el;
+  area.innerHTML=''; area.appendChild(el);
+}
+
+// Review area: ONE processed card at a time. force=true always re-renders;
+// force=false preserves the current card DOM (and your edits) if it's unchanged.
+function renderCurrent(force){
+  const area=document.getElementById('review');
+  document.getElementById('pos').textContent = newC.length ? (idx+1)+' / '+newC.length : '';
+  if(!newC.length){ area.innerHTML='<div class="empty">Nothing to review. Process raw items above, or change the source.</div>'; currentId=null; return; }
+  if(idx>=newC.length) idx=newC.length-1;
+  const c=newC[idx];
+  if(!force && currentId===c.id && area.firstChild) return; // keep edits on refresh
+  currentId=c.id;
+  area.innerHTML=''; area.appendChild(card(c));
 }
 
 function profOptions(s){ return '<option value="">— profession —</option>'+professions.map(p=>'<option value="'+p.id+'"'+(p.id===s?' selected':'')+'>'+esc(pickName(p.name))+'</option>').join(''); }
@@ -388,7 +409,7 @@ function card(c){
   el.querySelector('.act-reproc').onclick=async(ev)=>{ ev.target.disabled=true; ev.target.textContent='…';
     try{ const r=await fetch('/api/local/process/'+c.id,{method:'POST'}); const b=await r.json(); if(!r.ok)throw new Error(b.error); loadQueue(); }
     catch(e){ errEl.textContent=e.message; ev.target.disabled=false; ev.target.textContent='Re-run LLM'; } };
-  el.querySelector('.act-skip').onclick=()=>{ newC=newC.filter(x=>x.id!==c.id); render(); };
+  el.querySelector('.act-skip').onclick=()=>{ if(idx<newC.length-1) idx++; renderCurrent(true); };
   el.querySelector('.act-decline').onclick=async()=>{ const reason=prompt('Decline reason: not_a_master / spam / duplicate / wrong_extraction / out_of_scope / other','out_of_scope'); if(!reason) return;
     const r=await fetch('/api/mining/candidates/'+c.id+'/decline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reasonCode:reason})});
     if(r.ok){ counters.dec++; document.getElementById('cDec').textContent=counters.dec; loadQueue(); } else { const b=await r.json().catch(()=>({})); errEl.textContent=b.error||'decline failed'; } };
@@ -420,7 +441,9 @@ document.getElementById('pRun').onclick=async()=>{
   }catch(e){ msg.innerHTML='<span class="err">'+esc(e.message)+'</span>'; }
 };
 document.getElementById('reload').onclick=loadQueue;
-document.getElementById('fSource').onchange=(e)=>{ sourceFilter=e.target.value; localStorage.setItem('reviewSource',sourceFilter); loadQueue(); };
+document.getElementById('prev').onclick=()=>{ if(idx>0){ idx--; renderCurrent(true); } };
+document.getElementById('next').onclick=()=>{ if(idx<newC.length-1){ idx++; renderCurrent(true); } };
+document.getElementById('fSource').onchange=(e)=>{ sourceFilter=e.target.value; localStorage.setItem('reviewSource',sourceFilter); currentId=null; idx=0; loadQueue(); };
 loadSources().then(loadRefs).then(loadQueue);
 setInterval(()=>{ if(document.getElementById('auto').checked) loadQueue(); }, 6000);
 </script>
