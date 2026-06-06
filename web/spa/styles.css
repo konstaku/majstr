@@ -19,9 +19,12 @@
      offset (@media max-width:640px). */
   --bar-h: 56px;
 
-  --font-display: 'Archivo Black', 'Golos Text', 'DM Sans', sans-serif;
-  --font-body: 'DM Sans', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* Font families resolve to next/font CSS variables (see app/layout.tsx),
+     falling back to the named families then the system stack. Archivo Black
+     has no Cyrillic glyphs, so Golos Text covers Cyrillic display text. */
+  --font-display: var(--font-archivo), var(--font-golos), 'Archivo Black', 'Golos Text', sans-serif;
+  --font-body: var(--font-dm), 'DM Sans', system-ui, sans-serif;
+  --font-mono: var(--font-jb), 'JetBrains Mono', monospace;
 
   /* form vars */
   --text: var(--ink);

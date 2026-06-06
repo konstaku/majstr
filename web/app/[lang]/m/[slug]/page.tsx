@@ -78,10 +78,15 @@ export default async function MasterPage({
 
   // Open this master's modal on the main page, with its city + category
   // filters pre-set — exactly the SPA experience.
-  const seed = buildSeed(lang, ds, {
-    selectedCity: loc.id,
-    selectedProfessionCategory: prof.categoryID ?? "",
-  });
+  const seed = buildSeed(
+    lang,
+    ds,
+    {
+      selectedCity: loc.id,
+      selectedProfessionCategory: prof.categoryID ?? "",
+    },
+    master._id // keep this master full so the pre-opened modal needs no fetch
+  );
 
   return (
     <>

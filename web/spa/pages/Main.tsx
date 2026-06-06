@@ -123,11 +123,41 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
   const [pendingTrade, setPendingTrade] = useState(selectedProfessionCategory);
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  // Lazy-loaded full master records (about + contacts), keyed by id. The grid
+  // ships a slim projection (see lib/seed.ts); the heavy fields are fetched only
+  // when a card's modal opens. The detail page seeds its master full, so that
+  // case short-circuits (ctx master already has `contacts`) and never fetches.
+  const [details, setDetails] = useState<Record<string, Master>>({});
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
   // Portal the select menus to <body> only AFTER mount, so the server and the
   // first client render match (both undefined) — avoids a hydration mismatch
   // that would leave the selects/modal non-interactive.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // When a modal opens for a master we only have slim data for, fetch the full
+  // record (about + contacts). The modal opens instantly with the slim fields
+  // already present; contacts/bio fill in when this resolves.
+  useEffect(() => {
+    if (typeof showModal !== "string") return;
+    const ctx = masters.find((m) => m._id === showModal);
+    if (!ctx || ctx.contacts || details[showModal]) return;
+    let cancelled = false;
+    setDetailsLoading(true);
+    fetch(`/api/master/${showModal}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((full: Master | null) => {
+        if (full && !cancelled) setDetails((d) => ({ ...d, [full._id]: full }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setDetailsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showModal, masters, details]);
 
   // Sync pending state when external reset/navigation changes applied filters
   useEffect(() => {
@@ -401,12 +431,17 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
               professionCategory={selectedProfessionCategory}
               setShowModal={setShowModal}
             />
-            {showModal && isModalMaster(showModal) && (
-              <Modal
-                master={isModalMaster(showModal) as Master}
-                setShowModal={setShowModal}
-              />
-            )}
+            {typeof showModal === "string" && isModalMaster(showModal) && (() => {
+              const ctx = masters.find((m) => m._id === showModal)!;
+              const full = details[showModal] ?? ctx;
+              return (
+                <Modal
+                  master={full}
+                  setShowModal={setShowModal}
+                  loadingDetails={detailsLoading && !full.contacts}
+                />
+              );
+            })()}
           </>
         )}
       </div>

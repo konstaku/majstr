@@ -1,5 +1,6 @@
 import type { Dataset } from "./data";
 import type { Lang } from "./i18n";
+import type { Master } from "./api";
 
 export interface SeedSearchParams {
   selectedCity?: string;
@@ -7,16 +8,54 @@ export interface SeedSearchParams {
   selectedProfessionCategory?: string;
 }
 
-// Seed the MasterContext for a page. Always seeds ALL masters + reference data
-// (so the selects work exactly like the SPA), plus the filter state parsed from
-// the URL so the very first server render already shows the filtered grid.
+// Only these fields are read from the grid/cards in the SPA. The heavy fields —
+// `about` (long bios) and `contacts` (PII) — are stripped here and fetched
+// lazily when a master's modal opens (GET /api/master/[id]). Dropping them cuts
+// the per-page hydration payload from ~400 KB to a fraction, which is the single
+// biggest mobile-load win on the site.
+type SlimMaster = Pick<
+  Master,
+  | "_id"
+  | "name"
+  | "professionID"
+  | "countryID"
+  | "locationID"
+  | "languages"
+  | "photo"
+  | "tags"
+>;
+
+function slimMaster(m: Master): SlimMaster {
+  return {
+    _id: m._id,
+    name: m.name,
+    professionID: m.professionID,
+    countryID: m.countryID,
+    locationID: m.locationID,
+    languages: m.languages,
+    photo: m.photo,
+    tags: m.tags,
+  };
+}
+
+// Seed the MasterContext for a page. Seeds a SLIM projection of every master
+// (enough for the grid, filters, and selects) plus the URL-derived filter state,
+// so the first server render already shows the filtered grid for crawlers.
+//
+// `fullMasterId` keeps that one master's full record (about + contacts) in the
+// seed — used by the master detail page so its pre-opened modal renders complete
+// in the initial HTML with no client fetch.
 export function buildSeed(
   lang: Lang,
   ds: Dataset,
-  sp?: SeedSearchParams
+  sp?: SeedSearchParams,
+  fullMasterId?: string
 ): Record<string, unknown> {
+  const masters = ds.masters.map((m) =>
+    m._id === fullMasterId ? m : slimMaster(m)
+  );
   return {
-    masters: ds.masters,
+    masters,
     professions: ds.professions,
     locations: ds.locations,
     profCategories: ds.profCategories,

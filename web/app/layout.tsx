@@ -1,8 +1,43 @@
 import type { Metadata } from "next";
+import Script from "next/script";
+import {
+  Archivo_Black,
+  Golos_Text,
+  DM_Sans,
+  JetBrains_Mono,
+} from "next/font/google";
 import { SITE_URL } from "@/lib/config";
 // The REAL design system, imported once globally (variables first).
 import "@/spa/ui/tokens.css";
 import "@/spa/styles.css";
+
+// Self-hosted, preloaded, swap-rendered fonts. Replaces the render-blocking
+// Google Fonts <link> (two extra round-trips on the critical path) with files
+// served from our own origin and a zero-layout-shift fallback metric.
+const archivo = Archivo_Black({
+  weight: "400",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  variable: "--font-archivo",
+});
+const golos = Golos_Text({
+  subsets: ["latin", "latin-ext", "cyrillic"],
+  display: "swap",
+  variable: "--font-golos",
+});
+const dmSans = DM_Sans({
+  subsets: ["latin", "latin-ext"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-dm",
+});
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin", "latin-ext", "cyrillic"],
+  display: "swap",
+  variable: "--font-jb",
+});
+
+const fontVars = `${archivo.variable} ${golos.variable} ${dmSans.variable} ${jetbrains.variable}`;
 
 const GTM_ID = "GTM-MB2CPXFD";
 
@@ -27,21 +62,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="uk">
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`,
-          }}
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Golos+Text:wght@800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="uk" className={fontVars}>
       <body>
+        {/* GTM — loaded after hydration so it never blocks first paint. */}
+        <Script id="gtm" strategy="afterInteractive">
+          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`}
+        </Script>
         <noscript>
           <iframe
             src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}

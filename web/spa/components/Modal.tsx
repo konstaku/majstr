@@ -14,6 +14,8 @@ import { Location, Profession } from "../schema/state/state.schema";
 type ModalProps = {
   master: Master;
   setShowModal: React.Dispatch<React.SetStateAction<string | null | boolean>>;
+  /** True while the full record (about + contacts) is still being fetched. */
+  loadingDetails?: boolean;
 };
 
 const LANG_LABELS: Record<string, string> = {
@@ -78,13 +80,15 @@ function formatRegCode(masterId: string, allMasters: Master[]): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
 
-export default function Modal({ master, setShowModal }: ModalProps) {
+export default function Modal({ master, setShowModal, loadingDetails }: ModalProps) {
   const {
     state: { locations, professions, masters },
   } = useContext(MasterContext);
   const { t, lang } = useTranslation();
 
-  const { _id: id, languages, contacts, about, photo, countryID } = master;
+  const { _id: id, languages, about, photo, countryID } = master;
+  // Slim masters (grid seed) carry no contacts until the lazy fetch resolves.
+  const contacts = master.contacts ?? [];
 
   // Mirror MasterCard's fallback so modal always shows language badges.
   const displayLangs = (languages && languages.length > 0)
@@ -223,6 +227,12 @@ export default function Modal({ master, setShowModal }: ModalProps) {
           </section>
 
           {/* Contacts */}
+          {loadingDetails && contacts.length === 0 && (
+            <section className="modal-master__contacts-section">
+              <div className="modal-master__row-label">Contacts</div>
+              <div className="skeleton-block" style={{ height: 18, width: "60%", marginTop: 8 }} />
+            </section>
+          )}
           {contacts.length > 0 && (
             <section className="modal-master__contacts-section">
               <div className="modal-master__row-label">Contacts</div>
@@ -252,7 +262,12 @@ export default function Modal({ master, setShowModal }: ModalProps) {
           )}
 
           {/* Bio */}
-          {(about || t("modal.noAbout")) && (
+          {loadingDetails && about === undefined ? (
+            <section className="modal-master__bio">
+              <div className="skeleton-block" style={{ height: 14, width: "90%" }} />
+              <div className="skeleton-block" style={{ height: 14, width: "75%", marginTop: 8 }} />
+            </section>
+          ) : (
             <section className="modal-master__bio">
               {about || t("modal.noAbout")}
             </section>
@@ -276,7 +291,9 @@ export default function Modal({ master, setShowModal }: ModalProps) {
               </a>
             ) : (
               <div className="modal-master__cta modal-master__cta--disabled">
-                <span className="modal-master__cta-label">No contact</span>
+                <span className="modal-master__cta-label">
+                  {loadingDetails && contacts.length === 0 ? "…" : "No contact"}
+                </span>
               </div>
             )}
           </div>
