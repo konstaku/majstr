@@ -709,8 +709,8 @@ img {
 .master-card__photo {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
+  object-fit: cover;
+  object-position: center;
   filter: grayscale(100%) contrast(118%) brightness(102%);
   mix-blend-mode: lighten;
   background-color: var(--ink);
@@ -1117,8 +1117,8 @@ img {
 .modal-master__photo {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
+  object-fit: cover;
+  object-position: center;
   filter: grayscale(100%) contrast(118%) brightness(102%);
   mix-blend-mode: lighten;
   background-color: var(--ink);

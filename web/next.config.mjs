@@ -12,6 +12,18 @@ const SPA_PATHS = ["/login", "/profile", "/admin", "/add", "/onboard"];
 const nextConfig = {
   reactStrictMode: true,
   trailingSlash: false,
+  images: {
+    // Master photos live in the chupakabra-test S3 bucket (region host +
+    // legacy global host). Serve them through the Next optimizer as AVIF/WebP.
+    formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "chupakabra-test.s3.eu-west-3.amazonaws.com",
+      },
+      { protocol: "https", hostname: "chupakabra-test.s3.amazonaws.com" },
+    ],
+  },
   async redirects() {
     if (!SPA_ORIGIN) return [];
     return SPA_PATHS.flatMap((p) => [

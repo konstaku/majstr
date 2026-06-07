@@ -2,6 +2,7 @@
 
 import { useContext } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
@@ -85,9 +86,12 @@ export default function MasterCard({ master, setShowModal, isNew }: MasterCardPr
       <div className="master-card__sigil-cell">
         {photo ? (
           <>
-            <div
+            <Image
+              src={photo}
+              alt={displayName}
+              fill
+              sizes="(max-width: 640px) 45vw, 220px"
               className="master-card__photo"
-              style={{ backgroundImage: `url(${photo})` }}
             />
             <div className="master-card__photo-overlay" />
           </>

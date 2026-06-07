@@ -1,6 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
@@ -177,9 +178,13 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
             >
               {photo ? (
                 <>
-                  <div
+                  <Image
+                    src={photo}
+                    alt={displayName}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 196px"
+                    priority
                     className="modal-master__photo"
-                    style={{ backgroundImage: `url(${photo})` }}
                   />
                   <div className="modal-master__photo-overlay" />
                 </>
