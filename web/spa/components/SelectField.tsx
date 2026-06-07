@@ -30,7 +30,8 @@ export function SelectField({ kicker, options, value, onChange }: Props) {
       position: "fixed",
       top: r.bottom,
       left: r.left,
-      minWidth: r.width,
+      width: r.width,
+      minWidth: "max-content",
       zIndex: 9999,
     });
     setOpen(true);

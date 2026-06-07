@@ -535,9 +535,9 @@ img {
 }
 .sf-value {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: clamp(20px, 2vw, 28px);
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
   line-height: 1;
   color: var(--ink);
@@ -566,23 +566,23 @@ img {
 .sf-menu {
   background: var(--paper);
   border: var(--border);
-  box-shadow: 4px 4px 0 var(--ink);
+  border-top: none;
   max-height: 340px;
   overflow-y: auto;
 }
 .sf-opt {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
+  gap: 12px;
+  padding: 13px 20px;
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: clamp(17px, 1.5vw, 21px);
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.015em;
   text-transform: uppercase;
   color: var(--ink);
   cursor: pointer;
-  border-bottom: 1px solid rgba(14, 10, 6, 0.12);
+  border-bottom: 2px solid rgba(14, 10, 6, 0.1);
   white-space: nowrap;
 }
 .sf-opt:last-child {
@@ -2508,8 +2508,8 @@ img {
     padding: 18px 20px;
     border-right: none;
   }
-  .filter-toggle-wrap {
-    padding: 10px 14px 8px;
+  .sf-field {
+    padding: 10px 36px 8px 14px;
   }
   .results-top {
     padding: 12px 20px;
@@ -2647,7 +2647,9 @@ img {
     border-right: none;
     border-bottom: var(--border);
     min-height: 76px;
-    padding: 14px 16px 12px;
+  }
+  .hero-filter-row .sf-field {
+    padding: 14px 40px 12px 16px;
   }
   .hero-filter-row .filter-toggle-wrap.filter-toggle-noright {
     border-bottom: none;
