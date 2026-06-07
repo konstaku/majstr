@@ -66,6 +66,11 @@ export async function GET(req: NextRequest) {
   const contacts = (master.contacts ?? []).slice(0, 4);
 
   const archivoBold = loadFont("ArchivoBlack.ttf");
+  // Archivo Black has no Cyrillic; satori falls back across the fonts array
+  // per-glyph, so Golos Text covers Cyrillic master names/professions/cities.
+  // Static subset instances — satori can't read the Golos variable TTF.
+  const golosCyr = loadFont("GolosText-Cyrillic.ttf");
+  const golosLat = loadFont("GolosText-Latin.ttf");
 
   return new ImageResponse(
     (
@@ -155,6 +160,8 @@ export async function GET(req: NextRequest) {
             {/* Name */}
             <div
               style={{
+                display: "flex",
+                alignItems: "baseline",
                 fontFamily: "ArchivoBlack",
                 fontSize: master.name.length > 18 ? 44 : 56,
                 lineHeight: 1,
@@ -283,6 +290,8 @@ export async function GET(req: NextRequest) {
           style: "normal",
           weight: 900,
         },
+        { name: "GolosText", data: golosCyr, style: "normal", weight: 800 },
+        { name: "GolosText", data: golosLat, style: "normal", weight: 800 },
       ],
     }
   );
