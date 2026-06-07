@@ -22,18 +22,22 @@ function homeTitle(lang: Lang) {
     : "Україно- та російськомовні майстри в Італії | Majstr";
 }
 
+// NOTE: deliberately does NOT read searchParams. Reading searchParams here opts
+// the whole route out of static generation, forcing a per-request serverless
+// render (x-vercel-cache: MISS, ~0.5-1s TTFB, no edge caching). The legacy
+// ?card= OG-image injection isn't worth that cost — canonical master sharing is
+// /{lang}/m/{slug} (with its own per-master OG), and the ?card modal still opens
+// client-side. Keeping this static lets the home page be edge-cached like the
+// city/master pages.
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ card?: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isLang(lang)) return {};
-  const { card } = await searchParams;
   const title = homeTitle(lang);
-  const base: Metadata = {
+  return {
     title,
     alternates: {
       canonical: abs(homePath(lang)),
@@ -41,22 +45,6 @@ export async function generateMetadata({
     },
     openGraph: { title, url: abs(homePath(lang)), locale: OG_LOCALE[lang], type: "website" },
   };
-
-  // When a card modal is open (?card=<id>), inject its OG image so sharing
-  // the URL shows the master's card image rather than a blank preview.
-  if (card) {
-    const { master } = await getDataset().then(ds => ({
-      master: ds.masters.find(m => m._id === card),
-    }));
-    if (master) {
-      base.openGraph = {
-        ...base.openGraph,
-        images: [`${SITE_URL}/api/og?id=${card}`],
-      };
-    }
-  }
-
-  return base;
 }
 
 export default async function Home({

@@ -20,7 +20,7 @@ import "@/spa/styles.css";
 // Golos Text. Disabling it lets Cyrillic display text fall through to Golos.
 const archivo = Archivo_Black({
   weight: "400",
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   display: "swap",
   variable: "--font-archivo",
   adjustFontFallback: false,
@@ -31,22 +31,28 @@ const archivo = Archivo_Black({
 // loading the full variable range would render Cyrillic at the 400 default —
 // noticeably thinner than the Latin Archivo Black. A single 800 face keeps
 // Cyrillic display text heavy regardless of the inherited weight.
+// preload:false on the secondary faces — they'd otherwise add ~6 render-blocking
+// font preloads to the critical path (12 total), starving HTML/CSS on slow links.
+// Golos (Cyrillic display fallback) and JetBrains (metadata mono) load on demand
+// and swap in; DM Sans (body) + Archivo Black (Latin display) stay preloaded.
 const golos = Golos_Text({
   weight: "800",
-  subsets: ["latin", "latin-ext", "cyrillic"],
+  subsets: ["cyrillic"],
   display: "swap",
   variable: "--font-golos",
+  preload: false,
 });
 const dmSans = DM_Sans({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   style: ["normal", "italic"],
   display: "swap",
   variable: "--font-dm",
 });
 const jetbrains = JetBrains_Mono({
-  subsets: ["latin", "latin-ext", "cyrillic"],
+  subsets: ["latin"],
   display: "swap",
   variable: "--font-jb",
+  preload: false,
 });
 
 const fontVars = `${archivo.variable} ${golos.variable} ${dmSans.variable} ${jetbrains.variable}`;
