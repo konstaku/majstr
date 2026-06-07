@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     "Majstr — каталог перевірених україно- та російськомовних майстрів в Італії: манікюр, перукарі, косметологи, електрики, лікарі та інші. Запис у Telegram, безкоштовно.",
   alternates: { canonical: "/" },
   robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
-  openGraph: { type: "website", siteName: "Majstr", images: ["/og-image.png"] },
+  openGraph: { type: "website", siteName: "Majstr" },
   twitter: { card: "summary_large_image" },
   icons: { icon: "/favicon.png" },
 };
