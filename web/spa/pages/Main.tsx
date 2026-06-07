@@ -211,10 +211,7 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
       const profEntry = professions.find((p) => p.id === currentMaster.professionID);
       const professionName = localizedName(profEntry?.name, lang);
       const cityData = locations.find((l) => l.id === currentMaster.locationID);
-      const cityName =
-        lang === "uk"
-          ? cityData?.name.ua_alt ?? localizedName(cityData?.name, "uk")
-          : localizedName(cityData?.name, lang);
+      const cityName = localizedName(cityData?.name, lang);
 
       document.title = `${currentMaster.name} | ${professionName} ${t("main.inCity")} ${cityName}`;
     }
@@ -274,10 +271,7 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
         const loc = locations.find((l) => l.id === locId);
         return {
           value: locId,
-          label:
-            lang === "uk"
-              ? loc?.name.ua_alt ?? localizedName(loc?.name, "uk", locId)
-              : localizedName(loc?.name, lang, locId),
+          label: localizedName(loc?.name, lang, locId),
         };
       })
   );

@@ -80,6 +80,8 @@ export const CITY_REGION: Record<string, Record<Lang, string>> = {
   venice: { ru: "Венето", uk: "Венето" },
   verona: { ru: "Венето", uk: "Венето" },
   padua: { ru: "Венето", uk: "Венето" },
+  bergamo: { ru: "Ломбардия", uk: "Ломбардія" },
+  palermo: { ru: "Сицилия", uk: "Сицилія" },
 };
 
 export const PROFESSION_SEO: Record<string, Record<Lang, ProfSeo>> = {
@@ -248,4 +250,6 @@ export const CITY_PREP: Record<string, Record<Lang, string>> = {
   verona: { ru: "в Вероне", uk: "у Вероні" },
   padua: { ru: "в Падуе", uk: "у Падуї" },
   lecce: { ru: "в Лечче", uk: "у Лечче" },
+  bergamo: { ru: "в Бергамо", uk: "у Бергамо" },
+  palermo: { ru: "в Палермо", uk: "у Палермо" },
 };

@@ -193,5 +193,31 @@
       "ua": "Апулія",
       "ua_alt": "Апулії"
     }
+  },
+  {
+    "id": "bergamo",
+    "city": {
+      "en": "Bergamo",
+      "ua": "Бергамо",
+      "ua_alt": "Бергамо"
+    },
+    "province": {
+      "en": "Lombardy",
+      "ua": "Ломбардія",
+      "ua_alt": "Ломбардії"
+    }
+  },
+  {
+    "id": "palermo",
+    "city": {
+      "en": "Palermo",
+      "ua": "Палермо",
+      "ua_alt": "Палермо"
+    },
+    "province": {
+      "en": "Sicily",
+      "ua": "Сицилія",
+      "ua_alt": "Сицилії"
+    }
   }
 ]
