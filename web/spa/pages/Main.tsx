@@ -6,6 +6,7 @@ import { MasterContext } from "../context";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
+import { urlLang } from "@/lib/i18n";
 import { SelectField } from "../components/SelectField";
 
 import SearchResults from "../components/SearchResults";
@@ -293,7 +294,9 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
                 dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: pendingCity } });
                 dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: pendingTrade } });
                 // Filters drive the URL: /{lang}/{city}/{category} (each part optional).
-                const segs = [lang];
+                // Only uk/ru have SEO routes — clamp the UI lang so we never
+                // navigate to a 404 path like /en/medicine.
+                const segs: string[] = [urlLang(lang)];
                 if (pendingCity) segs.push(pendingCity);
                 if (pendingTrade) segs.push(pendingTrade);
                 router.push("/" + segs.join("/"));

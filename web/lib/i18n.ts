@@ -10,6 +10,13 @@ export function isLang(x: string): x is Lang {
   return (LANGS as readonly string[]).includes(x);
 }
 
+// The UI offers ~9 languages, but only uk/ru have SEO routes. Map any UI
+// language to a valid URL locale so navigation never builds a 404 path like
+// /en/medicine. RU stays RU; everything else falls back to the default (uk).
+export function urlLang(x: string): Lang {
+  return x === "ru" ? "ru" : DEFAULT_LANG;
+}
+
 // Map a UI lang to the key used in the API's localized name objects.
 // The API uses `ua` for Ukrainian. Nominative vs prepositional:
 //   nominative  → ua / ru

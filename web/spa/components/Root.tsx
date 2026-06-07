@@ -17,6 +17,7 @@ import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { LANG_LABELS, LANG_FLAGS } from "../i18n/translations";
+import { urlLang } from "@/lib/i18n";
 import {
   localizedName,
   APP_LANGS,
@@ -412,7 +413,7 @@ function FooterContent({ onAddMasterClick }: { onAddMasterClick: () => void }) {
         </div>
         <div className="footer-col">
           <h4>Legal</h4>
-          <Link href={`/${lang}/privacy`}>{t("footer.privacy")}</Link>
+          <Link href={`/${urlLang(lang)}/privacy`}>{t("footer.privacy")}</Link>
           <span>{t("footer.terms")}</span>
           <span>{t("footer.moderation")}</span>
           <span>{t("footer.feedback")}</span>

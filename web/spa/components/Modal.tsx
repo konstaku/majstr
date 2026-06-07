@@ -8,6 +8,7 @@ import { localizedName } from "../i18n/lang";
 import { transliterate } from "../helpers/transliterate";
 import Sigil from "./Sigil";
 import { masterSlug } from "@/lib/data";
+import { urlLang } from "@/lib/i18n";
 
 import type { Master, Contacts } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
@@ -142,7 +143,7 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
     const prevPath = window.location.pathname + window.location.search;
     const prof = professions.find((p: Profession) => p.id === master.professionID);
     const loc = locations.find((l: Location) => l.id === master.locationID);
-    const target = `/${lang}/m/${masterSlug(master, prof, loc)}`;
+    const target = `/${urlLang(lang)}/m/${masterSlug(master, prof, loc)}`;
     window.history.pushState(null, "", target);
     return () => {
       window.history.pushState(null, "", prevPath);
