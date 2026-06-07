@@ -59,15 +59,26 @@ numbers, then implemented the two highest-impact tiers.
   proxying photos through /_next/image, the browser no longer hits S3 or the API
   on load, so there are no cross-origin connections left to preconnect.
 
-### Blocked — needs decision (intervention points)
-1. **OG images broken (pre-existing).** `public/fonts/ArchivoBlack.ttf` &
-   `JetBrainsMono-Regular.ttf` are EOT files mislabeled `.ttf`; satori/next-og
-   can't read them. This crashes BOTH a new default OG image AND the existing
-   `/api/og?id=` per-master preview route (confirmed HTTP 500 in a prod build).
-   Fix needs valid TTF/OTF/WOFF, and a **Cyrillic** display face (Archivo Black
-   has no Cyrillic, but master names are Cyrillic) — plus a visual check.
-2. **P3 react-select (~35 KB of First Load JS).** Replace with native <select>
-   = changes the brutalist dropdown look; lazy-load = delays hero-filter
-   interactivity (it's the primary above-the-fold CTA). Design/UX call needed.
-   - Server-Component split of HowItWorks/Footer is infeasible: both depend on
-     client-context i18n (live language switch without reload).
+### Deployment note
+Vercel was building `frontend/` (Vite SPA), so the web/ Next app + perf work
+weren't actually live despite earlier main pushes. Owner repointed the Vercel
+domain/root to the Next app; **`develop` now deploys Next**. Going forward all
+web perf work lands on `develop` only — not `main`.
+
+### OG images — FIXED (commit 1a1b9c44, on develop)
+`public/fonts/*.ttf` were EOT files mislabeled `.ttf`; satori couldn't read
+them, crashing BOTH `/api/og?id=` (per-master, 500 in prod) and any default OG.
+Two further latent satori bugs surfaced once fonts loaded (a name <div> missing
+display:flex; the Golos *variable* TTF tripping satori's name-table parser).
+Fix: valid static Archivo Black + static Golos Text subsets (Cyrillic+Latin,
+800) with per-glyph fallback; display:flex on the name row; new
+app/opengraph-image.tsx default. Both verified rendering Cyrillic at 1200×630.
+
+### Still open — needs decision
+- **P3 react-select (~35 KB First Load JS).** Replace with native <select> =
+  loses the brutalist dropdown look; lazy-load = delays hero-filter
+  interactivity (the primary above-the-fold CTA); leave as-is = keep both at a
+  modest JS cost. Recommendation: leave as-is — the big wins (payload, images,
+  fonts) are landed and 35 KB isn't the bottleneck.
+  - Server-Component split of HowItWorks/Footer is infeasible: both depend on
+    client-context i18n (live language switch without reload).
