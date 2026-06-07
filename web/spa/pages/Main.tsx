@@ -1,16 +1,12 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Select, {
-  CSSObjectWithLabel,
-  GroupBase,
-  OptionProps,
-} from "react-select";
 import { MasterContext } from "../context";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
+import { SelectField } from "../components/SelectField";
 
 import SearchResults from "../components/SearchResults";
 import Modal from "../components/Modal";
@@ -24,80 +20,6 @@ import type { Profession, ProfCategory } from "../schema/state/state.schema";
 import type { Master } from "../schema/master/master.schema";
 import type { Dispatch } from "react";
 import type { Action } from "../reducer";
-
-// ── Select styles ────────────────────────────────────────────────────────────
-
-export const lightSelectStyles = {
-  control: (base: CSSObjectWithLabel) => ({
-    ...base,
-    background: "transparent",
-    border: "none",
-    boxShadow: "none",
-    minHeight: "auto",
-    cursor: "pointer",
-  }),
-  singleValue: (base: CSSObjectWithLabel) => ({
-    ...base,
-    fontFamily: '"Archivo Black", "DM Sans", sans-serif',
-    fontSize: "22px",
-    fontWeight: 900,
-    letterSpacing: "-0.03em",
-    lineHeight: 1,
-    color: "inherit",
-    textTransform: "uppercase" as const,
-  }),
-  valueContainer: (base: CSSObjectWithLabel) => ({
-    ...base,
-    padding: "0",
-  }),
-  dropdownIndicator: (base: CSSObjectWithLabel) => ({
-    ...base,
-    padding: "0 0 0 4px",
-    color: "inherit",
-    opacity: 0.5,
-  }),
-  indicatorSeparator: () => ({ display: "none" as const }),
-  menu: (base: CSSObjectWithLabel) => ({
-    ...base,
-    borderRadius: "0",
-    border: "2px solid #0e0a06",
-    boxShadow: "4px 4px 0 #0e0a06",
-    backgroundColor: "#fffaf0",
-    overflow: "hidden",
-    marginTop: "2px",
-    minWidth: "100%",
-    width: "max-content",
-  }),
-  // Portaled menu: clamp right edge so it never exits the viewport
-  menuPortal: (base: CSSObjectWithLabel) => {
-    const left = typeof base.left === "number" ? (base.left as number) : 0;
-    const maxW = window.innerWidth - left - 12;
-    return { ...base, zIndex: 9999, maxWidth: `${maxW}px` };
-  },
-  option: (
-    base: CSSObjectWithLabel,
-    state: OptionProps<
-      { value: string; label: string },
-      boolean,
-      GroupBase<{ value: string; label: string }>
-    >
-  ) => ({
-    ...base,
-    backgroundColor: state.isFocused ? "#c84b31" : "#fffaf0",
-    color: state.isFocused ? "#fffaf0" : "#0e0a06",
-    fontFamily: '"Archivo Black", "DM Sans", sans-serif',
-    fontSize: "22px",
-    fontWeight: 900,
-    lineHeight: 1,
-    letterSpacing: "-0.03em",
-    textTransform: "uppercase" as const,
-    cursor: "pointer",
-    padding: "8px 14px",
-    whiteSpace: "nowrap" as const,
-  }),
-};
-
-export const baseSelectStyles = lightSelectStyles;
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -132,8 +54,6 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
   // Portal the select menus to <body> only AFTER mount, so the server and the
   // first client render match (both undefined) — avoids a hydration mismatch
   // that would leave the selects/modal non-interactive.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   // When a modal opens for a master we only have slim data for, fetch the full
   // record (about + contacts). The modal opens instantly with the slim fields
@@ -226,14 +146,6 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
 
   const animatedCount = useSlotCount(heroCount);
 
-  // ── Trade select options — must be before any early return ──
-  const availableCategoryIDs = useMemo(() => {
-    const pool = pendingCity
-      ? masters.filter((m) => m.countryID === countryID && m.locationID === pendingCity)
-      : masters.filter((m) => m.countryID === countryID);
-    const profIDs = new Set(pool.map((m) => m.professionID));
-    return new Set(professions.filter((p) => profIDs.has(p.id)).map((p) => p.categoryID));
-  }, [masters, professions, countryID, pendingCity]);
 
   if (error) return (
     <div className="hero-section" style={{ minHeight: 200 }}>
@@ -252,38 +164,66 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
     </div>
   );
 
-  // ── City select options ──
-  const locationPlaceholder = currentCountry
-    ? { value: "", label: t("main.allCountry", { country: countryDisplayName }) }
-    : { value: "", label: "..." };
-
+  // ── City select options (all locations, count or SOON) ──
   const countryMastersForCity = masters.filter((m) => m.countryID === countryID);
   const masterCountByCity = countryMastersForCity.reduce<Record<string, number>>((acc, m) => {
     acc[m.locationID] = (acc[m.locationID] ?? 0) + 1;
     return acc;
   }, {});
 
-  const availableLocations = [locationPlaceholder].concat(
-    [...new Set(countryMastersForCity.map((m) => m.locationID))]
-      .sort((a, b) => (masterCountByCity[b] ?? 0) - (masterCountByCity[a] ?? 0))
-      .map((locId) => {
-        const loc = locations.find((l) => l.id === locId);
-        return {
-          value: locId,
-          label: localizedName(loc?.name, lang, locId),
-        };
-      })
-  );
+  const allItalyCount = countryMastersForCity.length;
+  const allCityLabel = currentCountry
+    ? t("main.allCountry", { country: countryDisplayName })
+    : "...";
 
-  const allTradesOption = { value: "", label: t("browse.allCategories") };
-  const tradeOptions = [allTradesOption].concat(
-    profCategories
-      .filter((cat: ProfCategory) => availableCategoryIDs.has(cat.id))
-      .map((cat: ProfCategory) => ({
+  const cityOptions = [
+    { value: "", label: allCityLabel, count: allItalyCount as number | "SOON" },
+    ...locations
+      .filter((l) => l.countryID === countryID)
+      .map((loc) => ({
+        value: loc.id,
+        label: localizedName(loc.name, lang, loc.id),
+        count: (masterCountByCity[loc.id] ?? 0) > 0
+          ? (masterCountByCity[loc.id] as number | "SOON")
+          : ("SOON" as const),
+      }))
+      .sort((a, b) => {
+        if (a.count === "SOON" && b.count !== "SOON") return 1;
+        if (b.count === "SOON" && a.count !== "SOON") return -1;
+        if (typeof a.count === "number" && typeof b.count === "number") return b.count - a.count;
+        return 0;
+      }),
+  ];
+
+  // ── Trade select options (all categories, count or SOON) ──
+  const cityMastersForTrade = pendingCity
+    ? countryMastersForCity.filter((m) => m.locationID === pendingCity)
+    : countryMastersForCity;
+
+  const profToCat = new Map(professions.map((p: Profession) => [p.id, p.categoryID]));
+  const masterCountByCat = cityMastersForTrade.reduce<Record<string, number>>((acc, m) => {
+    const cat = profToCat.get(m.professionID);
+    if (cat) acc[cat] = (acc[cat] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const tradeOptions = [
+    { value: "", label: t("browse.allCategories"), count: cityMastersForTrade.length as number | "SOON" },
+    ...profCategories
+      .map((cat) => ({
         value: cat.id,
         label: localizedName(cat.name, lang, cat.id),
+        count: (masterCountByCat[cat.id] ?? 0) > 0
+          ? (masterCountByCat[cat.id] as number | "SOON")
+          : ("SOON" as const),
       }))
-  );
+      .sort((a, b) => {
+        if (a.count === "SOON" && b.count !== "SOON") return 1;
+        if (b.count === "SOON" && a.count !== "SOON") return -1;
+        if (typeof a.count === "number" && typeof b.count === "number") return b.count - a.count;
+        return 0;
+      }),
+  ];
 
   function isModalMaster(id: string | boolean) {
     if (typeof id !== "string") return false;
@@ -319,59 +259,30 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
           <div className="hero-filter-row">
             {/* City toggle */}
             <div className="filter-toggle-wrap">
-              <span className="filter-kicker">{t("main.cityKicker")}</span>
-              <Select
-                instanceId="majstr-city"
-                className="headline-select"
-                classNamePrefix="majstr-select"
-                unstyled
-                isSearchable={false}
-                menuPortalTarget={mounted ? document.body : undefined}
-                menuPosition="fixed"
-                value={
-                  pendingCity
-                    ? availableLocations.find((l) => l.value === pendingCity) ?? availableLocations[0]
-                    : availableLocations[0]
-                }
-                options={availableLocations}
-                styles={lightSelectStyles}
-                onChange={(e) => {
-                  if (e && "value" in e) {
-                    const newCity = e.value;
-                    setPendingCity(newCity);
-                    if (pendingTrade) {
-                      const pool = newCity
-                        ? masters.filter((m) => m.countryID === countryID && m.locationID === newCity)
-                        : masters.filter((m) => m.countryID === countryID);
-                      const profIDs = new Set(pool.map((m) => m.professionID));
-                      const catIDs = new Set(professions.filter((p) => profIDs.has(p.id)).map((p) => p.categoryID));
-                      if (!catIDs.has(pendingTrade)) setPendingTrade("");
-                    }
+              <SelectField
+                kicker={t("main.cityKicker")}
+                options={cityOptions}
+                value={pendingCity}
+                onChange={(newCity) => {
+                  setPendingCity(newCity);
+                  if (pendingTrade) {
+                    const pool = newCity
+                      ? masters.filter((m) => m.countryID === countryID && m.locationID === newCity)
+                      : masters.filter((m) => m.countryID === countryID);
+                    const profIDs = new Set(pool.map((m) => m.professionID));
+                    const catIDs = new Set(professions.filter((p: Profession) => profIDs.has(p.id)).map((p: Profession) => p.categoryID));
+                    if (!catIDs.has(pendingTrade)) setPendingTrade("");
                   }
                 }}
               />
             </div>
-            {/* Trade toggle — same style as city */}
+            {/* Trade toggle */}
             <div className="filter-toggle-wrap filter-toggle-noright">
-              <span className="filter-kicker">{t("main.tradeKicker")}</span>
-              <Select
-                instanceId="majstr-trade"
-                className="headline-select"
-                classNamePrefix="majstr-select"
-                unstyled
-                isSearchable={false}
-                menuPortalTarget={mounted ? document.body : undefined}
-                menuPosition="fixed"
-                value={
-                  pendingTrade
-                    ? tradeOptions.find((o) => o.value === pendingTrade) ?? tradeOptions[0]
-                    : tradeOptions[0]
-                }
+              <SelectField
+                kicker={t("main.tradeKicker")}
                 options={tradeOptions}
-                styles={lightSelectStyles}
-                onChange={(e) => {
-                  if (e && "value" in e) setPendingTrade(e.value);
-                }}
+                value={pendingTrade}
+                onChange={setPendingTrade}
               />
             </div>
             {/* Search button */}

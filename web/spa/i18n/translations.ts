@@ -45,7 +45,7 @@ export type LangTranslations = {
     step3Desc: string;
   };
   browse: { label: string; allCategories: string; browseLabel: string };
-  results: { found: string; empty: string; tryChanging: string; sortedByRating: string };
+  results: { found: string; empty: string; emptyCity: string; tryChanging: string; sortedByRating: string };
   modal: { noAbout: string; languages: string; about: string; skills: string; contact: string };
   masterCard: { details: string; noReviews: string; verified: string; memberSince: string };
   badge: { newThisWeek: string; recentlyAdded: string };
@@ -106,6 +106,7 @@ export const translations: Record<string, LangTranslations> = {
     results: {
       found: "Знайдено майстрів:",
       empty: "Майстрів за вашим запитом не знайдено.",
+      emptyCity: "Майстрів у {city} поки немає —",
       tryChanging: "Спробуйте змінити місто або категорію.",
       sortedByRating: "МАЙСТРІВ · НОВІ ПЕРШІ",
     },
@@ -182,6 +183,7 @@ export const translations: Record<string, LangTranslations> = {
     results: {
       found: "Masters found:",
       empty: "No masters found for your request.",
+      emptyCity: "No masters in {city} yet —",
       tryChanging: "Try changing the city or category.",
       sortedByRating: "RESULTS · NEWEST FIRST",
     },
@@ -258,6 +260,7 @@ export const translations: Record<string, LangTranslations> = {
     results: {
       found: "Artigiani trovati:",
       empty: "Nessun artigiano trovato per la tua ricerca.",
+      emptyCity: "Nessun artigiano trovato a {city} —",
       tryChanging: "Prova a cambiare città o categoria.",
       sortedByRating: "ARTIGIANI · PIÙ RECENTI",
     },
@@ -334,6 +337,7 @@ export const translations: Record<string, LangTranslations> = {
     results: {
       found: "Artesãos encontrados:",
       empty: "Nenhum artesão encontrado para a sua pesquisa.",
+      emptyCity: "Nenhum artesão encontrado em {city} —",
       tryChanging: "Tente mudar a cidade ou categoria.",
       sortedByRating: "ARTESÃOS · MAIS RECENTES",
     },
@@ -411,6 +415,7 @@ translations.ru = {
   results: {
     found: "Найдено мастеров:",
     empty: "По вашему запросу мастера не найдены.",
+    emptyCity: "Мастеров в {city} пока нет —",
     tryChanging: "Попробуйте изменить город или категорию.",
     sortedByRating: "МАСТЕРОВ · НОВЫЕ ПЕРВЫЕ",
   },
@@ -487,6 +492,7 @@ translations.de = {
   results: {
     found: "Gefundene Fachkräfte:",
     empty: "Keine Fachkräfte für deine Anfrage gefunden.",
+    emptyCity: "—",
     tryChanging: "Versuch, die Stadt oder Kategorie zu ändern.",
     sortedByRating: "ERGEBNISSE · NEUESTE ZUERST",
   },
@@ -563,6 +569,7 @@ translations.fr = {
   results: {
     found: "Artisans trouvés :",
     empty: "Aucun artisan trouvé pour votre recherche.",
+    emptyCity: "—",
     tryChanging: "Essayez de changer de ville ou de catégorie.",
     sortedByRating: "RÉSULTATS · LES PLUS RÉCENTS",
   },
@@ -639,6 +646,7 @@ translations.tr = {
   results: {
     found: "Bulunan ustalar:",
     empty: "Aramanız için usta bulunamadı.",
+    emptyCity: "—",
     tryChanging: "Şehri veya kategoriyi değiştirmeyi deneyin.",
     sortedByRating: "SONUÇLAR · EN YENİLER",
   },
@@ -715,6 +723,7 @@ translations.es = {
   results: {
     found: "Profesionales encontrados:",
     empty: "No se encontraron profesionales para tu búsqueda.",
+    emptyCity: "—",
     tryChanging: "Prueba a cambiar la ciudad o la categoría.",
     sortedByRating: "RESULTADOS · MÁS RECIENTES",
   },

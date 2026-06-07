@@ -492,87 +492,144 @@ img {
    ============================================================ */
 
 .filter-toggle-wrap {
-  padding: 12px 16px 10px;
-  background: var(--paper);
   border-right: var(--border);
-  cursor: pointer;
   min-height: 68px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
 }
-.filter-toggle-wrap.dark {
+
+/* ── Custom SelectField ──────────────────────────────────────────────────── */
+.sf-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 12px 40px 10px 16px;
+  background: var(--paper);
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  outline: none;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sf-field:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: -2px;
+}
+.sf-open {
   background: var(--ink);
   color: var(--paper);
 }
-.filter-kicker {
+.sf-kicker {
   font-family: var(--font-mono);
   font-size: 9.5px;
+  font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  font-weight: 700;
-  opacity: 0.55;
-  margin-bottom: 3px;
-  display: block;
+  color: rgba(14, 10, 6, 0.55);
+  line-height: 1;
 }
-.filter-toggle-wrap.dark .filter-kicker {
-  opacity: 0.62;
+.sf-open .sf-kicker {
+  color: var(--terra);
+}
+.sf-value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--ink);
+}
+.sf-open .sf-value {
+  color: var(--paper);
+}
+.sf-chev {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--ink);
+  opacity: 0.45;
+  transition: transform 0.15s ease, opacity 0.12s ease;
+  pointer-events: none;
+}
+.sf-open .sf-chev {
+  transform: translateY(-50%) rotate(180deg);
+  color: var(--paper);
+  opacity: 0.8;
 }
 
-/* Override react-select inside filter-toggle-wrap */
-.filter-toggle-wrap .headline-select .majstr-select__control {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  min-height: auto !important;
-  cursor: pointer !important;
+/* Dropdown menu (portaled to body, position: fixed via inline style) */
+.sf-menu {
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: 4px 4px 0 var(--ink);
+  max-height: 340px;
+  overflow-y: auto;
 }
-.filter-toggle-wrap .headline-select .majstr-select__value-container {
-  padding: 0 !important;
+.sf-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(14, 10, 6, 0.12);
+  white-space: nowrap;
 }
-.filter-toggle-wrap .headline-select .majstr-select__single-value {
-  font-family: var(--font-display) !important;
-  font-size: 22px !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.03em !important;
-  color: inherit !important;
-  text-transform: uppercase !important;
+.sf-opt:last-child {
+  border-bottom: none;
 }
-.filter-toggle-wrap .headline-select .majstr-select__indicator-separator {
-  display: none !important;
+.sf-mk {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  background: transparent;
 }
-.filter-toggle-wrap .headline-select .majstr-select__dropdown-indicator {
-  padding: 0 0 0 4px !important;
-  color: inherit !important;
-  opacity: 0.5 !important;
+.sf-opt-label {
+  flex: 1;
 }
-.filter-toggle-wrap .headline-select .majstr-select__menu {
-  border-radius: 0 !important;
-  border: var(--border) !important;
-  box-shadow: 4px 4px 0 var(--ink) !important;
-  background: var(--paper) !important;
-  margin-top: 2px !important;
+.sf-opt-meta {
+  margin-left: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(14, 10, 6, 0.45);
 }
-.filter-toggle-wrap .headline-select .majstr-select__option {
-  font-family: var(--font-display) !important;
-  font-size: 22px !important;
-  font-weight: 900 !important;
-  line-height: 1 !important;
-  letter-spacing: -0.03em !important;
-  text-transform: uppercase !important;
-  cursor: pointer !important;
-  background: var(--paper) !important;
-  color: var(--ink) !important;
-  white-space: nowrap !important;
-  padding: 8px 14px !important;
+.sf-soon {
+  color: var(--terra);
+  opacity: 0.7;
 }
-.filter-toggle-wrap .headline-select .majstr-select__option--is-focused {
-  background: var(--terra) !important;
-  color: var(--paper) !important;
+/* Hover */
+.sf-opt:hover {
+  background: var(--terra);
+  color: var(--paper);
 }
-.filter-toggle-wrap .headline-select .majstr-select__option--is-selected {
-  background: var(--ink) !important;
-  color: var(--paper) !important;
+.sf-opt:hover .sf-mk {
+  background: var(--paper);
+}
+.sf-opt:hover .sf-opt-meta {
+  color: rgba(255, 250, 240, 0.75);
+}
+/* Selected */
+.sf-sel {
+  background: var(--ink);
+  color: var(--paper);
+}
+.sf-sel .sf-mk {
+  background: var(--terra);
+}
+.sf-sel .sf-opt-meta {
+  color: var(--terra);
 }
 
 /* ============================================================
@@ -633,6 +690,41 @@ img {
 }
 .search-empty-state p {
   opacity: 0.5;
+}
+
+/* Design-spec empty state — dashed border, terra CTA */
+.masters-empty {
+  border: 2px dashed rgba(14, 10, 6, 0.3);
+  padding: 64px 24px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.4vw, 28px);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: rgba(14, 10, 6, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+.masters-empty-cta {
+  font-size: clamp(14px, 1.4vw, 18px);
+}
+.masters-empty-reset {
+  background: none;
+  border: none;
+  font-family: var(--font-display);
+  font-size: inherit;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--terra);
+  cursor: pointer;
+  padding: 0;
+}
+.masters-empty-reset:hover {
+  text-decoration: underline;
 }
 
 /* ============================================================

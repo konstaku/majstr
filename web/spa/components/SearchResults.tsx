@@ -1,7 +1,6 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { MasterContext } from "../context";
 import MasterCard from "./MasterCard";
 import { useTranslation } from "../custom-hooks/useTranslation";
@@ -61,7 +60,7 @@ export default function SearchResults({
   setShowModal,
 }: SearchResultsProps) {
   const {
-    state: { professions, countryID },
+    state: { professions, locations, countryID },
     dispatch,
   } = useContext(MasterContext);
   const { t } = useTranslation();
@@ -124,22 +123,24 @@ export default function SearchResults({
       </div>
 
       {filteredMasters.length === 0 ? (
-        <div className="search-empty-state">
-          <p>{t("results.empty")}</p>
-          <p>{t("results.tryChanging")}</p>
-          <div className="empty-state-actions">
-            {hasActiveFilter && (
-              <button
-                className="empty-state-btn"
-                onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}
-              >
-                {t("browse.allCategories")} →
-              </button>
-            )}
-            <Link href="/add" className="empty-state-btn empty-state-btn-secondary">
-              {t("nav.addMaster")} →
-            </Link>
-          </div>
+        <div className="masters-empty">
+          <span className="masters-empty-line">
+            {city
+              ? (() => {
+                  const loc = locations.find((l) => l.id === city);
+                  const name = loc?.name?.ua ?? loc?.name?.en ?? city;
+                  return t("results.emptyCity").replace("{city}", name);
+                })()
+              : t("results.empty")}
+          </span>
+          <span className="masters-empty-cta">
+            <button
+              className="masters-empty-reset"
+              onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}
+            >
+              {t("results.tryChanging")}
+            </button>
+          </span>
         </div>
       ) : (
         <>
