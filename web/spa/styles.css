@@ -555,13 +555,16 @@ img {
 }
 .filter-toggle-wrap .headline-select .majstr-select__option {
   font-family: var(--font-display) !important;
-  font-size: 13px !important;
+  font-size: 22px !important;
   font-weight: 900 !important;
-  letter-spacing: -0.01em !important;
+  line-height: 1 !important;
+  letter-spacing: -0.03em !important;
   text-transform: uppercase !important;
   cursor: pointer !important;
   background: var(--paper) !important;
   color: var(--ink) !important;
+  white-space: nowrap !important;
+  padding: 8px 14px !important;
 }
 .filter-toggle-wrap .headline-select .majstr-select__option--is-focused {
   background: var(--terra) !important;

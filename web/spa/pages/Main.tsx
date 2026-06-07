@@ -66,13 +66,12 @@ export const lightSelectStyles = {
     overflow: "hidden",
     marginTop: "2px",
     minWidth: "100%",
-    maxWidth: "280px",
     width: "max-content",
   }),
   // Portaled menu: clamp right edge so it never exits the viewport
   menuPortal: (base: CSSObjectWithLabel) => {
     const left = typeof base.left === "number" ? (base.left as number) : 0;
-    const maxW = Math.min(280, window.innerWidth - left - 12);
+    const maxW = window.innerWidth - left - 12;
     return { ...base, zIndex: 9999, maxWidth: `${maxW}px` };
   },
   option: (
@@ -87,14 +86,14 @@ export const lightSelectStyles = {
     backgroundColor: state.isFocused ? "#c84b31" : "#fffaf0",
     color: state.isFocused ? "#fffaf0" : "#0e0a06",
     fontFamily: '"Archivo Black", "DM Sans", sans-serif',
-    fontSize: "13px",
+    fontSize: "22px",
     fontWeight: 900,
-    letterSpacing: "-0.01em",
+    lineHeight: 1,
+    letterSpacing: "-0.03em",
     textTransform: "uppercase" as const,
     cursor: "pointer",
-    padding: "10px 14px",
-    whiteSpace: "normal" as const,
-    overflowWrap: "break-word" as const,
+    padding: "8px 14px",
+    whiteSpace: "nowrap" as const,
   }),
 };
 
