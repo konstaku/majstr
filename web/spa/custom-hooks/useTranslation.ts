@@ -1,12 +1,11 @@
 import { useContext } from "react";
 import { MasterContext } from "../context";
-import { ACTIONS } from "../data/actions";
 import { translations } from "../i18n/translations";
 
 export function useTranslation() {
-  const { state, dispatch } = useContext(MasterContext);
+  const { state } = useContext(MasterContext);
   const lang = state.lang || "uk";
-  const dict = translations[lang] ?? translations["en"];
+  const dict = translations[lang] ?? translations["uk"];
 
   function t(key: string, params?: Record<string, string>): string {
     const parts = key.split(".");
@@ -23,10 +22,5 @@ export function useTranslation() {
     return result.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? `{${k}}`);
   }
 
-  function setLang(newLang: string) {
-    localStorage.setItem("lang", newLang);
-    dispatch({ type: ACTIONS.SET_LANGUAGE, payload: { lang: newLang } });
-  }
-
-  return { t, lang, setLang };
+  return { t, lang };
 }

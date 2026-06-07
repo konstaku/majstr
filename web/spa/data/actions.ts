@@ -11,5 +11,4 @@ export const ACTIONS = {
   DELETE: "DELETE",
   FILTER: "FILTER",
   ERROR: "ERROR",
-  SET_LANGUAGE: "SET_LANGUAGE",
 } as const;

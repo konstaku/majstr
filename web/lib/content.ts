@@ -8,6 +8,8 @@ import { CITY_REGION, PROFESSION_TIPS } from "./seo-data";
 //    "{profession} Италия" (no city); city hubs target "мастера {city}".
 // Counts are only surfaced in titles when impressive (≥5) to avoid the
 // "— 2 мастера" credibility hit and number-agreement bugs.
+// English mirrors the same structure for the diaspora searching in English;
+// it has no case system, so cityNom and cityPrep collapse to the same form.
 
 const lower = (s: string) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
 const BRAND = " | Majstr";
@@ -33,7 +35,9 @@ export function landingTitle(
       ? mastersCount(count, lang)
       : lang === "ru"
         ? "русскоязычные мастера"
-        : "україномовні майстри";
+        : lang === "en"
+          ? "Ukrainian-speaking masters"
+          : "україномовні майстри";
   return `${lead} ${cityNom} — ${tail}${BRAND}`;
 }
 
@@ -42,9 +46,11 @@ export function landingDescription(
   lead: string,
   cityPrep: string
 ): string {
-  return lang === "ru"
-    ? `${lead} ${cityPrep}. Проверенные русскоязычные мастера: портфолио, цены, отзывы и запись напрямую в Telegram. Бесплатно, без посредников.`
-    : `${lead} ${cityPrep}. Перевірені україномовні майстри: портфоліо, ціни, відгуки та запис напряму в Telegram. Безкоштовно, без посередників.`;
+  if (lang === "ru")
+    return `${lead} ${cityPrep}. Проверенные русскоязычные мастера: портфолио, цены, отзывы и запись напрямую в Telegram. Бесплатно, без посредников.`;
+  if (lang === "en")
+    return `${lead} ${cityPrep}. Verified Ukrainian- and Russian-speaking masters: portfolios, prices, reviews and booking directly on Telegram. Free, no middlemen.`;
+  return `${lead} ${cityPrep}. Перевірені україномовні майстри: портфоліо, ціни, відгуки та запис напряму в Telegram. Безкоштовно, без посередників.`;
 }
 
 // A truthful, city-specific sentence (region varies per city) so landing pages
@@ -52,9 +58,11 @@ export function landingDescription(
 function regionSentence(lang: Lang, cityPrep: string, cityId: string): string {
   const region = CITY_REGION[cityId]?.[lang];
   if (!region) return "";
-  return lang === "ru"
-    ? `Мастера работают ${cityPrep} и в соседних городах региона ${region}.`
-    : `Майстри працюють ${cityPrep} та в сусідніх містах регіону ${region}.`;
+  if (lang === "ru")
+    return `Мастера работают ${cityPrep} и в соседних городах региона ${region}.`;
+  if (lang === "en")
+    return `Masters work ${cityPrep} and in nearby towns of the ${region} region.`;
+  return `Майстри працюють ${cityPrep} та в сусідніх містах регіону ${region}.`;
 }
 
 export function landingIntro(
@@ -70,13 +78,20 @@ export function landingIntro(
     count >= 5
       ? lang === "ru"
         ? `${lead} ${cityPrep} — ${mastersCount(count, lang)} в каталоге Majstr.`
-        : `${lead} ${cityPrep} — ${mastersCount(count, lang)} у каталозі Majstr.`
+        : lang === "en"
+          ? `${lead} ${cityPrep} — ${mastersCount(count, lang)} in the Majstr directory.`
+          : `${lead} ${cityPrep} — ${mastersCount(count, lang)} у каталозі Majstr.`
       : lang === "ru"
         ? `${lead} ${cityPrep}. Проверенные русскоязычные мастера в каталоге Majstr.`
-        : `${lead} ${cityPrep}. Перевірені україномовні майстри в каталозі Majstr.`;
+        : lang === "en"
+          ? `${lead} ${cityPrep}. Verified Ukrainian- and Russian-speaking masters in the Majstr directory.`
+          : `${lead} ${cityPrep}. Перевірені україномовні майстри в каталозі Majstr.`;
   const region = regionSentence(lang, cityPrep, cityId);
   if (lang === "ru") {
     return `${opener} Все мастера говорят по-русски и по-украински и понимают клиентов из Украины и стран СНГ. ${region}${sub ? " " + sub : ""} Смотрите портфолио, цены и реальные отзывы, сравнивайте специалистов и записывайтесь напрямую через Telegram — бесплатно и без посредников.`;
+  }
+  if (lang === "en") {
+    return `${opener} All masters speak Ukrainian and Russian and understand clients from Ukraine and the CIS. ${region}${sub ? " " + sub : ""} Browse portfolios, prices and real reviews, compare specialists and book directly via Telegram — free and without middlemen.`;
   }
   return `${opener} Усі майстри говорять українською та російською і розуміють потреби клієнтів з України. ${region}${sub ? " " + sub : ""} Дивіться портфоліо, ціни та реальні відгуки, порівнюйте спеціалістів і записуйтесь напряму через Telegram — безкоштовно й без посередників.`;
 }
@@ -87,10 +102,14 @@ export function landingBody(lang: Lang, professionID: string): string {
     PROFESSION_TIPS[professionID]?.[lang] ??
     (lang === "ru"
       ? "напишите мастеру в Telegram, опишите задачу и уточните цену и сроки."
-      : "напишіть майстру в Telegram, опишіть завдання та уточніть ціну й терміни.");
-  return lang === "ru"
-    ? `Как выбрать мастера: ${tip} На Majstr вы пишете напрямую в Telegram — без посредников и комиссии — и обсуждаете все детали на родном языке.`
-    : `Як обрати майстра: ${tip} На Majstr ви пишете напряму в Telegram — без посередників і комісії — та обговорюєте всі деталі рідною мовою.`;
+      : lang === "en"
+        ? "message the master on Telegram, describe your task and confirm the price and timing."
+        : "напишіть майстру в Telegram, опишіть завдання та уточніть ціну й терміни.");
+  if (lang === "ru")
+    return `Как выбрать мастера: ${tip} На Majstr вы пишете напрямую в Telegram — без посредников и комиссии — и обсуждаете все детали на родном языке.`;
+  if (lang === "en")
+    return `How to choose a master: ${tip} On Majstr you message directly on Telegram — no middlemen and no commission — and discuss every detail in your own language.`;
+  return `Як обрати майстра: ${tip} На Majstr ви пишете напряму в Telegram — без посередників і комісії — та обговорюєте всі деталі рідною мовою.`;
 }
 
 export function landingFaq(
@@ -111,6 +130,22 @@ export function landingFaq(
       {
         q: `Как записаться к мастеру?`,
         a: `Запись бесплатная и происходит напрямую через Telegram: откройте профиль мастера и напишите ему в один клик — без посредников и комиссии.`,
+      },
+    ];
+  }
+  if (lang === "en") {
+    return [
+      {
+        q: `How much does ${lower(lead)} ${cityPrep} cost?`,
+        a: `Prices depend on the master and the service — each specialist lists their prices in their profile. Compare offers and reviews in the Majstr directory before booking.`,
+      },
+      {
+        q: `Do the masters speak Ukrainian and Russian?`,
+        a: `Yes. Every specialist in the Majstr directory speaks Ukrainian and Russian, and many also speak Italian, so you can discuss every detail in your own language.`,
+      },
+      {
+        q: `How do I book a master?`,
+        a: `Booking is free and happens directly on Telegram: open the master's profile and message them in one click — no middlemen and no commission.`,
       },
     ];
   }
@@ -145,31 +180,37 @@ export function masterDescription(
   profName: string,
   cityPrep: string
 ): string {
-  return lang === "ru"
-    ? `${name}: ${lower(profName)} ${cityPrep}. Говорит по-русски и по-украински. Портфолио, цены и отзывы — запись напрямую через Telegram, бесплатно.`
-    : `${name}: ${lower(profName)} ${cityPrep}. Говорить українською та російською. Портфоліо, ціни та відгуки — запис напряму через Telegram, безкоштовно.`;
+  if (lang === "ru")
+    return `${name}: ${lower(profName)} ${cityPrep}. Говорит по-русски и по-украински. Портфолио, цены и отзывы — запись напрямую через Telegram, бесплатно.`;
+  if (lang === "en")
+    return `${name}: ${lower(profName)} ${cityPrep}. Speaks Ukrainian and Russian. Portfolio, prices and reviews — book directly via Telegram, free.`;
+  return `${name}: ${lower(profName)} ${cityPrep}. Говорить українською та російською. Портфоліо, ціни та відгуки — запис напряму через Telegram, безкоштовно.`;
 }
 
 // ── City hub ──────────────────────────────────────────────────────────────────
 export function cityHubTitle(lang: Lang, cityPrep: string): string {
-  return lang === "ru"
-    ? `Русскоязычные мастера ${cityPrep}${BRAND}`
-    : `Україномовні майстри ${cityPrep}${BRAND}`;
+  if (lang === "ru") return `Русскоязычные мастера ${cityPrep}${BRAND}`;
+  if (lang === "en") return `Ukrainian- & Russian-speaking masters ${cityPrep}${BRAND}`;
+  return `Україномовні майстри ${cityPrep}${BRAND}`;
 }
 export function cityHubDescription(lang: Lang, cityPrep: string): string {
-  return lang === "ru"
-    ? `Каталог русскоязычных специалистов ${cityPrep}: маникюр, парикмахеры, косметологи, электрики, врачи и другие мастера. Отзывы, цены, запись бесплатно.`
-    : `Каталог україномовних спеціалістів ${cityPrep}: манікюр, перукарі, косметологи, електрики, лікарі та інші майстри. Відгуки, ціни, запис безкоштовно.`;
+  if (lang === "ru")
+    return `Каталог русскоязычных специалистов ${cityPrep}: маникюр, парикмахеры, косметологи, электрики, врачи и другие мастера. Отзывы, цены, запись бесплатно.`;
+  if (lang === "en")
+    return `Directory of Ukrainian- and Russian-speaking specialists ${cityPrep}: manicurists, hairdressers, beauticians, electricians, doctors and more. Reviews, prices, free booking.`;
+  return `Каталог україномовних спеціалістів ${cityPrep}: манікюр, перукарі, косметологи, електрики, лікарі та інші майстри. Відгуки, ціни, запис безкоштовно.`;
 }
 
 // ── Profession hub (all cities) ───────────────────────────────────────────────
 export function professionHubTitle(lang: Lang, lead: string): string {
-  return lang === "ru"
-    ? `${lead} в Италии — русскоязычные мастера${BRAND}`
-    : `${lead} в Італії — україномовні майстри${BRAND}`;
+  if (lang === "ru") return `${lead} в Италии — русскоязычные мастера${BRAND}`;
+  if (lang === "en") return `${lead} in Italy — Ukrainian-speaking masters${BRAND}`;
+  return `${lead} в Італії — україномовні майстри${BRAND}`;
 }
 export function professionHubDescription(lang: Lang, lead: string): string {
-  return lang === "ru"
-    ? `Русскоязычные мастера: ${lower(lead)} в городах Италии — Милан, Рим, Турин, Неаполь, Флоренция и другие. Цены, отзывы, запись в Telegram. Бесплатно.`
-    : `Україномовні майстри: ${lower(lead)} у містах Італії — Мілан, Рим, Турин, Неаполь, Флоренція та інші. Ціни, відгуки, запис у Telegram. Безкоштовно.`;
+  if (lang === "ru")
+    return `Русскоязычные мастера: ${lower(lead)} в городах Италии — Милан, Рим, Турин, Неаполь, Флоренция и другие. Цены, отзывы, запись в Telegram. Бесплатно.`;
+  if (lang === "en")
+    return `Ukrainian-speaking masters: ${lower(lead)} in cities across Italy — Milan, Rome, Turin, Naples, Florence and more. Prices, reviews, booking on Telegram. Free.`;
+  return `Україномовні майстри: ${lower(lead)} у містах Італії — Мілан, Рим, Турин, Неаполь, Флоренція та інші. Ціни, відгуки, запис у Telegram. Безкоштовно.`;
 }

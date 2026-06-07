@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
   getDataset,
   resolveCityBySlug,
@@ -58,9 +58,12 @@ export async function generateMetadata({
     const title =
       lang === "ru"
         ? `Русскоязычные мастера ${cityPrep(city, lang)} | Majstr`
-        : `Україномовні майстри ${cityPrep(city, lang)} | Majstr`;
+        : lang === "en"
+          ? `Ukrainian- & Russian-speaking masters ${cityPrep(city, lang)} | Majstr`
+          : `Україномовні майстри ${cityPrep(city, lang)} | Majstr`;
     return {
       title,
+      robots: isIndexable(lang) ? undefined : { index: false, follow: true },
       alternates: { canonical: abs(`/${lang}/${city.id}`), languages: langAlt(city.id) },
       openGraph: { title, locale: OG_LOCALE[lang], type: "website" },
     };
@@ -70,9 +73,12 @@ export async function generateMetadata({
   const title =
     lang === "ru"
       ? `${catName} в Италии — русскоязычные мастера | Majstr`
-      : `${catName} в Італії — україномовні майстри | Majstr`;
+      : lang === "en"
+        ? `${catName} in Italy — Ukrainian-speaking masters | Majstr`
+        : `${catName} в Італії — україномовні майстри | Majstr`;
   return {
     title,
+    robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: { canonical: abs(`/${lang}/${cat.id}`), languages: langAlt(cat.id) },
     openGraph: { title, locale: OG_LOCALE[lang], type: "website" },
   };

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
   getDataset,
   resolveCityBySlug,
@@ -62,14 +62,19 @@ export async function generateMetadata({
   const title =
     lang === "ru"
       ? `${catName} ${cityPrep(city, lang)} — русскоязычные мастера | Majstr`
-      : `${catName} ${cityPrep(city, lang)} — україномовні майстри | Majstr`;
+      : lang === "en"
+        ? `${catName} ${cityPrep(city, lang)} — Ukrainian-speaking masters | Majstr`
+        : `${catName} ${cityPrep(city, lang)} — україномовні майстри | Majstr`;
   const description =
     lang === "ru"
       ? `${catName} ${cityPrep(city, lang)}: проверенные русскоязычные мастера. Цены, отзывы, запись напрямую в Telegram. Бесплатно, без посредников.`
-      : `${catName} ${cityPrep(city, lang)}: перевірені україномовні майстри. Ціни, відгуки, запис напряму в Telegram. Безкоштовно, без посередників.`;
+      : lang === "en"
+        ? `${catName} ${cityPrep(city, lang)}: verified Ukrainian- and Russian-speaking masters. Prices, reviews, booking directly on Telegram. Free, no middlemen.`
+        : `${catName} ${cityPrep(city, lang)}: перевірені україномовні майстри. Ціни, відгуки, запис напряму в Telegram. Безкоштовно, без посередників.`;
   return {
     title,
     description,
+    robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
       canonical: abs(`/${lang}/${city.id}/${cat.id}`),
       languages: langAlt(city.id, cat.id),

@@ -6,7 +6,6 @@ import { MasterContext } from "../context";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
-import { urlLang } from "@/lib/i18n";
 import { SelectField } from "../components/SelectField";
 
 import SearchResults from "../components/SearchResults";
@@ -246,7 +245,9 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
               ? <span className="hero-stat-loading">&nbsp;</span>
               : lang === "uk"
                 ? `Україномовних майстрів доступно цього тижня у ${statLocationName}.`
-                : `Ukrainian-speaking craftsmen available this week in ${statLocationName}.`}
+                : lang === "ru"
+                  ? `Русскоязычных мастеров доступно на этой неделе в ${statLocationName}.`
+                  : `Ukrainian-speaking craftsmen available this week in ${statLocationName}.`}
           </div>
         </div>
 
@@ -293,18 +294,25 @@ function Main({ initialCard }: { initialCard?: string } = {}) {
               onClick={() => {
                 dispatch({ type: ACTIONS.SET_CITY, payload: { selectedCity: pendingCity } });
                 dispatch({ type: ACTIONS.SET_PROFESSION, payload: { selectedProfessionCategory: pendingTrade } });
-                // Filters drive the URL: /{lang}/{city}/{category} (each part optional).
-                // Only uk/ru have SEO routes — clamp the UI lang so we never
-                // navigate to a 404 path like /en/medicine.
-                const segs: string[] = [urlLang(lang)];
+                // Filters drive the URL: /{lang}/{city}/{category} (each part
+                // optional). `lang` is the URL locale (uk/ru/en), so each part
+                // is always a real route.
+                const segs: string[] = [lang];
                 if (pendingCity) segs.push(pendingCity);
                 if (pendingTrade) segs.push(pendingTrade);
-                router.push("/" + segs.join("/"));
+                // `scroll: false` — this navigation remounts the SPA (the new
+                // route has its own seed), so Next's default scroll-to-top would
+                // yank the page up. We do our own scroll-to-results instead.
+                router.push("/" + segs.join("/"), { scroll: false });
                 setTimeout(() => {
-                  if (!resultsRef.current) return;
+                  // Query the DOM, not resultsRef: the remount gives the new page
+                  // a fresh ref, leaving this closure's ref pointing at the
+                  // unmounted tree (null).
+                  const resultsEl = document.querySelector(".results-section");
+                  if (!resultsEl) return;
                   const headerEl = document.querySelector(".header") as HTMLElement | null;
                   const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
-                  const top = resultsRef.current.getBoundingClientRect().top + window.scrollY - headerHeight;
+                  const top = resultsEl.getBoundingClientRect().top + window.scrollY - headerHeight;
                   window.scrollTo({ top, behavior: "smooth" });
                 }, 50);
               }}

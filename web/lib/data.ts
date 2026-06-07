@@ -80,6 +80,8 @@ export function cityNom(loc: Location, lang: Lang): string {
 export function cityPrep(loc: Location, lang: Lang): string {
   const fixed = CITY_PREP[loc.id]?.[lang];
   if (fixed) return fixed;
+  // English has no prepositional case — "in <City>".
+  if (lang === "en") return `in ${nomName(loc.name, "en")}`.trim();
   const alt =
     lang === "ru"
       ? loc.name.ru_alt ?? loc.name.ru

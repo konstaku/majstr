@@ -5,20 +5,20 @@ import {
   categoriesWithMasters,
   masterSlug,
 } from "@/lib/data";
-import { LANGS, type Lang } from "@/lib/i18n";
+import { INDEXED_LANGS, type Lang } from "@/lib/i18n";
 import { abs, homePath, masterPath } from "@/lib/urls";
 
 export const revalidate = 3600;
 
 const langAlt = (build: (l: Lang) => string) =>
-  Object.fromEntries(LANGS.map((l) => [l, abs(build(l))]));
+  Object.fromEntries(INDEXED_LANGS.map((l) => [l, abs(build(l))]));
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { masters, professions, locById, profById } = await getDataset();
   const entries: MetadataRoute.Sitemap = [];
 
   // Home
-  for (const lang of LANGS)
+  for (const lang of INDEXED_LANGS)
     entries.push({
       url: abs(homePath(lang)),
       changeFrequency: "daily",
@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // City pages (/{lang}/{city})
   for (const id of new Set(masters.map((m) => m.locationID))) {
     if (!locById.get(id)) continue;
-    for (const lang of LANGS)
+    for (const lang of INDEXED_LANGS)
       entries.push({
         url: abs(`/${lang}/${id}`),
         changeFrequency: "weekly",
@@ -40,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Category pages (/{lang}/{category})
   for (const c of categoriesWithMasters(masters, professions)) {
-    for (const lang of LANGS)
+    for (const lang of INDEXED_LANGS)
       entries.push({
         url: abs(`/${lang}/${c}`),
         changeFrequency: "weekly",
@@ -53,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const combo of cityCategoryCombos(masters, professions)) {
     if (!locById.get(combo.locationID)) continue;
     const path = (l: Lang) => `/${l}/${combo.locationID}/${combo.categoryID}`;
-    for (const lang of LANGS)
+    for (const lang of INDEXED_LANGS)
       entries.push({
         url: abs(path(lang)),
         changeFrequency: "weekly",
@@ -65,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Master pages (/{lang}/m/{slug})
   for (const m of masters) {
     const slug = masterSlug(m, profById.get(m.professionID), locById.get(m.locationID));
-    for (const lang of LANGS)
+    for (const lang of INDEXED_LANGS)
       entries.push({
         url: abs(masterPath(lang, slug)),
         lastModified: m.updatedAt ? new Date(m.updatedAt) : undefined,

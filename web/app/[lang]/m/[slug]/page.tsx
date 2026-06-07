@@ -1,6 +1,6 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isIndexable, INDEXED_LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
   findMasterBySlug,
   allMasterParams,
@@ -24,7 +24,9 @@ type Params = { lang: string; slug: string };
 
 export async function generateStaticParams(): Promise<Params[]> {
   const slugs = await allMasterParams();
-  return LANGS.flatMap((lang) => slugs.map((s) => ({ lang, slug: s.slug })));
+  // Pre-render only indexed locales; a gated locale (en while unpublished) still
+  // renders on demand via dynamicParams, keeping build time/cost flat.
+  return INDEXED_LANGS.flatMap((lang) => slugs.map((s) => ({ lang, slug: s.slug })));
 }
 
 export async function generateMetadata({
@@ -44,6 +46,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
       canonical: abs(masterPath(lang, canonical)),
       languages: languageAlternates((l) => masterPath(l, canonical)),

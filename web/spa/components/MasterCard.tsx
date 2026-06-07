@@ -3,7 +3,6 @@
 import { useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
@@ -11,6 +10,7 @@ import { transliterate } from "../helpers/transliterate";
 import Sigil from "./Sigil";
 import { masterSlug } from "@/lib/data";
 import { masterPath } from "@/lib/urls";
+import type { Lang } from "@/lib/i18n";
 
 import type { Master } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
@@ -48,10 +48,9 @@ export default function MasterCard({ master, setShowModal, isNew }: MasterCardPr
   const profName = localizedName(prof?.name, lang);
   const locName = localizedName(loc?.name, lang);
 
-  // Crawlable master-page URL in the current URL locale (uk/ru).
-  const pathname = usePathname();
-  const urlLang = pathname?.split("/")[1] === "ru" ? "ru" : "uk";
-  const href = masterPath(urlLang, masterSlug(master, prof, loc));
+  // Crawlable master-page URL in the current locale. `lang` mirrors the URL
+  // locale (seeded server-side), so it's the right prefix for uk/ru/en.
+  const href = masterPath(lang as Lang, masterSlug(master, prof, loc));
 
   const displayLangs = (languages && languages.length > 0)
     ? languages

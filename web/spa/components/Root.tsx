@@ -17,13 +17,8 @@ import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { LANG_LABELS, LANG_FLAGS } from "../i18n/translations";
-import { urlLang } from "@/lib/i18n";
-import {
-  localizedName,
-  APP_LANGS,
-  LANG_ENDONYM,
-  type AppLang,
-} from "../i18n/lang";
+import { LANGS, type Lang } from "@/lib/i18n";
+import { localizedName, LANG_ENDONYM } from "../i18n/lang";
 import { apiFetch } from "../api/client";
 import AddMasterModal from "./AddMasterModal";
 
@@ -268,13 +263,21 @@ function CountryToggle({ countries, countryID, dispatch, lang }: CountryTogglePr
 }
 
 function LanguageSwitcher({ onClose }: { onClose?: () => void }) {
-  const { lang, setLang } = useTranslation();
+  const { lang } = useTranslation();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const cur: AppLang = (APP_LANGS as readonly string[]).includes(lang)
-    ? (lang as AppLang)
-    : "en";
+  // The URL is the source of truth for language, so switching is navigation.
+  // Strip the leading locale; the rest of the path is language-independent
+  // (city/category/master are raw ids), so the same page exists in every
+  // locale — a pure segment swap.
+  const rest = (pathname ?? "/").replace(/^\/(uk|ru|en)(?=\/|$)/, "");
+  const hrefFor = (l: Lang) => `/${l}${rest}` || `/${l}`;
+
+  const cur: Lang = (LANGS as readonly string[]).includes(lang)
+    ? (lang as Lang)
+    : "uk";
 
   useEffect(() => {
     if (!open) return;
@@ -293,7 +296,7 @@ function LanguageSwitcher({ onClose }: { onClose?: () => void }) {
     };
   }, [open]);
 
-  const ariaName = (code: AppLang) =>
+  const ariaName = (code: Lang) =>
     code === "ru" ? "RU — Русский" : LANG_ENDONYM[code];
 
   return (
@@ -315,13 +318,14 @@ function LanguageSwitcher({ onClose }: { onClose?: () => void }) {
         </button>
         {open && (
           <div className="lang-popover" id="lang-menu" role="menu">
-            {APP_LANGS.map((code) => (
-              <button
+            {LANGS.map((code) => (
+              <Link
                 key={code}
+                href={hrefFor(code)}
+                hrefLang={code}
                 role="menuitem"
                 className={`lang-popover-item ${lang === code ? "active" : ""}`}
                 onClick={() => {
-                  setLang(code);
                   setOpen(false);
                   onClose?.();
                 }}
@@ -333,7 +337,7 @@ function LanguageSwitcher({ onClose }: { onClose?: () => void }) {
                 ) : null}
                 {LANG_LABELS[code]}
                 <span className="lang-endo">{LANG_ENDONYM[code]}</span>
-              </button>
+              </Link>
             ))}
           </div>
         )}
@@ -413,7 +417,7 @@ function FooterContent({ onAddMasterClick }: { onAddMasterClick: () => void }) {
         </div>
         <div className="footer-col">
           <h4>Legal</h4>
-          <Link href={`/${urlLang(lang)}/privacy`}>{t("footer.privacy")}</Link>
+          <Link href={`/${lang}/privacy`}>{t("footer.privacy")}</Link>
           <span>{t("footer.terms")}</span>
           <span>{t("footer.moderation")}</span>
           <span>{t("footer.feedback")}</span>

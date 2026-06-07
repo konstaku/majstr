@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { LANGS, isLang, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { LANGS, isLang, isIndexable, OG_LOCALE, type Lang } from "@/lib/i18n";
 import { getDataset } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
 import { abs, homePath, languageAlternates } from "@/lib/urls";
@@ -17,9 +17,9 @@ export function generateStaticParams() {
 }
 
 function homeTitle(lang: Lang) {
-  return lang === "ru"
-    ? "Русско- и украиноязычные мастера в Италии | Majstr"
-    : "Україно- та російськомовні майстри в Італії | Majstr";
+  if (lang === "ru") return "Русско- и украиноязычные мастера в Италии | Majstr";
+  if (lang === "en") return "Ukrainian- and Russian-speaking masters in Italy | Majstr";
+  return "Україно- та російськомовні майстри в Італії | Majstr";
 }
 
 // NOTE: deliberately does NOT read searchParams. Reading searchParams here opts
@@ -39,6 +39,7 @@ export async function generateMetadata({
   const title = homeTitle(lang);
   return {
     title,
+    robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
       canonical: abs(homePath(lang)),
       languages: languageAlternates((l) => homePath(l)),
@@ -79,7 +80,7 @@ export default async function Home({
               "@id": `${SITE_URL}/#website`,
               url: SITE_URL,
               name: "Majstr",
-              inLanguage: lang === "ru" ? "ru" : "uk",
+              inLanguage: lang,
               publisher: { "@id": `${SITE_URL}/#organization` },
             },
           ],

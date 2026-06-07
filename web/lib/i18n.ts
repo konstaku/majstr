@@ -1,8 +1,9 @@
 import type { LocName } from "./api";
 
-// SEO content languages. uk + ru are the launch targets; the data layer is
-// language-agnostic so more can be added.
-export const LANGS = ["uk", "ru"] as const;
+// Supported locales. The URL is the single source of truth for language —
+// every locale here is a real, indexed /[lang]/... route. The data layer is
+// language-agnostic, so adding a locale = adding it here + authoring its copy.
+export const LANGS = ["uk", "ru", "en"] as const;
 export type Lang = (typeof LANGS)[number];
 export const DEFAULT_LANG: Lang = "uk";
 
@@ -10,19 +11,38 @@ export function isLang(x: string): x is Lang {
   return (LANGS as readonly string[]).includes(x);
 }
 
-// The UI offers ~9 languages, but only uk/ru have SEO routes. Map any UI
-// language to a valid URL locale so navigation never builds a 404 path like
-// /en/medicine. RU stays RU; everything else falls back to the default (uk).
-export function urlLang(x: string): Lang {
-  return x === "ru" ? "ru" : DEFAULT_LANG;
+// Content gate for English. While false, `en` routes still render and are
+// reachable via the language switcher, but are excluded from the sitemap +
+// hreflang and marked noindex per page — so we never publish thin/duplicate
+// pages. One switch drives sitemap inclusion, hreflang inclusion, and the
+// per-page robots flag. Flip to true once English template copy is authored.
+export const EN_INDEXED = true;
+
+// Locales advertised to crawlers (sitemap entries + hreflang alternates).
+// While `en` is gated it stays out of this list but its routes still render.
+export const INDEXED_LANGS: readonly Lang[] = EN_INDEXED
+  ? LANGS
+  : LANGS.filter((l) => l !== "en");
+
+// Whether a locale should be indexed. Drives the per-page `robots` flag — a
+// gated locale renders but is marked noindex,follow (keeps link equity flowing
+// while keeping thin pages out of the index).
+export function isIndexable(lang: Lang): boolean {
+  return lang !== "en" || EN_INDEXED;
 }
 
 // Map a UI lang to the key used in the API's localized name objects.
 // The API uses `ua` for Ukrainian. Nominative vs prepositional:
 //   nominative  → ua / ru
 //   prepositional → ua_alt / ru_alt   (e.g. Milan → "Мілані" / "Милане")
-const NAME_KEY: Record<Lang, keyof LocName> = { uk: "ua", ru: "ru" };
-const PREP_KEY: Record<Lang, keyof LocName> = { uk: "ua_alt", ru: "ru_alt" };
+const NAME_KEY: Record<Lang, keyof LocName> = { uk: "ua", ru: "ru", en: "en" };
+// English has no case system, so there's no prepositional variant — fall back to
+// the nominative `en` key (prepName already degrades to nomName when missing).
+const PREP_KEY: Record<Lang, keyof LocName> = {
+  uk: "ua_alt",
+  ru: "ru_alt",
+  en: "en",
+};
 
 export function nomName(name: LocName | undefined, lang: Lang): string {
   return name?.[NAME_KEY[lang]] ?? name?.en ?? "";
@@ -31,8 +51,12 @@ export function prepName(name: LocName | undefined, lang: Lang): string {
   return name?.[PREP_KEY[lang]] ?? nomName(name, lang);
 }
 
-export const HTML_LANG: Record<Lang, string> = { uk: "uk", ru: "ru" };
-export const OG_LOCALE: Record<Lang, string> = { uk: "uk_UA", ru: "ru_RU" };
+export const HTML_LANG: Record<Lang, string> = { uk: "uk", ru: "ru", en: "en" };
+export const OG_LOCALE: Record<Lang, string> = {
+  uk: "uk_UA",
+  ru: "ru_RU",
+  en: "en_US",
+};
 
 // ── Pluralization (RU & UK share the one/few/many rule) ───────────────────────
 export function plural(n: number, forms: [string, string, string]): string {
@@ -46,10 +70,13 @@ export function plural(n: number, forms: [string, string, string]): string {
 const MASTER_FORMS: Record<Lang, [string, string, string]> = {
   ru: ["мастер", "мастера", "мастеров"],
   uk: ["майстер", "майстри", "майстрів"],
+  en: ["master", "masters", "masters"],
 };
 
-/** "24 мастера" / "1 майстер" */
+/** "24 мастера" / "1 майстер" / "24 masters". English uses the simple
+ *  singular/plural rule, not the Slavic one/few/many forms. */
 export function mastersCount(n: number, lang: Lang): string {
+  if (lang === "en") return `${n} ${n === 1 ? "master" : "masters"}`;
   return `${n} ${plural(n, MASTER_FORMS[lang])}`;
 }
 
@@ -91,5 +118,23 @@ export const T: Record<Lang, Dict> = {
     professionsIn: "Майстри у",
     citiesFor: "Міста",
     backToCity: "Усі майстри міста",
+  },
+  en: {
+    home: "Home",
+    italy: "Italy",
+    bookTelegram: "Book on Telegram",
+    viewProfile: "Open profile",
+    allMasters: "All masters",
+    otherCities: "In other cities",
+    otherProfessions: "Other specialists in",
+    inCity: "in",
+    speaksNote: "All masters speak Ukrainian and Russian",
+    noContactNote: "Contacts open in the profile on Majstr",
+    free: "Free · no middlemen",
+    faqTitle: "Frequently asked questions",
+    masonryTagline: "Directory of Ukrainian- and Russian-speaking masters in Italy",
+    professionsIn: "Specialists in",
+    citiesFor: "Cities",
+    backToCity: "All specialists in the city",
   },
 };

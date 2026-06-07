@@ -5,21 +5,6 @@ import { reducer } from "./reducer";
 import type { State } from "./schema/state/state.schema";
 import type { Action } from "./reducer";
 
-// SSR-safe: never touch localStorage/navigator at module load. The language is
-// normally seeded from the URL (`initial.lang`); this is only a client fallback.
-function getInitialLang(): string {
-  if (typeof window === "undefined") return "uk";
-  try {
-    const saved = localStorage.getItem("lang");
-    if (saved) return saved;
-    const browser = navigator.language.split("-")[0].toLowerCase();
-    const known = ["en", "uk", "ru", "it", "pt", "de", "fr", "tr", "es"];
-    return known.includes(browser) ? browser : "uk";
-  } catch {
-    return "uk";
-  }
-}
-
 const BASE_STATE: State = {
   masters: [],
   professions: [],
@@ -66,10 +51,14 @@ export function MasterContextProvider({
   children,
   initial,
 }: MasterContextProviderProps) {
+  // `lang` is seeded from the URL locale (the single source of truth) and is
+  // never mutated on the client — switching language is a navigation, so the
+  // remount re-seeds it from the new URL. The `?? "uk"` is only a defensive
+  // default; every server page provides `initial.lang`.
   const seeded: State = {
     ...BASE_STATE,
-    lang: initial?.lang ?? getInitialLang(),
     ...initial,
+    lang: initial?.lang ?? "uk",
   };
   const [state, dispatch] = useReducer(reducer, seeded);
 
