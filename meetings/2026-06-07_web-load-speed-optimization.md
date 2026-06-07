@@ -43,9 +43,31 @@ numbers, then implemented the two highest-impact tiers.
 - Home still renders all 321 cards (~60 KB gzip). Pagination/virtualization would
   cut it further but changes UX — deferred pending product call.
 
-## Next steps (deferred tiers, not yet done)
-- [ ] P2: migrate avatars/card photos to `next/image` (AVIF/WebP, srcset, fixed
-      dims → kill CLS, `priority` on above-the-fold). Biggest mobile LCP lever left.
-- [ ] P3: lazy-load or replace react-select (~35 KB); move static sections
-      (HowItWorks, Footer) to Server Components.
-- [ ] P4: add real `/og-image.png` + `/favicon.png`; `preconnect` to S3 host.
+## Follow-up session (same day): P2 + P3/P4 attempt
+
+### Done & committed on develop
+- **Font fixes** (regressions from the next/font migration, all deployed to prod):
+  - `18e48eec` Cyrillic display fell to Arial — disabled Archivo Black's injected
+    metric fallback (no unicode-range) so Cyrillic flows to Golos Text.
+  - `a82aa9ac` Cyrillic professions lost weight — pinned Golos to 800 (display CSS
+    sets no explicit weight; old Google link only loaded Golos@800, which masked it).
+- **P2 next/image** `59c6ad90` — card + modal photos via next/image (fill +
+  object-fit, duotone preserved), AVIF/WebP, lazy (cards) / priority (modal).
+  Measured 37 KB JPEG → 10 KB AVIF (~72%). remotePatterns for chupakabra-test bucket.
+- **P4 partial** `d1fef4f9` — added missing favicon.png; removed dead /og-image.png ref.
+- Note: **preconnect dropped as a no-op** — with self-hosted fonts + next/image
+  proxying photos through /_next/image, the browser no longer hits S3 or the API
+  on load, so there are no cross-origin connections left to preconnect.
+
+### Blocked — needs decision (intervention points)
+1. **OG images broken (pre-existing).** `public/fonts/ArchivoBlack.ttf` &
+   `JetBrainsMono-Regular.ttf` are EOT files mislabeled `.ttf`; satori/next-og
+   can't read them. This crashes BOTH a new default OG image AND the existing
+   `/api/og?id=` per-master preview route (confirmed HTTP 500 in a prod build).
+   Fix needs valid TTF/OTF/WOFF, and a **Cyrillic** display face (Archivo Black
+   has no Cyrillic, but master names are Cyrillic) — plus a visual check.
+2. **P3 react-select (~35 KB of First Load JS).** Replace with native <select>
+   = changes the brutalist dropdown look; lazy-load = delays hero-filter
+   interactivity (it's the primary above-the-fold CTA). Design/UX call needed.
+   - Server-Component split of HowItWorks/Footer is infeasible: both depend on
+     client-context i18n (live language switch without reload).
