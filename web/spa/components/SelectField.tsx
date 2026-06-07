@@ -25,13 +25,31 @@ export function SelectField({ kicker, options, value, onChange }: Props) {
 
   const openMenu = () => {
     if (!fieldRef.current) return;
-    const r = fieldRef.current.getBoundingClientRect();
+    const sf = fieldRef.current.getBoundingClientRect();
+    const parent = fieldRef.current.parentElement;      // filter-toggle-wrap
+    const grandparent = parent?.parentElement;           // hero-filter-row
+
+    // The visual "select" extends into the border of the surrounding containers.
+    // hero-filter-row has a 2px border on all sides; filter-toggle-wrap has a
+    // 2px right border on desktop (the divider between city and trade).
+    // On mobile, hero-filter-row becomes flex-column so we extend to its right
+    // border instead of the parent's right divider.
+    const gpBorderLeft  = grandparent ? parseFloat(getComputedStyle(grandparent).borderLeftWidth)  || 0 : 0;
+    const gpBorderRight = grandparent ? parseFloat(getComputedStyle(grandparent).borderRightWidth) || 0 : 0;
+    const parentBorderRight = parent  ? parseFloat(getComputedStyle(parent).borderRightWidth)      || 0 : 0;
+
+    const isColumn = grandparent
+      ? getComputedStyle(grandparent).flexDirection === "column"
+      : false;
+
+    const extraLeft  = gpBorderLeft;
+    const extraRight = isColumn ? gpBorderRight : parentBorderRight;
+
     setMenuStyle({
       position: "fixed",
-      top: r.bottom,
-      left: r.left,
-      width: r.width,
-      minWidth: "max-content",
+      top: sf.bottom,
+      left: sf.left - extraLeft,
+      width: sf.width + extraLeft + extraRight,
       zIndex: 9999,
     });
     setOpen(true);
