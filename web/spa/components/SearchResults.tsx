@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MasterContext } from "../context";
 import MasterCard from "./MasterCard";
@@ -9,6 +9,14 @@ import { ACTIONS } from "../data/actions";
 
 import type { Master } from "../schema/master/master.schema";
 import type { Profession } from "../schema/state/state.schema";
+
+// Render the grid in windows: only the first batch is in the initial (SSR) HTML
+// — the home page would otherwise emit all ~321 cards (~450 KB of markup). The
+// rest reveal as the user scrolls via an IntersectionObserver. The full dataset
+// is already in client state (slim seed), so this is pure render windowing — no
+// extra fetches.
+const INITIAL_VISIBLE = 24;
+const LOAD_STEP = 24;
 
 type SearchResultsProps = {
   masters: Master[];
@@ -58,6 +66,14 @@ export default function SearchResults({
   } = useContext(MasterContext);
   const { t } = useTranslation();
 
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // New result set (filter changed) → reset the window to the first batch.
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE);
+  }, [city, professionCategory]);
+
   const availableProfessionIDs = professions
     .filter((p: Profession) => (!professionCategory ? true : p.categoryID === professionCategory))
     .map((p: Profession) => p.id);
@@ -70,6 +86,25 @@ export default function SearchResults({
         availableProfessionIDs.includes(m.professionID)
     )
     .sort((a, b) => getCreatedMs(b._id) - getCreatedMs(a._id));
+
+  const visibleMasters = filteredMasters.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredMasters.length;
+
+  // Reveal the next batch as the sentinel nears the viewport. Re-armed after
+  // each batch (visibleMasters.length dep) so it keeps filling a tall viewport.
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setVisibleCount((c) => c + LOAD_STEP);
+      },
+      { rootMargin: "800px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, visibleMasters.length]);
 
   const countryMasters = masters.filter(m => m.countryID === countryID);
   const newSet = buildNewSet(countryMasters);
@@ -107,16 +142,21 @@ export default function SearchResults({
           </div>
         </div>
       ) : (
-        <div className="masters-grid">
-          {filteredMasters.map((master) => (
-            <MasterCard
-              key={master._id}
-              master={master}
-              setShowModal={setShowModal}
-              isNew={newSet.has(master._id)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="masters-grid">
+            {visibleMasters.map((master) => (
+              <MasterCard
+                key={master._id}
+                master={master}
+                setShowModal={setShowModal}
+                isNew={newSet.has(master._id)}
+              />
+            ))}
+          </div>
+          {hasMore && (
+            <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }} />
+          )}
+        </>
       )}
     </>
   );
