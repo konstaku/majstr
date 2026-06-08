@@ -67,9 +67,11 @@ export function SelectField({ kicker, options, value, onChange }: Props) {
     };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", closeMenu, { passive: true, capture: true });
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", closeMenu, { capture: true });
     };
   }, [open]);
 
