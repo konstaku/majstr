@@ -549,6 +549,7 @@ img {
   box-shadow: 4px 4px 0 var(--ink) !important;
   background: var(--paper) !important;
   margin-top: 2px !important;
+  z-index: 200 !important;
 }
 .filter-toggle-wrap .headline-select .majstr-select__option {
   font-family: var(--font-display) !important;
@@ -1383,6 +1384,300 @@ img {
   color: var(--ink);
   opacity: 0.6;
   cursor: default;
+}
+
+/* — Claim section — */
+.modal-master__claim-section {
+  padding: 14px 20px;
+  border-top: var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.modal-master__claim-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.45;
+}
+.modal-master__claim-btn {
+  background: transparent;
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 9px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.1s, color 0.1s;
+}
+.modal-master__claim-btn:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+.modal-master__claim-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.modal-master__claim-feedback {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-master__claim-feedback--ok { color: #1c7a3b; }
+.modal-master__claim-feedback--err { color: #c0392b; }
+.modal-master__claim-link {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 900;
+}
+.modal-master__claim-retry {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  color: inherit;
+  padding: 0;
+}
+
+/* — Manage bar — */
+.modal-master__manage-bar {
+  padding: 10px 20px;
+  border-top: var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.modal-master__manage-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--terra);
+  margin-right: auto;
+}
+.modal-master__manage-btn {
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.1s, color 0.1s;
+}
+.modal-master__manage-btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+.modal-master__manage-btn--danger {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+.modal-master__manage-btn--danger:hover {
+  background: #c0392b;
+  color: var(--paper);
+}
+
+/* ── My Cards management page ─────────────────────────────────────── */
+.my-cards-page {
+  max-width: 680px;
+  margin: 48px auto;
+  padding: 0 20px;
+}
+.my-cards-page__title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 28px;
+}
+.my-cards-page__empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  opacity: 0.5;
+}
+.mycard {
+  border: 2px solid var(--ink);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.mycard__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.mycard__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+.mycard__name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.mycard__prof, .mycard__loc {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.5;
+}
+.mycard__status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border: 1.5px solid currentColor;
+  white-space: nowrap;
+}
+.mycard__status--approved { color: #1c7a3b; }
+.mycard__status--archived { color: var(--ink); opacity: 0.4; }
+.mycard__status--pending  { color: #b36b00; }
+.mycard__status--rejected { color: #c0392b; }
+.mycard__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.mycard__btn {
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.mycard__btn:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+.mycard__btn:disabled { opacity: 0.4; cursor: default; }
+.mycard__btn--primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.mycard__btn--primary:hover { background: #1a140d; }
+.mycard__btn--danger { border-color: #c0392b; color: #c0392b; }
+.mycard__btn--danger:hover:not(:disabled) { background: #c0392b; color: var(--paper); }
+.mycard__form {
+  margin-top: 20px;
+  border-top: 1px solid rgba(14,10,6,0.15);
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mycard__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.mycard__field-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.5;
+}
+.mycard__input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  padding: 7px 10px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.mycard__input:focus { border-color: var(--terra); }
+.mycard__input--sm { width: 120px; flex-shrink: 0; }
+.mycard__input--grow { flex: 1; }
+.mycard__input--textarea { resize: vertical; font-family: var(--font-body); font-size: 13px; }
+.mycard__contact-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.mycard__remove-contact {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #c0392b;
+  padding: 0 4px;
+  line-height: 1;
+}
+.mycard__add-contact {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.5;
+  padding: 0;
+  text-decoration: underline;
+}
+.mycard__add-contact:hover { opacity: 0.8; }
+.mycard__form-actions { display: flex; gap: 10px; margin-top: 4px; }
+.mycard__error {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #c0392b;
+  background: rgba(192,57,43,0.08);
+  border: 1px solid #c0392b;
+  padding: 8px 10px;
 }
 
 /* — Mobile (≤640) — */

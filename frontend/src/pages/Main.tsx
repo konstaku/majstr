@@ -296,9 +296,6 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
-                menuPortalTarget={document.body}
-                menuPosition="fixed"
-                closeMenuOnScroll
                 value={
                   pendingCity
                     ? availableLocations.find((l) => l.value === pendingCity) ?? availableLocations[0]
@@ -330,9 +327,6 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
-                menuPortalTarget={document.body}
-                menuPosition="fixed"
-                closeMenuOnScroll
                 value={
                   pendingTrade
                     ? tradeOptions.find((o) => o.value === pendingTrade) ?? tradeOptions[0]
