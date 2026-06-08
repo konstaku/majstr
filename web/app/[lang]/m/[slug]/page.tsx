@@ -57,7 +57,7 @@ export async function generateMetadata({
       url: abs(masterPath(lang, canonical)),
       locale: OG_LOCALE[lang],
       type: "profile",
-      images: [`${SITE_URL}/api/og?id=${master._id}`],
+      images: [master.OGimage || `${SITE_URL}/api/og?id=${master._id}`],
     },
   };
 }
