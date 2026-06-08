@@ -46,9 +46,9 @@ export function SelectField({ kicker, options, value, onChange }: Props) {
     const extraRight = isColumn ? gpBorderRight : parentBorderRight;
 
     setMenuStyle({
-      position: "fixed",
-      top: sf.bottom,
-      left: sf.left - extraLeft,
+      position: "absolute",
+      top: sf.bottom + window.scrollY,
+      left: sf.left + window.scrollX - extraLeft,
       width: sf.width + extraLeft + extraRight,
       zIndex: 9999,
     });
