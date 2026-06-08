@@ -120,7 +120,16 @@ function Main() {
   const [showModal, setShowModal] = useState<string | null | boolean>(null);
   const [pendingCity, setPendingCity] = useState(selectedCity);
   const [pendingTrade, setPendingTrade] = useState(selectedProfessionCategory);
+  const [cityMenuOpen, setCityMenuOpen] = useState(false);
+  const [tradeMenuOpen, setTradeMenuOpen] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cityMenuOpen && !tradeMenuOpen) return;
+    const close = () => { setCityMenuOpen(false); setTradeMenuOpen(false); };
+    window.addEventListener("scroll", close, { passive: true, capture: true });
+    return () => window.removeEventListener("scroll", close, { capture: true });
+  }, [cityMenuOpen, tradeMenuOpen]);
 
   // Sync pending state when external reset/navigation changes applied filters
   useEffect(() => {
@@ -296,6 +305,9 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
+                menuIsOpen={cityMenuOpen}
+                onMenuOpen={() => setCityMenuOpen(true)}
+                onMenuClose={() => setCityMenuOpen(false)}
                 value={
                   pendingCity
                     ? availableLocations.find((l) => l.value === pendingCity) ?? availableLocations[0]
@@ -327,6 +339,9 @@ function Main() {
                 classNamePrefix="majstr-select"
                 unstyled
                 isSearchable={false}
+                menuIsOpen={tradeMenuOpen}
+                onMenuOpen={() => setTradeMenuOpen(true)}
+                onMenuClose={() => setTradeMenuOpen(false)}
                 value={
                   pendingTrade
                     ? tradeOptions.find((o) => o.value === pendingTrade) ?? tradeOptions[0]
