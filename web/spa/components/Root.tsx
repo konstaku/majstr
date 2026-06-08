@@ -16,7 +16,7 @@ import { MasterContext } from "../context";
 import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
-import { LANG_LABELS, LANG_FLAGS } from "../i18n/translations";
+import { LANG_LABELS } from "../i18n/translations";
 import { LANGS, type Lang } from "@/lib/i18n";
 import { localizedName, LANG_ENDONYM } from "../i18n/lang";
 import { apiFetch } from "../api/client";
@@ -140,7 +140,7 @@ export default function Root({ children }: { children?: ReactNode }) {
 
           {/* Compact wordmark — mobile-only (CSS-gated), left of the bar */}
           <Link
-            href="/"
+            href={`/${lang}`}
             className="header-logo-compact"
             onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}
           >
@@ -148,7 +148,7 @@ export default function Root({ children }: { children?: ReactNode }) {
           </Link>
 
           <nav className="header-nav">
-            <Link href="/" className={pathname === "/" ? "active" : ""}>{t("nav.search")}</Link>
+            <Link href={`/${lang}`} className={pathname === `/${lang}` ? "active" : ""}>{t("nav.search")}</Link>
             {AddMasterLink}
             <span className="nav-item inactive">{t("nav.howItWorks")}</span>
             <span className="nav-item inactive">{t("nav.forBusiness")}</span>
@@ -183,7 +183,7 @@ export default function Root({ children }: { children?: ReactNode }) {
 
         {/* Wordmark */}
         <div className="header-wordmark">
-          <Link href="/" onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}>
+          <Link href={`/${lang}`} onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}>
             MAJSTR<span className="wordmark-dot">.</span>
           </Link>
         </div>
@@ -198,7 +198,7 @@ export default function Root({ children }: { children?: ReactNode }) {
         onClick={() => setShowBurgerMenu(false)}
       >
         <ul>
-          <li><Link href="/">{t("nav.search")}</Link></li>
+          <li><Link href={`/${lang}`}>{t("nav.search")}</Link></li>
           <li>
             <button type="button" className="burger-link" onClick={() => { setShowBurgerMenu(false); openAddMasterModal(); }}>
               {t("nav.addMaster")}
@@ -311,9 +311,6 @@ function LanguageSwitcher({ onClose }: { onClose?: () => void }) {
           aria-label={`Language: ${LANG_ENDONYM[cur]}`}
           onClick={() => setOpen((o) => !o)}
         >
-          {LANG_FLAGS[cur] ? (
-            <span aria-hidden="true">{LANG_FLAGS[cur]} </span>
-          ) : null}
           {LANG_LABELS[cur]} ▾
         </button>
         {open && (
@@ -332,9 +329,6 @@ function LanguageSwitcher({ onClose }: { onClose?: () => void }) {
                 aria-current={lang === code ? "true" : undefined}
                 aria-label={ariaName(code)}
               >
-                {LANG_FLAGS[code] ? (
-                  <span aria-hidden="true">{LANG_FLAGS[code]} </span>
-                ) : null}
                 {LANG_LABELS[code]}
                 <span className="lang-endo">{LANG_ENDONYM[code]}</span>
               </Link>
@@ -409,7 +403,7 @@ function FooterContent({ onAddMasterClick }: { onAddMasterClick: () => void }) {
       <div className="footer-top">
         <div className="footer-col">
           <h4>Platform</h4>
-          <Link href="/">{t("nav.search")}</Link>
+          <Link href={`/${lang}`}>{t("nav.search")}</Link>
           <button type="button" className="footer-link" onClick={onAddMasterClick}>
             {t("nav.addMaster")}
           </button>
