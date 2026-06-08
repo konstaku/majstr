@@ -8,6 +8,11 @@
 **/.DS_Store
 -backup
 /dump/
-/.claude/settings.local.json
+/.claude/
 /chat-history/
+
+# Local-only working material (not part of the app)
+/design mockups/
+/design-options/
+/session-summary/
 
