@@ -225,6 +225,11 @@ async function submitDraft(req, res) {
     draft.status = 'approved';
     draft.approvedAt = new Date();
     await draft.save();
+    // pre-save hook has run → draft.approved is now true.
+    // Regenerate OG so the verified stamp is included.
+    createOGimageForMaster(draft)
+      .then(ogUrl => Master.findByIdAndUpdate(draft._id, { OGimage: ogUrl.toString() }))
+      .catch(err => console.error('[OG] admin auto-approve OG regeneration failed:', err.message));
 
     await MasterAudit.create({
       masterID: draft._id,

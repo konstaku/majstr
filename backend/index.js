@@ -355,6 +355,11 @@ async function handleApproveMaster(req, res) {
       master.approvedAt = new Date();
       master.rejectionReason = undefined;
       await master.save();
+      // pre-save hook has run → master.approved is now true.
+      // Regenerate OG so the image matches the new design and shows the verified stamp.
+      createOGimageForMaster(master)
+        .then(ogUrl => Master.updateOne({ _id: master._id }, { $set: { OGimage: ogUrl.toString() } }))
+        .catch(err => console.error('[OG] regeneration on approval failed:', err.message));
 
       await MasterAudit.create({
         masterID: master._id,
