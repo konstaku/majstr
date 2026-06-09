@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Golos+Text:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:   #0e0a06;
+  --cream: #f4ede0;
+  --paper: #fffaf0;
+  --terra: #c84b31;
+  --muted: #8c8472;
+  --golos: "Golos Text", system-ui, sans-serif;
+  --wm:    "Archivo Black", "Golos Text", sans-serif;
+  --mono:  "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: transparent; }
+
+/* ── THE OG CARD — 1200 × 630 ─────────────────────────────────────────── */
+.og {
+  position: relative; width: 1200px; height: 630px; overflow: hidden;
+  background: var(--paper); color: var(--ink);
+  border: 6px solid var(--ink);
+  display: grid;
+  grid-template-columns: 600px 1fr;
+}
+.og.mini-layout {
+  grid-template-columns: 220px 1fr;
+}
+
+.wm {
+  font-family: var(--wm); text-transform: uppercase; letter-spacing: -.03em;
+  line-height: 1; display: inline-flex; align-items: baseline;
+}
+.wm .dot {
+  display: inline-block; background: var(--terra);
+  width: .16em; height: .16em; margin-left: .04em; vertical-align: baseline;
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 30px; border-bottom: 4px solid var(--ink);
+}
+.topbar .meta {
+  font-family: var(--mono); font-size: 15px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--muted);
+}
+.topbar .meta b { color: var(--ink); }
+
+.kick {
+  font-family: var(--mono); font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; font-size: 17px; color: var(--terra);
+}
+
+.langs { display: flex; gap: 8px; }
+.lang {
+  font-family: var(--mono); font-size: 15px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 5px 11px; background: var(--ink); color: var(--paper);
+}
+
+.m-visual {
+  position: relative; overflow: hidden; background: var(--ink);
+  border-right: 5px solid var(--ink);
+}
+.m-visual img.m-photo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center top;
+  display: block;
+  filter: grayscale(100%) contrast(112%) brightness(104%);
+}
+.m-visual.sigil-mini {
+  background: var(--cream);
+  display: flex; align-items: center; justify-content: center;
+}
+.m-visual.sigil-mini .mini-sigil-wrap {
+  width: calc(100% - 32px);
+}
+.m-visual.sigil-mini .mini-sigil-wrap svg {
+  display: block; width: 100%; height: auto;
+}
+.m-stamp {
+  position: absolute; left: 0; bottom: 0; z-index: 2;
+  background: var(--terra); color: var(--paper);
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  padding: 9px 16px; white-space: nowrap;
+}
+
+.m-info { display: flex; flex-direction: column; min-width: 0; }
+.m-body {
+  flex: 1; padding: 28px 34px 24px;
+  display: flex; flex-direction: column; min-height: 0;
+}
+.m-name {
+  font-family: var(--golos); font-weight: 900; font-size: 56px;
+  line-height: .94; letter-spacing: -.025em;
+  text-transform: uppercase; overflow-wrap: normal; word-break: normal;
+}
+.m-role {
+  font-family: var(--golos); font-weight: 800; font-size: 26px;
+  line-height: 1.05; letter-spacing: -.01em; text-transform: uppercase;
+  margin-top: 10px; display: flex; align-items: center; gap: .45em; flex-wrap: wrap;
+}
+.m-role .sq { width: .4em; height: .4em; background: var(--terra); display: inline-block; flex: none; }
+.m-role .city { color: var(--terra); }
+
+.m-speaks { display: flex; align-items: center; gap: 11px; margin-top: 15px; }
+.m-speaks .kick { font-size: 14px; flex: none; }
+
+.m-contacts { margin-top: 16px; border-top: 3px solid var(--ink); }
+.m-row {
+  display: grid; grid-template-columns: 114px 1fr;
+  align-items: center; padding: 9px 0;
+  border-bottom: 2px solid rgba(14,10,6,.13);
+}
+.m-row:last-child { border-bottom: none; }
+.m-row .k {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.m-row .v {
+  font-family: var(--golos); font-weight: 600; font-size: 20px;
+  letter-spacing: -.005em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.m-desc {
+  margin-top: 14px;
+  font-family: var(--golos); font-weight: 500; font-size: 17px;
+  line-height: 1.38; color: #3c352c; max-width: 34ch;
+  display: -webkit-box; -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.m-cta {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--ink); color: var(--paper); padding: 18px 30px;
+}
+.m-cta .url {
+  font-family: var(--golos); font-weight: 900; font-size: 22px;
+  letter-spacing: -.01em; text-transform: uppercase; color: var(--terra);
+}
+.m-cta .go {
+  font-family: var(--golos); font-weight: 900; font-size: 22px;
+  letter-spacing: -.005em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 12px;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* ── sigil algorithm — verbatim port of backend/helpers/sigil.js ───────── */
+function fnv1a(s){let h=0x811c9dc5>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return h>>>0;}
+function mulberry32(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+const rInt=(r,m)=>Math.floor(r()*m);
+
+/* ── mini sigil — 1×3 grid, 2-3 shapes, half-circle included ───────────── *
+ * viewBox 0 0 100 296: pad=10, gap=18, cellSize=80 → square cells
+ * VB_H = 2*10 + 3*80 + 2*18 = 296
+ */
+function buildMiniSigil(seed) {
+  const rnd = mulberry32(fnv1a(String(seed) + '|mini'));
+  const fillCount = rnd() < 0.67 ? 2 : 3;
+  const rows = [0, 1, 2];
+  for (let i = 2; i > 0; i--) { const j = Math.floor(rnd()*(i+1)); [rows[i],rows[j]]=[rows[j],rows[i]]; }
+  const filled = rows.slice(0, fillCount);
+  const terraIdx = Math.floor(rnd() * filled.length);
+  const SHAPES = ['square','circle','triangle','bar','half-circle'];
+  return filled.map((row, i) => ({
+    row, shape: SHAPES[Math.floor(rnd()*SHAPES.length)],
+    rotation: Math.floor(rnd()*4),
+    color: i === terraIdx ? '#c84b31' : '#0e0a06',
+  }));
+}
+function miniSigilSVG(seed) {
+  const cells = buildMiniSigil(seed);
+  const VB_W=100, VB_H=296, pad=10, gap=18, cs=80;
+  const rowY = r => pad + r*(cs+gap);
+  const f = n => n.toFixed(2);
+  const parts = [];
+  for (const c of cells) {
+    const x=pad, y=rowY(c.row), cx=x+cs/2, cy=y+cs/2, r=cs/2;
+    if (c.shape==='square')
+      parts.push(`<rect x="${f(x)}" y="${f(y)}" width="${f(cs)}" height="${f(cs)}" fill="${c.color}"/>`);
+    else if (c.shape==='circle')
+      parts.push(`<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" fill="${c.color}"/>`);
+    else if (c.shape==='triangle') {
+      const h=cs*Math.sqrt(3)/2;
+      parts.push(`<polygon points="${f(cx)},${f(cy-h/2)} ${f(cx+r)},${f(cy+h/2)} ${f(cx-r)},${f(cy+h/2)}" fill="${c.color}" transform="rotate(${c.rotation*90} ${f(cx)} ${f(cy)})"/>`);
+    } else if (c.shape==='bar') {
+      const t=cs/3;
+      if (c.rotation%2===0) parts.push(`<rect x="${f(x)}" y="${f(cy-t/2)}" width="${f(cs)}" height="${f(t)}" fill="${c.color}"/>`);
+      else parts.push(`<rect x="${f(cx-t/2)}" y="${f(y)}" width="${f(t)}" height="${f(cs)}" fill="${c.color}"/>`);
+    } else if (c.shape==='half-circle') {
+      const d=`M ${f(cx-r)} ${f(cy)} A ${f(r)} ${f(r)} 0 0 1 ${f(cx+r)} ${f(cy)} Z`;
+      parts.push(`<path d="${d}" fill="${c.color}" transform="rotate(${c.rotation*90} ${f(cx)} ${f(cy)})"/>`);
+    }
+  }
+  return `<svg viewBox="0 0 ${VB_W} ${VB_H}" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" style="display:block;width:100%;height:auto">${parts.join('')}</svg>`;
+}
+
+/* ── utils ─────────────────────────────────────────────────────────────── */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fitName(card) {
+  const el = card && card.querySelector('[data-fit="1"]');
+  if (!el) return;
+  let fs = 56; el.style.fontSize = fs + 'px';
+  const lh = 0.94;
+  while (fs > 27 && (el.scrollHeight > fs*lh*2+4 || el.scrollWidth > el.clientWidth+1)) {
+    fs--; el.style.fontSize = fs + 'px';
+  }
+}
+
+/* ── card builder ───────────────────────────────────────────────────────── */
+function buildCard(data) {
+  const isPhoto = !!data.photoUrl;
+  const ogClass = isPhoto ? 'og' : 'og mini-layout';
+
+  let visualClass = 'm-visual';
+  let visualInner = '';
+  if (isPhoto) {
+    visualInner = `<img class="m-photo" src="${esc(data.photoUrl)}" alt="">`;
+    if (data.verified) visualInner += `<div class="m-stamp">Перевірено</div>`;
+  } else {
+    visualClass += ' sigil-mini';
+    visualInner = `<div class="mini-sigil-wrap">${miniSigilSVG(data.masterId)}</div>`;
+  }
+
+  const contactRows = (data.contacts||[]).map(c =>
+    `<div class="m-row"><span class="k">${esc(c.type)}</span><span class="v">${esc(c.value)}</span></div>`
+  ).join('');
+
+  const descHTML = data.desc && data.desc.trim()
+    ? `<div class="m-desc">${esc(data.desc)}</div>` : '';
+
+  const langBadges = (data.langs||[]).map(l => `<span class="lang">${esc(l)}</span>`).join('');
+
+  return `<div class="${ogClass}">
+  <div class="${visualClass}">${visualInner}</div>
+  <div class="m-info">
+    <div class="topbar">
+      <span class="wm" style="font-size:26px">MAJSTR<span class="dot"></span></span>
+      <span class="meta">UA <b>→</b> ${esc(data.dest||'IT')}</span>
+    </div>
+    <div class="m-body">
+      <div class="m-name" data-fit="1">${esc(data.name)}</div>
+      <div class="m-role">${esc(data.prof)}<span class="sq"></span><span class="city">${esc(data.city)}</span></div>
+      <div class="m-speaks">
+        <span class="kick">Говорить</span>
+        <span class="langs">${langBadges}</span>
+      </div>
+      <div class="m-contacts">${contactRows}</div>
+      ${descHTML}
+    </div>
+    <div class="m-cta">
+      <span class="url">majstr.xyz</span>
+      <span class="go">Більше майстрів <span>→</span></span>
+    </div>
+  </div>
+</div>`;
+}
+
+/* ── entry point ────────────────────────────────────────────────────────── */
+function initCard(data) {
+  document.getElementById('root').innerHTML = buildCard(data);
+  fitName(document.querySelector('.og'));
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  if (!window.OG_DATA) return;
+  await document.fonts.ready;
+  initCard(window.OG_DATA);
+});
+</script>
+</body>
+</html>
