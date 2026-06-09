@@ -7,7 +7,7 @@
     "start": "node index.js",
     "devStart": "nodemon index.js",
     "review": "node scripts/local-queue-server.js",
-    "postinstall": "patch-package",
+    "postinstall": "patch-package && npx playwright install --with-deps chromium",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Konstantin Kupriyanov",
