@@ -10,9 +10,7 @@ const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
 const PUBLIC_WEB_URL = process.env.PUBLIC_WEB_URL || 'https://majstr.xyz';
 
 const AVAILABILITY_EMOJI = { available: '🟢', next_week: '🟡', busy: '🔴' };
-const LANG_LABELS = {
-  uk:'UA',en:'EN',it:'IT',pt:'PT',es:'ES',de:'DE',fr:'FR',pl:'PL',ru:'RU',
-};
+const { LANG_LABELS } = require('../helpers/langLabels');
 
 async function buildAdminNotificationText(draft) {
   const [profEntry, locEntry] = await Promise.all([

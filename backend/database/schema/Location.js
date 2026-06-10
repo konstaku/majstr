@@ -1,8 +1,8 @@
 const { default: mongoose } = require('mongoose');
 
 const locationSchema = new mongoose.Schema({
-  id: String,
-  countryID: String,
+  id: { type: String, index: true },
+  countryID: { type: String, index: true },
   name: {
     en: String,
     ua: String,

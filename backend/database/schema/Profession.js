@@ -1,7 +1,7 @@
 const { default: mongoose } = require('mongoose');
 
 const professionSchema = new mongoose.Schema({
-  id: String,
+  id: { type: String, index: true },
   categoryID: String,
   name: {
     ua: String,

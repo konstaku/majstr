@@ -1,7 +1,19 @@
 const multer = require('multer');
 const sharp = require('sharp');
-const { fileTypeFromBuffer } = require('file-type');
 const AWS = require('aws-sdk');
+const { S3_BUCKET } = require('../config/s3');
+
+// file-type is ESM-only; load it lazily via dynamic import. A bare
+// require('file-type') used to resolve to node-telegram-bot-api's hoisted
+// v3.9.0, which has no fileTypeFromBuffer — photo uploads then threw on
+// every request.
+let _fileTypeFromBuffer = null;
+async function fileTypeFromBuffer(buffer) {
+  if (!_fileTypeFromBuffer) {
+    ({ fileTypeFromBuffer: _fileTypeFromBuffer } = await import('file-type'));
+  }
+  return _fileTypeFromBuffer(buffer);
+}
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB pre-resize
@@ -37,7 +49,7 @@ async function resizeAndUpload(buffer, userID) {
 
   const key = `userpics/${userID}.jpg`;
   const result = await s3.upload({
-    Bucket: 'chupakabra-test',
+    Bucket: S3_BUCKET,
     Key: key,
     Body: resized,
     ContentType: 'image/jpeg',
@@ -113,3 +125,5 @@ async function uploadDraftPhotoFromTelegram(req, res) {
 }
 
 module.exports = { uploadDraftPhoto, uploadDraftPhotoFromTelegram };
+// Exposed so the test suite can stub s3.upload without hitting AWS.
+module.exports._s3 = s3;
