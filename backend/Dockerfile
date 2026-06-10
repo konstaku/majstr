@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY package*.json ./
+# mongodb-memory-server is a devDependency for the test suite; without this
+# flag its postinstall downloads an ~80MB mongod binary into the prod image.
+ENV MONGOMS_DISABLE_POSTINSTALL=1
 RUN npm ci
 COPY . .
 
