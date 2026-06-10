@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+# The base image ships npm 10, whose `npm ci` validator rejects lockfiles
+# written by npm 11 (the version used locally) — the picomatch dedupe layout
+# trips it. Align the image with the lockfile generator.
+RUN npm install -g npm@11
 COPY package*.json ./
 # mongodb-memory-server is a devDependency for the test suite; without this
 # flag its postinstall downloads an ~80MB mongod binary into the prod image.
