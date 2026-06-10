@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Master = require('../database/schema/Master');
 
 /**
@@ -15,6 +16,10 @@ module.exports = async function loadOwnedMaster(req, res, next) {
   }
 
   const masterID = req.params.id;
+  // Malformed ids would otherwise throw a CastError out of findById.
+  if (!mongoose.isValidObjectId(masterID)) {
+    return res.status(404).json({ error: 'master_not_found' });
+  }
   const master = await Master.findById(masterID);
   if (!master) {
     return res.status(404).json({ error: 'master_not_found' });

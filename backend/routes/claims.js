@@ -10,6 +10,20 @@ function normalizePhone(p) {
   return String(p).replace(/[^\d]/g, '');
 }
 
+function telegramHandleMatches(username, masterContacts) {
+  if (!username) return false;
+  const normalized = username.toLowerCase().replace(/^@/, '');
+  const tgContacts = masterContacts
+    .filter(c => /^telegram$/i.test(c.contactType))
+    .map(c => c.value.toLowerCase().replace(/^@/, '').trim())
+    .filter(Boolean);
+  return tgContacts.some(h => h === normalized);
+}
+
+function telegramIdMatches(userTelegramID, master) {
+  return !!(userTelegramID && master.telegramID && master.telegramID === userTelegramID);
+}
+
 function phoneMatches(claimantPhone, masterContacts) {
   const claimantDigits = normalizePhone(claimantPhone);
   if (!claimantDigits) return false;
@@ -47,13 +61,18 @@ async function submitClaim(req, res) {
   if (phone) {
     evidence.push({ type: 'phone_match', value: normalizePhone(phone) });
   }
+  if (req.user.username) {
+    evidence.push({ type: 'social_handle', value: req.user.username });
+  }
   if (notes) {
     evidence.push({ type: 'other', notes });
   }
 
+  const phoneMatch = !!phone && phoneMatches(phone, master.contacts);
+  const handleMatch = telegramHandleMatches(req.user.username, master.contacts);
+  const idMatch = telegramIdMatches(req.user.telegramID, master);
   // Admin claims always queue for paper trail — decision 2026-05-16
-  const autoApproved =
-    !req.user.isAdmin && !!phone && phoneMatches(phone, master.contacts);
+  const autoApproved = !req.user.isAdmin && (phoneMatch || handleMatch || idMatch);
 
   let claim;
   try {

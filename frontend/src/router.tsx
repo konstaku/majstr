@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import ErrorPage from "./pages/ErrorPage";
 import OnboardingWizard from "./onboarding/OnboardingWizard";
+import MyCards from "./pages/MyCards";
 
 export const router = createBrowserRouter([
   {
@@ -38,6 +39,10 @@ export const router = createBrowserRouter([
           {
             path: "/profile",
             element: <Profile />,
+          },
+          {
+            path: "/my-cards",
+            element: <MyCards />,
           },
           {
             path: "/admin",

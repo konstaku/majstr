@@ -35,7 +35,7 @@ function getISOWeek(date: Date): number {
 
 export default function Root() {
   const { state, dispatch } = useContext(MasterContext);
-  const { countryID, countries } = state;
+  const { countryID, countries, user } = state;
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
   const [showAddMasterModal, setShowAddMasterModal] = useState(false);
   const { t, lang } = useTranslation();
@@ -145,6 +145,11 @@ export default function Root() {
           <nav className="header-nav">
             <Link to="/" className={location.pathname === "/" ? "active" : ""}>{t("nav.search")}</Link>
             {AddMasterLink}
+            {user.isLoggedIn && (
+              <Link to="/my-cards" className={location.pathname === "/my-cards" ? "active" : ""}>
+                {t("nav.myCards")}
+              </Link>
+            )}
             <span className="nav-item inactive">{t("nav.howItWorks")}</span>
             <span className="nav-item inactive">{t("nav.forBusiness")}</span>
           </nav>
@@ -199,6 +204,9 @@ export default function Root() {
               {t("nav.addMaster")}
             </button>
           </li>
+          {user.isLoggedIn && (
+            <li><Link to="/my-cards">{t("nav.myCards")}</Link></li>
+          )}
           <li><span className="inactive">{t("nav.faq")}</span></li>
           <li className="burger-controls" onClick={(e) => e.stopPropagation()}>
             <CountryToggle

@@ -1,5 +1,5 @@
 export type LangTranslations = {
-  nav: { search: string; addMaster: string; joinAsMaster: string; faq: string; howItWorks: string; forBusiness: string };
+  nav: { search: string; addMaster: string; joinAsMaster: string; faq: string; howItWorks: string; forBusiness: string; myCards: string };
   footer: {
     terms: string;
     faq: string;
@@ -56,7 +56,7 @@ export type LangTranslations = {
 
 export const translations: Record<string, LangTranslations> = {
   uk: {
-    nav: { search: "Пошук", addMaster: "Додати майстра", joinAsMaster: "Доєднатися", faq: "FAQ", howItWorks: "Як це працює", forBusiness: "Для бізнесу" },
+    nav: { search: "Пошук", addMaster: "Додати майстра", joinAsMaster: "Доєднатися", faq: "FAQ", howItWorks: "Як це працює", forBusiness: "Для бізнесу", myCards: "Мої картки" },
     footer: {
       terms: "Умови використання",
       faq: "Питання та відповіді",
@@ -131,7 +131,7 @@ export const translations: Record<string, LangTranslations> = {
   },
 
   en: {
-    nav: { search: "Search", addMaster: "Add master", joinAsMaster: "Join as master", faq: "FAQ", howItWorks: "How it works", forBusiness: "For business" },
+    nav: { search: "Search", addMaster: "Add master", joinAsMaster: "Join as master", faq: "FAQ", howItWorks: "How it works", forBusiness: "For business", myCards: "My cards" },
     footer: {
       terms: "Terms of use",
       faq: "FAQ",
@@ -206,7 +206,7 @@ export const translations: Record<string, LangTranslations> = {
   },
 
   it: {
-    nav: { search: "Cerca", addMaster: "Aggiungi artigiano", joinAsMaster: "Crea il tuo profilo", faq: "FAQ", howItWorks: "Come funziona", forBusiness: "Per le aziende" },
+    nav: { search: "Cerca", addMaster: "Aggiungi artigiano", joinAsMaster: "Crea il tuo profilo", faq: "FAQ", howItWorks: "Come funziona", forBusiness: "Per le aziende", myCards: "Le mie schede" },
     footer: {
       terms: "Termini di utilizzo",
       faq: "Domande frequenti",
@@ -281,7 +281,7 @@ export const translations: Record<string, LangTranslations> = {
   },
 
   pt: {
-    nav: { search: "Pesquisar", addMaster: "Adicionar artesão", joinAsMaster: "Junte-se como profissional", faq: "FAQ", howItWorks: "Como funciona", forBusiness: "Para empresas" },
+    nav: { search: "Pesquisar", addMaster: "Adicionar artesão", joinAsMaster: "Junte-se como profissional", faq: "FAQ", howItWorks: "Como funciona", forBusiness: "Para empresas", myCards: "Os meus cartões" },
     footer: {
       terms: "Termos de uso",
       faq: "Perguntas frequentes",
@@ -357,7 +357,7 @@ export const translations: Record<string, LangTranslations> = {
 };
 
 translations.ru = {
-  nav: { search: "Поиск", addMaster: "Добавить мастера", joinAsMaster: "Стать мастером", faq: "FAQ", howItWorks: "Как это работает", forBusiness: "Для бизнеса" },
+  nav: { search: "Поиск", addMaster: "Добавить мастера", joinAsMaster: "Стать мастером", faq: "FAQ", howItWorks: "Как это работает", forBusiness: "Для бизнеса", myCards: "Мои карточки" },
   footer: {
     terms: "Условия использования",
     faq: "Вопросы и ответы",
@@ -432,7 +432,7 @@ translations.ru = {
 };
 
 translations.de = {
-  nav: { search: "Suchen", addMaster: "Fachkraft hinzufügen", joinAsMaster: "Mitmachen", faq: "FAQ", howItWorks: "So funktioniert's", forBusiness: "Für Unternehmen" },
+  nav: { search: "Suchen", addMaster: "Fachkraft hinzufügen", joinAsMaster: "Mitmachen", faq: "FAQ", howItWorks: "So funktioniert's", forBusiness: "Für Unternehmen", myCards: "Meine Karten" },
   footer: {
     terms: "Nutzungsbedingungen",
     faq: "Häufige Fragen",
@@ -507,7 +507,7 @@ translations.de = {
 };
 
 translations.fr = {
-  nav: { search: "Rechercher", addMaster: "Ajouter un artisan", joinAsMaster: "Devenir artisan", faq: "FAQ", howItWorks: "Comment ça marche", forBusiness: "Pour les entreprises" },
+  nav: { search: "Rechercher", addMaster: "Ajouter un artisan", joinAsMaster: "Devenir artisan", faq: "FAQ", howItWorks: "Comment ça marche", forBusiness: "Pour les entreprises", myCards: "Mes fiches" },
   footer: {
     terms: "Conditions d'utilisation",
     faq: "Questions fréquentes",
@@ -582,7 +582,7 @@ translations.fr = {
 };
 
 translations.tr = {
-  nav: { search: "Ara", addMaster: "Usta ekle", joinAsMaster: "Usta olarak katıl", faq: "SSS", howItWorks: "Nasıl çalışır", forBusiness: "İşletmeler için" },
+  nav: { search: "Ara", addMaster: "Usta ekle", joinAsMaster: "Usta olarak katıl", faq: "SSS", howItWorks: "Nasıl çalışır", forBusiness: "İşletmeler için", myCards: "Kartlarım" },
   footer: {
     terms: "Kullanım koşulları",
     faq: "Sıkça sorulan sorular",
@@ -657,7 +657,7 @@ translations.tr = {
 };
 
 translations.es = {
-  nav: { search: "Buscar", addMaster: "Añadir profesional", joinAsMaster: "Únete como profesional", faq: "Preguntas frecuentes", howItWorks: "Cómo funciona", forBusiness: "Para empresas" },
+  nav: { search: "Buscar", addMaster: "Añadir profesional", joinAsMaster: "Únete como profesional", faq: "Preguntas frecuentes", howItWorks: "Cómo funciona", forBusiness: "Para empresas", myCards: "Mis fichas" },
   footer: {
     terms: "Condiciones de uso",
     faq: "Preguntas frecuentes",

@@ -13,6 +13,8 @@ const { getDraft, patchDraft, deleteDraft, submitDraft, getMine } = require('./r
 const { uploadDraftPhoto, uploadDraftPhotoFromTelegram } = require('./routes/photo');
 const { patchDraftLimiter, submitDraftLimiter, photoUploadLimiter, claimsLimiter } = require('./middleware/draftRateLimiter');
 const { submitClaim, getMyClaims, withdrawClaim } = require('./routes/claims');
+const { editOwnedMaster, setVisibility, deleteOwnedMaster } = require('./routes/ownedMaster');
+const loadOwnedMaster = require('./middleware/loadOwnedMaster');
 const {
   createProfession,
   createProfCategory,
@@ -77,6 +79,12 @@ function buildApp() {
   });
   app.delete('/api/masters/draft', requireUser, deleteDraft);
   app.get('/api/masters/mine', requireUser, getMine);
+
+  // Owner card management (claim flow). Registered AFTER the literal
+  // /draft and /mine paths so :id can never shadow them.
+  app.patch('/api/masters/:id/visibility', requireUser, asyncHandler(loadOwnedMaster), asyncHandler(setVisibility));
+  app.patch('/api/masters/:id', requireUser, asyncHandler(loadOwnedMaster), asyncHandler(editOwnedMaster));
+  app.delete('/api/masters/:id', requireUser, asyncHandler(loadOwnedMaster), asyncHandler(deleteOwnedMaster));
 
   // Claims
   app.post('/api/claims', requireUser, claimsLimiter, submitClaim);

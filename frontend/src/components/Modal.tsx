@@ -1,12 +1,16 @@
-import { useContext, useEffect, useMemo } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
 import { localizedName } from "../i18n/lang";
 import { transliterate } from "../helpers/transliterate";
 import Sigil from "./Sigil";
+import { apiFetch } from "../api/client";
 
 import type { Master, Contacts } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
+
+type ClaimStatus = "idle" | "loading" | "success" | "pending_review" | "already_owner" | "error";
 
 type ModalProps = {
   master: Master;
@@ -77,9 +81,66 @@ function formatRegCode(masterId: string, allMasters: Master[]): string {
 
 export default function Modal({ master, setShowModal }: ModalProps) {
   const {
-    state: { locations, professions, masters },
+    state: { locations, professions, masters, user },
   } = useContext(MasterContext);
   const { t, lang } = useTranslation();
+
+  const [claimStatus, setClaimStatus] = useState<ClaimStatus>("idle");
+  const [isOwner, setIsOwner] = useState<boolean | null>(null);
+  const [masterStatus, setMasterStatus] = useState(master.status ?? "approved");
+
+  useEffect(() => {
+    if (!user.isLoggedIn || !master.claimable) { setIsOwner(false); return; }
+    apiFetch("/api/masters/mine", {}, { redirectOn401: false })
+      .then(r => r.ok ? r.json() : { masters: [] })
+      .then(({ masters: mine }: { masters: { _id: string }[] }) =>
+        setIsOwner(mine.some(m => m._id === master._id))
+      )
+      .catch(() => setIsOwner(false));
+  }, [user.isLoggedIn, master._id, master.claimable]);
+
+  async function handleClaim() {
+    setClaimStatus("loading");
+    try {
+      const r = await apiFetch("/api/claims", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masterID: master._id }),
+      }, { redirectOn401: false });
+      if (r.status === 401) { setClaimStatus("error"); return; }
+      const body = await r.json();
+      if (!r.ok) {
+        if (body.error === "already_owner") { setClaimStatus("already_owner"); setIsOwner(true); return; }
+        setClaimStatus("error"); return;
+      }
+      if (body.autoApproved) { setClaimStatus("success"); setIsOwner(true); }
+      else setClaimStatus("pending_review");
+    } catch { setClaimStatus("error"); }
+  }
+
+  async function handleHide() {
+    await apiFetch(`/api/masters/${master._id}/visibility`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hidden: true }),
+    });
+    setMasterStatus("archived");
+  }
+
+  async function handleRestore() {
+    await apiFetch(`/api/masters/${master._id}/visibility`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hidden: false }),
+    });
+    setMasterStatus("approved");
+  }
+
+  async function handleDelete() {
+    if (!window.confirm("Delete your card permanently? This cannot be undone.")) return;
+    await apiFetch(`/api/masters/${master._id}`, { method: "DELETE" });
+    setShowModal(null);
+  }
 
   const { _id: id, languages, contacts, about, photo, countryID } = master;
 
@@ -250,6 +311,60 @@ export default function Modal({ master, setShowModal }: ModalProps) {
             <section className="modal-master__bio">
               {about || t("modal.noAbout")}
             </section>
+          )}
+
+          {/* Claim section — shown for claimable cards when logged in and not already owner */}
+          {master.claimable && user.isLoggedIn && isOwner === false && (
+            <section className="modal-master__claim-section">
+              <span className="modal-master__claim-label">Is this you?</span>
+              {claimStatus === "idle" && (
+                <button type="button" className="modal-master__claim-btn" onClick={handleClaim}>
+                  <span>Claim this card</span>
+                  <span>→</span>
+                </button>
+              )}
+              {claimStatus === "loading" && (
+                <button type="button" className="modal-master__claim-btn" disabled>
+                  <span>Checking...</span>
+                </button>
+              )}
+              {claimStatus === "success" && (
+                <div className="modal-master__claim-feedback modal-master__claim-feedback--ok">
+                  Card claimed. <Link to="/my-cards" className="modal-master__claim-link">Manage your card →</Link>
+                </div>
+              )}
+              {claimStatus === "pending_review" && (
+                <div className="modal-master__claim-feedback">
+                  Request submitted — admin will review shortly.
+                </div>
+              )}
+              {claimStatus === "error" && (
+                <div className="modal-master__claim-feedback modal-master__claim-feedback--err">
+                  Could not submit claim. Try again.
+                  <button type="button" className="modal-master__claim-retry" onClick={() => setClaimStatus("idle")}>Retry</button>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Manage bar — shown when the logged-in user owns this card */}
+          {isOwner && (
+            <div className="modal-master__manage-bar">
+              <span className="modal-master__manage-label">Your card</span>
+              <Link to="/my-cards" className="modal-master__manage-btn">Edit</Link>
+              {masterStatus === "approved" ? (
+                <button type="button" className="modal-master__manage-btn" onClick={handleHide}>
+                  Hide
+                </button>
+              ) : (
+                <button type="button" className="modal-master__manage-btn" onClick={handleRestore}>
+                  Restore
+                </button>
+              )}
+              <button type="button" className="modal-master__manage-btn modal-master__manage-btn--danger" onClick={handleDelete}>
+                Delete
+              </button>
+            </div>
           )}
 
           {/* CTA band */}
