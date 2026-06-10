@@ -274,3 +274,7 @@ async function getMine(req, res) {
 }
 
 module.exports = { getDraft, patchDraft, deleteDraft, submitDraft, getMine };
+// Shared with routes/ownedMaster.js — owner edits validate exactly like
+// draft patches.
+module.exports.validatePatch = validatePatch;
+module.exports.DRAFT_FIELDS = DRAFT_FIELDS;
