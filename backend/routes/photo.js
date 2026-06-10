@@ -43,11 +43,16 @@ function runMulter(req, res) {
 
 async function resizeAndUpload(buffer, userID) {
   const resized = await sharp(buffer)
+    // Bake EXIF orientation into the pixels. Re-encoding strips the EXIF
+    // tag, so without this phone photos render rotated 90°/180°.
+    .rotate()
     .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 85 })
     .toBuffer();
 
-  const key = `userpics/${userID}.jpg`;
+  // Unique key per upload: a stable per-user key meant a re-upload kept the
+  // same URL, so browsers showed the cached (old) photo in the preview.
+  const key = `userpics/${userID}-${Date.now()}.jpg`;
   const result = await s3.upload({
     Bucket: S3_BUCKET,
     Key: key,

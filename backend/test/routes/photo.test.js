@@ -71,9 +71,34 @@ describe('POST /api/masters/draft/photo', () => {
     const uploadArgs = photoRoutes._s3.upload.mock.calls[0][0];
     expect(uploadArgs.Bucket).toBe('test-bucket');
     expect(uploadArgs.ContentType).toBe('image/jpeg'); // re-encoded by sharp
+    // Unique key per upload so a re-upload never reuses a cached URL.
+    expect(uploadArgs.Key).toMatch(/^userpics\/[0-9a-f]{24}-\d+\.jpg$/);
     // The uploaded body is a real JPEG produced from the PNG input.
     const meta = await sharp(uploadArgs.Body).metadata();
     expect(meta.format).toBe('jpeg');
+  });
+
+  it('bakes EXIF orientation into the pixels (phone photos arrive rotated)', async () => {
+    const { authHeader } = await makeUser();
+    // 8×16 JPEG tagged orientation 6 = "rotate 90° CW to display".
+    const tagged = await sharp({
+      create: { width: 8, height: 16, channels: 3, background: '#c14b32' },
+    })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .toBuffer();
+
+    const res = await request(app)
+      .post('/api/masters/draft/photo')
+      .set('Authorization', authHeader)
+      .attach('photo', tagged, 'rotated.jpg');
+    expect(res.status).toBe(200);
+
+    const meta = await sharp(photoRoutes._s3.upload.mock.calls[0][0].Body).metadata();
+    // Pixels physically rotated (16×8), no orientation tag left behind.
+    expect(meta.width).toBe(16);
+    expect(meta.height).toBe(8);
+    expect(meta.orientation).toBeUndefined();
   });
 
   it('accepts a real JPEG', async () => {
