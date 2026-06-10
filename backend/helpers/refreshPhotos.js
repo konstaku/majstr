@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const AWS = require('aws-sdk');
 require('dotenv').config();
+const { S3_BUCKET } = require('../config/s3');
 
 const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
 const uri = `mongodb+srv://0864380:${MONGO_PASSWORD}@piglets.vfyjg2w.mongodb.net/`;
@@ -54,7 +55,7 @@ async function main() {
           .catch(console.error);
 
         const uploadParams = {
-          Bucket: 'chupakabra-test',
+          Bucket: S3_BUCKET,
           Key: `userpics/${id}.jpg`,
           Body: photo,
         };

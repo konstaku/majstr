@@ -70,6 +70,9 @@ node index.js      # Start without auto-reload
 npm run review     # Local LLM review queue (http://127.0.0.1:4300) — auth-free,
                    # localhost-only. Paste chat text → Ollama → review/publish.
                    # Needs `ollama serve` running (OLLAMA_MODEL, default qwen2.5:14b).
+npm test           # Vitest + supertest + mongodb-memory-server (first run
+                   # downloads a mongod binary, cached afterwards)
+npm run test:watch # Vitest in watch mode
 ```
 
 ### Frontend
@@ -78,20 +81,34 @@ cd frontend
 npm run dev        # Vite dev server
 npm run build      # Production build
 npm run lint       # ESLint
+npm run typecheck  # tsc --noEmit
+npm test           # Vitest unit tests (happy-dom + MSW)
 npm run preview    # Preview production build
 ```
 
+### E2E (smoke)
+```bash
+cd e2e
+npm test           # Playwright against the Vite dev server; the API is fully
+                   # stubbed via page.route() — no backend/Mongo/bot needed.
+                   # One-time: npm install && npx playwright install chromium
+```
+
+Backend test notes: tests require app modules with `require()` (the CJS graph
+is native — `vi.mock` cannot reach transitive requires). Chromium/S3 stay out
+of tests via the `og.impl` seam (`helpers/generateOpenGraph.js`) and the
+`_s3` export on `routes/photo.js`.
+
 ## Architecture
 
-The project has three separate Node processes running in production, all requiring SSL certificates:
+The project has two Node processes running in production:
 
 | Process | File | Port | Purpose |
 |---|---|---|---|
-| API server | `backend/index.js` | 5000 (HTTPS) | REST API (`/`, `/auth`, `/addmaster`) |
+| API server | `backend/index.js` | 5000 (HTTPS) | REST API (`/`, `/auth`, `/addmaster`, `/api/*`) |
 | Telegram bot | `backend/bot.js` | 8443 (HTTPS) | Webhook handler for Telegram |
-| OG middleware | `backend/open-graph-middleware.js` | 5050 (HTTP) | SSR for social sharing previews |
 
-Nginx routes traffic: requests with `?card=` in the URL go to the OG middleware (port 5050); everything else goes to the static frontend. The API lives at `api.majstr.xyz`.
+`backend/index.js` is a thin entry: the Express app is built side-effect-free in `backend/app.js` (which is what the test suite imports). The bot implementation lives in `backend/bot/` (instance, transport, router, startFlow, masterStatus, forwardLeads, moderationCallbacks, claimCallbacks); `backend/bot.js` stays as a thin re-export of `{ bot, runBot }`. OG/social previews are rendered by the Next.js layer in `web/` (the old `open-graph-middleware.js` was removed). The API lives at `api.majstr.xyz`.
 
 ## Authentication Flow
 
@@ -105,7 +122,7 @@ Nginx routes traffic: requests with `?card=` in the URL go to the OG middleware 
 
 1. Any logged-in user can submit a master via `POST /addmaster`
 2. New masters get `approved: false` by default
-3. On save, a canvas-based OG image is generated (`helpers/generateOpenGraph.js`) and uploaded to S3 (`chupakabra-test` bucket, key `user-og/<master_id>.jpg`)
+3. On save, an OG image is rendered with Playwright/Chromium (`helpers/generateOpenGraph.js`) and uploaded to S3 (bucket from `S3_BUCKET` env via `config/s3.js`, default `chupakabra-test`; key `user-og/<master_id>.png`)
 4. Admin receives a Telegram message with Approve ✅ / Decline ❌ inline keyboard
 5. Admin's Telegram ID `5950535` gets masters auto-approved
 

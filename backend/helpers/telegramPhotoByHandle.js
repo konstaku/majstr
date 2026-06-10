@@ -17,7 +17,7 @@ const AWS = require('aws-sdk');
 
 const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const BUCKET = process.env.S3_BUCKET || 'chupakabra-test';
+const { S3_BUCKET: BUCKET } = require('../config/s3');
 // Some servers reject default fetch UAs; spoof a normal browser.
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/537.36 ' +

@@ -10,11 +10,10 @@ const { chromium } = require('playwright');
 const Profession    = require('../database/schema/Profession');
 const Location      = require('../database/schema/Location');
 const { localizedName } = require('../lang');
+const { S3_BUCKET } = require('../config/s3');
 
 // ── Brand mapping ─────────────────────────────────────────────────────────────
-const LANG_LABELS = {
-  uk:'UA', en:'EN', it:'IT', pt:'PT', es:'ES', de:'DE', fr:'FR', pl:'PL', ru:'RU',
-};
+const { LANG_LABELS } = require('./langLabels');
 const CONTACT_LABELS = {
   telegram:'Telegram', phone:'Телефон', instagram:'Instagram',
   viber:'Viber', whatsapp:'WhatsApp', facebook:'Facebook', website:'Сайт',
@@ -50,7 +49,14 @@ async function getBrowser() {
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
+// Thin delegator: callers hold a direct reference to this function, while the
+// real work lives in module.exports.impl — the seam the test suite replaces
+// so route tests don't launch Chromium or hit S3.
 async function createOGimageForMaster(master) {
+  return module.exports.impl(master);
+}
+
+async function generateAndUpload(master) {
   console.log('[OG] Generating for master:', master._id);
 
   const [professions, locations] = await Promise.all([
@@ -118,7 +124,7 @@ async function createOGimageForMaster(master) {
 
 async function uploadToS3(buffer, master) {
   const params = {
-    Bucket:      'chupakabra-test',
+    Bucket:      S3_BUCKET,
     Key:         `user-og/${master._id}.png`,
     Body:        buffer,
     ContentType: 'image/png',
@@ -137,4 +143,5 @@ async function closeBrowser() {
 }
 
 module.exports = createOGimageForMaster;
+module.exports.impl = generateAndUpload;
 module.exports.closeBrowser = closeBrowser;

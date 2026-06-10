@@ -8,7 +8,7 @@
 const AWS = require('aws-sdk');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const BUCKET = process.env.S3_BUCKET || 'chupakabra-test';
+const { S3_BUCKET: BUCKET } = require('../config/s3');
 
 let _s3 = null;
 function getS3() {
