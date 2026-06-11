@@ -15,6 +15,7 @@ const CandidateModel = require('../database/schema/Candidate');
 const miningDb = require('../database/miningDb');
 const Master = require('../database/schema/Master');
 const MasterAudit = require('../database/schema/MasterAudit');
+const createOGimageForMaster = require('../helpers/generateOpenGraph');
 const Profession = require('../database/schema/Profession');
 const Location = require('../database/schema/Location');
 const {
@@ -331,11 +332,22 @@ async function acceptCandidate(req, res) {
   // #117 — fire-and-forget Telegram profile photo fetch for scraped masters
   // with an @handle. The admin doesn't wait for it; if it succeeds the photo
   // appears on the card on the next render. Any failure is logged, not thrown.
+  // The OG card is generated AFTER the photo settles (either way) so the
+  // image includes the photo — published cards previously shipped with no
+  // OGimage at all and fell back to the legacy Next.js OG layout.
   fetchAndUploadPhotoForMaster(created)
     .then((url) => {
-      if (url) return Master.updateOne({ _id: created._id }, { $set: { photo: url } });
+      if (url) {
+        created.photo = url;
+        return Master.updateOne({ _id: created._id }, { $set: { photo: url } });
+      }
     })
-    .catch((e) => console.error('[scraped-photo] post-accept', e.message));
+    .catch((e) => console.error('[scraped-photo] post-accept', e.message))
+    .then(() => createOGimageForMaster(created))
+    .then((ogUrl) =>
+      Master.updateOne({ _id: created._id }, { $set: { OGimage: ogUrl.toString() } })
+    )
+    .catch((e) => console.error('[OG] post-accept generation failed:', e.message));
 
   const MiningFeedback = miningDb.MiningFeedback();
   // Diff what the admin saved vs what the classifier extracted — the labeled

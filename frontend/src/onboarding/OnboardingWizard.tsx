@@ -13,6 +13,7 @@ import { StepLocation } from "./steps/StepLocation";
 import { StepBioTags } from "./steps/StepBioTags";
 import { StepContact } from "./steps/StepContact";
 import { useHaptic } from "../ui/useHaptic";
+import { useClaimDeepLink } from "../surface/useClaimDeepLink";
 import { OnboardingI18nProvider, useOnbT } from "./i18n";
 
 const STEP_TITLE_KEYS = [
@@ -143,6 +144,11 @@ function WizardInner() {
 }
 
 export default function OnboardingWizard() {
+  // The bot's Main Mini App opens HERE (/onboard), so claim deep links
+  // (startapp=claim-<id>) arrive on this route — redirect before the wizard
+  // mounts its draft flow.
+  useClaimDeepLink();
+
   return (
     <OnboardingI18nProvider>
       <WizardInner />
