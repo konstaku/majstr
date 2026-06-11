@@ -18,3 +18,11 @@ test("master names and the result counter are shown", async ({ page }) => {
   await expect(page.locator(".master-card__name", { hasText: "Іван Сантехнік" })).toBeVisible();
   await expect(page.locator(".found-amount")).toHaveText(String(masters.length));
 });
+
+test("the owner-verified master carries the badge and sorts first", async ({ page }) => {
+  const firstCard = page.locator(".master-card").first();
+  await expect(firstCard.locator(".master-card__name")).toHaveText("Іван Сантехнік");
+  await expect(firstCard.locator(".master-card__badge--verified")).toBeVisible();
+  // Unverified cards must not carry the badge.
+  await expect(page.locator(".master-card__badge--verified")).toHaveCount(1);
+});

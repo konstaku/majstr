@@ -4,6 +4,7 @@ const Master = require('../database/schema/Master');
 const MasterClaim = require('../database/schema/MasterClaim');
 const MasterAudit = require('../database/schema/MasterAudit');
 const User = require('../database/schema/User');
+const { requestVerification } = require('../helpers/verification');
 const { bot, PUBLIC_WEB_URL } = require('./instance');
 
 async function handleClaimCallback(queryId, message, data, from) {
@@ -63,6 +64,14 @@ async function handleClaimCallback(queryId, message, data, from) {
       claim.claimantTelegramID,
       `✅ Your claim was approved! You are now the owner of the card:\n${PUBLIC_WEB_URL}/?card=${claim.masterID}`
     ).catch(() => {});
+
+    // Ownership established → queue the card for moderator verification.
+    const claimed = await Master.findById(claim.masterID);
+    if (claimed) {
+      requestVerification(claimed, 'claim approved by admin').catch(err =>
+        console.error('[verify] request failed:', err)
+      );
+    }
 
   } else {
     claim.status = 'rejected';

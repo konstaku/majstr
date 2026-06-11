@@ -63,6 +63,8 @@ export interface Master {
   reviewCount?: number;
   likes?: number;
   approved?: boolean;
+  /** Owner-verified by a moderator (claim flow) — badge + search priority. */
+  verified?: boolean;
   status?: string;
   claimable?: boolean;
   source?: string;

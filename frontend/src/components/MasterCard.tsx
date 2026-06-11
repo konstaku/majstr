@@ -34,7 +34,8 @@ export default function MasterCard({ master, setShowModal, isNew }: MasterCardPr
   const { _id, name, professionID, locationID, languages, countryID, photo, tags } = master;
 
   const displayName = lang === "uk" ? name : transliterate(name);
-  const isVerified = !!photo;
+  // Owner-verified by a moderator (claim flow) — not merely "has a photo".
+  const isVerified = !!master.verified;
 
   const profName = localizedName(
     professions.find((p: Profession) => p.id === professionID)?.name,

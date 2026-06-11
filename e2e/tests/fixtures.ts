@@ -34,9 +34,10 @@ export const countries = [
 
 const master = (
   id: string,
-  fields: { name: string; professionID: string; locationID: string; about: string }
+  fields: { name: string; professionID: string; locationID: string; about: string; verified?: boolean }
 ) => ({
   _id: id,
+  verified: false,
   ...fields,
   telegramID: 100000 + Number(id.slice(-2)),
   countryID: "IT",
@@ -66,6 +67,8 @@ export const masters = [
     professionID: "plumber",
     locationID: "rome",
     about: "Сантехнічні роботи в Римі.",
+    // Owner-verified — must carry the VERIFIED badge and sort first.
+    verified: true,
   }),
   master("684700000000000000000503", {
     name: "Петро Електрик",

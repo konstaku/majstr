@@ -184,6 +184,10 @@ export function citiesOfProfession(
 
 // Rank: rated/claimed first, then more reviews, then newer.
 function masterRank(a: Master, b: Master): number {
+  // Owner-verified cards always rank first.
+  const av = a.verified ? 1 : 0;
+  const bv = b.verified ? 1 : 0;
+  if (bv !== av) return bv - av;
   const ar = a.rating ?? -1;
   const br = b.rating ?? -1;
   if (br !== ar) return br - ar;

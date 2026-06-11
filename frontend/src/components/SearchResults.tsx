@@ -67,7 +67,12 @@ export default function SearchResults({
         m.locationID.includes(city) &&
         availableProfessionIDs.includes(m.professionID)
     )
-    .sort((a, b) => getCreatedMs(b._id) - getCreatedMs(a._id));
+    .sort(
+      (a, b) =>
+        // Owner-verified cards first, then newest.
+        Number(!!b.verified) - Number(!!a.verified) ||
+        getCreatedMs(b._id) - getCreatedMs(a._id)
+    );
 
   const countryMasters = masters.filter(m => m.countryID === countryID);
   const newSet = buildNewSet(countryMasters);

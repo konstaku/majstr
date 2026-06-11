@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import ErrorPage from "./pages/ErrorPage";
 import OnboardingWizard from "./onboarding/OnboardingWizard";
 import MyCards from "./pages/MyCards";
+import ClaimCard from "./pages/ClaimCard";
 
 export const router = createBrowserRouter([
   {
@@ -43,6 +44,10 @@ export const router = createBrowserRouter([
           {
             path: "/my-cards",
             element: <MyCards />,
+          },
+          {
+            path: "/claim/:masterId",
+            element: <ClaimCard />,
           },
           {
             path: "/admin",

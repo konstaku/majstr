@@ -91,7 +91,7 @@ async function generateAndUpload(master) {
     city:     localizedName(locEntry?.name,  'uk', master.locationID),
     langs,
     photoUrl: master.photo || null,
-    verified: master.approved === true,
+    verified: master.verified === true,
     desc:     master.about || '',
     contacts,
     dest:     master.countryID || 'IT',

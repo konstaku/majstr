@@ -36,6 +36,11 @@ const masterSchema = new mongoose.Schema(
       default: 'draft',
     },
     approved: { type: Boolean, default: false },
+    // Owner-verified: the master claimed the card and a moderator confirmed
+    // it (verify: callbacks). Drives the VERIFIED badge + search priority.
+    // Distinct from `approved`, which only gates public visibility.
+    verified: { type: Boolean, default: false },
+    verifiedAt: Date,
     submittedAt: Date,
     approvedAt: Date,
     rejectedAt: Date,
@@ -62,6 +67,7 @@ const masterSchema = new mongoose.Schema(
 );
 
 masterSchema.index({ status: 1, countryID: 1, locationID: 1 });
+masterSchema.index({ status: 1, verified: -1 }); // verified-first public listing
 masterSchema.index({ status: 1, submittedAt: 1 });
 masterSchema.index({ ownerUserID: 1, status: 1 });
 masterSchema.index({ telegramID: 1, status: 1 });

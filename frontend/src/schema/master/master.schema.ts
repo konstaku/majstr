@@ -30,6 +30,9 @@ export const MasterSchema = z.object({
   reviewCount: z.number().min(0).optional(),
   claimable: z.boolean().optional().default(false),
   status: z.string().optional(),
+  // Owner-verified by a moderator (claim flow) — drives the VERIFIED badge
+  // and search priority.
+  verified: z.boolean().optional().default(false),
 });
 
 export type Master = z.infer<typeof MasterSchema>;

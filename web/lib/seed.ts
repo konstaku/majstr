@@ -23,6 +23,7 @@ type SlimMaster = Pick<
   | "languages"
   | "photo"
   | "tags"
+  | "verified"
 >;
 
 function slimMaster(m: Master): SlimMaster {
@@ -35,6 +36,8 @@ function slimMaster(m: Master): SlimMaster {
     languages: m.languages,
     photo: m.photo,
     tags: m.tags,
+    // Needed by the grid: VERIFIED badge + verified-first ordering.
+    verified: m.verified,
   };
 }
 

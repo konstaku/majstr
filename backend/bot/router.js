@@ -10,6 +10,7 @@ const {
 } = require('./masterStatus');
 const { handleMasterCallback } = require('./moderationCallbacks');
 const { handleClaimCallback } = require('./claimCallbacks');
+const { handleVerifyCallback } = require('./verifyCallbacks');
 
 async function handleMessage(message) {
   // Mini App data submissions are not user text commands — ignore silently.
@@ -69,6 +70,9 @@ async function handleCallbackQuery(callbackQuery) {
   }
   if (data.startsWith('master:')) {
     return handleMasterCallback(queryId, message, data, from);
+  }
+  if (data.startsWith('verify:')) {
+    return handleVerifyCallback(queryId, message, data, from);
   }
   if (data.startsWith('uilang:')) {
     return handleUiLangCallback(queryId, message, data, from);
