@@ -32,12 +32,23 @@ async function handleClaimCallback(queryId, message, data, from) {
     const master = await Master.findById(claim.masterID);
     const previousOwnerID = master?.ownerUserID || null;
 
-    await Master.findByIdAndUpdate(claim.masterID, {
-      ownerUserID: claim.claimantUserID,
-      telegramID: claim.claimantTelegramID,
-      claimable: false,
-      claimedAt: new Date(),
-    });
+    try {
+      await Master.findByIdAndUpdate(claim.masterID, {
+        ownerUserID: claim.claimantUserID,
+        telegramID: claim.claimantTelegramID,
+        claimable: false,
+        claimedAt: new Date(),
+      });
+    } catch (err) {
+      // One active card per owner — the claimant already has one.
+      if (err.code === 11000) {
+        return bot.answerCallbackQuery(queryId, {
+          text: 'Claimant already owns an active card — cannot transfer.',
+          show_alert: true,
+        });
+      }
+      throw err;
+    }
 
     claim.status = 'approved';
     claim.reviewedBy = adminUser?._id;

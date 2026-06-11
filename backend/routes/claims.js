@@ -57,6 +57,17 @@ async function submitClaim(req, res) {
     return res.status(409).json({ error: 'already_owner' });
   }
 
+  // One active card per owner (partial unique index on ownerUserID). Without
+  // this check the ownership transfer below throws E11000 — surface a clear
+  // 409 instead.
+  const hasActiveCard = await Master.exists({
+    ownerUserID: req.user._id,
+    status: { $in: Master.ACTIVE_STATUSES },
+  });
+  if (hasActiveCard) {
+    return res.status(409).json({ error: 'active_card_exists' });
+  }
+
   // Build evidence from what the claimant provided
   const evidence = [];
   if (phone) {
@@ -95,12 +106,24 @@ async function submitClaim(req, res) {
   if (autoApproved) {
     const previousOwnerID = master.ownerUserID || null;
 
-    await Master.findByIdAndUpdate(master._id, {
-      ownerUserID: req.user._id,
-      telegramID: req.user.telegramID,
-      claimable: false,
-      claimedAt: new Date(),
-    });
+    try {
+      await Master.findByIdAndUpdate(master._id, {
+        ownerUserID: req.user._id,
+        telegramID: req.user.telegramID,
+        claimable: false,
+        claimedAt: new Date(),
+      });
+    } catch (err) {
+      // Race with the pre-check above: claimant acquired an active card
+      // between the two queries. Roll the claim back and answer cleanly.
+      if (err.code === 11000) {
+        claim.status = 'rejected';
+        claim.reason = 'claimant already owns an active card';
+        await claim.save().catch(() => {});
+        return res.status(409).json({ error: 'active_card_exists' });
+      }
+      throw err;
+    }
 
     await MasterAudit.create({
       masterID: master._id,

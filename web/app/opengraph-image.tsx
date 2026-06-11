@@ -3,9 +3,9 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 // Default site OG image (file convention) — used for the home page and any
-// route that doesn't set its own openGraph.images (master pages override this
-// with /api/og?id=…). Replaces the previously-referenced /og-image.png, which
-// did not exist and 404'd, leaving shared links with no preview.
+// route that doesn't set its own openGraph.images. Master pages use the
+// Playwright-rendered card (Master.OGimage); the legacy /api/og generator
+// was removed.
 export const runtime = "nodejs";
 export const alt = "Majstr — каталог майстрів в Італії";
 export const size = { width: 1200, height: 630 };
