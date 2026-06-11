@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Master = require('../database/schema/Master');
 const MasterClaim = require('../database/schema/MasterClaim');
 const MasterAudit = require('../database/schema/MasterAudit');
+const { requestVerification } = require('../helpers/verification');
 const { bot } = require('../bot');
 
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -109,6 +110,13 @@ async function submitClaim(req, res) {
       diff: { ownerUserID: [previousOwnerID, req.user._id] },
       reason: 'claim approved (phone match)',
     }).catch(err => console.error('Failed to write claim audit row:', err));
+
+    // Ownership established → queue the card for moderator verification
+    // (VERIFIED badge), even if the new owner never edits anything.
+    const claimed = await Master.findById(master._id);
+    requestVerification(claimed, 'card claimed by its master (auto-approved)').catch(err =>
+      console.error('[verify] request failed:', err)
+    );
   } else {
     // Queue to admin — send link + claimant info
     if (TELEGRAM_ADMIN_CHAT_ID) {

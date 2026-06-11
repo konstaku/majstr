@@ -114,6 +114,37 @@ describe('PATCH /api/masters/:id (owner edit)', () => {
     expect(audit).toMatchObject({ action: 'edit', reason: 'owner edit' });
   });
 
+  it('revokes the VERIFIED badge on any owner edit (re-moderation required)', async () => {
+    const { user, authHeader } = await makeUser({ telegramID: 80013 });
+    const master = await makeOwned(user._id, { verified: true, verifiedAt: new Date() });
+
+    const res = await request(app)
+      .patch(`/api/masters/${master._id}`)
+      .set('Authorization', authHeader)
+      .send({ about: 'tiny tweak' });
+    expect(res.status).toBe(200);
+
+    const updated = await Master.findById(master._id);
+    expect(updated.verified).toBe(false);
+    expect(updated.verifiedAt).toBeUndefined();
+    expect(updated.status).toBe('approved'); // visibility untouched
+  });
+
+  it('accepts photo and languages in the owner patch (full edit scope)', async () => {
+    const { user, authHeader } = await makeUser({ telegramID: 80014 });
+    const master = await makeOwned(user._id);
+
+    const res = await request(app)
+      .patch(`/api/masters/${master._id}`)
+      .set('Authorization', authHeader)
+      .send({ photo: 'https://s3.test/userpics/new.jpg', languages: ['ua', 'it'] });
+    expect(res.status).toBe(200);
+
+    const updated = await Master.findById(master._id);
+    expect(updated.photo).toBe('https://s3.test/userpics/new.jpg');
+    expect([...updated.languages]).toEqual(['ua', 'it']);
+  });
+
   it('422s invalid patches with the draft validation rules', async () => {
     const { user, authHeader } = await makeUser({ telegramID: 80005 });
     const master = await makeOwned(user._id);

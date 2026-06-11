@@ -24,7 +24,8 @@ async function handleApiRequests(req, res) {
         if (req.query.country) {
           mastersQuery = { ...mastersQuery, countryID: req.query.country };
         }
-        const masters = await Master.find(mastersQuery).sort({ _id: -1 });
+        // Owner-verified cards first, then newest.
+        const masters = await Master.find(mastersQuery).sort({ verified: -1, _id: -1 });
         console.log(`Fetching masters for location`, req.query.country);
         res.status(200).send(masters);
         break;

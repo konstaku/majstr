@@ -30,19 +30,23 @@ describe('GET /?q=…', () => {
     expect(res.status).toBe(404);
   });
 
-  it('q=masters returns only approved masters, newest first, filtered by country', async () => {
+  it('q=masters returns only approved masters, verified first then newest, filtered by country', async () => {
     const approvedIT = await Master.create({ name: 'A', status: 'approved', countryID: 'IT' });
     const approvedDE = await Master.create({ name: 'B', status: 'approved', countryID: 'DE' });
     await Master.create({ name: 'C', status: 'pending', countryID: 'IT' });
     await Master.create({ name: 'D', status: 'draft', countryID: 'IT' });
+    // Oldest of the set, but owner-verified → must rank first.
+    const verified = await Master.create({
+      name: 'V', status: 'approved', countryID: 'IT', verified: true,
+    });
 
     const all = await request(app).get('/?q=masters');
     expect(all.status).toBe(200);
-    // newest first = _id desc
-    expect(all.body.map((m) => m.name)).toEqual(['B', 'A']);
+    // verified first, then newest (= _id desc)
+    expect(all.body.map((m) => m.name)).toEqual(['V', 'B', 'A']);
 
     const it_ = await request(app).get('/?q=masters&country=IT');
-    expect(it_.body.map((m) => m._id)).toEqual([String(approvedIT._id)]);
+    expect(it_.body.map((m) => m._id)).toEqual([String(verified._id), String(approvedIT._id)]);
 
     const de = await request(app).get('/?q=masters&country=DE');
     expect(de.body.map((m) => m._id)).toEqual([String(approvedDE._id)]);

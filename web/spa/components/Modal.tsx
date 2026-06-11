@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
@@ -136,6 +136,18 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
 
   const useTwoColContacts = contacts.length >= 4;
 
+  // Share-to-claim: a shared card link may carry a #claim (or ?claim=1)
+  // marker. Capture it during the FIRST render — the URL-mirroring effect
+  // below rewrites the URL (pushState) and would wipe the hash.
+  const [claimIntent] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      (window.location.hash === "#claim" ||
+        new URLSearchParams(window.location.search).get("claim") === "1")
+  );
+  const showClaimBanner = claimIntent && master.claimable === true;
+  const botUsername = process.env.NEXT_PUBLIC_TMA_BOT_USERNAME || "majstr_bot";
+
   // While the modal is open, reflect it in the URL as the master page
   // (/{lang}/m/{slug}) so it's shareable, indexable, and back-button closes it.
   useEffect(() => {
@@ -168,6 +180,32 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
               ✕
             </button>
           </header>
+
+          {/* Share-to-claim banner (link carried #claim / ?claim=1) */}
+          {showClaimBanner && (
+            <a
+              href={`https://t.me/${botUsername}?startapp=claim-${id}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                background: "#f5c542",
+                color: "#0e0a06",
+                fontFamily: "var(--font-mono)",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                textDecoration: "none",
+                padding: "8px 16px",
+                borderBottom: "2px solid #0e0a06",
+                textAlign: "center",
+              }}
+            >
+              Це ваша картка? Натисніть, щоб редагувати або видалити →
+            </a>
+          )}
 
           {/* Identity row: avatar + name block */}
           <section className="modal-master__identity">

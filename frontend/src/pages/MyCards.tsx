@@ -1,8 +1,10 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { MasterContext } from "../context";
 import { apiFetch } from "../api/client";
 import { localizedName } from "../i18n/lang";
+import { isTMA } from "../surface/detect";
+import { LANGUAGE_OPTIONS } from "../onboarding/schema";
 import type { Profession, Location } from "../schema/state/state.schema";
 
 type Contact = { contactType: string; value: string };
@@ -39,6 +41,8 @@ type EditState = {
   professionID: string;
   locationID: string;
   availability: string;
+  photo: string;
+  languages: string[];
 };
 
 function buildEdit(m: OwnedMaster): EditState {
@@ -49,6 +53,8 @@ function buildEdit(m: OwnedMaster): EditState {
     professionID: m.professionID ?? "",
     locationID: m.locationID ?? "",
     availability: m.availability ?? "",
+    photo: m.photo ?? "",
+    languages: m.languages ? [...m.languages] : [],
   };
 }
 
@@ -68,6 +74,8 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
   const [status, setStatus] = useState(master.status);
   const [visLoading, setVisLoading] = useState(false);
   const [delLoading, setDelLoading] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const profName = localizedName(
     professions.find(p => p.id === master.professionID)?.name,
@@ -97,6 +105,39 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
     setForm(f => ({ ...f, contacts: f.contacts.filter((_, idx) => idx !== i) }));
   }
 
+  function toggleLanguage(code: string) {
+    setForm(f => ({
+      ...f,
+      languages: f.languages.includes(code)
+        ? f.languages.filter(l => l !== code)
+        : [...f.languages, code],
+    }));
+  }
+
+  async function handlePhotoUpload(file: File) {
+    setPhotoUploading(true);
+    setEditErr(null);
+    try {
+      const body = new FormData();
+      body.append("photo", file);
+      // Same upload pipeline as the onboarding wizard — resizes, fixes EXIF
+      // orientation and returns a fresh S3 URL (not draft-coupled).
+      const r = await apiFetch("/api/masters/draft/photo", { method: "POST", body });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        setEditErr(String(err.error ?? "photo upload failed"));
+        return;
+      }
+      const { photoUrl } = await r.json();
+      setField("photo", photoUrl);
+    } catch (err) {
+      setEditErr(String(err));
+    } finally {
+      setPhotoUploading(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     setEditErr(null);
@@ -111,6 +152,8 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
           professionID: form.professionID || undefined,
           locationID: form.locationID || undefined,
           availability: form.availability || undefined,
+          photo: form.photo || undefined,
+          languages: form.languages,
         }),
       });
       if (!r.ok) {
@@ -198,6 +241,47 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
 
       {editing && (
         <form className="mycard__form" onSubmit={e => { e.preventDefault(); handleSave(); }}>
+          <div className="mycard__field">
+            <span className="mycard__field-label">Photo</span>
+            <div className="mycard__photo-row">
+              {form.photo ? (
+                <span
+                  className="mycard__photo-preview"
+                  style={{ backgroundImage: `url(${form.photo})` }}
+                />
+              ) : (
+                <span className="mycard__photo-preview mycard__photo-preview--empty">—</span>
+              )}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: "none" }}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhotoUpload(file);
+                }}
+              />
+              <button
+                type="button"
+                className="mycard__btn"
+                disabled={photoUploading}
+                onClick={() => photoInputRef.current?.click()}
+              >
+                {photoUploading ? "Uploading…" : form.photo ? "Change photo" : "Upload photo"}
+              </button>
+              {form.photo && (
+                <button
+                  type="button"
+                  className="mycard__btn"
+                  onClick={() => setField("photo", "")}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+
           <label className="mycard__field">
             <span className="mycard__field-label">Name</span>
             <input
@@ -279,6 +363,23 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
             )}
           </div>
 
+          <div className="mycard__field">
+            <span className="mycard__field-label">Languages</span>
+            <div className="mycard__chips">
+              {LANGUAGE_OPTIONS.map(({ code, label }) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={`mycard__chip${form.languages.includes(code) ? " mycard__chip--active" : ""}`}
+                  aria-pressed={form.languages.includes(code)}
+                  onClick={() => toggleLanguage(code)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label className="mycard__field">
             <span className="mycard__field-label">About</span>
             <textarea
@@ -321,7 +422,9 @@ export default function MyCards() {
       .catch(() => setLoading(false));
   }, []);
 
-  if (!user.isLoggedIn) return <Navigate to="/login" />;
+  // Inside the Telegram Mini App auth rides on initData headers, not the
+  // web localStorage token — never bounce TMA users to /login.
+  if (!user.isLoggedIn && !isTMA()) return <Navigate to="/login" />;
 
   return (
     <main className="my-cards-page">

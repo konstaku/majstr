@@ -39,6 +39,10 @@ const DICT = {
       '✅ Вашу картку майстра схвалено та опубліковано!\n\nПереглянути: {url}',
     'owner.declined':
       '❌ На жаль, вашу картку майстра не схвалено. Ви можете відредагувати дані та надіслати її повторно через бота.',
+    'owner.verified':
+      '🛡 Вашу картку верифіковано! Тепер вона має позначку VERIFIED і показується вище в результатах пошуку.\n\nПереглянути: {url}',
+    'owner.verifyDeclined':
+      '❌ Верифікацію картки відхилено. Перевірте дані картки та збережіть зміни ще раз — ми переглянемо її повторно.',
     'forward.savedRaw':
       '✅ Зберіг у чергу. Оброблю локальною моделлю і покажу картку, коли відкрию інструмент перегляду.',
     'forward.received':
@@ -75,6 +79,10 @@ const DICT = {
       '✅ Your master card has been approved and published!\n\nView it: {url}',
     'owner.declined':
       '❌ Unfortunately your master card was not approved. You can edit the details and resubmit it via the bot.',
+    'owner.verified':
+      '🛡 Your card is now verified! It carries the VERIFIED badge and ranks higher in search results.\n\nView it: {url}',
+    'owner.verifyDeclined':
+      '❌ Card verification was declined. Review your card details and save again — we will take another look.',
     'forward.savedRaw':
       '✅ Saved to the queue. I’ll run it through the local model and show the card when you open the review tool.',
     'forward.received':

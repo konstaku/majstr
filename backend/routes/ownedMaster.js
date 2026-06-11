@@ -1,6 +1,7 @@
 const Master = require('../database/schema/Master');
 const MasterAudit = require('../database/schema/MasterAudit');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
+const { requestVerification } = require('../helpers/verification');
 const { validatePatch, DRAFT_FIELDS } = require('./draft');
 
 async function editOwnedMaster(req, res) {
@@ -13,6 +14,11 @@ async function editOwnedMaster(req, res) {
   }
   Object.assign(req.master, update);
 
+  // Any owner edit revokes the VERIFIED badge until a moderator re-approves
+  // (visibility is untouched — the edited card stays live).
+  req.master.verified = false;
+  req.master.verifiedAt = undefined;
+
   if (req.body.name || req.body.photo || req.body.professionID) {
     try {
       req.master.OGimage = (await createOGimageForMaster(req.master)).toString();
@@ -22,6 +28,10 @@ async function editOwnedMaster(req, res) {
   }
 
   await req.master.save();
+
+  requestVerification(req.master, 'owner edited the card').catch((err) =>
+    console.error('[verify] request failed:', err)
+  );
 
   MasterAudit.create({
     masterID: req.master._id,
