@@ -8,11 +8,12 @@ import {
 } from "react";
 
 const IS_DEV = window.location.hostname.startsWith("dev.");
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { MasterContext } from "../context";
 import { Action } from "../reducer";
 import { ACTIONS } from "../data/actions";
 import { useTranslation } from "../custom-hooks/useTranslation";
+import { useClaimDeepLink } from "../surface/useClaimDeepLink";
 import { LANG_LABELS, LANG_FLAGS } from "../i18n/translations";
 import {
   localizedName,
@@ -40,7 +41,6 @@ export default function Root() {
   const [showAddMasterModal, setShowAddMasterModal] = useState(false);
   const { t, lang } = useTranslation();
   const location = useLocation();
-  const navigate = useNavigate();
   const burgerToggleRef = useRef<HTMLButtonElement>(null);
   const burgerMenuRef = useRef<HTMLDivElement>(null);
 
@@ -77,15 +77,8 @@ export default function Root() {
     dispatch({ type: ACTIONS.LOGIN, payload: { user } });
   }, [dispatch]);
 
-  // Telegram Mini App deep link: t.me/<bot>?startapp=claim-<masterId> opens
-  // the TMA at "/" with the payload in initDataUnsafe.start_param — route it
-  // to the claim screen once on mount.
-  useEffect(() => {
-    const sp = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
-    const m = sp?.match(/^claim[-_]([0-9a-f]{24})$/i);
-    if (m) navigate(`/claim/${m[1]}`, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Claim deep links can enter through any TMA entry route.
+  useClaimDeepLink();
 
   // Burger overlay: lock background scroll, close on Escape, and manage
   // focus (move into the overlay on open, return to the toggle on close).
