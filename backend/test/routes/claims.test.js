@@ -74,6 +74,25 @@ describe('POST /api/claims', () => {
     expect(owned.body.error).toBe('not_claimable');
   });
 
+  it('409s when the claimant already owns ANOTHER active card (one card per owner)', async () => {
+    const { user, authHeader } = await makeUser({ telegramID: 70014, username: 'majstrolena' });
+    await Master.create({ name: 'Own card', status: 'approved', ownerUserID: user._id });
+    const master = await makeClaimable();
+
+    // Would auto-approve on handle match — but the ownership transfer would
+    // violate the one-active-card index, so it must answer 409 cleanly.
+    const res = await request(app)
+      .post('/api/claims')
+      .set('Authorization', authHeader)
+      .send({ masterID: master._id });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('active_card_exists');
+
+    const untouched = await Master.findById(master._id);
+    expect(untouched.ownerUserID).toBeUndefined();
+    expect(untouched.claimable).toBe(true);
+  });
+
   it('409s when the caller already owns the card', async () => {
     const { user, authHeader } = await makeUser();
     const master = await makeClaimable({ ownerUserID: user._id });

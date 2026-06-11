@@ -60,6 +60,14 @@ export default function ClaimCard() {
           setState({ phase: "pending" });
           return;
         }
+        if (body.error === "active_card_exists") {
+          setState({
+            phase: "error",
+            message:
+              "У вас вже є активна картка майстра — спершу видаліть її в «Мої картки», щоб підтвердити цю.",
+          });
+          return;
+        }
         if (body.error === "not_claimable") {
           setState({
             phase: "error",
@@ -71,7 +79,17 @@ export default function ClaimCard() {
           setState({ phase: "error", message: "Картку не знайдено." });
           return;
         }
-        setState({ phase: "error", message: "Не вдалося обробити запит. Спробуйте пізніше." });
+        if (res.status === 429) {
+          setState({
+            phase: "error",
+            message: "Забагато спроб поспіль. Спробуйте приблизно за годину.",
+          });
+          return;
+        }
+        setState({
+          phase: "error",
+          message: `Не вдалося обробити запит (код ${res.status}). Спробуйте пізніше.`,
+        });
       } catch {
         setState({ phase: "error", message: "Немає звʼязку. Спробуйте ще раз." });
       }

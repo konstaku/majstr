@@ -63,9 +63,9 @@ function buildApp() {
   app.post('/review', asyncHandler(addReview));
 
   // Draft lifecycle (Mini App onboarding wizard)
-  app.get('/api/masters/draft', requireUser, getDraft);
-  app.patch('/api/masters/draft', requireUser, patchDraftLimiter, patchDraft);
-  app.post('/api/masters/draft/submit', requireUser, submitDraftLimiter, submitDraft);
+  app.get('/api/masters/draft', requireUser, asyncHandler(getDraft));
+  app.patch('/api/masters/draft', requireUser, patchDraftLimiter, asyncHandler(patchDraft));
+  app.post('/api/masters/draft/submit', requireUser, submitDraftLimiter, asyncHandler(submitDraft));
   app.post('/api/masters/draft/photo', requireUser, photoUploadLimiter, uploadDraftPhoto);
   app.post('/api/masters/draft/photo/from-telegram', requireUser, photoUploadLimiter, uploadDraftPhotoFromTelegram);
   app.get('/api/masters/draft/photo/telegram-check', requireUser, async (req, res) => {
@@ -77,8 +77,8 @@ function buildApp() {
       return res.status(502).json({ error: 'telegram_check_failed' });
     }
   });
-  app.delete('/api/masters/draft', requireUser, deleteDraft);
-  app.get('/api/masters/mine', requireUser, getMine);
+  app.delete('/api/masters/draft', requireUser, asyncHandler(deleteDraft));
+  app.get('/api/masters/mine', requireUser, asyncHandler(getMine));
 
   // Owner card management (claim flow). Registered AFTER the literal
   // /draft and /mine paths so :id can never shadow them.
@@ -86,10 +86,12 @@ function buildApp() {
   app.patch('/api/masters/:id', requireUser, asyncHandler(loadOwnedMaster), asyncHandler(editOwnedMaster));
   app.delete('/api/masters/:id', requireUser, asyncHandler(loadOwnedMaster), asyncHandler(deleteOwnedMaster));
 
-  // Claims
-  app.post('/api/claims', requireUser, claimsLimiter, submitClaim);
-  app.get('/api/claims/mine', requireUser, getMyClaims);
-  app.delete('/api/claims/:id', requireUser, withdrawClaim);
+  // Claims. asyncHandler matters here: an uncaught throw (e.g. a unique-index
+  // violation) used to hang the request, and the edge then answered without
+  // CORS headers — the TMA saw it as a network error.
+  app.post('/api/claims', requireUser, claimsLimiter, asyncHandler(submitClaim));
+  app.get('/api/claims/mine', requireUser, asyncHandler(getMyClaims));
+  app.delete('/api/claims/:id', requireUser, asyncHandler(withdrawClaim));
 
   // Mini App bootstrap + reference data (legacy /?q= aliases kept below)
   app.get('/api/me', requireUser, (req, res) => res.json(req.user));

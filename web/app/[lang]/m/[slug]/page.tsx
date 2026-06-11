@@ -11,7 +11,6 @@ import {
 } from "@/lib/data";
 import { masterTitle, masterDescription } from "@/lib/content";
 import { abs, masterPath, languageAlternates } from "@/lib/urls";
-import { SITE_URL } from "@/lib/config";
 import { buildSeed } from "@/lib/seed";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
@@ -57,7 +56,9 @@ export async function generateMetadata({
       url: abs(masterPath(lang, canonical)),
       locale: OG_LOCALE[lang],
       type: "profile",
-      images: [master.OGimage || `${SITE_URL}/api/og?id=${master._id}`],
+      // Only the Playwright-rendered card image (backend generateOpenGraph).
+      // Cards without one fall back to the site-wide opengraph-image.
+      ...(master.OGimage ? { images: [master.OGimage] } : {}),
     },
   };
 }
