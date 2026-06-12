@@ -16,6 +16,20 @@ const miningDb = require('../database/miningDb');
 const Master = require('../database/schema/Master');
 const MasterAudit = require('../database/schema/MasterAudit');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
+
+// On-demand ISR for the public site. Without this, a freshly published
+// master sits in stale Next.js caches for up to an hour — the grid and the
+// /api/master/[id] detail route can disagree, and the card modal renders
+// without contacts/about. Env is read at call time so the local review tool
+// (npm run review) picks it up from the local .env too.
+function triggerWebRevalidate(label) {
+  const secret = process.env.REVALIDATE_SECRET;
+  const base = process.env.PUBLIC_WEB_URL || 'https://majstr.xyz';
+  if (!secret) return Promise.resolve();
+  return fetch(`${base}/api/revalidate?secret=${secret}`, { method: 'POST' })
+    .then(() => {})
+    .catch((e) => console.error(`[revalidate] ${label} failed:`, e.message));
+}
 const Profession = require('../database/schema/Profession');
 const Location = require('../database/schema/Location');
 const {
@@ -329,6 +343,9 @@ async function acceptCandidate(req, res) {
   cand.masterRef = created._id;
   await cand.save();
 
+  // Make the new master visible on the public site within seconds.
+  triggerWebRevalidate('post-accept');
+
   // #117 — fire-and-forget Telegram profile photo fetch for scraped masters
   // with an @handle. The admin doesn't wait for it; if it succeeds the photo
   // appears on the card on the next render. Any failure is logged, not thrown.
@@ -347,7 +364,10 @@ async function acceptCandidate(req, res) {
     .then((ogUrl) =>
       Master.updateOne({ _id: created._id }, { $set: { OGimage: ogUrl.toString() } })
     )
-    .catch((e) => console.error('[OG] post-accept generation failed:', e.message));
+    .catch((e) => console.error('[OG] post-accept generation failed:', e.message))
+    // Second revalidate once photo + OG have landed so the cached dataset
+    // carries the final card (the first one only made the master visible).
+    .then(() => triggerWebRevalidate('post-accept-og'));
 
   const MiningFeedback = miningDb.MiningFeedback();
   // Diff what the admin saved vs what the classifier extracted — the labeled
