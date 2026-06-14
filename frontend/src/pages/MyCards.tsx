@@ -1,11 +1,15 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import "../onboarding/wizard.css";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { MasterContext } from "../context";
 import { apiFetch } from "../api/client";
 import { localizedName } from "../i18n/lang";
 import { isTMA } from "../surface/detect";
+import { useReferenceData, type Profession, type ProfCategory, type Location } from "../onboarding/useReferenceData";
+import { PickerSheet } from "../onboarding/ui/PickerSheet";
 import { LANGUAGE_OPTIONS } from "../onboarding/schema";
-import type { Profession, Location } from "../schema/state/state.schema";
+
+// Card management for owners (claim flow). Standalone screen styled like the
+// add-master wizard — no website header/branding.
 
 type Contact = { contactType: string; value: string };
 
@@ -24,15 +28,20 @@ type OwnedMaster = {
 };
 
 const CONTACT_TYPES = ["telegram", "whatsapp", "phone", "instagram", "facebook", "email"];
-const AVAILABILITY_VALUES = ["available", "next_week", "busy"] as const;
 
 const STATUS_LABEL: Record<string, string> = {
-  approved: "Live",
-  archived: "Hidden",
-  pending: "Pending review",
-  rejected: "Rejected",
-  draft: "Draft",
+  approved: "Опубліковано",
+  archived: "Приховано",
+  pending: "На модерації",
+  rejected: "Відхилено",
+  draft: "Чернетка",
 };
+
+const AVAILABILITY_OPTIONS: { value: string; label: string }[] = [
+  { value: "available", label: "🟢 Вільний зараз" },
+  { value: "next_week", label: "🟡 З наступного тижня" },
+  { value: "busy", label: "🔴 Зайнятий" },
+];
 
 type EditState = {
   name: string;
@@ -61,12 +70,13 @@ function buildEdit(m: OwnedMaster): EditState {
 type CardManageProps = {
   master: OwnedMaster;
   professions: Profession[];
+  profCategories: ProfCategory[];
   locations: Location[];
   onUpdate: (m: OwnedMaster) => void;
   onDelete: () => void;
 };
 
-function CardManage({ master, professions, locations, onUpdate, onDelete }: CardManageProps) {
+function CardManage({ master, professions, profCategories, locations, onUpdate, onDelete }: CardManageProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editErr, setEditErr] = useState<string | null>(null);
@@ -77,14 +87,21 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
   const [photoUploading, setPhotoUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const profName = localizedName(
-    professions.find(p => p.id === master.professionID)?.name,
-    "uk"
+  // Category → profession (same UX as the wizard's profession step).
+  const [categoryID, setCategoryID] = useState(
+    () => professions.find(p => p.id === master.professionID)?.categoryID ?? ""
   );
-  const locName = localizedName(
-    locations.find(l => l.id === master.locationID)?.name,
-    "uk"
-  );
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showProfessionPicker, setShowProfessionPicker] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+
+  const selectedCategory = profCategories.find(c => c.id === categoryID);
+  const selectedProfession = professions.find(p => p.id === form.professionID);
+  const selectedLocation = locations.find(l => l.id === form.locationID);
+  const filteredProfessions = professions.filter(p => p.categoryID === categoryID);
+
+  const profName = localizedName(selectedProfession?.name, "uk");
+  const locName = localizedName(selectedLocation?.name, "uk");
 
   function setField<K extends keyof EditState>(key: K, val: EditState[K]) {
     setForm(f => ({ ...f, [key]: val }));
@@ -125,7 +142,7 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
       const r = await apiFetch("/api/masters/draft/photo", { method: "POST", body });
       if (!r.ok) {
         const err = await r.json().catch(() => ({}));
-        setEditErr(String(err.error ?? "photo upload failed"));
+        setEditErr(String(err.error ?? "не вдалося завантажити фото"));
         return;
       }
       const { photoUrl } = await r.json();
@@ -188,7 +205,7 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
   }
 
   async function handleDelete() {
-    if (!window.confirm("Delete this card permanently? This cannot be undone.")) return;
+    if (!window.confirm("Видалити картку назавжди? Цю дію не можна скасувати.")) return;
     setDelLoading(true);
     try {
       await apiFetch(`/api/masters/${master._id}`, { method: "DELETE" });
@@ -199,59 +216,58 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
   }
 
   return (
-    <article className="mycard">
-      <div className="mycard__header">
-        <div className="mycard__title-row">
-          <strong className="mycard__name">{master.name}</strong>
-          {profName && <span className="mycard__prof">{profName}</span>}
-          {locName && <span className="mycard__loc">· {locName}</span>}
-        </div>
-        <span className={`mycard__status mycard__status--${status}`}>
-          {STATUS_LABEL[status] ?? status}
-        </span>
+    <div className="wizard-card">
+      <div className="wizard-card-header">
+        <span className="wizard-card-name">{master.name}</span>
+        <span className="wizard-status">{STATUS_LABEL[status] ?? status}</span>
       </div>
+      {(profName || locName) && (
+        <div className="wizard-card-sub">
+          {[profName, locName].filter(Boolean).join(" · ")}
+        </div>
+      )}
 
-      <div className="mycard__actions">
+      <div className="wizard-actions">
         <button
           type="button"
-          className="mycard__btn"
+          className="wizard-ghost-btn"
           onClick={() => { setEditing(e => !e); setForm(buildEdit(master)); setEditErr(null); }}
         >
-          {editing ? "Cancel" : "Edit"}
+          {editing ? "Скасувати" : "Редагувати"}
         </button>
         {(status === "approved" || status === "archived") && (
           <button
             type="button"
-            className="mycard__btn"
+            className="wizard-ghost-btn"
             disabled={visLoading}
             onClick={handleVisibility}
           >
-            {status === "approved" ? "Hide" : "Restore"}
+            {status === "approved" ? "Приховати" : "Показати"}
           </button>
         )}
         <button
           type="button"
-          className="mycard__btn mycard__btn--danger"
+          className="wizard-ghost-btn wizard-ghost-btn--danger"
           disabled={delLoading}
           onClick={handleDelete}
         >
-          Delete
+          Видалити
         </button>
       </div>
 
       {editing && (
-        <form className="mycard__form" onSubmit={e => { e.preventDefault(); handleSave(); }}>
-          <div className="mycard__field">
-            <span className="mycard__field-label">Photo</span>
-            <div className="mycard__photo-row">
-              {form.photo ? (
-                <span
-                  className="mycard__photo-preview"
-                  style={{ backgroundImage: `url(${form.photo})` }}
-                />
-              ) : (
-                <span className="mycard__photo-preview mycard__photo-preview--empty">—</span>
-              )}
+        <form
+          className="wizard-step-content"
+          style={{ marginTop: 14 }}
+          onSubmit={e => { e.preventDefault(); handleSave(); }}
+        >
+          <div className="wizard-field">
+            <label className="wizard-label">Фото</label>
+            <div className="wizard-photo-row">
+              <span
+                className="wizard-photo-preview"
+                style={form.photo ? { backgroundImage: `url(${form.photo})` } : undefined}
+              />
               <input
                 ref={photoInputRef}
                 type="file"
@@ -264,113 +280,93 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
               />
               <button
                 type="button"
-                className="mycard__btn"
+                className="wizard-ghost-btn"
                 disabled={photoUploading}
                 onClick={() => photoInputRef.current?.click()}
               >
-                {photoUploading ? "Uploading…" : form.photo ? "Change photo" : "Upload photo"}
+                {photoUploading ? "Завантаження…" : form.photo ? "Змінити фото" : "Завантажити фото"}
               </button>
               {form.photo && (
-                <button
-                  type="button"
-                  className="mycard__btn"
-                  onClick={() => setField("photo", "")}
-                >
-                  Remove
+                <button type="button" className="wizard-ghost-btn" onClick={() => setField("photo", "")}>
+                  Прибрати
                 </button>
               )}
             </div>
           </div>
 
-          <label className="mycard__field">
-            <span className="mycard__field-label">Name</span>
+          <div className="wizard-field">
+            <label className="wizard-label">Імʼя</label>
             <input
-              className="mycard__input"
+              className="wizard-input"
               value={form.name}
               maxLength={80}
               onChange={e => setField("name", e.target.value)}
             />
-          </label>
-
-          <label className="mycard__field">
-            <span className="mycard__field-label">Profession</span>
-            <select
-              className="mycard__input"
-              value={form.professionID}
-              onChange={e => setField("professionID", e.target.value)}
-            >
-              <option value="">— not set —</option>
-              {professions.map(p => (
-                <option key={p.id} value={p.id}>
-                  {localizedName(p.name, "uk")}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="mycard__field">
-            <span className="mycard__field-label">City</span>
-            <select
-              className="mycard__input"
-              value={form.locationID}
-              onChange={e => setField("locationID", e.target.value)}
-            >
-              <option value="">— not set —</option>
-              {locations.map(l => (
-                <option key={l.id} value={l.id}>
-                  {localizedName(l.name, "uk")}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="mycard__field">
-            <span className="mycard__field-label">Availability</span>
-            <select
-              className="mycard__input"
-              value={form.availability}
-              onChange={e => setField("availability", e.target.value)}
-            >
-              <option value="">— not set —</option>
-              {AVAILABILITY_VALUES.map(v => (
-                <option key={v} value={v}>{v.replace("_", " ")}</option>
-              ))}
-            </select>
-          </label>
-
-          <div className="mycard__field">
-            <span className="mycard__field-label">Contacts</span>
-            {form.contacts.map((c, i) => (
-              <div key={i} className="mycard__contact-row">
-                <select
-                  className="mycard__input mycard__input--sm"
-                  value={c.contactType}
-                  onChange={e => setContact(i, "contactType", e.target.value)}
-                >
-                  {CONTACT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <input
-                  className="mycard__input mycard__input--grow"
-                  value={c.value}
-                  placeholder="value"
-                  onChange={e => setContact(i, "value", e.target.value)}
-                />
-                <button type="button" className="mycard__remove-contact" onClick={() => removeContact(i)}>✕</button>
-              </div>
-            ))}
-            {form.contacts.length < 5 && (
-              <button type="button" className="mycard__add-contact" onClick={addContact}>+ Add contact</button>
-            )}
           </div>
 
-          <div className="mycard__field">
-            <span className="mycard__field-label">Languages</span>
-            <div className="mycard__chips">
+          <div className="wizard-field">
+            <label className="wizard-label">Категорія</label>
+            <button
+              type="button"
+              className={`wizard-picker-btn${!selectedCategory ? " wizard-picker-btn--placeholder" : ""}`}
+              onClick={() => setShowCategoryPicker(true)}
+            >
+              {selectedCategory ? localizedName(selectedCategory.name, "uk") : "Оберіть категорію"}
+              <span className="wizard-picker-chevron">›</span>
+            </button>
+          </div>
+
+          <div className="wizard-field">
+            <label className="wizard-label">Професія</label>
+            <button
+              type="button"
+              className={`wizard-picker-btn${!selectedProfession ? " wizard-picker-btn--placeholder" : ""}${!categoryID ? " wizard-picker-btn--disabled" : ""}`}
+              onClick={() => categoryID && setShowProfessionPicker(true)}
+              disabled={!categoryID}
+            >
+              {selectedProfession
+                ? localizedName(selectedProfession.name, "uk")
+                : categoryID ? "Оберіть професію" : "Спершу оберіть категорію"}
+              <span className="wizard-picker-chevron">›</span>
+            </button>
+          </div>
+
+          <div className="wizard-field">
+            <label className="wizard-label">Місто</label>
+            <button
+              type="button"
+              className={`wizard-picker-btn${!selectedLocation ? " wizard-picker-btn--placeholder" : ""}`}
+              onClick={() => setShowLocationPicker(true)}
+            >
+              {selectedLocation ? localizedName(selectedLocation.name, "uk") : "Оберіть місто"}
+              <span className="wizard-picker-chevron">›</span>
+            </button>
+          </div>
+
+          <div className="wizard-field">
+            <label className="wizard-label">Доступність</label>
+            <div className="wizard-chips">
+              {AVAILABILITY_OPTIONS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`wizard-chip${form.availability === value ? " wizard-chip--active" : ""}`}
+                  onClick={() => setField("availability", form.availability === value ? "" : value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="wizard-field">
+            <label className="wizard-label">Мови</label>
+            <div className="wizard-chips">
               {LANGUAGE_OPTIONS.map(({ code, label }) => (
                 <button
                   key={code}
                   type="button"
-                  className={`mycard__chip${form.languages.includes(code) ? " mycard__chip--active" : ""}`}
+                  className={`wizard-chip${form.languages.includes(code) ? " wizard-chip--active" : ""}`}
                   aria-pressed={form.languages.includes(code)}
                   onClick={() => toggleLanguage(code)}
                 >
@@ -380,41 +376,104 @@ function CardManage({ master, professions, locations, onUpdate, onDelete }: Card
             </div>
           </div>
 
-          <label className="mycard__field">
-            <span className="mycard__field-label">About</span>
+          <div className="wizard-field">
+            <label className="wizard-label">Контакти</label>
+            {form.contacts.map((c, i) => (
+              <div key={i} className="wizard-contact-row">
+                <select
+                  className="wizard-input wizard-contact-type"
+                  value={c.contactType}
+                  onChange={e => setContact(i, "contactType", e.target.value)}
+                >
+                  {CONTACT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <input
+                  className="wizard-input"
+                  value={c.value}
+                  placeholder="значення"
+                  onChange={e => setContact(i, "value", e.target.value)}
+                />
+                <button type="button" className="wizard-ghost-btn" onClick={() => removeContact(i)}>✕</button>
+              </div>
+            ))}
+            {form.contacts.length < 5 && (
+              <button type="button" className="wizard-ghost-btn" onClick={addContact}>
+                + Додати контакт
+              </button>
+            )}
+          </div>
+
+          <div className="wizard-field">
+            <label className="wizard-label">Про себе</label>
             <textarea
-              className="mycard__input mycard__input--textarea"
+              className="wizard-textarea"
               value={form.about}
               maxLength={1000}
               rows={4}
               onChange={e => setField("about", e.target.value)}
             />
-          </label>
-
-          {editErr && <div className="mycard__error">{editErr}</div>}
-
-          <div className="mycard__form-actions">
-            <button type="submit" className="mycard__btn mycard__btn--primary" disabled={saving}>
-              {saving ? "Saving…" : "Save changes"}
-            </button>
           </div>
+
+          {editErr && <p className="wizard-field-error">{editErr}</p>}
+
+          <button type="submit" className="wizard-solid-btn" disabled={saving}>
+            {saving ? "Зберігаємо…" : "Зберегти зміни"}
+          </button>
+          <p className="wizard-hint" style={{ marginTop: 8 }}>
+            Після збереження картка піде на перевірку модератором для позначки VERIFIED.
+          </p>
+
+          {showCategoryPicker && (
+            <PickerSheet
+              title="Категорія"
+              options={profCategories.map(c => ({ value: c.id, label: localizedName(c.name, "uk", c.id) }))}
+              selected={categoryID}
+              onSelect={id => {
+                setCategoryID(id);
+                setField("professionID", "");
+              }}
+              onClose={() => setShowCategoryPicker(false)}
+            />
+          )}
+          {showProfessionPicker && (
+            <PickerSheet
+              title="Професія"
+              options={filteredProfessions.map(p => ({ value: p.id, label: localizedName(p.name, "uk", p.id) }))}
+              selected={form.professionID}
+              onSelect={id => setField("professionID", id)}
+              onClose={() => setShowProfessionPicker(false)}
+            />
+          )}
+          {showLocationPicker && (
+            <PickerSheet
+              title="Місто"
+              options={locations.map(l => ({ value: l.id, label: localizedName(l.name, "uk", l.id) }))}
+              selected={form.locationID}
+              onSelect={id => setField("locationID", id)}
+              onClose={() => setShowLocationPicker(false)}
+            />
+          )}
         </form>
       )}
-    </article>
+    </div>
   );
 }
 
 export default function MyCards() {
-  const {
-    state: { user, professions, locations },
-  } = useContext(MasterContext);
-
+  const { professions, profCategories, locations, loading: refLoading } = useReferenceData();
   const [masters, setMasters] = useState<OwnedMaster[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
     apiFetch("/api/masters/mine", {}, { redirectOn401: false })
-      .then(r => r.ok ? r.json() : { masters: [] })
+      .then(r => {
+        if (r.status === 401) {
+          setUnauthorized(true);
+          return { masters: [] };
+        }
+        return r.ok ? r.json() : { masters: [] };
+      })
       .then(({ masters: data }: { masters: OwnedMaster[] }) => {
         setMasters(data);
         setLoading(false);
@@ -422,32 +481,43 @@ export default function MyCards() {
       .catch(() => setLoading(false));
   }, []);
 
-  // Inside the Telegram Mini App auth rides on initData headers, not the
-  // web localStorage token — never bounce TMA users to /login.
-  if (!user.isLoggedIn && !isTMA()) return <Navigate to="/login" />;
+  // Web visitors without a session go to login; inside the TMA auth rides on
+  // initData headers, so a 401 there means something else — show a message.
+  if (unauthorized && !isTMA()) return <Navigate to="/login" />;
 
   return (
-    <main className="my-cards-page">
-      <h1 className="my-cards-page__title">My cards</h1>
+    <div className="wizard">
+      <div className="wizard-step-title">Мої картки</div>
+      <div className="wizard-body">
+        {(loading || refLoading) && (
+          <>
+            <div className="wizard-skeleton" />
+            <div className="wizard-skeleton" style={{ width: "60%" }} />
+          </>
+        )}
 
-      {loading && <p className="my-cards-page__empty">Loading…</p>}
+        {unauthorized && isTMA() && (
+          <p className="wizard-hint">Не вдалося підтвердити сесію. Закрийте і відкрийте Mini App ще раз.</p>
+        )}
 
-      {!loading && masters?.length === 0 && (
-        <p className="my-cards-page__empty">
-          You don&apos;t own any cards yet. Claim a card from the search results.
-        </p>
-      )}
+        {!loading && !refLoading && !unauthorized && masters?.length === 0 && (
+          <p className="wizard-hint">
+            У вас поки немає карток. Підтвердіть свою картку з каталогу або створіть нову.
+          </p>
+        )}
 
-      {masters?.map(m => (
-        <CardManage
-          key={m._id}
-          master={m}
-          professions={professions}
-          locations={locations}
-          onUpdate={updated => setMasters(prev => prev!.map(x => x._id === updated._id ? updated : x))}
-          onDelete={() => setMasters(prev => prev!.filter(x => x._id !== m._id))}
-        />
-      ))}
-    </main>
+        {!refLoading && masters?.map(m => (
+          <CardManage
+            key={m._id}
+            master={m}
+            professions={professions}
+            profCategories={profCategories}
+            locations={locations}
+            onUpdate={updated => setMasters(prev => prev!.map(x => x._id === updated._id ? updated : x))}
+            onDelete={() => setMasters(prev => prev!.filter(x => x._id !== m._id))}
+          />
+        ))}
+      </div>
+    </div>
   );
 }

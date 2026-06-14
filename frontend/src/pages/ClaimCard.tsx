@@ -1,12 +1,12 @@
+import "../onboarding/wizard.css";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "../api/client";
 import { isTMA } from "../surface/detect";
 
-// Landing screen for the share-to-claim deep link:
-// t.me/<bot>?startapp=claim-<masterId> → Root routes here. The claim POST
-// runs against TMA initData auth; the backend auto-approves when the
-// caller's telegram handle / id / phone matches the card's contacts.
+// Landing screen for the share-to-claim deep link
+// (t.me/<bot>?startapp=claim-<masterId>). Standalone, styled like the
+// add-master wizard — no website header/branding.
 type ClaimState =
   | { phase: "checking" }
   | { phase: "success" }
@@ -108,55 +108,69 @@ export default function ClaimCard() {
   }
 
   return (
-    <main className="claim-page">
-      {state.phase === "checking" && <p className="claim-page__status">Перевіряємо картку…</p>}
+    <div className="wizard">
+      {state.phase === "checking" && (
+        <div className="wizard-body">
+          <div className="wizard-skeleton" />
+          <div className="wizard-skeleton" />
+          <div className="wizard-skeleton" style={{ width: "60%" }} />
+        </div>
+      )}
 
       {state.phase === "success" && (
-        <>
-          <h1 className="claim-page__title">✅ Картка тепер ваша</h1>
-          <p className="claim-page__text">
+        <div className="wizard-success">
+          <div className="wizard-success-icon">✅</div>
+          <h2 className="wizard-success-title">Картка тепер ваша</h2>
+          <p className="wizard-success-text">
             Ми підтвердили, що це ваш профіль. Оновіть дані — після перевірки модератором картка
             отримає позначку VERIFIED і показуватиметься вище в пошуку.
           </p>
-          <div className="claim-page__actions">
-            <Link to="/my-cards" className="mycard__btn mycard__btn--primary">
-              Редагувати картку
-            </Link>
+          <div className="wizard-actions" style={{ width: "100%", maxWidth: 320 }}>
             <button
               type="button"
-              className="mycard__btn mycard__btn--danger"
+              className="wizard-solid-btn"
+              onClick={() => navigate("/my-cards")}
+            >
+              Редагувати картку
+            </button>
+            <button
+              type="button"
+              className="wizard-ghost-btn wizard-ghost-btn--danger"
               disabled={deleting}
               onClick={handleDelete}
             >
               Видалити картку
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {state.phase === "pending" && (
-        <>
-          <h1 className="claim-page__title">⏳ Запит на розгляді</h1>
-          <p className="claim-page__text">
+        <div className="wizard-success">
+          <div className="wizard-success-icon">⏳</div>
+          <h2 className="wizard-success-title">Запит на розгляді</h2>
+          <p className="wizard-success-text">
             Ми не змогли підтвердити автоматично, що картка ваша. Модератор перегляне запит і ми
             повідомимо вас у Telegram.
           </p>
-        </>
+        </div>
       )}
 
       {state.phase === "deleted" && (
-        <>
-          <h1 className="claim-page__title">Картку видалено</h1>
-          <p className="claim-page__text">Ваші дані прибрано з каталогу.</p>
-        </>
+        <div className="wizard-success">
+          <div className="wizard-success-icon">🗑</div>
+          <h2 className="wizard-success-title">Картку видалено</h2>
+          <p className="wizard-success-text">Ваші дані прибрано з каталогу.</p>
+        </div>
       )}
 
       {state.phase === "error" && (
-        <>
-          <h1 className="claim-page__title">Не вдалося</h1>
-          <p className="claim-page__text">{state.message}</p>
-        </>
+        <div className="wizard-success">
+          <div className="wizard-success-icon">⚠️</div>
+          <h2 className="wizard-success-title">Не вдалося</h2>
+          <p className="wizard-success-text">{state.message}</p>
+        </div>
       )}
-    </main>
+    </div>
   );
 }

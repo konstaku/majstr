@@ -109,6 +109,28 @@ async function generateAndUpload(master) {
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate((data) => window.initCard(data), ogData);
 
+    // The master photo (<img class="m-photo">) is injected by initCard AFTER
+    // the networkidle wait — screenshotting two rAFs later raced the S3
+    // fetch and produced a black box where the photo belongs. Wait for every
+    // image to settle (load or error), capped at 8s so a dead URL can't
+    // wedge the generator.
+    await page.evaluate(() =>
+      Promise.race([
+        Promise.all(
+          Array.from(document.images)
+            .filter((img) => !img.complete)
+            .map(
+              (img) =>
+                new Promise((resolve) => {
+                  img.addEventListener('load', resolve, { once: true });
+                  img.addEventListener('error', resolve, { once: true });
+                })
+            )
+        ),
+        new Promise((resolve) => setTimeout(resolve, 8000)),
+      ])
+    );
+
     // Two rAFs: first lets fitName run, second lets the layout settle
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 
