@@ -18,6 +18,18 @@ export const router = createBrowserRouter([
     element: <OnboardingWizard />,
     errorElement: <ErrorPage />,
   },
+  // Claim flow + card management share the add-master wizard look: standalone
+  // screens without the website header/branding.
+  {
+    path: "/claim/:masterId",
+    element: <ClaimCard />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/my-cards",
+    element: <MyCards />,
+    errorElement: <ErrorPage />,
+  },
   {
     path: "/",
     element: <Root />,
@@ -40,14 +52,6 @@ export const router = createBrowserRouter([
           {
             path: "/profile",
             element: <Profile />,
-          },
-          {
-            path: "/my-cards",
-            element: <MyCards />,
-          },
-          {
-            path: "/claim/:masterId",
-            element: <ClaimCard />,
           },
           {
             path: "/admin",

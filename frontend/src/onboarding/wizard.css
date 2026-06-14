@@ -577,3 +577,85 @@
   opacity: 0.85;
   max-width: 320px;
 }
+
+/* ── Claim flow / My Cards (wizard-styled management screens) ── */
+.wizard-solid-btn {
+  width: 100%;
+  padding: 13px 18px;
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wizard-solid-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.wizard-card {
+  border: 1.5px solid var(--app-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: var(--app-secondary-bg);
+}
+.wizard-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.wizard-card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--app-fg);
+}
+.wizard-card-sub {
+  font-size: 13px;
+  color: var(--app-hint);
+  margin-bottom: 10px;
+}
+.wizard-status {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--app-hint);
+  white-space: nowrap;
+}
+.wizard-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wizard-photo-preview {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--app-secondary-bg);
+}
+.wizard-contact-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.wizard-contact-type {
+  flex: 0 0 38%;
+}
+.wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.wizard-actions .wizard-ghost-btn {
+  flex: 1 1 auto;
+}
