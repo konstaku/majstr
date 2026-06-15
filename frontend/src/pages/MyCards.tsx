@@ -25,7 +25,6 @@ type OwnedMaster = {
   photo?: string | null;
   tags?: { ua?: string[]; en?: string[] };
   languages?: string[];
-  availability?: string;
 };
 
 const CONTACT_TYPES = ["telegram", "whatsapp", "phone", "instagram", "facebook", "email"];
@@ -38,19 +37,12 @@ const STATUS_LABEL: Record<string, string> = {
   draft: "Чернетка",
 };
 
-const AVAILABILITY_OPTIONS: { value: string; label: string }[] = [
-  { value: "available", label: "🟢 Вільний зараз" },
-  { value: "next_week", label: "🟡 З наступного тижня" },
-  { value: "busy", label: "🔴 Зайнятий" },
-];
-
 type EditState = {
   name: string;
   about: string;
   contacts: Contact[];
   professionID: string;
   locationID: string;
-  availability: string;
   photo: string;
   languages: string[];
 };
@@ -62,7 +54,6 @@ function buildEdit(m: OwnedMaster): EditState {
     contacts: m.contacts.length ? m.contacts.map(c => ({ ...c })) : [{ contactType: "telegram", value: "" }],
     professionID: m.professionID ?? "",
     locationID: m.locationID ?? "",
-    availability: m.availability ?? "",
     photo: m.photo ?? "",
     languages: m.languages ? [...m.languages] : [],
   };
@@ -82,8 +73,7 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
   const [saving, setSaving] = useState(false);
   const [editErr, setEditErr] = useState<string | null>(null);
   const [form, setForm] = useState<EditState>(() => buildEdit(master));
-  const [status, setStatus] = useState(master.status);
-  const [visLoading, setVisLoading] = useState(false);
+  const status = master.status;
   const [delLoading, setDelLoading] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -169,7 +159,6 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
           contacts: form.contacts.filter(c => c.value.trim()),
           professionID: form.professionID || undefined,
           locationID: form.locationID || undefined,
-          availability: form.availability || undefined,
           photo: form.photo || undefined,
           languages: form.languages,
         }),
@@ -187,21 +176,6 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
       setEditErr(String(err));
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleVisibility() {
-    const hide = status === "approved";
-    setVisLoading(true);
-    try {
-      await apiFetch(`/api/masters/${master._id}/visibility`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hidden: hide }),
-      });
-      setStatus(hide ? "archived" : "approved");
-    } finally {
-      setVisLoading(false);
     }
   }
 
@@ -228,40 +202,52 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
         </div>
       )}
 
-      <div className="wizard-actions">
-        <button
-          type="button"
-          className="wizard-ghost-btn wizard-ghost-btn--primary"
-          onClick={() => { setEditing(e => !e); setForm(buildEdit(master)); setEditErr(null); }}
-        >
-          {editing ? "Скасувати" : "Редагувати"}
-        </button>
-        {(status === "approved" || status === "archived") && (
+      {!editing && (
+        <div className="wizard-actions">
           <button
             type="button"
-            className="wizard-ghost-btn wizard-ghost-btn--compact"
-            disabled={visLoading}
-            onClick={handleVisibility}
+            className="wizard-ghost-btn wizard-ghost-btn--primary"
+            onClick={() => { setEditing(true); setForm(buildEdit(master)); setEditErr(null); }}
           >
-            {status === "approved" ? "Приховати" : "Показати"}
+            Редагувати
           </button>
-        )}
-        <button
-          type="button"
-          className="wizard-ghost-btn wizard-ghost-btn--danger wizard-ghost-btn--compact"
-          disabled={delLoading}
-          onClick={handleDelete}
-        >
-          Видалити
-        </button>
-      </div>
+          <button
+            type="button"
+            className="wizard-ghost-btn wizard-ghost-btn--danger wizard-ghost-btn--compact"
+            disabled={delLoading}
+            onClick={handleDelete}
+          >
+            Видалити
+          </button>
+        </div>
+      )}
 
       {editing && (
         <form
-          className="wizard-step-content"
-          style={{ marginTop: 14 }}
+          className="wizard-step-content wizard-edit-form"
           onSubmit={e => { e.preventDefault(); handleSave(); }}
+          onKeyDown={e => {
+            // Enter must never submit the form — only the Save button does.
+            // Allow newlines in the "Про себе" textarea; block Enter on inputs.
+            if (
+              e.key === "Enter" &&
+              (e.target as HTMLElement).tagName === "INPUT"
+            ) {
+              e.preventDefault();
+            }
+          }}
         >
+          <div className="wizard-edit-head">
+            <button
+              type="button"
+              className="wizard-edit-back"
+              aria-label="Скасувати редагування"
+              onClick={() => { setEditing(false); setEditErr(null); }}
+            >
+              ← Назад
+            </button>
+          </div>
+
           <div className="wizard-field">
             <label className="wizard-label">Фото</label>
             <div className="wizard-photo-row">
@@ -345,22 +331,6 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
           </div>
 
           <div className="wizard-field">
-            <label className="wizard-label">Доступність</label>
-            <div className="wizard-chips">
-              {AVAILABILITY_OPTIONS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`wizard-chip${form.availability === value ? " wizard-chip--active" : ""}`}
-                  onClick={() => setField("availability", form.availability === value ? "" : value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="wizard-field">
             <label className="wizard-label">Мови</label>
             <div className="wizard-chips">
               {LANGUAGE_OPTIONS.map(({ code, label }) => (
@@ -419,6 +389,14 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
 
           <button type="submit" className="wizard-solid-btn" disabled={saving}>
             {saving ? "Зберігаємо…" : "Зберегти зміни"}
+          </button>
+          <button
+            type="button"
+            className="wizard-edit-cancel"
+            disabled={saving}
+            onClick={() => { setEditing(false); setEditErr(null); }}
+          >
+            Скасувати
           </button>
           <p className="wizard-hint" style={{ marginTop: 8 }}>
             Після збереження картка піде на перевірку модератором для позначки VERIFIED.

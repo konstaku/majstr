@@ -49,8 +49,12 @@ export async function GET(
   }
   return NextResponse.json(master, {
     headers: {
+      // Short shared cache so an owner edit (photo/contacts) reaches the card
+      // modal within ~a minute even if the tag-purge misses this URL's CDN
+      // entry; stale-while-revalidate keeps responses instant meanwhile. The
+      // underlying dataset is still ISR-cached, so this adds no upstream load.
       "Cache-Control":
-        "public, s-maxage=3600, stale-while-revalidate=86400",
+        "public, s-maxage=60, stale-while-revalidate=86400",
     },
   });
 }

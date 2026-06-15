@@ -2,6 +2,7 @@ const Master = require('../database/schema/Master');
 const MasterAudit = require('../database/schema/MasterAudit');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
 const { requestVerification } = require('../helpers/verification');
+const { triggerWebRevalidate } = require('../helpers/revalidateWeb');
 const { validatePatch, DRAFT_FIELDS } = require('./draft');
 
 async function editOwnedMaster(req, res) {
@@ -28,6 +29,10 @@ async function editOwnedMaster(req, res) {
   }
 
   await req.master.save();
+
+  // Refresh the public site so the new photo/OG/details reach the grid AND the
+  // card-modal detail route (otherwise the modal serves a stale cached record).
+  triggerWebRevalidate('owner-edit');
 
   requestVerification(req.master, 'owner edited the card').catch((err) =>
     console.error('[verify] request failed:', err)
@@ -66,6 +71,9 @@ async function setVisibility(req, res) {
 
   await req.master.save();
 
+  // Hiding/restoring changes the card's presence on the public grid.
+  triggerWebRevalidate(hidden ? 'owner-hide' : 'owner-restore');
+
   MasterAudit.create({
     masterID: req.master._id,
     actorUserID: req.user._id,
@@ -84,6 +92,9 @@ async function deleteOwnedMaster(req, res) {
   const previousStatus = req.master.status;
 
   await Master.deleteOne({ _id: masterID });
+
+  // Drop the deleted card from the public grid/detail caches.
+  triggerWebRevalidate('owner-delete');
 
   MasterAudit.create({
     masterID,

@@ -145,6 +145,32 @@ describe('PATCH /api/masters/:id (owner edit)', () => {
     expect([...updated.languages]).toEqual(['ua', 'it']);
   });
 
+  it('pings the web ISR revalidate webhook so the edit reaches the public site', async () => {
+    const { user, authHeader } = await makeUser({ telegramID: 80020 });
+    const master = await makeOwned(user._id);
+
+    const prevSecret = process.env.REVALIDATE_SECRET;
+    process.env.REVALIDATE_SECRET = 'test-secret';
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true });
+    try {
+      const res = await request(app)
+        .patch(`/api/masters/${master._id}`)
+        .set('Authorization', authHeader)
+        .send({ about: 'ping the cache' });
+      expect(res.status).toBe(200);
+
+      const pinged = fetchMock.mock.calls.some(
+        ([url, opts]) =>
+          String(url).includes('/api/revalidate?secret=test-secret') &&
+          opts?.method === 'POST'
+      );
+      expect(pinged).toBe(true);
+    } finally {
+      fetchMock.mockRestore();
+      process.env.REVALIDATE_SECRET = prevSecret;
+    }
+  });
+
   it('422s invalid patches with the draft validation rules', async () => {
     const { user, authHeader } = await makeUser({ telegramID: 80005 });
     const master = await makeOwned(user._id);

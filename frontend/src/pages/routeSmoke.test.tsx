@@ -55,14 +55,14 @@ describe("/my-cards", () => {
     );
   });
 
-  it("renders the owner action menu with Edit primary and Hide/Delete compact", async () => {
+  it("renders a two-button owner action row: Edit primary, Delete compact", async () => {
     renderRoute("/my-cards");
 
     const edit = await screen.findByRole("button", { name: "Редагувати" });
-    // Bug #1 guard: Edit is the prominent action, Hide/Delete are compact so
-    // Delete can't be fat-fingered.
+    // Bug #1 guard: the action row is exactly Edit + Delete — Hide is gone, and
+    // Delete stays compact so it can't be fat-fingered.
     expect(edit.className).toContain("wizard-ghost-btn--primary");
-    expect(screen.getByRole("button", { name: "Приховати" }).className).toContain("wizard-ghost-btn--compact");
+    expect(screen.queryByRole("button", { name: "Приховати" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Видалити" }).className).toContain("wizard-ghost-btn--compact");
   });
 
