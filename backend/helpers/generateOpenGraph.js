@@ -155,7 +155,11 @@ async function uploadToS3(buffer, master) {
     s3.upload(params, (err, data) => {
       if (err) { reject(err); return; }
       console.log('[OG] Upload ok:', data.Location);
-      resolve(data.Location);
+      // The S3 key is stable (user-og/<id>.png), so a regenerated card keeps the
+      // same URL and social/CDN caches keep serving the OLD image. Append a
+      // version param that changes on every regeneration to bust those caches.
+      // S3 ignores unknown query params, so the URL still resolves to the object.
+      resolve(`${data.Location}?v=${Date.now()}`);
     });
   });
 }

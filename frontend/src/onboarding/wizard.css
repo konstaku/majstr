@@ -1,3 +1,15 @@
+/* Standalone wizard screens (/onboard, /claim, /my-cards) render WITHOUT the
+   website header. styles.css is bundled app-wide, so its mobile rule
+   `body { padding-top: var(--bar-h) }` (which offsets the fixed site header on
+   ≤640px) still applies here — and because body's background is the brutalist
+   --cream, that 56px of padding shows as a beige stripe above the white wizard.
+   Neutralize it whenever a wizard is mounted: no header to offset, and the
+   page background should be the app/theme background, not --cream. */
+body:has(> #root > .wizard) {
+  padding-top: 0;
+  background: var(--app-bg);
+}
+
 .wizard {
   display: flex;
   flex-direction: column;
@@ -656,11 +668,54 @@
   gap: 8px;
   margin-top: 12px;
 }
+
+/* ── Inline edit form (My Cards) ── */
+.wizard-edit-form {
+  margin-top: 16px;
+}
+/* Subtle "← Назад" affordance — the only way out of edit mode at the top.
+   Deliberately low-key (no border, hint-colored) so it reads as a back link,
+   not a competing action. */
+.wizard-edit-head {
+  margin-bottom: 4px;
+}
+.wizard-edit-back {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--app-hint);
+  cursor: pointer;
+}
+.wizard-edit-back:hover {
+  color: var(--app-fg);
+}
+/* Quiet "Скасувати" beneath the Save button — leaves edit mode without
+   saving, without looking like a primary action. */
+.wizard-edit-cancel {
+  align-self: center;
+  margin-top: 10px;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--app-hint);
+  cursor: pointer;
+}
+.wizard-edit-cancel:hover:not(:disabled) {
+  color: var(--app-fg);
+}
+.wizard-edit-cancel:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .wizard-actions .wizard-ghost-btn {
   flex: 1 1 auto;
 }
-/* Edit is the primary action — full-width and prominent. Hide/Delete are
-   secondary: content-sized and visibly smaller so Delete can't be hit by
+/* Edit is the primary action — full-width and prominent. Delete is
+   secondary: content-sized and visibly smaller so it can't be hit by
    mistake. */
 .wizard-actions .wizard-ghost-btn--primary {
   flex: 1 1 100%;
