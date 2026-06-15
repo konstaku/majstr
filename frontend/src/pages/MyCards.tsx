@@ -7,6 +7,7 @@ import { isTMA } from "../surface/detect";
 import { useReferenceData, type Profession, type ProfCategory, type Location } from "../onboarding/useReferenceData";
 import { PickerSheet } from "../onboarding/ui/PickerSheet";
 import { LANGUAGE_OPTIONS } from "../onboarding/schema";
+import { OnboardingI18nProvider } from "../onboarding/i18n";
 
 // Card management for owners (claim flow). Standalone screen styled like the
 // add-master wizard — no website header/branding.
@@ -230,7 +231,7 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
       <div className="wizard-actions">
         <button
           type="button"
-          className="wizard-ghost-btn"
+          className="wizard-ghost-btn wizard-ghost-btn--primary"
           onClick={() => { setEditing(e => !e); setForm(buildEdit(master)); setEditErr(null); }}
         >
           {editing ? "Скасувати" : "Редагувати"}
@@ -238,7 +239,7 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
         {(status === "approved" || status === "archived") && (
           <button
             type="button"
-            className="wizard-ghost-btn"
+            className="wizard-ghost-btn wizard-ghost-btn--compact"
             disabled={visLoading}
             onClick={handleVisibility}
           >
@@ -247,7 +248,7 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
         )}
         <button
           type="button"
-          className="wizard-ghost-btn wizard-ghost-btn--danger"
+          className="wizard-ghost-btn wizard-ghost-btn--danger wizard-ghost-btn--compact"
           disabled={delLoading}
           onClick={handleDelete}
         >
@@ -459,7 +460,19 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
   );
 }
 
+// PickerSheet (category/profession/city pickers) calls useOnbT(), which throws
+// outside an OnboardingI18nProvider. This standalone route isn't under the
+// wizard, so it must supply the provider itself — otherwise opening a picker
+// crashes into the router errorElement.
 export default function MyCards() {
+  return (
+    <OnboardingI18nProvider>
+      <MyCardsInner />
+    </OnboardingI18nProvider>
+  );
+}
+
+function MyCardsInner() {
   const { professions, profCategories, locations, loading: refLoading } = useReferenceData();
   const [masters, setMasters] = useState<OwnedMaster[] | null>(null);
   const [loading, setLoading] = useState(true);

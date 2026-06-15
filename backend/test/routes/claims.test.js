@@ -105,6 +105,22 @@ describe('POST /api/claims', () => {
     expect(res.body.error).toBe('already_owner');
   });
 
+  it('returns already_owner (not not_claimable) when the owner re-opens their claimed card', async () => {
+    // After a successful claim the card is owned AND claimable:false. Re-opening
+    // the deep link must surface already_owner so the client routes to /my-cards.
+    const { user, authHeader } = await makeUser();
+    const master = await Master.create({
+      name: 'Mine', status: 'approved', claimable: false, ownerUserID: user._id,
+    });
+
+    const res = await request(app)
+      .post('/api/claims')
+      .set('Authorization', authHeader)
+      .send({ masterID: master._id });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('already_owner');
+  });
+
   it('auto-approves on phone match (formatting-insensitive) and transfers ownership', async () => {
     const { user, authHeader } = await makeUser({ telegramID: 70001, username: 'someone_else' });
     const master = await makeClaimable();

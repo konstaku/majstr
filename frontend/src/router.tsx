@@ -12,7 +12,10 @@ import OnboardingWizard from "./onboarding/OnboardingWizard";
 import MyCards from "./pages/MyCards";
 import ClaimCard from "./pages/ClaimCard";
 
-export const router = createBrowserRouter([
+// Exported so tests can mount the exact same route tree through a memory
+// router (see src/test/renderRoute.tsx) — that way a route forgetting a
+// required provider is caught, instead of being masked by a test wrapper.
+export const routes = [
   {
     path: "/onboard",
     element: <OnboardingWizard />,
@@ -65,4 +68,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(routes);
