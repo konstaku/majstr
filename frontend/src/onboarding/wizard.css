@@ -659,3 +659,17 @@
 .wizard-actions .wizard-ghost-btn {
   flex: 1 1 auto;
 }
+/* Edit is the primary action — full-width and prominent. Hide/Delete are
+   secondary: content-sized and visibly smaller so Delete can't be hit by
+   mistake. */
+.wizard-actions .wizard-ghost-btn--primary {
+  flex: 1 1 100%;
+  padding: 11px 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.wizard-actions .wizard-ghost-btn--compact {
+  flex: 0 1 auto;
+  padding: 5px 12px;
+  font-size: 12px;
+}

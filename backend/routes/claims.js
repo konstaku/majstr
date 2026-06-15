@@ -51,11 +51,16 @@ async function submitClaim(req, res) {
 
   const master = await Master.findById(masterID);
   if (!master) return res.status(404).json({ error: 'master_not_found' });
-  if (!master.claimable) return res.status(409).json({ error: 'not_claimable' });
 
+  // Ownership is checked BEFORE claimability: a master who already claimed
+  // their card and re-opens the same deep link must land on card management
+  // (the client routes `already_owner` → /my-cards), not hit the dead-end
+  // "not_claimable" error — claiming sets claimable:false, so the order matters.
   if (master.ownerUserID && master.ownerUserID.equals(req.user._id)) {
     return res.status(409).json({ error: 'already_owner' });
   }
+
+  if (!master.claimable) return res.status(409).json({ error: 'not_claimable' });
 
   // One active card per owner (partial unique index on ownerUserID). Without
   // this check the ownership transfer below throws E11000 — surface a clear
