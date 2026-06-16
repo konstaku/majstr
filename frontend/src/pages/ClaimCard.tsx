@@ -1,21 +1,34 @@
 import "../onboarding/wizard.css";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../api/client";
 import { isTMA } from "../surface/detect";
+import { track } from "../analytics";
+
+// Map the deep-link ?src= suffix to the claim source recorded by the API +
+// analytics. Founder-DM links carry -dm; the public card CTA carries -org.
+function resolveSource(src: string | null): "founder_dm" | "organic" | "unknown" {
+  if (src === "dm") return "founder_dm";
+  if (src === "org") return "organic";
+  return "unknown";
+}
+
+const SHARE_TEXT = "Я тепер у каталозі Majstr — знайдете мене тут 👉";
 
 // Landing screen for the share-to-claim deep link
 // (t.me/<bot>?startapp=claim-<masterId>). Standalone, styled like the
 // add-master wizard — no website header/branding.
 type ClaimState =
   | { phase: "checking" }
-  | { phase: "success" }
+  | { phase: "success"; shareUrl?: string }
   | { phase: "pending" }
   | { phase: "deleted" }
   | { phase: "error"; message: string };
 
 export default function ClaimCard() {
   const { masterId } = useParams<{ masterId: string }>();
+  const [searchParams] = useSearchParams();
+  const source = resolveSource(searchParams.get("src"));
   const navigate = useNavigate();
   const [state, setState] = useState<ClaimState>({ phase: "checking" });
   const [deleting, setDeleting] = useState(false);
@@ -24,6 +37,8 @@ export default function ClaimCard() {
   useEffect(() => {
     if (!masterId || fired.current) return;
     fired.current = true; // claims are rate-limited — never double-fire
+
+    track("claim_start", { master_id: masterId, source });
 
     (async () => {
       if (!isTMA()) {
@@ -40,14 +55,20 @@ export default function ClaimCard() {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ masterID: masterId }),
+            body: JSON.stringify({ masterID: masterId, source }),
           },
           { redirectOn401: false }
         );
 
         if (res.status === 201) {
-          const { autoApproved } = await res.json();
-          setState({ phase: autoApproved ? "success" : "pending" });
+          const { autoApproved, shareUrl } = await res.json();
+          if (autoApproved) {
+            track("claim_success", { master_id: masterId, source, auto_approved: true });
+            setState({ phase: "success", shareUrl });
+          } else {
+            track("claim_pending", { master_id: masterId, source });
+            setState({ phase: "pending" });
+          }
           return;
         }
 
@@ -94,7 +115,23 @@ export default function ClaimCard() {
         setState({ phase: "error", message: "Немає звʼязку. Спробуйте ще раз." });
       }
     })();
-  }, [masterId, navigate]);
+  }, [masterId, source, navigate]);
+
+  function handleShare(shareUrl?: string) {
+    if (!shareUrl) return;
+    track("share_click", { master_id: masterId, share_method: "claim_success" });
+    const tg = window.Telegram?.WebApp;
+    // Prefer Telegram's native share sheet inside the Mini App; fall back to the
+    // Web Share API, then to opening the t.me share URL.
+    const tgShare = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(SHARE_TEXT)}`;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(tgShare);
+    } else if (navigator.share) {
+      navigator.share({ text: SHARE_TEXT, url: shareUrl }).catch(() => {});
+    } else {
+      window.open(tgShare, "_blank");
+    }
+  }
 
   async function handleDelete() {
     if (!window.confirm("Видалити картку назавжди? Цю дію не можна скасувати.")) return;
@@ -126,9 +163,18 @@ export default function ClaimCard() {
             отримає позначку VERIFIED і показуватиметься вище в пошуку.
           </p>
           <div className="wizard-actions" style={{ width: "100%", maxWidth: 320 }}>
+            {state.shareUrl && (
+              <button
+                type="button"
+                className="wizard-solid-btn"
+                onClick={() => handleShare(state.shareUrl)}
+              >
+                Поділитися карткою 🔗
+              </button>
+            )}
             <button
               type="button"
-              className="wizard-solid-btn"
+              className={state.shareUrl ? "wizard-ghost-btn" : "wizard-solid-btn"}
               onClick={() => navigate("/my-cards")}
             >
               Редагувати картку

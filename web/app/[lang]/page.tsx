@@ -22,6 +22,14 @@ function homeTitle(lang: Lang) {
   return "Україно- та російськомовні майстри в Італії | Majstr";
 }
 
+function homeDescription(lang: Lang) {
+  if (lang === "ru")
+    return "Majstr — каталог проверенных русско- и украиноязычных мастеров в Италии: маникюр, парикмахеры, косметологи, электрики, врачи и другие. Запись в Telegram, бесплатно.";
+  if (lang === "en")
+    return "Majstr — directory of trusted Ukrainian- and Russian-speaking masters in Italy: manicurists, hairdressers, beauticians, electricians, doctors and more. Book on Telegram, free.";
+  return "Majstr — каталог перевірених україно- та російськомовних майстрів в Італії: манікюр, перукарі, косметологи, електрики, лікарі та інші. Запис у Telegram, безкоштовно.";
+}
+
 // NOTE: deliberately does NOT read searchParams. Reading searchParams here opts
 // the whole route out of static generation, forcing a per-request serverless
 // render (x-vercel-cache: MISS, ~0.5-1s TTFB, no edge caching). The legacy
@@ -37,14 +45,16 @@ export async function generateMetadata({
   const { lang } = await params;
   if (!isLang(lang)) return {};
   const title = homeTitle(lang);
+  const description = homeDescription(lang);
   return {
     title,
+    description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
       canonical: abs(homePath(lang)),
       languages: languageAlternates((l) => homePath(l)),
     },
-    openGraph: { title, url: abs(homePath(lang)), locale: OG_LOCALE[lang], type: "website" },
+    openGraph: { title, description, url: abs(homePath(lang)), locale: OG_LOCALE[lang], type: "website" },
   };
 }
 

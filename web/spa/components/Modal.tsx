@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
@@ -8,6 +8,7 @@ import { localizedName } from "../i18n/lang";
 import { transliterate } from "../helpers/transliterate";
 import Sigil from "./Sigil";
 import { masterSlug } from "@/lib/data";
+import { track } from "@/lib/analytics";
 
 import type { Master, Contacts } from "../schema/master/master.schema";
 import { Location, Profession } from "../schema/state/state.schema";
@@ -136,16 +137,12 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
 
   const useTwoColContacts = contacts.length >= 4;
 
-  // Share-to-claim: a shared card link may carry a #claim (or ?claim=1)
-  // marker. Capture it during the FIRST render — the URL-mirroring effect
-  // below rewrites the URL (pushState) and would wipe the hash.
-  const [claimIntent] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      (window.location.hash === "#claim" ||
-        new URLSearchParams(window.location.search).get("claim") === "1")
-  );
-  const showClaimBanner = claimIntent && master.claimable === true;
+  // "Це ваша картка? Заберіть її" — shown on every claimable (unowned, scraped)
+  // card, logged out, no URL flag required. This IS the acquisition channel: a
+  // master who Googles their own name lands here and can claim in two taps. The
+  // `-org` deep-link suffix tags the resulting claim as organic (vs founder-DM)
+  // for the Day-4 growth gate.
+  const showClaimBanner = master.claimable === true;
   const botUsername = process.env.NEXT_PUBLIC_TMA_BOT_USERNAME || "majstr_bot";
 
   // While the modal is open, reflect it in the URL as the master page
@@ -181,10 +178,12 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
             </button>
           </header>
 
-          {/* Share-to-claim banner (link carried #claim / ?claim=1) */}
+          {/* "Це ваша картка? Заберіть її" — logged-out claim CTA on every
+              claimable scraped card (the self-Googling-master acquisition path). */}
           {showClaimBanner && (
             <a
-              href={`https://t.me/${botUsername}?startapp=claim-${id}`}
+              href={`https://t.me/${botUsername}?startapp=claim-${id}-org`}
+              onClick={() => track("claim_cta_click", { master_id: id, source: "organic" })}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -203,7 +202,7 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                 textAlign: "center",
               }}
             >
-              Це ваша картка? Натисніть, щоб редагувати або видалити →
+              Це ваша картка? Заберіть її безкоштовно →
             </a>
           )}
 
@@ -247,6 +246,24 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                   <span className="modal-master__profession">{profName}</span>
                   <span className="modal-master__divider" aria-hidden="true" />
                   <span className="modal-master__city">{locName}</span>
+                  {master.verified && (
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        background: "var(--terra)",
+                        color: "var(--paper)",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        padding: "2px 6px",
+                        borderRadius: 2,
+                      }}
+                    >
+                      ✓ Verified
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -293,6 +310,13 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                         href={meta.href(c.value)}
                         target={c.contactType === "phone" || c.contactType === "email" ? undefined : "_blank"}
                         rel="noopener noreferrer"
+                        onClick={() =>
+                          track("contact_click", {
+                            master_id: id,
+                            channel: c.contactType.toLowerCase(),
+                            is_primary: false,
+                          })
+                        }
                       >
                         <span className="modal-master__contact-label">{meta.label}</span>
                         <span className="modal-master__contact-value">{meta.display(c.value)}</span>
@@ -328,6 +352,13 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                 href={primaryHref}
                 target={primaryContact.contactType === "phone" || primaryContact.contactType === "email" ? undefined : "_blank"}
                 rel="noopener noreferrer"
+                onClick={() =>
+                  track("contact_click", {
+                    master_id: id,
+                    channel: primaryContact.contactType.toLowerCase(),
+                    is_primary: true,
+                  })
+                }
               >
                 <span className="modal-master__cta-label">{ctaText}</span>
                 <span className="modal-master__cta-arrow" aria-hidden="true">→</span>

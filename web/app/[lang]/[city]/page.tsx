@@ -9,6 +9,7 @@ import {
   cityPrep,
 } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
+import { cityHubDescription, professionHubDescription } from "@/lib/content";
 import { abs } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
@@ -61,11 +62,13 @@ export async function generateMetadata({
         : lang === "en"
           ? `Ukrainian- & Russian-speaking masters ${cityPrep(city, lang)} | Majstr`
           : `Україномовні майстри ${cityPrep(city, lang)} | Majstr`;
+    const description = cityHubDescription(lang, cityPrep(city, lang));
     return {
       title,
+      description,
       robots: isIndexable(lang) ? undefined : { index: false, follow: true },
       alternates: { canonical: abs(`/${lang}/${city.id}`), languages: langAlt(city.id) },
-      openGraph: { title, locale: OG_LOCALE[lang], type: "website" },
+      openGraph: { title, description, locale: OG_LOCALE[lang], type: "website" },
     };
   }
   const { lang, cat } = r;
@@ -76,11 +79,13 @@ export async function generateMetadata({
       : lang === "en"
         ? `${catName} in Italy — Ukrainian-speaking masters | Majstr`
         : `${catName} в Італії — україномовні майстри | Majstr`;
+  const description = professionHubDescription(lang, catName);
   return {
     title,
+    description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: { canonical: abs(`/${lang}/${cat.id}`), languages: langAlt(cat.id) },
-    openGraph: { title, locale: OG_LOCALE[lang], type: "website" },
+    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website" },
   };
 }
 

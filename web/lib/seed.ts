@@ -24,6 +24,7 @@ type SlimMaster = Pick<
   | "photo"
   | "tags"
   | "verified"
+  | "claimable"
 >;
 
 function slimMaster(m: Master): SlimMaster {
@@ -38,6 +39,9 @@ function slimMaster(m: Master): SlimMaster {
     tags: m.tags,
     // Needed by the grid: VERIFIED badge + verified-first ordering.
     verified: m.verified,
+    // Needed by the modal: the logged-out "claim this card" CTA renders on any
+    // claimable (unowned, scraped) card — the self-Googling-master acquisition path.
+    claimable: m.claimable,
   };
 }
 

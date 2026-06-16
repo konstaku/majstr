@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   openGraph: { type: "website", siteName: "Majstr" },
   twitter: { card: "summary_large_image" },
   icons: { icon: "/favicon.png" },
+  // Search Console + Yandex Webmaster ownership. Tokens come from env (set in
+  // Vercel); when absent the tags are simply omitted. Yandex matters as much as
+  // Google here — it's where the RU diaspora pages are meant to rank.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.YANDEX_VERIFICATION,
+  },
 };
 
 // <html>/<body> live in app/[lang]/layout.tsx so the `lang` attribute can
