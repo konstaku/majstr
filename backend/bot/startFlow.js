@@ -2,7 +2,20 @@ const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
 
 const User = require('../database/schema/User');
+const Master = require('../database/schema/Master');
 const i18n = require('../i18n');
+
+// A "card" for the welcome CTA means a real, submitted listing — not a
+// half-finished draft (those should resume the wizard, not jump to manage).
+const OWNED_CARD_STATUSES = ['pending', 'approved', 'archived'];
+
+async function userOwnsCard(ownerUserID) {
+  if (!ownerUserID) return false;
+  return !!(await Master.exists({
+    ownerUserID,
+    status: { $in: OWNED_CARD_STATUSES },
+  }).catch(() => false));
+}
 const { S3_BUCKET } = require('../config/s3');
 const {
   bot,
@@ -46,7 +59,8 @@ async function handleStart(message, payload) {
       registeredUser.uiLanguage = lang;
       await registeredUser.save().catch(() => {});
     }
-    return sendLoginLink(message.chat.id, registeredUser.token, lang);
+    const hasCard = await userOwnsCard(registeredUser._id);
+    return sendLoginLink(message.chat.id, registeredUser.token, lang, hasCard);
   }
 
   console.log('Welcome new user!, ID:', message.chat.id);
@@ -54,37 +68,44 @@ async function handleStart(message, payload) {
   const token = createTokenForUser(message);
   const userPhoto = await fetchUserTelegramPhoto(message);
   await addUserToDatabase(message, userPhoto, token, lang);
-  sendLoginLink(message.chat.id, token, lang);
+  // Brand-new user — by definition no card yet.
+  sendLoginLink(message.chat.id, token, lang, false);
 }
 
-// Welcome keyboard. "Add master" is the primary CTA — first and alone on
-// its own full-width row so it's the biggest/most prominent control. Then
-// the uk/en/ru language switch, then the website link.
-function buildWelcomeKeyboard(lang, token) {
+// Welcome keyboard. The primary CTA — first and alone on its own full-width
+// row so it's the biggest/most prominent control — adapts to the user: an
+// owner gets "Manage my card" (→ /my-cards), everyone else gets "Add my master
+// card" (→ /onboard). Then the language switch, then the website link.
+function buildWelcomeKeyboard(lang, token, hasCard = false) {
   const encodedToken = encodeURIComponent(JSON.stringify(token));
+  const primary = hasCard
+    ? {
+        text: i18n.t(lang, 'btn.manageCard'),
+        web_app: { url: `${TMA_BASE_URL}/my-cards?lng=${lang}` },
+      }
+    : {
+        text: i18n.t(lang, 'btn.addMaster'),
+        web_app: { url: `${TMA_BASE_URL}/onboard?lng=${lang}` },
+      };
+  const sitePath = hasCard ? 'my-cards' : 'add';
   return {
     inline_keyboard: [
-      [
-        {
-          text: i18n.t(lang, 'btn.addMaster'),
-          web_app: { url: `${TMA_BASE_URL}/onboard?lng=${lang}` },
-        },
-      ],
+      [primary],
       ...i18n.langKeyboardRows(lang),
       [
         {
           text: i18n.t(lang, 'btn.loginSite'),
-          url: `${FRONTEND_URL}/login?token=${encodedToken}&path=add&lng=${lang}`,
+          url: `${FRONTEND_URL}/login?token=${encodedToken}&path=${sitePath}&lng=${lang}`,
         },
       ],
     ],
   };
 }
 
-function sendLoginLink(id, token, lang) {
+function sendLoginLink(id, token, lang, hasCard = false) {
   const L = i18n.normalizeLang(lang);
   bot.sendMessage(id, i18n.t(L, 'welcome.body'), {
-    reply_markup: buildWelcomeKeyboard(L, token),
+    reply_markup: buildWelcomeKeyboard(L, token, hasCard),
   }).catch((err) => console.error('[sendLoginLink] failed:', err.message));
 }
 
@@ -176,10 +197,11 @@ async function handleUiLangCallback(queryId, message, data, from) {
 
   await bot.answerCallbackQuery(queryId, { text: i18n.t(code, 'lang.switched') });
 
+  const hasCard = user ? await userOwnsCard(user._id) : false;
   await bot.editMessageText(i18n.t(code, 'welcome.body'), {
     chat_id,
     message_id,
-    reply_markup: buildWelcomeKeyboard(code, user && user.token),
+    reply_markup: buildWelcomeKeyboard(code, user && user.token, hasCard),
   }).catch((err) => console.error('[uilang] edit failed:', err.message));
 }
 
@@ -225,6 +247,7 @@ async function addUserToDatabase(message, photo, token, lang) {
 module.exports = {
   parseLangFromPayload,
   handleStart,
+  userOwnsCard,
   buildWelcomeKeyboard,
   sendLoginLink,
   createTokenForUser,

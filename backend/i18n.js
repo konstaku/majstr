@@ -21,6 +21,7 @@ const DICT = {
     'welcome.body':
       'Вітаємо у Majstr! 🛠\n\nЗнайдіть майстра або зареєструйте себе як фахівця.\n\n👇 Оберіть мову / Choose language',
     'btn.addMaster': '➕ Додати картку майстра',
+    'btn.manageCard': '🛠 Керувати моєю карткою',
     'btn.loginSite': '🌐 Увійти на сайт',
     'lang.switched': '✅ Мову змінено',
     'unknownCommand':
@@ -61,6 +62,7 @@ const DICT = {
     'welcome.body':
       'Welcome to Majstr! 🛠\n\nFind a tradesperson or register yourself as one.\n\n👇 Choose language / Оберіть мову',
     'btn.addMaster': '➕ Add my master card',
+    'btn.manageCard': '🛠 Manage my card',
     'btn.loginSite': '🌐 Open the website',
     'lang.switched': '✅ Language changed',
     'unknownCommand':

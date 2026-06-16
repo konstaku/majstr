@@ -1,6 +1,8 @@
 import "./wizard.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
+import { apiFetch } from "../api/client";
 import { BackAffordance } from "../ui/BackAffordance";
 import { PrimaryCTA } from "../ui/PrimaryCTA";
 import { usePopup } from "../ui/usePopup";
@@ -143,15 +145,68 @@ function WizardInner() {
   );
 }
 
+// A "card" for dispatch purposes is a real submitted listing — a half-finished
+// draft should resume the wizard, not bounce the user to management.
+const OWNED_CARD_STATUSES = ["pending", "approved", "archived"];
+
+// The bot's Main Mini App opens HERE (/onboard) for everyone. Decide on launch
+// where the user actually belongs: an owner goes to /my-cards (Manage), a new
+// user stays on the wizard (Add). Returns true while the decision is pending.
+function useOwnedCardRedirect(): boolean {
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    // A claim deep link wins — useClaimDeepLink redirects to /claim; don't also
+    // race a /my-cards bounce.
+    const sp = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+    if (sp && /^claim[-_]/i.test(sp)) {
+      setChecking(false);
+      return;
+    }
+    let cancelled = false;
+    apiFetch("/api/masters/mine", {}, { redirectOn401: false })
+      .then((r) => (r.ok ? r.json() : { masters: [] }))
+      .then(({ masters }: { masters?: { status: string }[] }) => {
+        if (cancelled) return;
+        const owns = (masters ?? []).some((m) =>
+          OWNED_CARD_STATUSES.includes(m.status)
+        );
+        if (owns) navigate("/my-cards", { replace: true });
+        else setChecking(false);
+      })
+      .catch(() => {
+        if (!cancelled) setChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
+  return checking;
+}
+
+function WizardLoading() {
+  return (
+    <div className="wizard">
+      <div className="wizard-body">
+        <div className="wizard-skeleton" />
+        <div className="wizard-skeleton" />
+        <div className="wizard-skeleton" style={{ width: "60%" }} />
+      </div>
+    </div>
+  );
+}
+
 export default function OnboardingWizard() {
-  // The bot's Main Mini App opens HERE (/onboard), so claim deep links
-  // (startapp=claim-<id>) arrive on this route — redirect before the wizard
-  // mounts its draft flow.
+  // Claim deep links (startapp=claim-<id>) also arrive on this route — redirect
+  // before the wizard mounts its draft flow.
   useClaimDeepLink();
+  const checking = useOwnedCardRedirect();
 
   return (
     <OnboardingI18nProvider>
-      <WizardInner />
+      {checking ? <WizardLoading /> : <WizardInner />}
     </OnboardingI18nProvider>
   );
 }
