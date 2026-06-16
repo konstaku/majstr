@@ -4,6 +4,7 @@ const User = require('../database/schema/User');
 const i18n = require('../i18n');
 const { masterWebUrl } = require('../helpers/masterUrl');
 const { bot, getUserLang, REVALIDATE_SECRET, PUBLIC_WEB_URL } = require('./instance');
+const { editAdminMessage } = require('./editAdminMessage');
 
 async function handleMasterCallback(queryId, message, data, from) {
   // data format: master:approve:<masterID> or master:decline:<masterID>
@@ -18,10 +19,7 @@ async function handleMasterCallback(queryId, message, data, from) {
   }
   if (master.status !== 'pending') {
     await bot.answerCallbackQuery(queryId, { text: `Вже ${master.status}` });
-    return bot.editMessageText(`${message.text}\n\nℹ️ Вже оброблено (${master.status}).`, {
-      chat_id: message.chat.id,
-      message_id: message.message_id,
-    }).catch(() => {});
+    return editAdminMessage(message, `ℹ️ Вже оброблено (${master.status}).`);
   }
 
   const adminUser = await User.findOne({ telegramID: from.id });
@@ -42,10 +40,7 @@ async function handleMasterCallback(queryId, message, data, from) {
     }).catch(err => console.error('Failed to write approve audit row:', err));
 
     await bot.answerCallbackQuery(queryId, { text: '✅ Схвалено' });
-    await bot.editMessageText(
-      `${message.text}\n\n✅ Схвалено — ${from.first_name}`,
-      { chat_id: message.chat.id, message_id: message.message_id }
-    ).catch(() => {});
+    await editAdminMessage(message, `✅ Схвалено — ${from.first_name}`);
 
     // Flush the Next.js ISR cache so the new master page is live immediately.
     // Awaited so the cache is warm before the notification URL is sent.
@@ -79,10 +74,7 @@ async function handleMasterCallback(queryId, message, data, from) {
     }).catch(err => console.error('Failed to write reject audit row:', err));
 
     await bot.answerCallbackQuery(queryId, { text: '❌ Відхилено' });
-    await bot.editMessageText(
-      `${message.text}\n\n❌ Відхилено — ${from.first_name}`,
-      { chat_id: message.chat.id, message_id: message.message_id }
-    ).catch(() => {});
+    await editAdminMessage(message, `❌ Відхилено — ${from.first_name}`);
 
     if (master.telegramID) {
       const oLang = await getUserLang(master.telegramID);

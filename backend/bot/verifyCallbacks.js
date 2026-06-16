@@ -5,6 +5,7 @@ const i18n = require('../i18n');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
 const { masterWebUrl } = require('../helpers/masterUrl');
 const { bot, getUserLang, REVALIDATE_SECRET, PUBLIC_WEB_URL } = require('./instance');
+const { editAdminMessage } = require('./editAdminMessage');
 
 // verify:approve:<masterID> / verify:decline:<masterID> — moderator decision
 // on a verification request (helpers/verification.js). Approve grants the
@@ -22,11 +23,6 @@ async function handleVerifyCallback(queryId, message, data, from) {
   }
 
   const adminUser = await User.findOne({ telegramID: from.id });
-  const editText = (suffix) =>
-    bot.editMessageText(`${message.text || message.caption || ''}\n\n${suffix}`, {
-      chat_id: message.chat.id,
-      message_id: message.message_id,
-    }).catch(() => {});
 
   if (action === 'approve') {
     if (master.verified) {
@@ -46,7 +42,7 @@ async function handleVerifyCallback(queryId, message, data, from) {
     }).catch(err => console.error('Failed to write verify audit row:', err));
 
     await bot.answerCallbackQuery(queryId, { text: '✅ Верифіковано' });
-    await editText(`✅ Верифіковано — ${from.first_name}`);
+    await editAdminMessage(message, `✅ Верифіковано — ${from.first_name}`);
 
     // Refresh the OG card (verified stamp) and the public pages.
     createOGimageForMaster(master)
@@ -76,7 +72,7 @@ async function handleVerifyCallback(queryId, message, data, from) {
     }).catch(err => console.error('Failed to write verify audit row:', err));
 
     await bot.answerCallbackQuery(queryId, { text: '❌ Відхилено' });
-    await editText(`❌ Верифікацію відхилено — ${from.first_name}`);
+    await editAdminMessage(message, `❌ Верифікацію відхилено — ${from.first_name}`);
 
     if (master.telegramID) {
       const oLang = await getUserLang(master.telegramID);

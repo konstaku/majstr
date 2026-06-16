@@ -24,6 +24,7 @@ beforeEach(() => {
   vi.spyOn(bot, 'sendPhoto').mockResolvedValue({});
   vi.spyOn(bot, 'answerCallbackQuery').mockResolvedValue(true);
   vi.spyOn(bot, 'editMessageText').mockResolvedValue({});
+  vi.spyOn(bot, 'editMessageCaption').mockResolvedValue({});
 });
 
 afterEach(async () => {
@@ -89,6 +90,23 @@ describe('handleVerifyCallback — approve', () => {
     expect(bot.sendMessage).toHaveBeenCalledWith(70042, expect.stringContaining('VERIFIED'));
     // OG card regenerated with the verified stamp
     await vi.waitFor(() => expect(ogMock).toHaveBeenCalled());
+  });
+
+  it('clears the buttons on a photo request by editing the caption, not the text', async () => {
+    // Photo verification requests carry a caption, not text — editMessageText
+    // fails on them, which used to leave the Verify/Decline buttons tappable.
+    const master = await Master.create({ name: 'Олена', status: 'approved' });
+    const photoMessage = { chat: { id: 424242 }, message_id: 88, caption: 'Запит на верифікацію' };
+
+    await handleVerifyCallback('q6', photoMessage, `verify:approve:${master._id}`, admin);
+
+    expect(bot.editMessageCaption).toHaveBeenCalledTimes(1);
+    const [body, opts] = bot.editMessageCaption.mock.calls[0];
+    expect(body).toContain('✅ Верифіковано');
+    expect(opts).toMatchObject({ chat_id: 424242, message_id: 88 });
+    // No reply_markup passed → Telegram removes the inline keyboard.
+    expect(opts.reply_markup).toBeUndefined();
+    expect(bot.editMessageText).not.toHaveBeenCalled();
   });
 
   it('answers idempotently when the card is already verified', async () => {
