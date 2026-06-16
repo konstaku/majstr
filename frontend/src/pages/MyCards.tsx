@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 import { apiFetch } from "../api/client";
 import { localizedName } from "../i18n/lang";
 import { isTMA } from "../surface/detect";
+import { track } from "../analytics";
 import { useReferenceData, type Profession, type ProfCategory, type Location } from "../onboarding/useReferenceData";
 import { PickerSheet } from "../onboarding/ui/PickerSheet";
 import { LANGUAGE_OPTIONS } from "../onboarding/schema";
@@ -25,9 +26,23 @@ type OwnedMaster = {
   photo?: string | null;
   tags?: { ua?: string[]; en?: string[] };
   languages?: string[];
+  shareUrl?: string;
 };
 
 const CONTACT_TYPES = ["telegram", "whatsapp", "phone", "instagram", "facebook", "email"];
+
+const SHARE_TEXT = "Я тепер у каталозі Majstr — знайдете мене тут 👉";
+
+// Share the card's public page (its per-master OG image unfurls in Telegram).
+function shareCard(master: { _id: string; shareUrl?: string }) {
+  if (!master.shareUrl) return;
+  track("share_click", { master_id: master._id, share_method: "my_cards" });
+  const tg = window.Telegram?.WebApp;
+  const tgShare = `https://t.me/share/url?url=${encodeURIComponent(master.shareUrl)}&text=${encodeURIComponent(SHARE_TEXT)}`;
+  if (tg?.openTelegramLink) tg.openTelegramLink(tgShare);
+  else if (navigator.share) navigator.share({ text: SHARE_TEXT, url: master.shareUrl }).catch(() => {});
+  else window.open(tgShare, "_blank");
+}
 
 const STATUS_LABEL: Record<string, string> = {
   approved: "Опубліковано",
@@ -204,6 +219,15 @@ function CardManage({ master, professions, profCategories, locations, onUpdate, 
 
       {!editing && (
         <div className="wizard-actions">
+          {master.shareUrl && (
+            <button
+              type="button"
+              className="wizard-ghost-btn wizard-ghost-btn--primary"
+              onClick={() => shareCard(master)}
+            >
+              Поділитися 🔗
+            </button>
+          )}
           <button
             type="button"
             className="wizard-ghost-btn wizard-ghost-btn--primary"

@@ -75,6 +75,8 @@ export interface TgWebApp {
   ready(): void;
   expand(): void;
   close(): void;
+  openTelegramLink?(url: string): void;
+  openLink?(url: string, options?: { try_instant_view?: boolean }): void;
   onEvent(event: string, cb: () => void): void;
   offEvent(event: string, cb: () => void): void;
   CloudStorage?: TgCloudStorage;

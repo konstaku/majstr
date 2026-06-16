@@ -16,7 +16,9 @@ export function isLang(x: string): x is Lang {
 // hreflang and marked noindex per page — so we never publish thin/duplicate
 // pages. One switch drives sitemap inclusion, hreflang inclusion, and the
 // per-page robots flag. Flip to true once English template copy is authored.
-export const EN_INDEXED = true;
+// 2026-06-16: set false for launch — EN body copy is still template-thin, so we
+// keep /en routes reachable but out of the index to avoid thin duplicate pages.
+export const EN_INDEXED = false;
 
 // Locales advertised to crawlers (sitemap entries + hreflang alternates).
 // While `en` is gated it stays out of this list but its routes still render.

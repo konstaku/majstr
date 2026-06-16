@@ -3,9 +3,17 @@ const Master = require('../database/schema/Master');
 const MasterClaim = require('../database/schema/MasterClaim');
 const MasterAudit = require('../database/schema/MasterAudit');
 const { requestVerification } = require('../helpers/verification');
+const { masterWebUrl } = require('../helpers/masterUrl');
 const { bot } = require('../bot');
 
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
+const PUBLIC_WEB_URL = process.env.PUBLIC_WEB_URL || 'https://majstr.xyz';
+
+// Accept only the deep-link-encoded sources; anything else is recorded as
+// 'unknown' so a bad client value can never poison the growth-gate split.
+function normalizeSource(s) {
+  return MasterClaim.SOURCES.includes(s) ? s : 'unknown';
+}
 
 function normalizePhone(p) {
   return String(p).replace(/[^\d]/g, '');
@@ -42,7 +50,7 @@ function phoneMatches(claimantPhone, masterContacts) {
 }
 
 async function submitClaim(req, res) {
-  const { masterID, phone, notes } = req.body || {};
+  const { masterID, phone, notes, source } = req.body || {};
 
   if (!masterID) return res.status(400).json({ error: 'masterID required' });
   if (!mongoose.Types.ObjectId.isValid(masterID)) {
@@ -99,6 +107,7 @@ async function submitClaim(req, res) {
       claimantTelegramID: req.user.telegramID,
       evidence,
       status: autoApproved ? 'approved' : 'pending',
+      source: normalizeSource(source),
       autoApproved,
     });
   } catch (err) {
@@ -173,7 +182,12 @@ async function submitClaim(req, res) {
     }
   }
 
-  return res.status(201).json({ claim, autoApproved });
+  // The public card URL the new owner shares — the per-master OG image unfurls
+  // from this page (the share loop's engine). Valid whether the claim was
+  // auto-approved or queued; the card is already public either way.
+  const shareUrl = masterWebUrl(master, 'uk', PUBLIC_WEB_URL);
+
+  return res.status(201).json({ claim, autoApproved, shareUrl });
 }
 
 async function getMyClaims(req, res) {

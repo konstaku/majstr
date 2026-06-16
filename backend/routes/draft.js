@@ -3,6 +3,7 @@ const MasterAudit = require('../database/schema/MasterAudit');
 const Profession = require('../database/schema/Profession');
 const Location = require('../database/schema/Location');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
+const { masterWebUrl } = require('../helpers/masterUrl');
 const { localizedName } = require('../lang');
 const { bot } = require('../bot');
 
@@ -270,7 +271,13 @@ async function submitDraft(req, res) {
 async function getMine(req, res) {
   const masters = await Master.find({ ownerUserID: req.user._id })
     .sort({ updatedAt: -1 });
-  res.json({ masters });
+  // Attach the public share URL so owners can one-tap-share their card (the
+  // per-master OG image unfurls from this page).
+  const withShare = masters.map((m) => ({
+    ...m.toObject(),
+    shareUrl: masterWebUrl(m, 'uk', PUBLIC_WEB_URL),
+  }));
+  res.json({ masters: withShare });
 }
 
 module.exports = { getDraft, patchDraft, deleteDraft, submitDraft, getMine };

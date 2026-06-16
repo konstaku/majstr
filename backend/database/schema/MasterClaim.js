@@ -4,6 +4,10 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const STATUS = ['pending', 'approved', 'rejected', 'withdrawn'];
 const EVIDENCE_TYPES = ['phone_match', 'social_handle', 'admin_attestation', 'other'];
+// Where the claim originated — the Day-4 growth gate splits founder-driven from
+// organic claims. Encoded into the deep link (?startapp=claim-<id>-dm|-org) and
+// parsed client-side; 'unknown' when the suffix is absent (e.g. legacy links).
+const SOURCES = ['founder_dm', 'organic', 'unknown'];
 
 const claimSchema = new mongoose.Schema(
   {
@@ -18,6 +22,7 @@ const claimSchema = new mongoose.Schema(
       },
     ],
     status:      { type: String, enum: STATUS, default: 'pending' },
+    source:      { type: String, enum: SOURCES, default: 'unknown' },
     autoApproved: { type: Boolean, default: false },
     reviewedBy:  { type: ObjectId, ref: 'User' },
     reviewedAt:  Date,
@@ -42,4 +47,5 @@ claimSchema.index(
 const MasterClaim = mongoose.model('MasterClaim', claimSchema);
 MasterClaim.STATUS = STATUS;
 MasterClaim.EVIDENCE_TYPES = EVIDENCE_TYPES;
+MasterClaim.SOURCES = SOURCES;
 module.exports = MasterClaim;

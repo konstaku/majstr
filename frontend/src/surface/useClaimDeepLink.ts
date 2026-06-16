@@ -11,8 +11,14 @@ export function useClaimDeepLink(): void {
 
   useEffect(() => {
     const sp = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
-    const m = sp?.match(/^claim[-_]([0-9a-f]{24})$/i);
-    if (m) navigate(`/claim/${m[1]}`, { replace: true });
+    // claim-<24hex> with an optional -dm / -org source suffix. The suffix tags
+    // the claim as founder-driven vs organic for the Day-4 growth gate; it's
+    // carried to /claim as ?src= and forwarded to the API + analytics.
+    const m = sp?.match(/^claim[-_]([0-9a-f]{24})(?:[-_](dm|org))?$/i);
+    if (m) {
+      const src = m[2] ? `?src=${m[2].toLowerCase()}` : "";
+      navigate(`/claim/${m[1]}${src}`, { replace: true });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

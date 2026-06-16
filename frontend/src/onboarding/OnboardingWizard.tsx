@@ -16,6 +16,7 @@ import { StepBioTags } from "./steps/StepBioTags";
 import { StepContact } from "./steps/StepContact";
 import { useHaptic } from "../ui/useHaptic";
 import { useClaimDeepLink } from "../surface/useClaimDeepLink";
+import { track } from "../analytics";
 import { OnboardingI18nProvider, useOnbT } from "./i18n";
 
 const STEP_TITLE_KEYS = [
@@ -71,6 +72,11 @@ function WizardInner() {
     const result = await submit();
     if (result.ok) {
       haptic.notify("success");
+      const v = form.getValues();
+      track("master_submit", {
+        profession_id: v.professionID,
+        location_id: v.locationID,
+      });
       setSubmitted(true);
       return;
     }

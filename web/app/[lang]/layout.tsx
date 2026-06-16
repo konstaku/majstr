@@ -56,6 +56,12 @@ const jetbrains = JetBrains_Mono({
 const fontVars = `${archivo.variable} ${golos.variable} ${dmSans.variable} ${jetbrains.variable}`;
 
 const GTM_ID = "GTM-MB2CPXFD";
+// Direct GA4 (gtag). The measurement ID is public (it ships in client JS), so a
+// production default is fine; env can override per-deploy. Gated to production so
+// local `next dev` doesn't pollute the GA4 property. GTM still loads independently.
+const GA4_ID =
+  process.env.NEXT_PUBLIC_GA4_ID ||
+  (process.env.NODE_ENV === "production" ? "G-V2TNM71Q6G" : undefined);
 
 // This layout owns <html>/<body> so the `lang` attribute reflects the URL
 // locale (uk/ru/en) — the root layout is above the [lang] segment and can't
@@ -85,6 +91,18 @@ export default async function LangLayout({
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
+        {/* GA4 (gtag) — conversion events fire via track() in lib/analytics.ts */}
+        {GA4_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_ID}');`}
+            </Script>
+          </>
+        )}
         {children}
       </body>
     </html>
