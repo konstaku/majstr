@@ -89,7 +89,10 @@ describe("/my-cards", () => {
 describe("/onboard", () => {
   beforeEach(mockReferenceData);
 
-  it("mounts the wizard without hitting the error page", async () => {
+  it("mounts the wizard for a user with no card", async () => {
+    server.use(
+      http.get(`${API}/api/masters/mine`, () => HttpResponse.json({ masters: [] }))
+    );
     renderRoute("/onboard");
     // Step counter is part of the wizard chrome; its presence proves the
     // provider tree (i18n + telegram + form) mounted cleanly.
@@ -97,6 +100,16 @@ describe("/onboard", () => {
       expect(document.querySelector(".wizard-progress")).toBeInTheDocument()
     );
     expect(screen.queryByText(ROUTE_ERROR_TEXT)).not.toBeInTheDocument();
+  });
+
+  it("redirects an owner to card management instead of the wizard", async () => {
+    server.use(
+      http.get(`${API}/api/masters/mine`, () => HttpResponse.json({ masters: [ownedMaster] }))
+    );
+    renderRoute("/onboard");
+    // The launch dispatcher should land on /my-cards (Manage), not the wizard.
+    expect(await screen.findByText("Мої картки")).toBeInTheDocument();
+    expect(document.querySelector(".wizard-progress")).not.toBeInTheDocument();
   });
 });
 
