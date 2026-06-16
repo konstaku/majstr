@@ -202,7 +202,7 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                 textAlign: "center",
               }}
             >
-              Це ваша картка? Заберіть її безкоштовно →
+              Це ваша картка? Натисніть щоб редагувати або видалити
             </a>
           )}
 
@@ -234,6 +234,27 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                   </div>
                 </>
               )}
+              {master.verified && (
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: 11,
+                    left: 14,
+                    zIndex: 2,
+                    background: "var(--terra)",
+                    color: "var(--paper)",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    lineHeight: 1,
+                    padding: "3px 6px",
+                  }}
+                >
+                  ✓ Verified
+                </span>
+              )}
             </div>
 
             <div className="modal-master__name-block">
@@ -246,24 +267,6 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                   <span className="modal-master__profession">{profName}</span>
                   <span className="modal-master__divider" aria-hidden="true" />
                   <span className="modal-master__city">{locName}</span>
-                  {master.verified && (
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        background: "var(--terra)",
-                        color: "var(--paper)",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 9,
-                        fontWeight: 700,
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        padding: "2px 6px",
-                        borderRadius: 2,
-                      }}
-                    >
-                      ✓ Verified
-                    </span>
-                  )}
                 </div>
               </div>
 
