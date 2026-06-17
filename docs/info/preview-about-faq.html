@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Majstr — Про нас &amp; Поширені запитання (превʼю)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e0a06;
+    --paper:#fffaf0;
+    --cream:#f4ede0;
+    --terra:#c84b31;
+    --green:#22c55e;
+    --amber:#d97706;
+    --red:#ef4444;
+    --border:2px solid var(--ink);
+    --muted:#7a7064;
+    --line:#39322a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'DM Sans',system-ui,sans-serif;
+    line-height:1.55;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 110px}
+
+  /* ---- shared header ---- */
+  header{background:var(--ink);color:var(--paper);border-bottom:6px solid var(--terra)}
+  .header-inner{max-width:920px;margin:0 auto;padding:28px 20px 34px}
+  .metastrip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:#b9b2a6;display:flex;flex-wrap:wrap;gap:8px 22px;
+    border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:22px;
+  }
+  .metastrip b{color:var(--terra);font-weight:700}
+  .wordmark{
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(40px,11vw,92px);line-height:.9;letter-spacing:-.02em;
+    text-transform:uppercase;
+  }
+  .wordmark .dot{color:var(--terra)}
+  .subtitle{
+    font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.06em;
+    margin-top:16px;color:#e6dccb;max-width:640px;
+  }
+
+  /* ---- preview banner (for the founder only) ---- */
+  .preview-note{
+    background:var(--amber);color:var(--ink);border:var(--border);
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;font-weight:700;padding:11px 16px;margin-top:22px;
+  }
+
+  /* ---- page divider label (sticky) ---- */
+  .pagebar{
+    position:sticky;top:0;z-index:30;background:var(--ink);color:var(--paper);
+    border-bottom:6px solid var(--terra);
+  }
+  .pagebar-inner{
+    max-width:920px;margin:0 auto;padding:13px 20px;
+    display:flex;align-items:baseline;gap:14px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;
+    text-transform:uppercase;
+  }
+  .pagebar .n{color:var(--terra);font-weight:700}
+  .pagebar .t{font-weight:700;letter-spacing:.14em}
+  .pagebar .sep{color:var(--muted);flex:1;border-bottom:1px dashed var(--line);transform:translateY(-3px)}
+
+  /* ---- section primitives ---- */
+  .page{padding-top:46px}
+  .kicker{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--terra);font-weight:700;margin-bottom:10px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .kicker::before{content:"";width:26px;height:2px;background:var(--terra);display:inline-block}
+  h1{
+    font-family:'Archivo Black',sans-serif;text-transform:uppercase;
+    font-size:clamp(30px,6vw,56px);line-height:.96;letter-spacing:-.015em;
+  }
+  p{margin:14px 0}
+  a{color:var(--terra);text-decoration:none;border-bottom:1px solid var(--terra)}
+  a:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+  /* ---- ABOUT layout ---- */
+  .about-grid{
+    display:grid;grid-template-columns:300px 1fr;gap:30px;margin-top:30px;
+    align-items:start;
+  }
+  @media(max-width:720px){.about-grid{grid-template-columns:1fr;gap:24px}}
+
+  .photo-col{position:sticky;top:74px}
+  @media(max-width:720px){.photo-col{position:static}}
+
+  .photo{
+    position:relative;background:var(--ink);overflow:hidden;border:var(--border);
+    aspect-ratio:1/1;width:100%;
+  }
+  .photo img{
+    display:block;width:100%;height:100%;object-fit:cover;
+    filter:grayscale(100%) contrast(118%) brightness(102%);
+    mix-blend-mode:lighten;background-color:var(--ink);
+  }
+  .photo::after{
+    content:"";position:absolute;inset:0;background:var(--paper);
+    mix-blend-mode:darken;pointer-events:none;
+  }
+  .photo .badge{
+    position:absolute;left:0;bottom:0;z-index:2;
+    background:var(--terra);color:var(--paper);
+    font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+    letter-spacing:.18em;text-transform:uppercase;padding:6px 10px;
+    border-top:var(--border);border-right:var(--border);
+  }
+  .photo .code{
+    position:absolute;right:0;top:0;z-index:2;
+    background:var(--ink);color:var(--paper);
+    font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+    letter-spacing:.14em;padding:5px 9px;border-bottom:var(--border);border-left:var(--border);
+  }
+  .photo-meta{
+    margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:.06em;color:var(--muted);line-height:1.7;
+  }
+  .photo-meta b{color:var(--ink)}
+
+  .about-body p{font-size:17px;line-height:1.62;max-width:620px}
+
+  /* ---- big idea / pull-quote ---- */
+  .bigidea{
+    background:var(--terra);color:var(--paper);border:var(--border);
+    padding:30px 28px;margin:30px 0 22px;
+  }
+  .bigidea .q{
+    font-family:'Archivo Black',sans-serif;text-transform:uppercase;
+    font-size:clamp(19px,3vw,28px);line-height:1.18;letter-spacing:-.01em;
+  }
+  .bigidea .q::before{content:"«"} .bigidea .q::after{content:"»"}
+  .signature{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink);text-align:right;margin-top:8px;
+    border-top:var(--border);padding-top:12px;
+  }
+  .signature b{color:var(--terra)}
+
+  /* ---- FAQ ---- */
+  .faq-intro{
+    background:var(--ink);color:var(--paper);border:var(--border);
+    padding:22px 26px;margin-top:26px;font-size:15px;line-height:1.6;max-width:760px;
+  }
+  .faq-intro a{color:#ffd9a0;border-bottom-color:#ffd9a0}
+
+  .faq-group{margin-top:34px}
+  .faq-label{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--terra);font-weight:700;
+    display:flex;align-items:center;gap:12px;margin-bottom:14px;
+  }
+  .faq-label .ix{
+    background:var(--ink);color:var(--paper);font-size:10px;letter-spacing:.06em;
+    padding:3px 8px;
+  }
+  .faq-label .rule{flex:1;height:2px;background:var(--ink)}
+
+  details.qa{
+    border:var(--border);background:var(--paper);margin-bottom:-2px;
+  }
+  details.qa[open]{background:var(--paper)}
+  details.qa > summary{
+    list-style:none;cursor:pointer;display:flex;align-items:flex-start;gap:14px;
+    padding:16px 18px;
+    font-family:'Archivo Black',sans-serif;text-transform:uppercase;
+    font-size:14px;line-height:1.25;letter-spacing:.005em;
+  }
+  details.qa > summary::-webkit-details-marker{display:none}
+  details.qa > summary:focus-visible{outline:3px solid var(--terra);outline-offset:-3px}
+  details.qa > summary:hover{background:var(--cream)}
+  .qa .mark{
+    flex:0 0 auto;width:24px;height:24px;background:var(--terra);color:var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo Black',sans-serif;font-size:18px;line-height:1;
+    margin-top:-1px;
+  }
+  details.qa[open] .mark::before{content:"–"}
+  details.qa:not([open]) .mark::before{content:"+"}
+  .qa .qtext{flex:1}
+  .qa .answer{
+    padding:0 18px 18px 56px;font-size:15px;line-height:1.6;
+    border-top:1px solid var(--cream);
+  }
+  details.qa[open] .answer{border-top:2px solid var(--ink);padding-top:16px;margin-top:-1px}
+  @media(max-width:520px){
+    .qa .answer{padding-left:18px}
+  }
+
+  /* ---- closing ---- */
+  .oneliner{
+    background:var(--ink);color:var(--paper);border:6px solid var(--terra);
+    padding:30px 28px;margin-top:40px;
+    font-family:'Archivo Black',sans-serif;text-transform:uppercase;
+    font-size:clamp(17px,3vw,26px);line-height:1.18;letter-spacing:-.01em;
+  }
+  .oneliner span{color:var(--terra)}
+  .oneliner a{color:var(--paper);border-bottom-color:var(--terra)}
+
+  footer{margin-top:60px;border-top:var(--border);padding-top:20px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted)}
+  footer b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="metastrip">
+      <span>MAJSTR.XYZ</span>
+      <span>UA&rarr;IT</span>
+      <span>КАТАЛОГ&nbsp;<b>МАЙСТРІВ</b></span>
+      <span>МОВА&nbsp;<b>UA / RU</b></span>
+      <span>ПРЕВʼЮ&nbsp;<b>2 СТОРІНКИ</b></span>
+    </div>
+    <div class="wordmark">MAJSTR<span class="dot">.</span></div>
+    <p class="subtitle">Про нас &amp; Поширені запитання — статичне превʼю для затвердження перед збіркою справжніх сторінок Next.js.</p>
+    <div class="preview-note">Це превʼю для перегляду засновником · обидві сторінки показано стеком в одному файлі · фінальні сторінки буде винесено в окремі маршрути</div>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 1 · ПРО НАС
+     ════════════════════════════════════════════════════════════ -->
+<div class="pagebar">
+  <div class="pagebar-inner">
+    <span class="n">СТОРІНКА 01</span>
+    <span class="sep"></span>
+    <span class="t">/ПРО НАС</span>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section class="page" id="about" aria-labelledby="about-h1">
+    <div class="kicker">Хто за цим стоїть</div>
+    <h1 id="about-h1">Зроблено своїми — для своїх</h1>
+
+    <div class="about-grid">
+      <div class="photo-col">
+        <figure class="photo">
+          <img src="./konsta.jpeg" alt="Костянтин, засновник Majstr" width="600" height="600">
+          <span class="code">M-01</span>
+          <figcaption class="badge">Засновник</figcaption>
+        </figure>
+        <div class="photo-meta">
+          <div><b>Костянтин</b></div>
+          <div>В Італії з 2023</div>
+          <div>Telegram: <a href="https://t.me/wondercooler">@wondercooler</a></div>
+        </div>
+      </div>
+
+      <div class="about-body">
+        <p>Мене звати Костянтин. В Італії я живу з 2023 року. Я люблю цю країну, але кілька разів потрапляв у прикрі ситуації. Шукав квартиру — і натрапляв на ріелторів, які просто не хотіли мені її здавати. Переплачував за обслуговування авто. А одного разу опинився у швидкій, бо лікарка мене не розуміла й виписувала таблетки замість того, щоб призначити обстеження.</p>
+
+        <p>Я переконаний, що нічого з цього не сталося б, якби я мав під рукою контакти лікаря, ріелтора й інших фахівців, з якими ми говоримо однією мовою.</p>
+
+        <p>Тому я зробив Majstr — курований каталог україно- та російськомовних спеціалістів. Він зібраний із рекомендацій реальних людей у телеграм-чатах і групах у соцмережах. Вірю, що комусь це допоможе знайти потрібного фахівця, а самим фахівцям — своїх клієнтів.</p>
+
+        <div class="bigidea">
+          <p class="q">Усього цього могло б не статися, якби поруч був хтось, хто говорить твоєю мовою.</p>
+        </div>
+        <p class="signature">— <b>Костянтин</b>, засновник Majstr</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 2 · ПОШИРЕНІ ЗАПИТАННЯ
+     ════════════════════════════════════════════════════════════ -->
+<div class="pagebar">
+  <div class="pagebar-inner">
+    <span class="n">СТОРІНКА 02</span>
+    <span class="sep"></span>
+    <span class="t">/ПОШИРЕНІ ЗАПИТАННЯ</span>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section class="page" id="faq" aria-labelledby="faq-h1">
+    <div class="kicker">Довідка</div>
+    <h1 id="faq-h1">Поширені запитання</h1>
+
+    <p class="faq-intro">Коротко про те, як працює Majstr, звідки беруться дані й що робити майстрам. Якщо чогось не знайшли — пишіть мені в телеграм: <a href="https://t.me/wondercooler">@wondercooler</a>.</p>
+
+    <!-- GROUP 1 -->
+    <div class="faq-group">
+      <div class="faq-label"><span class="ix">01</span> Про дані <span class="rule"></span></div>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Звідки у вас дані?</span></summary>
+        <div class="answer">З телеграм-чатів і груп у соцмережах — там, де майстри розміщують оголошення, а учасники діляться рекомендаціями. Усі дані ми опрацьовуємо вручну й публікуємо лише відкриту інформацію з публічного профілю та повідомлень.</div>
+      </details>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Що означає «перевірено»?</span></summary>
+        <div class="answer">Що майстер прив’язав свій телеграм-акаунт до картки на сайті. Майстри з позначкою «перевірено» можуть редагувати, приховувати й видаляти свої профілі та завжди показуються першими в пошуку.</div>
+      </details>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">А якщо майстер не «перевірений»?</span></summary>
+        <div class="answer">Усі майстри проходять модерацію і є реальними людьми зі спільноти. Неперевірені майстри можуть поки що не знати про свою картку — або знати, але ще не пройти перевірку. Ми поступово пишемо кожному, кого додаємо.</div>
+      </details>
+    </div>
+
+    <!-- GROUP 2 -->
+    <div class="faq-group">
+      <div class="faq-label"><span class="ix">02</span> Для майстрів <span class="rule"></span></div>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Як додати свій профіль?</span></summary>
+        <div class="answer">Натисніть кнопку «Приєднатися» у верхньому правому куті й створіть запис через телеграм-бота. Картка з’явиться на сайті після перевірки модератором.</div>
+      </details>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Як додати іншого майстра?</span></summary>
+        <div class="answer">Це працює в бета-режимі. Надішліть повідомлення <a href="https://t.me/majstr_bot">@majstr_bot</a> у вільній формі — наприклад: «Ольга, нотаріус у Мілані, робить нотаріально завірені переклади та представництво в суді. Телефон такий-то». Модератори перевірять картку й опублікують її.</div>
+      </details>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">А якщо я не хочу, щоб мій профіль був на сайті?</span></summary>
+        <div class="answer">Картку можна видалити за пару кліків: натисніть жовту плашку «Це ваша картка?» у профілі майстра, підтвердьте телеграм-акаунт і виберіть «Видалити профіль». Або просто напишіть мені в телеграм: <a href="https://t.me/wondercooler">@wondercooler</a>. Дані видаляються з бази назавжди.</div>
+      </details>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Як поставити рейтинг?</span></summary>
+        <div class="answer">Скоро зробимо це для перевірених користувачів.</div>
+      </details>
+    </div>
+
+    <!-- GROUP 3 -->
+    <div class="faq-group">
+      <div class="faq-label"><span class="ix">03</span> Технічні питання <span class="rule"></span></div>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Навіщо потрібен телеграм-бот?</span></summary>
+        <div class="answer">Щоб створити або змінити профіль. Телеграм — найпопулярніший спосіб спілкування у спільноті, тож він водночас і логін для реєстрації. Це ще й захист від шахрайства: одна картка — один телеграм-акаунт.</div>
+      </details>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Яку інформацію запитує бот?</span></summary>
+        <div class="answer">Бот бачить лише ваш публічний профіль — ті дані, які в налаштуваннях приватності Telegram позначені як «видно всім». Доступу до чатів, листування чи особистих даних немає. Під час створення профілю ви можете за бажанням поділитися номером телефону — це необов’язково.</div>
+      </details>
+    </div>
+
+    <!-- GROUP 4 -->
+    <div class="faq-group">
+      <div class="faq-label"><span class="ix">04</span> Інше <span class="rule"></span></div>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Чому на сайті немає перевізників в Україну?</span></summary>
+        <div class="answer">Ми думали над цим, але поки що вирішили їх не додавати. Можливо, згодом це зміниться.</div>
+      </details>
+
+      <details class="qa" name="faq">
+        <summary><span class="mark" aria-hidden="true"></span><span class="qtext">Чи є мобільний застосунок?</span></summary>
+        <div class="answer">Можливо, зроблю його пізніше. Поки що застосунок доступний у Telegram.</div>
+      </details>
+    </div>
+
+    <div class="oneliner">
+      Не знайшли відповіді? <span>→</span> Пишіть у телеграм <a href="https://t.me/wondercooler">@wondercooler</a>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>MAJSTR.</b> &nbsp;ПРЕВʼЮ · ПРО НАС + FAQ &nbsp;&middot;&nbsp; 2026-06-17 &nbsp;&middot;&nbsp; СТАТУС: <b>на затвердження</b> &nbsp;&middot;&nbsp; ДАЛІ: <b>винести у сторінки Next.js (web/)</b></p>
+  </footer>
+
+</main>
+
+</body>
+</html>

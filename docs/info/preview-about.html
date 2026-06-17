@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Majstr · Про нас</title>
+
+<!-- Real main-page styles (header/footer + design tokens) loaded from the live site -->
+<link rel="stylesheet" href="https://majstr.xyz/_next/static/css/e66d60401465c2f4.css">
+<link rel="stylesheet" href="https://majstr.xyz/_next/static/css/172a4a1c807f72b5.css">
+
+<!-- Mockup typefaces for the About content -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Golos+Text:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  /* The live CSS only ships the COLOR tokens; the font CSS variables are
+     injected by next/font onto <html> on the real site, which this static
+     preview has no equivalent of — so var(--font-display)/(--font-mono) were
+     resolving to nothing and the header/footer fell back to Times. Define the
+     font variables here, pointing at the Google-Fonts families loaded above, so
+     the real logo/menu/footer render in their correct typefaces. */
+  :root{
+    --font-archivo:'Archivo Black';
+    --font-golos:'Golos Text';
+    --font-dm:'DM Sans';
+    --font-jb:'JetBrains Mono';
+    --font-display:'Archivo Black','Golos Text',sans-serif;
+    --font-body:'DM Sans',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+
+  /* Header — matched to the mockup: bold JetBrains Mono nav, MAJSTR logo,
+     active "Про нас" ink pill, muted-grey item, terra CTA, single bar. */
+  .mk-nav{ background:var(--cream); border-bottom:2px solid var(--ink); }
+  .mk-nav-inner{ max-width:1240px; margin:0 auto; padding:16px 40px; display:flex; align-items:center; gap:26px; }
+  .mk-logo{ font-family:'Archivo Black',sans-serif; font-size:22px; letter-spacing:-.01em;
+    text-transform:uppercase; color:var(--ink); text-decoration:none; }
+  .mk-dot{ color:var(--terra); }
+  .mk-links{ display:flex; align-items:center; gap:26px; margin-left:30px;
+    font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700;
+    letter-spacing:.12em; text-transform:uppercase; }
+  .mk-links a{ color:var(--ink); text-decoration:none; }
+  .mk-links a.muted{ color:#a39b8d; }
+  .mk-links a.active{ background:var(--ink); color:var(--paper); padding:8px 13px; }
+  .mk-div{ width:1px; height:18px; background:#d3c9b8; }
+  .mk-right{ margin-left:auto; display:flex; align-items:center; gap:14px; }
+  .mk-lang{ display:inline-flex; align-items:center; gap:8px; border:2px solid var(--ink);
+    padding:7px 11px; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700;
+    letter-spacing:.06em; background:var(--paper); }
+  .mk-flag{ width:18px; height:12px; border:1px solid var(--ink); display:inline-block;
+    background:linear-gradient(#2b6fd6 0 50%,#ffd02e 50% 100%); }
+  .mk-join{ font-family:'Archivo Black','Golos Text',sans-serif; font-weight:900; font-size:14px;
+    letter-spacing:.02em; text-transform:uppercase; color:var(--paper); background:var(--terra);
+    border:2px solid var(--ink); padding:10px 17px; text-decoration:none; }
+  @media(max-width:880px){ .mk-links,.mk-div{ display:none; } .mk-nav-inner{ padding:14px 22px; } }
+
+  /* About content — typefaces exactly per the mockup (Golos Text body,
+     Archivo Black display, JetBrains Mono labels). Colors come from the live
+     site's --ink/--terra/--paper tokens (loaded above), so they match exactly. */
+  .about{ background:var(--cream); }
+  .about-inner{ max-width:720px; margin:0 auto; padding:56px 40px 0; }
+  .about-kicker{ font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700;
+    letter-spacing:.22em; text-transform:uppercase; color:var(--terra); margin-bottom:18px; }
+  /* H1 — Archivo Black 72px / -0.04em / 0.92 (mockup) */
+  /* Archivo Black is Latin-only — Cyrillic falls through to Golos Text, pinned
+     to 900 so "ЯК З'ЯВИВСЯ" is as heavy as the Latin "MAJSTR". */
+  .about-h1{ font-family:'Archivo Black','Golos Text',sans-serif; font-weight:900;
+    text-transform:uppercase; font-size:clamp(42px,7vw,72px); line-height:.92;
+    letter-spacing:-.04em; color:var(--ink); margin:0 0 30px; }
+  .about-h1 span{ color:var(--terra); }
+  /* Lead — Golos Text 28px / 600 (mockup) */
+  .about-lead{ font-family:'Golos Text',sans-serif; font-size:clamp(20px,2.4vw,28px);
+    font-weight:600; line-height:1.32; letter-spacing:-.01em; color:var(--ink);
+    margin:0 0 32px; }
+  /* Body — Golos Text 17px / 400, softer ink #2c261f (mockup) */
+  .about-body{ font-family:'Golos Text',sans-serif; font-size:17px;
+    line-height:1.66; color:#2c261f; }
+  .about-body p{ margin:0 0 18px; }
+  /* Emphasis — Golos Text 600 (mockup), NOT 700 */
+  .about-body strong{ font-weight:600; color:var(--ink); }
+
+  .about-portrait{ float:right; width:230px; margin:4px 0 20px 36px; }
+  .about-photo{ position:relative; background:var(--ink); overflow:hidden;
+    border:2px solid var(--ink); aspect-ratio:1/1; }
+  .about-photo img{ display:block; width:100%; height:100%; object-fit:cover;
+    filter:grayscale(100%) contrast(118%) brightness(102%);
+    mix-blend-mode:lighten; background-color:var(--ink); }
+  .about-photo::after{ content:""; position:absolute; inset:0; background:var(--paper);
+    mix-blend-mode:darken; pointer-events:none; }
+  .about-portrait figcaption{ margin-top:10px; }
+  /* Caption name — Golos Text 800 / 15px (mockup) */
+  .about-portrait .cn{ display:block; font-family:'Golos Text',sans-serif; font-weight:800;
+    font-size:15px; letter-spacing:-.01em; line-height:1; color:var(--ink); }
+  /* Caption role — JetBrains Mono 700 / 12px / grey #8c8472 (mockup) */
+  .about-portrait .cr{ display:block; font-family:'JetBrains Mono',monospace; font-size:12px;
+    font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#8c8472; margin-top:7px; }
+
+  /* CTA — Archivo Black 24px, INK text, 3px terra underline (mockup) */
+  .about-cta-row{ clear:both; padding:54px 0 96px; }
+  .about-cta{ display:inline-flex; align-items:baseline; gap:14px;
+    font-family:'Archivo Black','Golos Text',sans-serif; font-weight:900; text-transform:uppercase;
+    font-size:clamp(20px,2.6vw,24px); letter-spacing:.01em; color:var(--ink);
+    text-decoration:none; border-bottom:3px solid var(--terra); padding-bottom:6px; }
+
+  .preview-note{ background:#d97706; color:#1a1206; font-family:'JetBrains Mono',monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase; text-align:center;
+    padding:6px; font-weight:700; }
+
+  @media(max-width:880px){
+    .about-inner{ padding:40px 22px 0; }
+    .about-portrait{ float:none; width:200px; margin:0 0 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-note">Прев'ю · сторінка «Про нас» · справжні шапка й футер сайту · ще не на сайті</div>
+
+<!-- ===== HEADER — matched to the mockup (bold JetBrains Mono nav, single bar) ===== -->
+<header class="mk-nav">
+  <div class="mk-nav-inner">
+    <a href="/uk" class="mk-logo">MAJSTR<span class="mk-dot">.</span></a>
+    <nav class="mk-links">
+      <a href="/uk">Пошук</a>
+      <a href="#">Додати майстра</a>
+      <span class="mk-div" aria-hidden="true"></span>
+      <a href="#" class="muted">Як це працює</a>
+      <a href="#" class="active">Про нас</a>
+    </nav>
+    <div class="mk-right">
+      <span class="mk-lang"><span class="mk-flag" aria-hidden="true"></span>UA ▾</span>
+      <a href="https://t.me/majstr_bot" class="mk-join">Доєднатися</a>
+    </div>
+  </div>
+</header>
+
+<!-- ===== ABOUT CONTENT ===== -->
+<main class="about">
+  <div class="about-inner">
+    <div class="about-kicker">Про нас</div>
+    <h1 class="about-h1">Як з'явився <span>Majstr</span></h1>
+
+    <p class="about-lead">
+      Мене звуть Константин, я живу в Італії з 2023 року. Я люблю цю країну, але кілька
+      разів потрапляв у неприємні ситуації.
+    </p>
+
+    <div class="about-body">
+      <figure class="about-portrait">
+        <div class="about-photo">
+          <img src="./konsta.jpeg" alt="Константин, засновник Majstr">
+        </div>
+        <figcaption>
+          <span class="cn">Константин</span>
+          <span class="cr">Засновник Majstr</span>
+        </figcaption>
+      </figure>
+
+      <p>
+        Шукав квартиру у ріелторів, які не хотіли її здавати, переплачував за ремонт
+        автомобіля, а одного разу опинився в швидкій через те, що лікарка мене не
+        розуміла і призначала таблетки замість обстеження.
+      </p>
+      <p>
+        Вірю, що цього б не сталося, якби я знав контакти лікаря, ріелтора та інших
+        фахівців, <strong>з якими ми говоримо однією мовою</strong>.
+      </p>
+      <p>
+        Я зробив сервіс majstr: курований каталог україномовних та російськомовних
+        фахівців, заснований на рекомендаціях людей у телеграм-чатах та групах соцмереж.
+        Я починав це як каталог особистих рекомендацій, та згодом вирішив зробити версію,
+        відкриту для спільноти.
+      </p>
+      <p>
+        Вірю, що комусь це допоможе знайти потрібного спеціаліста, а спеціалістам —
+        <strong>своїх клієнтів</strong>.
+      </p>
+    </div>
+
+    <div class="about-cta-row">
+      <a href="/uk" class="about-cta">Знайти майстра <span>→</span></a>
+    </div>
+  </div>
+</main>
+
+<!-- ===== REAL MAIN-PAGE FOOTER (captured from majstr.xyz/uk) ===== -->
+<footer class="footer"><div class="footer-inner"><div class="footer-big">2 400+<br><span class="footer-terra" style="transition:opacity 0.18s;opacity:1;cursor:default">UKRAINIAN</span><br>CRAFTSMEN.<span class="footer-meta">© MAJSTR · MADE FOR THE COMMUNITY</span></div><div class="footer-top"><div class="footer-col"><h4>Platform</h4><a href="/uk">Пошук</a><button type="button" class="footer-link">Додати майстра</button><span class="inactive">FAQ</span></div><div class="footer-col"><h4>Legal</h4><a href="/uk/privacy">Політика конфіденційності</a><span>Умови використання</span><span>Політика модерації</span><span>Зворотній звʼязок</span></div><div class="footer-col"><h4>Community</h4><a href="https://t.me/majstr_bot">Telegram Bot</a></div></div><div class="footer-bottom"><span>© 2025 Majstr. Всі права захищені.</span><span>Зроблено з ❤️ 🇺🇦 для української громади</span></div></div></footer>
+
+</body>
+</html>

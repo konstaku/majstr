@@ -32,7 +32,15 @@ function getISOWeek(date: Date): number {
   return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
-export default function Root({ children }: { children?: ReactNode }) {
+export default function Root({
+  children,
+  // The big MAJSTR wordmark is a search/main-page hero element. Content pages
+  // (e.g. About) keep the meta nav strip + footer but hide it.
+  showWordmark = true,
+}: {
+  children?: ReactNode;
+  showWordmark?: boolean;
+}) {
   const { state, dispatch } = useContext(MasterContext);
   const { countryID, countries } = state;
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
@@ -151,7 +159,7 @@ export default function Root({ children }: { children?: ReactNode }) {
             <Link href={`/${lang}`} className={pathname === `/${lang}` ? "active" : ""}>{t("nav.search")}</Link>
             {AddMasterLink}
             <span className="nav-item inactive">{t("nav.howItWorks")}</span>
-            <span className="nav-item inactive">{t("nav.forBusiness")}</span>
+            <Link href={`/${lang}/about`} className={pathname === `/${lang}/about` ? "active" : ""}>{t("nav.about")}</Link>
           </nav>
 
           <div className="header-controls">
@@ -181,12 +189,14 @@ export default function Root({ children }: { children?: ReactNode }) {
           </div>
         </div>
 
-        {/* Wordmark */}
-        <div className="header-wordmark">
-          <Link href={`/${lang}`} onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}>
-            MAJSTR<span className="wordmark-dot">.</span>
-          </Link>
-        </div>
+        {/* Wordmark — search/main-page hero only */}
+        {showWordmark && (
+          <div className="header-wordmark">
+            <Link href={`/${lang}`} onClick={() => dispatch({ type: ACTIONS.RESET_SEARCH })}>
+              MAJSTR<span className="wordmark-dot">.</span>
+            </Link>
+          </div>
+        )}
       </header>
 
       {/* Mobile burger menu */}
@@ -204,6 +214,7 @@ export default function Root({ children }: { children?: ReactNode }) {
               {t("nav.addMaster")}
             </button>
           </li>
+          <li><Link href={`/${lang}/about`}>{t("nav.about")}</Link></li>
           <li><span className="inactive">{t("nav.faq")}</span></li>
           <li className="burger-controls" onClick={(e) => e.stopPropagation()}>
             <CountryToggle
