@@ -158,7 +158,7 @@ export default function Root({
           <nav className="header-nav">
             <Link href={`/${lang}`} className={pathname === `/${lang}` ? "active" : ""}>{t("nav.search")}</Link>
             {AddMasterLink}
-            <span className="nav-item inactive">{t("nav.howItWorks")}</span>
+            <Link href={`/${lang}/faq`} className={pathname === `/${lang}/faq` ? "active" : ""}>{t("nav.faq")}</Link>
             <Link href={`/${lang}/about`} className={pathname === `/${lang}/about` ? "active" : ""}>{t("nav.about")}</Link>
           </nav>
 
@@ -214,8 +214,8 @@ export default function Root({
               {t("nav.addMaster")}
             </button>
           </li>
+          <li><Link href={`/${lang}/faq`}>{t("nav.faq")}</Link></li>
           <li><Link href={`/${lang}/about`}>{t("nav.about")}</Link></li>
-          <li><span className="inactive">{t("nav.faq")}</span></li>
           <li className="burger-controls" onClick={(e) => e.stopPropagation()}>
             <CountryToggle
               countries={countries}
@@ -418,7 +418,7 @@ function FooterContent({ onAddMasterClick }: { onAddMasterClick: () => void }) {
           <button type="button" className="footer-link" onClick={onAddMasterClick}>
             {t("nav.addMaster")}
           </button>
-          <span className="inactive">{t("nav.faq")}</span>
+          <Link href={`/${lang}/faq`}>{t("nav.faq")}</Link>
         </div>
         <div className="footer-col">
           <h4>Legal</h4>
