@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Majstr · FAQ</title>
+
+<!-- Real main-page styles (header/footer + tokens) from the live site -->
+<link rel="stylesheet" href="https://majstr.xyz/_next/static/css/878510cdd0da7445.css">
+<link rel="stylesheet" href="https://majstr.xyz/_next/static/css/172a4a1c807f72b5.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Golos+Text:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    /* The live CSS only ships color tokens; its font vars are injected by
+       next/font onto <html>, which this standalone file lacks — define them so
+       the real header/footer render in the right typefaces. */
+    --font-archivo:'Archivo Black'; --font-golos:'Golos Text';
+    --font-dm:'DM Sans'; --font-jb:'JetBrains Mono';
+    --font-display:'Archivo Black','Golos Text',sans-serif;
+    --font-body:'DM Sans',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+    /* FAQ-body tokens (mockup) */
+    --ink:#0e0a06; --cream:#f4ede0; --paper:#fffaf0; --terra:#c84b31;
+    --terra-dk:#a83a20; --muted:#8c8472; --line:#0e0a06;
+    --display:"Archivo Black","Golos Text",sans-serif;
+    --golos:"Golos Text",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  body{ background:var(--cream); color:var(--ink); margin:0; font-family:var(--golos);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+
+  /* ── Header band — inner content aligned to the FAQ column (1000px) ──────── */
+  .head{ border-bottom:2px solid var(--line); background:var(--paper); padding:clamp(36px,5vw,68px) 0; }
+  .head-inner{ max-width:1000px; margin:0 auto; padding:0 24px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:32px; flex-wrap:wrap; }
+  .head .kick{ font-family:var(--mono); font-size:14px; font-weight:700;
+    letter-spacing:.22em; text-transform:uppercase; color:var(--terra); margin-bottom:18px; }
+  .head h1{ margin:0; font-family:var(--display); font-weight:900;
+    font-size:clamp(44px,7vw,104px); line-height:.88; letter-spacing:-.04em; text-transform:uppercase; }
+  .head .note{ font-family:var(--golos); font-weight:500; font-size:clamp(15px,1.4vw,18px);
+    line-height:1.5; color:var(--muted); max-width:34ch; text-wrap:pretty; }
+  .head .note a{ color:var(--terra); font-weight:700; text-decoration:none; }
+
+  /* ── FAQ body ───────────────────────────────────────────── */
+  .faq{ max-width:1000px; margin:0 auto; padding:clamp(34px,5vw,64px) 24px clamp(48px,6vw,88px); }
+  .group{ margin-bottom:clamp(34px,4vw,52px); }
+  .group:last-child{ margin-bottom:0; }
+  .group-h{ display:flex; align-items:baseline; gap:14px; margin-bottom:18px;
+    font-family:var(--mono); font-size:13px; font-weight:700; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--muted); }
+  .group-h::after{ content:""; flex:1; height:2px; background:rgba(14,10,6,.16); }
+  .group-h .n{ color:var(--terra); }
+
+  .item{ border:2px solid var(--line); background:var(--paper); margin-bottom:-2px; }
+  .q{ width:100%; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:18px;
+    padding:22px 26px; background:transparent; border:0; cursor:pointer; text-align:left;
+    font-family:var(--golos); color:var(--ink); }
+  .q .qn{ font-family:var(--mono); font-size:14px; font-weight:700; letter-spacing:.06em; color:var(--terra); }
+  .q .qt{ font-weight:700; font-size:clamp(17px,1.6vw,22px); line-height:1.25; letter-spacing:-.01em; }
+  .q .ind{ position:relative; width:26px; height:26px; flex:none; border:2px solid var(--line); }
+  .q .ind::before,.q .ind::after{ content:""; position:absolute; background:var(--ink);
+    left:50%; top:50%; transform:translate(-50%,-50%); }
+  .q .ind::before{ width:12px; height:2px; }
+  .q .ind::after{ width:2px; height:12px; transition:transform .2s ease,opacity .2s ease; }
+  .item.open .q{ background:var(--ink); color:var(--paper); }
+  .item.open .q .qt{ color:var(--paper); }
+  .item.open .q .ind{ border-color:var(--paper); }
+  .item.open .q .ind::before{ background:var(--terra); }
+  .item.open .q .ind::after{ opacity:0; transform:translate(-50%,-50%) rotate(90deg); }
+  .item:hover:not(.open) .q .qt{ color:var(--terra-dk); }
+  .a{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .24s ease; }
+  .item.open .a{ grid-template-rows:1fr; }
+  .a-inner{ overflow:hidden; }
+  .a p{ margin:0; padding:22px 26px 26px; max-width:64ch; border-top:2px solid var(--line);
+    font-family:var(--golos); font-weight:400; font-size:clamp(16px,1.3vw,18px);
+    line-height:1.62; color:#2c261f; text-wrap:pretty; }
+  .a p .em{ font-weight:700; color:var(--ink); }
+  .a p a{ color:var(--terra); font-weight:700; text-decoration:none; }
+  .a p code{ font-family:var(--mono); font-size:.92em; font-weight:700; background:var(--cream);
+    border:1px solid rgba(14,10,6,.2); padding:1px 6px; color:var(--ink); }
+
+  @media (max-width:620px){
+    .q{ padding:18px 18px; gap:12px; }
+    .a p{ padding:18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== REAL MAIN-PAGE HEADER (live site; no wordmark hero, FAQ active) ===== -->
+<header class="header"><div class="header-meta"><span class="header-meta-label">EST. 2023 · WEEK 25/26</span><a class="header-logo-compact" href="/uk">MAJSTR<span class="wordmark-dot">.</span></a><nav class="header-nav"><a class="" href="/uk">Пошук</a><button type="button" class="nav-item">Додати майстра</button><a class="active" href="/uk/faq">FAQ</a><a class="" href="/uk/about">Про нас</a></nav><div class="header-controls"><nav class="lang-switcher" aria-label="Language"><div class="lang-more"><button class="lang-btn active lang-current" aria-haspopup="menu" aria-expanded="false">UA ▾</button></div></nav><button type="button" class="cta-header" aria-label="Доєднатися">Доєднатися</button></div><div class="header-bar-actions"><button type="button" class="burger-open" aria-label="Open menu">≡</button><button type="button" class="cta-header" aria-label="Доєднатися">Доєднатися</button></div></div></header>
+
+<!-- HEADER BAND -->
+<section class="head">
+  <div class="head-inner">
+    <div>
+      <div class="kick">Поширені запитання</div>
+      <h1>FAQ</h1>
+    </div>
+    <p class="note">Не знайшли відповідь? Напишіть мені в телеграм <a href="https://t.me/wondercooler">@wondercooler</a></p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<main class="faq" id="faq">
+  <div class="group">
+    <div class="group-h"><span class="n">01</span> Дані та довіра</div>
+    <div class="item">
+      <button class="q"><span class="qn">01</span><span class="qt">Звідки у вас дані?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>З телеграм-чатів і груп у соцмережах — там, де майстри розміщують оголошення, а учасники діляться рекомендаціями. Усі дані ми опрацьовуємо вручну й публікуємо лише відкриту інформацію з публічного профілю та повідомлень.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">02</span><span class="qt">Що означає «перевірено»?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Що майстер прив’язав свій телеграм-акаунт до картки на сайті. <span class="em">Майстри з позначкою «перевірено»</span> можуть редагувати, приховувати й видаляти свої профілі та завжди показуються першими в пошуку.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">03</span><span class="qt">А якщо майстер не «перевірений»?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Усі майстри проходять модерацію і є реальними людьми зі спільноти. Неперевірені майстри можуть поки що не знати про свою картку — або знати, але ще не пройти перевірку. Ми поступово пишемо кожному, кого додаємо на сайт.</p></div></div>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-h"><span class="n">02</span> Ваш профіль</div>
+    <div class="item">
+      <button class="q"><span class="qn">04</span><span class="qt">Як додати свій профіль?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Натисніть кнопку «Приєднатися» у верхньому правому куті й створіть запис через телеграм-бота. Картка з’явиться на сайті після перевірки модератором.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">05</span><span class="qt">Як додати іншого майстра?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Це працює в бета-режимі — надішліть повідомлення <code>@majstr_bot</code> і у вільній формі опишіть інформацію, наприклад: «Ольга, нотаріус у Мілані, робить нотаріально завірені переклади та представництво в суді. Телефон такий-то». Модератори перевірять картку й опублікують її на сайті.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">06</span><span class="qt">Що якщо я не хочу, щоб мій профіль був на сайті?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Видалити картку можна за пару кліків: натисніть жовту плашку «Це ваша картка?» у профілі майстра, підтвердьте свій телеграм-акаунт і виберіть «Видалити профіль». Або напишіть мені в телеграм <span class="em">@wondercooler</span>, якщо не хочете користуватися ботом. Ваші дані назавжди видаляються з бази.</p></div></div>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-h"><span class="n">03</span> Питання від майстрів</div>
+    <div class="item">
+      <button class="q"><span class="qn">07</span><span class="qt">Я надаю послуги онлайн, яке місто мені обирати?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Наш сервіс вирішує проблему пошуку фахівців офлайн.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">08</span><span class="qt">У мене сервіс по всій Італії, я виїзний фотограф / перевізник — яке місто вказувати?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Виберіть одне місто — те, де живете, або найближче велике до вас. Політика сервісу — <span class="em">«один майстер — одне місто»</span>. Можливо, згодом ми це змінимо.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">09</span><span class="qt">Чому немає моєї професії?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Ми додаємо фахівців першої необхідності: це питання медицини, побуту, сервісів краси та здоров’я, допомоги з документами та переїздом. Можливо, згодом ми додамо інші професії, але поки що пріоритети такі. Якщо ви впевнені, що ваша професія має бути на сайті, напишіть у телеграм <span class="em">@wondercooler</span>.</p></div></div>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-h"><span class="n">04</span> Юридичні та фінансові питання</div>
+    <div class="item">
+      <button class="q"><span class="qn">10</span><span class="qt">Я не веду комерційної діяльності / не податковий резидент Італії</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Розміщення картки не означає, що майстер веде комерційну діяльність в Італії — про це зазначено в політиці конфіденційності. Ми не робимо жодних перевірок щодо цього: майстер може бути волонтером, надавати послуги за бартером або бути самозайнятим.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">11</span><span class="qt">Чи публікуєте ви ціни на послуги майстрів?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Ми не публікуємо ціни на послуги майстрів, навіть якщо знайшли таку інформацію у відкритому доступі, бо не можемо гарантувати її точність та актуальність. Будь-який майстер може вказати свої розцінки самостійно, підтвердивши профіль і відредагувавши картку. У такому разі майстер сам відповідає за точність і достовірність даних.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">12</span><span class="qt">Як ви обробляєте дані?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Ми зберігаємо повідомлення з телеграм-чатів, знайдені за ключовими словами, що містять оголошення про надання послуг або рекомендацію фахівця, який такі послуги надає. Ми беремо дані лише з відкритих для всіх користувачів чатів і груп — по суті, спрощуємо пошук тим, у кого немає часу вступати в десятки спільнот, шукати або питати рекомендації й чекати на відповідь спільноти. Детальніше й юридичною мовою можна почитати в розділі <a href="/uk/privacy">політики конфіденційності</a>.</p></div></div>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-h"><span class="n">05</span> Телеграм-бот</div>
+    <div class="item">
+      <button class="q"><span class="qn">13</span><span class="qt">Навіщо потрібен телеграм-бот?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Щоб створити або змінити профіль на сайті. Телеграм — найпопулярніший спосіб спілкування у спільноті, тож ми вирішили використати його як логін для реєстрації. Це ще й захист від шахрайства — <span class="em">одна картка — один телеграм-акаунт</span>.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">14</span><span class="qt">Яку інформацію запитує телеграм-бот?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Бот бачить лише ваш публічний профіль (ті дані, які в налаштуваннях приватності Telegram позначені як «видно всім»). Доступу до чатів, листування чи інших особистих даних немає. Під час створення профілю ви можете за бажанням поділитися номером телефону — це необов’язково, якщо не хочете, просто не надавайте доступ.</p></div></div>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-h"><span class="n">06</span> Інше</div>
+    <div class="item">
+      <button class="q"><span class="qn">15</span><span class="qt">Чому на сайті немає перевізників в Україну?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Ми думали над цим і вирішили поки що не додавати перевізників. Можливо, згодом наша політика зміниться.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">16</span><span class="qt">Чи є мобільний застосунок?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Можливо, згодом я зроблю застосунок. Поки що він доступний у Telegram.</p></div></div>
+    </div>
+    <div class="item">
+      <button class="q"><span class="qn">17</span><span class="qt">Як поставити рейтинг?</span><span class="ind"></span></button>
+      <div class="a"><div class="a-inner"><p>Скоро реалізуємо таку можливість для перевірених користувачів.</p></div></div>
+    </div>
+  </div>
+</main>
+
+<!-- ===== REAL MAIN-PAGE FOOTER (live site) ===== -->
+<footer class="footer"><div class="footer-inner"><div class="footer-big">2 400+<br><span class="footer-terra" style="opacity:1">UKRAINIAN</span><br>CRAFTSMEN.<span class="footer-meta">© MAJSTR · MADE FOR THE COMMUNITY</span></div><div class="footer-top"><div class="footer-col"><h4>Platform</h4><a href="/uk">Пошук</a><button type="button" class="footer-link">Додати майстра</button><a href="/uk/faq">FAQ</a></div><div class="footer-col"><h4>Legal</h4><a href="/uk/privacy">Політика конфіденційності</a><span>Умови використання</span><span>Політика модерації</span><span>Зворотній звʼязок</span></div><div class="footer-col"><h4>Community</h4><a href="https://t.me/majstr_bot">Telegram Bot</a></div></div><div class="footer-bottom"><span>© 2025 Majstr. Всі права захищені.</span><span>Зроблено з ❤️ 🇺🇦 для української громади</span></div></div></footer>
+
+<script>
+  document.getElementById('faq').addEventListener('click', e=>{
+    const q = e.target.closest('.q'); if(!q) return;
+    q.closest('.item').classList.toggle('open');
+  });
+  document.querySelector('.item').classList.add('open');
+</script>
+</body>
+</html>
