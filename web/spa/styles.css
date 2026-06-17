@@ -116,8 +116,7 @@ img {
   cursor: pointer;
   white-space: nowrap;
 }
-.header-nav a.active,
-.header-nav a:first-child {
+.header-nav a.active {
   background: var(--ink);
   color: var(--paper);
 }

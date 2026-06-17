@@ -11,14 +11,17 @@ import Root from "./components/Root";
 export default function AppShell({
   seed,
   children,
+  showWordmark = true,
 }: {
   // Partial<State> from the server (typed loosely to avoid cross-package friction)
   seed: Record<string, unknown>;
   children: ReactNode;
+  // Content pages (About, etc.) hide the big search/main-page wordmark hero.
+  showWordmark?: boolean;
 }) {
   return (
     <MasterContextProvider initial={seed}>
-      <Root>{children}</Root>
+      <Root showWordmark={showWordmark}>{children}</Root>
     </MasterContextProvider>
   );
 }

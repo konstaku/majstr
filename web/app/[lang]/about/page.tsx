@@ -75,7 +75,7 @@ export default async function AboutPage({
   const seed = { lang, countrySet: false, loading: false };
 
   return (
-    <AppShell seed={seed}>
+    <AppShell seed={seed} showWordmark={false}>
       <main className="about-page">
         <div className="about-inner">
           <div className="about-kicker">Про нас</div>
