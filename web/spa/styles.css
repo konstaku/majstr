@@ -2908,10 +2908,12 @@ img {
 }
 
 /* ── About page ─────────────────────────────────────────────────────────────
-   Typefaces match the design mockup: display = Archivo Black (Latin) + Golos
-   Text (Cyrillic, via --font-display, heavy 800) so "ЯК З'ЯВИВСЯ MAJSTR" is
-   uniformly bold; running text = Golos Text (--font-golos-body). 720px column,
-   founder photo with the site's ink↔paper duotone. */
+   Display = Archivo Black (Latin) + Golos Text (Cyrillic, via --font-display,
+   heavy 800) so "ЯК З'ЯВИВСЯ MAJSTR" + the caption name are uniformly bold.
+   Running text uses --font-body (DM Sans): the mockup uses Golos for body, but
+   loading a sub-800 Golos weight poisons the shared "Golos Text" family and
+   thins all display Cyrillic site-wide, so body stays on the site body font.
+   720px column, founder photo with the site's ink↔paper duotone. */
 .about-page { background: var(--cream); }
 .about-inner { max-width: 720px; margin: 0 auto; padding: 56px 40px 96px; }
 .about-kicker {
@@ -2925,11 +2927,11 @@ img {
 }
 .about-h1-accent { color: var(--terra); }
 .about-lead {
-  font-family: var(--font-golos-body); font-weight: 600;
+  font-family: var(--font-body); font-weight: 600;
   font-size: clamp(20px, 2.4vw, 28px); line-height: 1.32; letter-spacing: -0.01em;
   color: var(--ink); margin: 0 0 32px;
 }
-.about-body { font-family: var(--font-golos-body); font-weight: 400; font-size: 17px; line-height: 1.66; color: #2c261f; }
+.about-body { font-family: var(--font-body); font-weight: 400; font-size: 17px; line-height: 1.66; color: #2c261f; }
 .about-body p { margin: 0 0 18px; }
 .about-body strong { font-weight: 600; color: var(--ink); }
 .about-portrait { float: right; width: 230px; margin: 4px 0 20px 36px; }
@@ -2948,7 +2950,7 @@ img {
 }
 .about-cap { margin-top: 10px; }
 .about-cap-name {
-  display: block; font-family: var(--font-golos-body); font-weight: 800;
+  display: block; font-family: var(--font-display);
   font-size: 15px; letter-spacing: -0.01em; line-height: 1; color: var(--ink);
 }
 .about-cap-role {

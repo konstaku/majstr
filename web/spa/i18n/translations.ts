@@ -1,5 +1,5 @@
 export type LangTranslations = {
-  nav: { search: string; addMaster: string; joinAsMaster: string; faq: string; howItWorks: string; forBusiness: string };
+  nav: { search: string; addMaster: string; joinAsMaster: string; faq: string; howItWorks: string; forBusiness: string; about?: string };
   footer: {
     privacy: string;
     terms: string;
@@ -57,7 +57,7 @@ export type LangTranslations = {
 
 export const translations: Record<string, LangTranslations> = {
   uk: {
-    nav: { search: "Пошук", addMaster: "Додати майстра", joinAsMaster: "Доєднатися", faq: "FAQ", howItWorks: "Як це працює", forBusiness: "Для бізнесу" },
+    nav: { search: "Пошук", addMaster: "Додати майстра", joinAsMaster: "Доєднатися", faq: "FAQ", howItWorks: "Як це працює", forBusiness: "Для бізнесу", about: "Про нас" },
     footer: {
       privacy: "Політика конфіденційності",
       terms: "Умови використання",
@@ -134,7 +134,7 @@ export const translations: Record<string, LangTranslations> = {
   },
 
   en: {
-    nav: { search: "Search", addMaster: "Add master", joinAsMaster: "Join as master", faq: "FAQ", howItWorks: "How it works", forBusiness: "For business" },
+    nav: { search: "Search", addMaster: "Add master", joinAsMaster: "Join as master", faq: "FAQ", howItWorks: "How it works", forBusiness: "For business", about: "About" },
     footer: {
       privacy: "Privacy Policy",
       terms: "Terms of use",
@@ -366,7 +366,7 @@ export const translations: Record<string, LangTranslations> = {
 };
 
 translations.ru = {
-  nav: { search: "Поиск", addMaster: "Добавить мастера", joinAsMaster: "Стать мастером", faq: "FAQ", howItWorks: "Как это работает", forBusiness: "Для бизнеса" },
+  nav: { search: "Поиск", addMaster: "Добавить мастера", joinAsMaster: "Стать мастером", faq: "FAQ", howItWorks: "Как это работает", forBusiness: "Для бизнеса", about: "О нас" },
   footer: {
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",

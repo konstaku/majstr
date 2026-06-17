@@ -151,7 +151,7 @@ export default function Root({ children }: { children?: ReactNode }) {
             <Link href={`/${lang}`} className={pathname === `/${lang}` ? "active" : ""}>{t("nav.search")}</Link>
             {AddMasterLink}
             <span className="nav-item inactive">{t("nav.howItWorks")}</span>
-            <span className="nav-item inactive">{t("nav.forBusiness")}</span>
+            <Link href={`/${lang}/about`} className={pathname === `/${lang}/about` ? "active" : ""}>{t("nav.about")}</Link>
           </nav>
 
           <div className="header-controls">
@@ -204,6 +204,7 @@ export default function Root({ children }: { children?: ReactNode }) {
               {t("nav.addMaster")}
             </button>
           </li>
+          <li><Link href={`/${lang}/about`}>{t("nav.about")}</Link></li>
           <li><span className="inactive">{t("nav.faq")}</span></li>
           <li className="burger-controls" onClick={(e) => e.stopPropagation()}>
             <CountryToggle

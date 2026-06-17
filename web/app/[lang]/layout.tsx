@@ -40,17 +40,6 @@ const golos = Golos_Text({
   variable: "--font-golos",
   preload: false,
 });
-// Body-copy weights of Golos Text (latin + cyrillic) for the About page, which
-// uses Golos for running text per its design. Kept separate from the display
-// `golos` above (pinned to 800) so body weights never thin out display Cyrillic.
-// preload:false — only the About route uses it.
-const golosBody = Golos_Text({
-  weight: ["400", "600", "800"],
-  subsets: ["latin", "cyrillic"],
-  display: "swap",
-  variable: "--font-golos-body",
-  preload: false,
-});
 const dmSans = DM_Sans({
   subsets: ["latin"],
   style: ["normal", "italic"],
@@ -64,7 +53,7 @@ const jetbrains = JetBrains_Mono({
   preload: false,
 });
 
-const fontVars = `${archivo.variable} ${golos.variable} ${golosBody.variable} ${dmSans.variable} ${jetbrains.variable}`;
+const fontVars = `${archivo.variable} ${golos.variable} ${dmSans.variable} ${jetbrains.variable}`;
 
 const GTM_ID = "GTM-MB2CPXFD";
 // Direct GA4 (gtag). The measurement ID is public (it ships in client JS), so a
