@@ -10,7 +10,7 @@ import {
 } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
 import { cityHubDescription, professionHubDescription } from "@/lib/content";
-import { abs } from "@/lib/urls";
+import { abs, DEFAULT_OG_IMAGE } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
 
@@ -68,7 +68,7 @@ export async function generateMetadata({
       description,
       robots: isIndexable(lang) ? undefined : { index: false, follow: true },
       alternates: { canonical: abs(`/${lang}/${city.id}`), languages: langAlt(city.id) },
-      openGraph: { title, description, locale: OG_LOCALE[lang], type: "website" },
+      openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
     };
   }
   const { lang, cat } = r;
@@ -85,7 +85,7 @@ export async function generateMetadata({
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: { canonical: abs(`/${lang}/${cat.id}`), languages: langAlt(cat.id) },
-    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website" },
+    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
   };
 }
 
