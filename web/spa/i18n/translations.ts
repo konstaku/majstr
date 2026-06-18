@@ -47,7 +47,7 @@ export type LangTranslations = {
   browse: { label: string; allCategories: string; browseLabel: string };
   results: { found: string; empty: string; emptyCity: string; tryChanging: string; sortedByRating: string };
   modal: { noAbout: string; languages: string; about: string; skills: string; contact: string };
-  masterCard: { details: string; noReviews: string; verified: string; memberSince: string };
+  masterCard: { details: string; noReviews: string; verified: string; verifiedBadge: string; memberSince: string };
   badge: { newThisWeek: string; recentlyAdded: string };
   cta: { microcopy: string };
   login: { loading: string; error: string; home: string };
@@ -117,7 +117,7 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Навички",
       contact: "Зв'язатися",
     },
-    masterCard: { details: "OPEN", noReviews: "Поки немає відгуків", verified: "Профіль підтверджено", memberSince: "Учасник з" },
+    masterCard: { details: "OPEN", noReviews: "Поки немає відгуків", verified: "Профіль підтверджено", verifiedBadge: "Перевірено", memberSince: "Учасник з" },
     badge: { newThisWeek: "Новий цього тижня", recentlyAdded: "Щойно доданий" },
     cta: { microcopy: "3 хв · Безкоштовно · Telegram" },
     login: {
@@ -194,7 +194,7 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Skills",
       contact: "Contact",
     },
-    masterCard: { details: "OPEN", noReviews: "No reviews yet", verified: "Profile verified", memberSince: "Member since" },
+    masterCard: { details: "OPEN", noReviews: "No reviews yet", verified: "Profile verified", verifiedBadge: "Verified", memberSince: "Member since" },
     badge: { newThisWeek: "New this week", recentlyAdded: "Recently added" },
     cta: { microcopy: "3 min · Free · Via Telegram" },
     login: {
@@ -271,7 +271,7 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Competenze",
       contact: "Contatta",
     },
-    masterCard: { details: "OPEN", noReviews: "Nessuna recensione", verified: "Profilo verificato", memberSince: "Membro da" },
+    masterCard: { details: "OPEN", noReviews: "Nessuna recensione", verified: "Profilo verificato", verifiedBadge: "Verificato", memberSince: "Membro da" },
     badge: { newThisWeek: "Nuovo questa settimana", recentlyAdded: "Aggiunto di recente" },
     cta: { microcopy: "3 min · Gratis · Via Telegram" },
     login: {
@@ -348,7 +348,7 @@ export const translations: Record<string, LangTranslations> = {
       skills: "Competências",
       contact: "Contactar",
     },
-    masterCard: { details: "OPEN", noReviews: "Sem avaliações", verified: "Perfil verificado", memberSince: "Membro desde" },
+    masterCard: { details: "OPEN", noReviews: "Sem avaliações", verified: "Perfil verificado", verifiedBadge: "Verificado", memberSince: "Membro desde" },
     badge: { newThisWeek: "Novo esta semana", recentlyAdded: "Adicionado recentemente" },
     cta: { microcopy: "3 min · Grátis · Via Telegram" },
     login: {
@@ -426,7 +426,7 @@ translations.ru = {
     skills: "Навыки",
     contact: "Связаться",
   },
-  masterCard: { details: "OPEN", noReviews: "Пока нет отзывов", verified: "Профиль подтверждён", memberSince: "Участник с" },
+  masterCard: { details: "OPEN", noReviews: "Пока нет отзывов", verified: "Профиль подтверждён", verifiedBadge: "Проверено", memberSince: "Участник с" },
   badge: { newThisWeek: "Новый на этой неделе", recentlyAdded: "Недавно добавлен" },
   cta: { microcopy: "3 мин · Бесплатно · Через Telegram" },
   login: {
@@ -503,7 +503,7 @@ translations.de = {
     skills: "Fähigkeiten",
     contact: "Kontakt",
   },
-  masterCard: { details: "OPEN", noReviews: "Noch keine Bewertungen", verified: "Profil bestätigt", memberSince: "Dabei seit" },
+  masterCard: { details: "OPEN", noReviews: "Noch keine Bewertungen", verified: "Profil bestätigt", verifiedBadge: "Bestätigt", memberSince: "Dabei seit" },
   badge: { newThisWeek: "Neu diese Woche", recentlyAdded: "Kürzlich hinzugefügt" },
   cta: { microcopy: "3 Min · Kostenlos · Über Telegram" },
   login: {
@@ -580,7 +580,7 @@ translations.fr = {
     skills: "Compétences",
     contact: "Contact",
   },
-  masterCard: { details: "OPEN", noReviews: "Pas encore d'avis", verified: "Profil vérifié", memberSince: "Membre depuis" },
+  masterCard: { details: "OPEN", noReviews: "Pas encore d'avis", verified: "Profil vérifié", verifiedBadge: "Vérifié", memberSince: "Membre depuis" },
   badge: { newThisWeek: "Nouveau cette semaine", recentlyAdded: "Ajouté récemment" },
   cta: { microcopy: "3 min · Gratuit · Via Telegram" },
   login: {
@@ -657,7 +657,7 @@ translations.tr = {
     skills: "Beceriler",
     contact: "İletişim",
   },
-  masterCard: { details: "OPEN", noReviews: "Henüz değerlendirme yok", verified: "Profil doğrulandı", memberSince: "Üyelik tarihi" },
+  masterCard: { details: "OPEN", noReviews: "Henüz değerlendirme yok", verified: "Profil doğrulandı", verifiedBadge: "Doğrulandı", memberSince: "Üyelik tarihi" },
   badge: { newThisWeek: "Bu hafta yeni", recentlyAdded: "Yakın zamanda eklendi" },
   cta: { microcopy: "3 dk · Ücretsiz · Telegram üzerinden" },
   login: {
@@ -734,7 +734,7 @@ translations.es = {
     skills: "Habilidades",
     contact: "Contacto",
   },
-  masterCard: { details: "OPEN", noReviews: "Aún sin valoraciones", verified: "Perfil verificado", memberSince: "Miembro desde" },
+  masterCard: { details: "OPEN", noReviews: "Aún sin valoraciones", verified: "Perfil verificado", verifiedBadge: "Verificado", memberSince: "Miembro desde" },
   badge: { newThisWeek: "Nuevo esta semana", recentlyAdded: "Añadido recientemente" },
   cta: { microcopy: "3 min · Gratis · Vía Telegram" },
   login: {
