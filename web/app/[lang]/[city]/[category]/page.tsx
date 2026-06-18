@@ -11,7 +11,7 @@ import {
   cityPrep,
 } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
-import { abs } from "@/lib/urls";
+import { abs, DEFAULT_OG_IMAGE } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
 
@@ -79,7 +79,7 @@ export async function generateMetadata({
       canonical: abs(`/${lang}/${city.id}/${cat.id}`),
       languages: langAlt(city.id, cat.id),
     },
-    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website" },
+    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
   };
 }
 

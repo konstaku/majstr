@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { isLang, isIndexable, LANGS, OG_LOCALE, type Lang } from "@/lib/i18n";
-import { abs, languageAlternates } from "@/lib/urls";
+import { abs, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Faq from "@/spa/components/Faq";
 
@@ -50,7 +50,7 @@ export async function generateMetadata({
       canonical: abs(faqPath(lang)),
       languages: languageAlternates(faqPath),
     },
-    openGraph: { title, description, url: abs(faqPath(lang)), locale: OG_LOCALE[lang], type: "website" },
+    openGraph: { title, description, url: abs(faqPath(lang)), locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
   };
 }
 

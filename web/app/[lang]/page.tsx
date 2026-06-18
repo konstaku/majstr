@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { LANGS, isLang, isIndexable, OG_LOCALE, type Lang } from "@/lib/i18n";
 import { getDataset } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
-import { abs, homePath, languageAlternates } from "@/lib/urls";
+import { abs, homePath, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
 import { SITE_URL } from "@/lib/config";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
@@ -54,7 +54,7 @@ export async function generateMetadata({
       canonical: abs(homePath(lang)),
       languages: languageAlternates((l) => homePath(l)),
     },
-    openGraph: { title, description, url: abs(homePath(lang)), locale: OG_LOCALE[lang], type: "website" },
+    openGraph: { title, description, url: abs(homePath(lang)), locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
   };
 }
 

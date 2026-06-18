@@ -1,16 +1,10 @@
-import { notFound } from "next/navigation";
-import type { Metadata } from "next";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  isLang,
-  isIndexable,
-  LANGS,
-  OG_LOCALE,
-  type Lang,
-} from "@/lib/i18n";
-import { abs, homePath, languageAlternates } from "@/lib/urls";
-import AppShell from "@/spa/AppShell";
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import Image from 'next/image';
+import { isLang, isIndexable, LANGS, OG_LOCALE, type Lang } from '@/lib/i18n';
+import { abs, homePath, languageAlternates, DEFAULT_OG_IMAGE } from '@/lib/urls';
+import AppShell from '@/spa/AppShell';
 
 export const revalidate = 86400;
 
@@ -21,20 +15,20 @@ export function generateStaticParams() {
 }
 
 function meta(lang: Lang) {
-  if (lang === "ru")
+  if (lang === 'ru')
     return {
-      title: "О нас — Majstr",
+      title: 'О нас — Majstr',
       description:
-        "Почему появился Majstr: личная история основателя и каталог украино- и русскоязычных специалистов в Италии, собранный из рекомендаций сообщества.",
+        'Почему появился Majstr: личная история основателя и каталог украино- и русскоязычных специалистов в Италии, собранный из рекомендаций сообщества.',
     };
-  if (lang === "en")
+  if (lang === 'en')
     return {
-      title: "About — Majstr",
+      title: 'About — Majstr',
       description:
         "Why Majstr exists: the founder's story and a curated directory of Ukrainian- and Russian-speaking specialists in Italy, built from community recommendations.",
     };
   return {
-    title: "Про нас — Majstr",
+    title: 'Про нас — Majstr',
     description:
       "Чому з'явився Majstr: особиста історія засновника й каталог україно- та російськомовних фахівців в Італії, зібраний із рекомендацій спільноти.",
   };
@@ -57,7 +51,14 @@ export async function generateMetadata({
       canonical: abs(aboutPath(lang)),
       languages: languageAlternates(aboutPath),
     },
-    openGraph: { title, description, url: abs(aboutPath(lang)), locale: OG_LOCALE[lang], type: "website" },
+    openGraph: {
+      title,
+      description,
+      url: abs(aboutPath(lang)),
+      locale: OG_LOCALE[lang],
+      type: 'website',
+      images: [DEFAULT_OG_IMAGE],
+    },
   };
 }
 
@@ -84,8 +85,8 @@ export default async function AboutPage({
           </h1>
 
           <p className="about-lead">
-            Мене звуть Константин, я живу в Італії з 2023 року. Я люблю цю країну, але
-            кілька разів потрапляв у неприємні ситуації.
+            Мене звуть Константин, я живу в Італії з 2023 року. Я люблю цю
+            країну, але кілька разів потрапляв у неприємні ситуації.
           </p>
 
           <div className="about-body">
@@ -106,23 +107,26 @@ export default async function AboutPage({
             </figure>
 
             <p>
-              Шукав квартиру у ріелторів, які не хотіли її здавати, переплачував за
-              ремонт автомобіля, а одного разу опинився в швидкій через те, що лікарка
-              мене не розуміла і призначала таблетки замість обстеження.
+              Шукав квартиру у ріелторів, які не хотіли її здавати, переплачував
+              за ремонт автомобіля, а одного разу опинився в швидкій через те,
+              що лікарка мене не розуміла і призначала пігулки замість
+              обстеження.
             </p>
             <p>
-              Вірю, що цього б не сталося, якби я знав контакти лікаря, ріелтора та інших
-              фахівців, <strong>з якими ми говоримо однією мовою</strong>.
+              Вірю, що цього б не сталося, якби я знав контакти лікаря, ріелтора
+              та інших фахівців,{' '}
+              <strong>з якими ми говоримо однією мовою</strong>.
             </p>
             <p>
-              Я зробив сервіс majstr: курований каталог україномовних та російськомовних
-              фахівців, заснований на рекомендаціях людей у телеграм-чатах та групах
-              соцмереж. Я починав це як каталог особистих рекомендацій, та згодом вирішив
-              зробити версію, відкриту для спільноти.
+              Я зробив сервіс majstr: курований каталог україномовних та
+              російськомовних фахівців, заснований на рекомендаціях людей у
+              телеграм-чатах та групах соцмереж. Я починав це як каталог
+              особистих рекомендацій, та згодом вирішив зробити версію, відкриту
+              для спільноти.
             </p>
             <p>
-              Вірю, що комусь це допоможе знайти потрібного спеціаліста, а спеціалістам —{" "}
-              <strong>своїх клієнтів</strong>.
+              Вірю, що комусь це допоможе знайти потрібного спеціаліста, а
+              спеціалістам — <strong>своїх клієнтів</strong>.
             </p>
           </div>
 

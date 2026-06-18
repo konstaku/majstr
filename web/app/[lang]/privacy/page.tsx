@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { isLang, type Lang } from "@/lib/i18n";
-import { abs, homePath, languageAlternates } from "@/lib/urls";
+import { abs, homePath, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
 import { API_BASE } from "@/lib/config";
 
 interface PolicySection {
@@ -55,6 +55,7 @@ export async function generateMetadata({
       title,
       url: abs(privacyPath(lang)),
       type: "website",
+      images: [DEFAULT_OG_IMAGE],
     },
   };
 }
