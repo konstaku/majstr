@@ -126,7 +126,7 @@ export default function MasterCard({ master, setShowModal, isNew }: MasterCardPr
                 className="master-card__badge master-card__badge--status master-card__badge--verified"
                 title={t("masterCard.verified")}
               >
-                VERIFIED
+                {t("masterCard.verifiedBadge")}
               </span>
             )}
             {statusBadge === "new" && (

@@ -252,7 +252,7 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                     padding: "3px 6px",
                   }}
                 >
-                  ✓ Verified
+                  ✓ {t("masterCard.verifiedBadge")}
                 </span>
               )}
             </div>

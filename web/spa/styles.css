@@ -903,6 +903,7 @@ img {
 .master-card__badge--verified {
   background: var(--terra);
   color: var(--paper);
+  text-transform: uppercase;
 }
 .master-card__badge--new {
   background: var(--paper);
