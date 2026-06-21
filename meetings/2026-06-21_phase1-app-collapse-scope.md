@@ -138,6 +138,24 @@ Both are env/DNS flips, no code revert needed.
   and treat 1a as complete at the state-layer unification. Tightens the boundary,
   avoids speculative drift.
 
+### 1b progress (branch `phase1-app-collapse`)
+Shared layer DONE + tsc-verified (catalogue build unchanged):
+- ✅ foundation: `surface/detect` + `telegram-global.d.ts`; unified surface-aware
+  `api/client.ts` (Next-adapted, SSR-guarded); `useTranslation` gained `setLang`.
+- ✅ providers + UI: `surface/useTelegramContext` (+`telegram-sdk`, minus the unused
+  `@telegram-apps/sdk` dep), `ui/{ThemeBridge,usePopup,useHaptic,PrimaryCTA,
+  BackAffordance}`, `useAuthenticateUser`.
+- ✅ i18n: web/spa is now the single translations superset (added `nav.myCards`).
+
+REMAINING (the bulk — heavy react-router→next adaptation + runtime verification):
+- ⬜ port `onboarding/` (~15 files) + page-coupled `useClaimDeepLink`, `api/mining`,
+  `helpers/new-master-form`.
+- ⬜ port the 8 app pages (router → next/navigation + next/link).
+- ⬜ `app/(app)/layout.tsx` (providers + telegram-web-app.js Script + start_param routing).
+- ⬜ `app/(app)/*/page.tsx` route files.
+- ⬜ `middleware.ts` strict host separation.
+- ⬜ verify on preview deploy against `@majstr_dev_bot`; then 1c tests, 1d cutover.
+
 ## Estimate
 The single largest step in the France initiative — multi-day, best split across a
 short PR series (1a / 1b / 1c–1e). Not gating the France *data* (already live); it
