@@ -107,18 +107,39 @@ export function TelegramContextProvider({ children }: { children: ReactNode }) {
   const [snapshot, setSnapshot] = useState<TelegramContextValue>(WEB_DEFAULT);
 
   useEffect(() => {
-    setSnapshot(readSnapshot());
-    if (!isTMA()) return;
-    initTelegramSDK();
+    // The Telegram bridge (telegram-web-app.js) may not have executed yet when
+    // this effect runs — under Next the script doesn't block hydration the way
+    // Vite's classic <head> script did. A one-shot `if (!isTMA()) return` would
+    // then latch into "web" mode forever (no user → name never prefills → the
+    // wizard's Next button stays disabled). So poll briefly for the bridge and
+    // wire up the moment it appears.
+    let cleanup: (() => void) | undefined;
 
-    const wa = window.Telegram?.WebApp;
-    if (!wa) return;
-    const refresh = () => setSnapshot(readSnapshot());
-    wa.onEvent("viewportChanged", refresh);
-    wa.onEvent("themeChanged", refresh);
+    const wire = (): boolean => {
+      const wa = window.Telegram?.WebApp;
+      setSnapshot(readSnapshot());
+      if (!wa || !isTMA()) return false;
+      initTelegramSDK();
+      const refresh = () => setSnapshot(readSnapshot());
+      wa.onEvent("viewportChanged", refresh);
+      wa.onEvent("themeChanged", refresh);
+      cleanup = () => {
+        wa.offEvent("viewportChanged", refresh);
+        wa.offEvent("themeChanged", refresh);
+      };
+      return true;
+    };
+
+    if (wire()) return () => cleanup?.();
+
+    // Bridge not ready — poll for up to ~3s (50ms × 60), then give up (web).
+    let tries = 0;
+    const id = setInterval(() => {
+      if (wire() || ++tries > 60) clearInterval(id);
+    }, 50);
     return () => {
-      wa.offEvent("viewportChanged", refresh);
-      wa.offEvent("themeChanged", refresh);
+      clearInterval(id);
+      cleanup?.();
     };
   }, []);
 
