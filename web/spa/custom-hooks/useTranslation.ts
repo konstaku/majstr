@@ -1,9 +1,10 @@
 import { useContext } from "react";
 import { MasterContext } from "../context";
+import { ACTIONS } from "../data/actions";
 import { translations } from "../i18n/translations";
 
 export function useTranslation() {
-  const { state } = useContext(MasterContext);
+  const { state, dispatch } = useContext(MasterContext);
   const lang = state.lang || "uk";
   const dict = translations[lang] ?? translations["uk"];
 
@@ -22,5 +23,13 @@ export function useTranslation() {
     return result.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? `{${k}}`);
   }
 
-  return { t, lang };
+  // Runtime language switch for the interactive app surfaces. Persists to
+  // localStorage (re-read on next mount by the no-seed provider) and updates
+  // state. The SEO catalogue is URL-driven and doesn't call this.
+  function setLang(newLang: string) {
+    if (typeof window !== "undefined") localStorage.setItem("lang", newLang);
+    dispatch({ type: ACTIONS.SET_LANGUAGE, payload: { lang: newLang } });
+  }
+
+  return { t, lang, setLang };
 }

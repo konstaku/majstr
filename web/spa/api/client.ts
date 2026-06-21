@@ -1,29 +1,64 @@
-// Web-only API client for the Next app (no Telegram-surface coupling — that
-// lives in the app routes which stay on the SPA in Phase A). Server-side reads
-// are done in lib/; this is the client-side fetch used by reused components
-// (e.g. Root's hydration-time refetch and auth-aware calls).
+import { isTMA } from "../surface/detect";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api.majstr.xyz";
 
 export interface ApiOpts {
+  // Centralised 401 handling. Mutation/protected flows want it (default).
+  // Soft auth checks (e.g. useAuthenticateUser probing /auth) opt out so a
+  // normal "not logged in" 401 doesn't trigger a redirect/close loop.
   redirectOn401?: boolean;
 }
 
+// Single fetch entry point. Adds the right auth header per surface:
+//   TMA  -> X-Telegram-Init-Data (verified server-side via HMAC)
+//   web  -> Authorization: <jwt from localStorage>
+// On the public catalogue, isTMA() is false, so this behaves exactly like the
+// previous web-only client (localStorage token path).
 export async function apiFetch(
   path: string,
   init: RequestInit = {},
-  _opts: ApiOpts = {}
+  { redirectOn401 = true }: ApiOpts = {}
 ): Promise<Response> {
   const headers = new Headers(init.headers);
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem("token");
-      if (raw) {
+
+  if (isTMA()) {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (initData) headers.set("X-Telegram-Init-Data", initData);
+  } else if (typeof window !== "undefined") {
+    const raw = localStorage.getItem("token");
+    if (raw) {
+      try {
         const token = JSON.parse(raw);
         if (token) headers.set("Authorization", token);
+      } catch {
+        /* malformed stored token — treat as unauthenticated */
       }
-    } catch {
-      /* malformed stored token — treat as unauthenticated */
     }
   }
-  return fetch(`${BASE}${path}`, { ...init, headers });
+
+  const res = await fetch(`${BASE}${path}`, { ...init, headers });
+
+  if (res.status === 401 && redirectOn401) {
+    onUnauthorized();
+  }
+  return res;
+}
+
+// 401 means the session is dead. On TMA, closing forces Telegram to hand
+// back fresh initData on next open. On web, drop the token and bounce to
+// login (unless we're already there).
+export function onUnauthorized(): void {
+  if (isTMA()) {
+    try {
+      window.Telegram?.WebApp?.close();
+    } catch {
+      /* noop */
+    }
+    return;
+  }
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("token");
+  if (!window.location.pathname.startsWith("/login")) {
+    window.location.href = "/login";
+  }
 }
