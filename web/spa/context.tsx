@@ -1,9 +1,31 @@
 "use client";
 
-import { createContext, Dispatch, ReactNode, useReducer } from "react";
+import {
+  createContext,
+  Dispatch,
+  ReactNode,
+  useEffect,
+  useReducer,
+} from "react";
 import { reducer } from "./reducer";
+import { ACTIONS } from "./data/actions";
 import type { State } from "./schema/state/state.schema";
 import type { Action } from "./reducer";
+
+// Languages the interactive app surfaces (onboarding/claim/etc.) may switch to.
+// The SEO catalogue is URL-driven (uk/ru/en) and ignores this.
+const KNOWN_LANGS = ["en", "uk", "ru", "it", "pt", "de", "fr", "tr", "es"];
+
+// Client-only: the saved language, else a supported browser language, else null.
+// Returns null during SSR so the first render matches the server (no hydration
+// mismatch) — the provider adopts it after mount instead.
+function clientLang(): string | null {
+  if (typeof window === "undefined") return null;
+  const saved = localStorage.getItem("lang");
+  if (saved) return saved;
+  const browser = navigator.language?.split("-")[0]?.toLowerCase();
+  return browser && KNOWN_LANGS.includes(browser) ? browser : null;
+}
 
 const BASE_STATE: State = {
   masters: [],
@@ -61,6 +83,18 @@ export function MasterContextProvider({
     lang: initial?.lang ?? "uk",
   };
   const [state, dispatch] = useReducer(reducer, seeded);
+
+  // App surfaces render WITHOUT a server seed (outside the SEO catalogue, which
+  // is URL-driven and never mutates lang). Only for them: after mount, adopt the
+  // saved/browser language (SSR-safe — see clientLang).
+  useEffect(() => {
+    if (initial) return;
+    const lang = clientLang();
+    if (lang && lang !== seeded.lang) {
+      dispatch({ type: ACTIONS.SET_LANGUAGE, payload: { lang } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <MasterContext.Provider value={{ state, dispatch }}>

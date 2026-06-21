@@ -87,6 +87,16 @@ export function reducer(state: State, { type, payload }: Action): State {
       };
     }
 
+    // Runtime language switch — used only by the interactive app surfaces
+    // (onboarding/claim/etc.). The SEO catalogue is URL-driven and never
+    // dispatches this.
+    case ACTIONS.SET_LANGUAGE: {
+      return {
+        ...state,
+        lang: payload.lang,
+      };
+    }
+
     default: {
       return state;
     }
