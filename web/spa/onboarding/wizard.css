@@ -1,0 +1,730 @@
+/* Standalone wizard screens (/onboard, /claim, /my-cards) render WITHOUT the
+   website header. styles.css is bundled app-wide, so its mobile rule
+   `body { padding-top: var(--bar-h) }` (which offsets the fixed site header on
+   ≤640px) still applies here — and because body's background is the brutalist
+   --cream, that 56px of padding shows as a beige stripe above the white wizard.
+   Neutralize it whenever a wizard is mounted: no header to offset, and the
+   page background should be the app/theme background, not --cream. */
+body:has(> #root > .wizard) {
+  padding-top: 0;
+  background: var(--app-bg);
+}
+
+.wizard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--app-bg);
+  color: var(--app-fg);
+  font-family: var(--font-mono, monospace);
+}
+
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 20px 8px;
+}
+
+.wizard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--app-border);
+  transition: background 0.2s;
+}
+
+.wizard-dot--active {
+  background: var(--app-accent);
+}
+
+.wizard-step-counter {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--app-hint);
+  letter-spacing: 0.04em;
+}
+
+.wizard-step-title {
+  padding: 8px 20px 16px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.wizard-body {
+  flex: 1;
+  padding: 0 20px 24px;
+}
+
+.wizard-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wizard-step-hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--app-hint);
+}
+
+/* ── Step fields ── */
+
+.wizard-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.wizard-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-fg);
+  letter-spacing: 0.03em;
+}
+
+.wizard-required {
+  color: var(--app-destructive);
+  margin-left: 2px;
+}
+
+.wizard-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  font-size: 16px;
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  box-sizing: border-box;
+  outline: none;
+  font-family: inherit;
+}
+
+.wizard-input:focus {
+  border-color: var(--app-accent);
+}
+
+.wizard-input--error {
+  border-color: var(--app-destructive);
+}
+
+.wizard-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--app-hint);
+  line-height: 1.4;
+}
+
+.wizard-field-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--app-destructive);
+}
+
+.wizard-readonly {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--app-secondary-bg);
+  color: var(--app-hint);
+  font-size: 15px;
+  border: 1.5px solid var(--app-border);
+}
+
+/* ── Picker button ── */
+
+.wizard-picker-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.wizard-picker-btn--placeholder {
+  color: var(--app-hint);
+}
+
+.wizard-picker-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wizard-picker-chevron {
+  font-size: 18px;
+  color: var(--app-hint);
+}
+
+/* ── Language chips ── */
+
+.wizard-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wizard-chip {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--app-border);
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.wizard-chip--active {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: var(--app-accent-fg);
+}
+
+/* ── Ghost buttons (photo actions) ── */
+
+.step-photo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.step-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--app-secondary-bg);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--app-border);
+  flex-shrink: 0;
+}
+
+.step-avatar-placeholder {
+  font-size: 36px;
+  color: var(--app-hint);
+}
+
+.step-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.wizard-ghost-btn {
+  background: none;
+  border: 1.5px solid var(--app-border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--app-link);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.wizard-ghost-btn--danger {
+  color: var(--app-destructive);
+  border-color: var(--app-destructive);
+}
+
+.wizard-ghost-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Skeleton ── */
+
+.wizard-skeleton {
+  height: 44px;
+  border-radius: 10px;
+  background: var(--app-secondary-bg);
+  margin-bottom: 16px;
+  animation: wizard-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes wizard-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── PickerSheet ── */
+
+.picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.picker-sheet {
+  width: 100%;
+  max-height: 80dvh;
+  background: var(--app-bg);
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--app-border);
+  flex-shrink: 0;
+}
+
+.picker-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.picker-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--app-hint);
+  padding: 4px 8px;
+}
+
+.picker-search-wrap {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--app-border);
+  flex-shrink: 0;
+}
+
+.picker-search {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  font-size: 15px;
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0 env(safe-area-inset-bottom, 0);
+}
+
+.picker-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.picker-item:last-child {
+  border-bottom: none;
+}
+
+.picker-item--selected .picker-item-label {
+  color: var(--app-accent);
+  font-weight: 600;
+}
+
+.picker-item-label {
+  font-size: 15px;
+  color: var(--app-fg);
+}
+
+.picker-item-sublabel {
+  font-size: 12px;
+  color: var(--app-hint);
+  margin-top: 2px;
+}
+
+.picker-empty {
+  padding: 24px 20px;
+  text-align: center;
+  color: var(--app-hint);
+  font-size: 14px;
+}
+
+/* ── Bio textarea ── */
+
+.wizard-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Hide progress dots while the bio textarea is focused — reclaim vertical space. */
+.wizard:has(.wizard-textarea:focus) .wizard-progress {
+  display: none;
+}
+
+.bio-counter {
+  font-size: 12px;
+  text-align: right;
+  margin-top: 4px;
+  transition: color 0.2s;
+}
+
+/* ── TagPicker ── */
+
+.tag-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-secondary-bg);
+  min-height: 52px;
+  align-items: center;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.tag-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--app-accent-fg);
+  font-size: 15px;
+  padding: 0 0 0 2px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.tag-chip-remove:hover {
+  opacity: 1;
+}
+
+.tag-chip-add {
+  background: none;
+  border: 1.5px dashed var(--app-border);
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--app-link);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tag-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.tag-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1.5px solid var(--app-accent);
+  border-radius: 10px;
+  font-size: 15px;
+  background: var(--app-secondary-bg);
+  color: var(--app-fg);
+  outline: none;
+  font-family: inherit;
+}
+
+.tag-input-confirm {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tag-input-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-suggestions-label {
+  font-size: 12px;
+  color: var(--app-hint);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.tag-suggestions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-suggestion-chip {
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1.5px solid var(--app-border);
+  background: var(--app-bg);
+  color: var(--app-fg);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tag-suggestion-chip:hover {
+  background: var(--app-secondary-bg);
+}
+
+/* ── Checkbox ── */
+
+.wizard-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--app-fg);
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.wizard-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--app-accent);
+  flex-shrink: 0;
+}
+
+.wizard-sync-error {
+  margin: 0 20px 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--app-destructive);
+  background: color-mix(in srgb, var(--app-destructive) 10%, transparent);
+  border-radius: 6px;
+}
+
+.wizard-placeholder-label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--app-border);
+  font-family: monospace;
+  border: 1px dashed var(--app-border);
+  padding: 32px 16px;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.wizard-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 28px;
+  min-height: 60vh;
+  gap: 12px;
+}
+
+.wizard-success-icon {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.wizard-success-title {
+  margin: 0;
+  font-size: 24px;
+  color: var(--app-fg);
+}
+
+.wizard-success-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--app-fg);
+  opacity: 0.85;
+  max-width: 320px;
+}
+
+/* ── Claim flow / My Cards (wizard-styled management screens) ── */
+.wizard-solid-btn {
+  width: 100%;
+  padding: 13px 18px;
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wizard-solid-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.wizard-card {
+  border: 1.5px solid var(--app-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: var(--app-secondary-bg);
+}
+.wizard-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.wizard-card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--app-fg);
+}
+.wizard-card-sub {
+  font-size: 13px;
+  color: var(--app-hint);
+  margin-bottom: 10px;
+}
+.wizard-status {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--app-hint);
+  white-space: nowrap;
+}
+.wizard-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wizard-photo-preview {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border: 1.5px solid var(--app-border);
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--app-secondary-bg);
+}
+.wizard-contact-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.wizard-contact-type {
+  flex: 0 0 38%;
+}
+.wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ── Inline edit form (My Cards) ── */
+.wizard-edit-form {
+  margin-top: 16px;
+}
+/* Subtle "← Назад" affordance — the only way out of edit mode at the top.
+   Deliberately low-key (no border, hint-colored) so it reads as a back link,
+   not a competing action. */
+.wizard-edit-head {
+  margin-bottom: 4px;
+}
+.wizard-edit-back {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--app-hint);
+  cursor: pointer;
+}
+.wizard-edit-back:hover {
+  color: var(--app-fg);
+}
+/* Quiet "Скасувати" beneath the Save button — leaves edit mode without
+   saving, without looking like a primary action. */
+.wizard-edit-cancel {
+  align-self: center;
+  margin-top: 10px;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--app-hint);
+  cursor: pointer;
+}
+.wizard-edit-cancel:hover:not(:disabled) {
+  color: var(--app-fg);
+}
+.wizard-edit-cancel:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.wizard-actions .wizard-ghost-btn {
+  flex: 1 1 auto;
+}
+/* Edit is the primary action — full-width and prominent. Delete is
+   secondary: content-sized and visibly smaller so it can't be hit by
+   mistake. */
+.wizard-actions .wizard-ghost-btn--primary {
+  flex: 1 1 100%;
+  padding: 11px 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.wizard-actions .wizard-ghost-btn--compact {
+  flex: 0 1 auto;
+  padding: 5px 12px;
+  font-size: 12px;
+}
