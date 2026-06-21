@@ -147,14 +147,22 @@ Shared layer DONE + tsc-verified (catalogue build unchanged):
   BackAffordance}`, `useAuthenticateUser`.
 - ✅ i18n: web/spa is now the single translations superset (added `nav.myCards`).
 
-REMAINING (the bulk — heavy react-router→next adaptation + runtime verification):
-- ⬜ port `onboarding/` (~15 files) + page-coupled `useClaimDeepLink`, `api/mining`,
+- ✅ onboarding wizard ported → `/onboard` builds in the (app) route group.
+  `(app)/layout.tsx` owns `<html>/<body>`, loads the TG bridge in `<head>`,
+  noindex; `AppProviders` = Telegram/Theme/Popup/Master(no-seed) stack. Ported
+  `useClaimDeepLink` (router→next), `analytics`, tag-suggestions; reconciled
+  `master.schema`; added `react-hook-form` to web/.
+
+REMAINING:
+- ⬜ port the other 7 pages: MyCards, ClaimCard, Profile, Admin, MiningReview,
+  Login, AddNewRecord (router→next/navigation + next/link) + `api/mining`,
   `helpers/new-master-form`.
-- ⬜ port the 8 app pages (router → next/navigation + next/link).
-- ⬜ `app/(app)/layout.tsx` (providers + telegram-web-app.js Script + start_param routing).
-- ⬜ `app/(app)/*/page.tsx` route files.
-- ⬜ `middleware.ts` strict host separation.
-- ⬜ verify on preview deploy against `@majstr_dev_bot`; then 1c tests, 1d cutover.
+- ⬜ `middleware.ts` strict host separation + Direct-Link `start_param` root routing
+  (startapp=onboard / claim-<id>).
+- ⬜ **verify `/onboard` on a preview deploy against `@majstr_dev_bot`** before
+  replicating the pattern across the remaining pages.
+- ⬜ 1c tests, 1d cutover (point app.majstr.xyz at Next, drop SPA_ORIGIN redirects),
+  1e delete frontend/, 1f auth hardening.
 
 ## Estimate
 The single largest step in the France initiative — multi-day, best split across a
