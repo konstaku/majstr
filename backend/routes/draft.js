@@ -4,6 +4,7 @@ const Profession = require('../database/schema/Profession');
 const Location = require('../database/schema/Location');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
 const { masterWebUrl } = require('../helpers/masterUrl');
+const { isKnownCountry } = require('../helpers/validateCountry');
 const { localizedName } = require('../lang');
 const { bot } = require('../bot');
 
@@ -137,6 +138,13 @@ async function patchDraft(req, res) {
 
   const errors = validatePatch(body);
   if (errors) return res.status(422).json({ errors });
+
+  // Country, when provided, must reference a real Country doc. A typo or unknown
+  // code would otherwise persist and — via the Master schema's `default: 'IT'` —
+  // a missing country silently mislabels the master as Italian.
+  if (body.countryID !== undefined && !(await isKnownCountry(body.countryID))) {
+    return res.status(422).json({ errors: { countryID: 'unknown country' } });
+  }
 
   const update = { lastEditedAt: new Date() };
   for (const key of DRAFT_FIELDS) {
