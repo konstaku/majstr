@@ -44,7 +44,12 @@ function isForwarded(message) {
     message.forward_from ||
     message.forward_from_chat ||
     message.forward_sender_name ||
-    message.contact // a shared/forwarded contact card is a lead too
+    // A shared/forwarded contact card (a third party's number) is a lead — but
+    // NOT the sender sharing their OWN phone (the onboarding "share contact"
+    // step, where contact.user_id === the sender). That self-share must be
+    // ignored, not queued as a mined lead.
+    (message.contact &&
+      !(message.from && message.contact.user_id === message.from.id))
   );
 }
 

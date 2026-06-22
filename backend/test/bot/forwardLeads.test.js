@@ -41,7 +41,19 @@ describe('isForwarded', () => {
     expect(isForwarded({ forward_origin: {} })).toBe(true);
     expect(isForwarded({ forward_sender_name: 'X' })).toBe(true);
     expect(isForwarded({ contact: { phone_number: '+39' } })).toBe(true);
+    // Third-party contact (user_id differs from sender) is still a lead.
+    expect(
+      isForwarded({ contact: { user_id: 9, phone_number: '+39' }, from: { id: 5 } })
+    ).toBe(true);
     expect(isForwarded({ text: '/start' })).toBe(false);
+  });
+
+  it('ignores the sender sharing their OWN phone (onboarding share-contact)', () => {
+    // requestContact() during onboarding delivers the user's own contact to the
+    // bot chat — contact.user_id === from.id — and must NOT be queued as a lead.
+    expect(
+      isForwarded({ contact: { user_id: 5, phone_number: '+39' }, from: { id: 5 } })
+    ).toBe(false);
   });
 });
 
