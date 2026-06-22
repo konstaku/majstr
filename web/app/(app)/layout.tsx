@@ -50,7 +50,12 @@ export default function AppGroupLayout({ children }: { children: ReactNode }) {
         <meta name="robots" content="noindex" />
         <script src="https://telegram.org/js/telegram-web-app.js" />
       </head>
-      <body>
+      {/* The global styles.css paints body with the catalogue's --cream and, on
+          mobile, adds padding-top for the site header — both wrong for the app
+          surfaces (a beige stripe above the wizard). The old wizard.css fix
+          keyed on the Vite `#root` node, which doesn't exist in Next. Set the
+          app/theme background + drop the header offset directly on this body. */}
+      <body style={{ background: "var(--app-bg)", paddingTop: 0 }}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
