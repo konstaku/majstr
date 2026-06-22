@@ -181,8 +181,16 @@ catalogue unchanged.
 
 REMAINING (Phase 1 tail):
 - ⬜ Optional: (app)/error.tsx (Next error boundary, replaces React Router ErrorPage).
-- ⬜ 1c tests: port unit/route-smoke into web/, retarget e2e (Vite:5173 → Next),
-  add host-separation redirect tests.
+- 🟡 1c tests — PARTIAL: vitest stood up in web/ (happy-dom) + scripts. Ported
+  reducer.test (incl. SET_LANGUAGE) + detect.test; NEW middleware.test (host
+  separation). 19 pass. Deferred (follow-ups):
+  • MSW/DOM-heavy unit tests (api/client, useAuthenticateUser, PrimaryCTA) — need
+    an MSW setup port; medium value.
+  • routeSmoke.test — React-Router-specific, doesn't translate to Next (drop).
+  • e2e RETARGET is a rework, not a config swap: the catalogue specs stub the API
+    via page.route() (client-side), but Next fetches catalogue data server-side, so
+    client stubbing won't intercept it. Do this with cutover (1d). claim.spec (an
+    (app) client route) retargets more directly.
 - ⬜ 1d CUTOVER: point app.majstr.xyz Vercel domain at the Next app (majstr-frontend),
   drop the next.config SPA_ORIGIN redirects, verify @prod-bot end-to-end (the real
   env: whitelisted origin + prod bot → authed flows work). Keep Vite as rollback.
