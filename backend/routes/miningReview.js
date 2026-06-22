@@ -302,6 +302,8 @@ async function acceptCandidate(req, res) {
     name: String(master.name).trim(),
     professionID: master.professionID,
     locationID: master.locationID,
+    // Mining sources are all Italian chats until the France mining work lands
+    // (deferred), so an unset country defaults to 'IT' here intentionally.
     countryID: master.countryID || 'IT',
     contacts: master.contacts.map((c) => ({
       contactType: c.contactType,

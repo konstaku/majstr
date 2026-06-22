@@ -7,6 +7,7 @@ import request from 'supertest';
 const buildApp = require('../../app');
 const Master = require('../../database/schema/Master');
 const MasterAudit = require('../../database/schema/MasterAudit');
+const Country = require('../../database/schema/Country');
 const og = require('../../helpers/generateOpenGraph');
 const { bot } = require('../../bot');
 const { connect, clearAll, disconnect } = require('../db');
@@ -100,6 +101,28 @@ describe('PATCH /api/masters/draft', () => {
       .send(body);
     expect(res.status).toBe(422);
     expect(res.body.errors).toHaveProperty(field);
+  });
+
+  it('persists a known countryID', async () => {
+    await Country.create({ id: 'FR', name: { en: 'France' } });
+    const { authHeader } = await makeUser();
+    const res = await request(app)
+      .patch('/api/masters/draft')
+      .set('Authorization', authHeader)
+      .send({ name: 'Marie', countryID: 'FR' });
+    expect(res.status).toBe(200);
+    expect(res.body.draft.countryID).toBe('FR');
+  });
+
+  it('rejects an unknown countryID with 422', async () => {
+    await Country.create({ id: 'FR', name: { en: 'France' } });
+    const { authHeader } = await makeUser();
+    const res = await request(app)
+      .patch('/api/masters/draft')
+      .set('Authorization', authHeader)
+      .send({ name: 'Typo', countryID: 'XX' });
+    expect(res.status).toBe(422);
+    expect(res.body.errors).toHaveProperty('countryID');
   });
 
   it('returns 409 active_master_exists when the user already has a live card', async () => {
