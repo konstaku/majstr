@@ -153,16 +153,31 @@ Shared layer DONE + tsc-verified (catalogue build unchanged):
   `useClaimDeepLink` (router→next), `analytics`, tag-suggestions; reconciled
   `master.schema`; added `react-hook-form` to web/.
 
+- ✅ claim flow + auth pages ported: Login, Profile, ClaimCard, MyCards →
+  routes /login, /profile, /claim/[masterId], /my-cards. (Dependency-complete;
+  react-router→next/navigation.) Build green, catalogue unchanged.
+
+VERIFICATION NOTE (2026-06-22): tried verifying /onboard live via a Vercel preview
++ @majstr_dev_bot. Hit walls that are ENVIRONMENTAL, not port bugs: (1) Vercel
+deployment protection on preview URLs, (2) prod API CORS allowlist excludes the
+preview origin, (3) dev-bot initData can't validate against the prod bot token.
+Confirmed working: SSR render of /onboard + catalogue, Telegram bridge, hydration,
+name prefill (after the bridge-resilience fix). The CORS-blocked autosave is what
+pinned the wizard's Next button. DECISION (option B): bank the structural
+verification (nav + writes are verbatim Vite logic that runs fine at app.majstr.xyz)
+and do the true end-to-end test at CUTOVER on app.majstr.xyz (whitelisted origin +
+prod bot). Prod ALLOWED_ORIGINS was temporarily widened then reverted — confirmed clean.
+
 REMAINING:
-- ⬜ port the other 7 pages: MyCards, ClaimCard, Profile, Admin, MiningReview,
-  Login, AddNewRecord (router→next/navigation + next/link) + `api/mining`,
-  `helpers/new-master-form`.
+- ⬜ port Admin (+ NewMasterPreview), MiningReview (+ mining/ components, api/mining),
+  AddNewRecord (+ check MasterCardPreview / new-master-form) — note: decide whether
+  /add is legacy (superseded by /onboard) and can be dropped instead of ported.
+- ⬜ Next error boundary (app)/error.tsx (replaces React Router ErrorPage).
 - ⬜ `middleware.ts` strict host separation + Direct-Link `start_param` root routing
   (startapp=onboard / claim-<id>).
-- ⬜ **verify `/onboard` on a preview deploy against `@majstr_dev_bot`** before
-  replicating the pattern across the remaining pages.
-- ⬜ 1c tests, 1d cutover (point app.majstr.xyz at Next, drop SPA_ORIGIN redirects),
-  1e delete frontend/, 1f auth hardening.
+- ⬜ 1c tests, 1d cutover (point app.majstr.xyz at Next, drop SPA_ORIGIN redirects) —
+  cutover is where end-to-end Mini-App verification happens, 1e delete frontend/,
+  1f auth hardening.
 
 ## Estimate
 The single largest step in the France initiative — multi-day, best split across a
