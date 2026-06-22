@@ -23,8 +23,11 @@ export function StepProfile() {
   // real profile photo. Telegram supplies photo_url in initData for ALL users
   // (auto-generated colored-circle avatars), so client-side checks are unreliable.
   useEffect(() => {
-    apiFetch("/api/masters/draft/photo/telegram-check")
-      .then((r) => r.json())
+    // Soft probe — a 401 here (e.g. opened in a plain browser without a token)
+    // must NOT trigger the global 401 handler, which would close the Mini App /
+    // bounce to /login. Opt out and just fall back to "no photo".
+    apiFetch("/api/masters/draft/photo/telegram-check", {}, { redirectOn401: false })
+      .then((r) => (r.ok ? r.json() : { available: false }))
       .then((data) => setHasTgPhoto(data.available === true))
       .catch(() => setHasTgPhoto(false));
   }, []);
