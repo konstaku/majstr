@@ -168,16 +168,26 @@ verification (nav + writes are verbatim Vite logic that runs fine at app.majstr.
 and do the true end-to-end test at CUTOVER on app.majstr.xyz (whitelisted origin +
 prod bot). Prod ALLOWED_ORIGINS was temporarily widened then reverted — confirmed clean.
 
-REMAINING:
-- ⬜ port Admin (+ NewMasterPreview), MiningReview (+ mining/ components, api/mining),
-  AddNewRecord (+ check MasterCardPreview / new-master-form) — note: decide whether
-  /add is legacy (superseded by /onboard) and can be dropped instead of ported.
-- ⬜ Next error boundary (app)/error.tsx (replaces React Router ErrorPage).
-- ⬜ `middleware.ts` strict host separation + Direct-Link `start_param` root routing
-  (startapp=onboard / claim-<id>).
-- ⬜ 1c tests, 1d cutover (point app.majstr.xyz at Next, drop SPA_ORIGIN redirects) —
-  cutover is where end-to-end Mini-App verification happens, 1e delete frontend/,
-  1f auth hardening.
+- ✅ Admin (/admin) ported (+ NewMasterPreview); loader → client fetch, self-fetches professions.
+- ✅ MiningReview (/admin/mining) ported (+ api/mining, components/mining/InlineCreate).
+- ✅ `middleware.ts` strict host separation (app.* ↔ apex/country; unknown hosts pass through).
+- ⏭️ `/add` NOT ported — retired; reborn post-cutover as the admin-add feature
+  (`meetings/2026-06-22_admin-add-master-feature.md`).
+
+**1b code-complete on the branch** (13 commits): all Vite app surfaces now exist as
+Next routes (/onboard, /claim/[masterId], /my-cards, /login, /profile, /admin,
+/admin/mining) + host-separation middleware. tsc clean; next build green throughout;
+catalogue unchanged.
+
+REMAINING (Phase 1 tail):
+- ⬜ Optional: (app)/error.tsx (Next error boundary, replaces React Router ErrorPage).
+- ⬜ 1c tests: port unit/route-smoke into web/, retarget e2e (Vite:5173 → Next),
+  add host-separation redirect tests.
+- ⬜ 1d CUTOVER: point app.majstr.xyz Vercel domain at the Next app (majstr-frontend),
+  drop the next.config SPA_ORIGIN redirects, verify @prod-bot end-to-end (the real
+  env: whitelisted origin + prod bot → authed flows work). Keep Vite as rollback.
+- ⬜ 1e delete frontend/ + CLAUDE.md/docs updates. 1f auth hardening.
+- ⬜ THEN: admin-add feature (see its note).
 
 ## Estimate
 The single largest step in the France initiative — multi-day, best split across a
