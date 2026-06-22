@@ -28,9 +28,10 @@ export const MasterSchema = z.object({
   availability: z.enum(["available", "next_week", "busy"]).optional(),
   rating: z.number().min(0).max(5).optional(),
   reviewCount: z.number().min(0).optional(),
-  claimable: z.boolean().optional(),
+  claimable: z.boolean().optional().default(false),
+  status: z.string().optional(),
   // Owner-verified by a moderator (claim flow) — VERIFIED badge + priority.
-  verified: z.boolean().optional(),
+  verified: z.boolean().optional().default(false),
 });
 
 export type Master = z.infer<typeof MasterSchema>;
