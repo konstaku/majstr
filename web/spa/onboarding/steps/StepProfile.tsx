@@ -18,6 +18,10 @@ export function StepProfile() {
 
   // null = checking, true = real TG photo available, false = no real photo
   const [hasTgPhoto, setHasTgPhoto] = useState<boolean | null>(null);
+  // Set once the user removes the photo, so the auto-attach effect below won't
+  // immediately re-add it.
+  const [photoDismissed, setPhotoDismissed] = useState(false);
+  const autoAttached = useRef(false);
 
   // Ask the backend (via Bot API getUserProfilePhotos) whether this user has a
   // real profile photo. Telegram supplies photo_url in initData for ALL users
@@ -67,6 +71,24 @@ export function StepProfile() {
       setUploading(false);
     }
   };
+
+  // Auto-use the Telegram photo by default: if the user has a real TG photo and
+  // hasn't already chosen or removed one, attach it (download → S3) so the
+  // previewed avatar is what actually gets saved — users expect the photo they
+  // see to be on their card. Runs once; they can still upload another or remove.
+  useEffect(() => {
+    if (
+      hasTgPhoto === true &&
+      !photoUrl &&
+      !photoDismissed &&
+      !uploading &&
+      !autoAttached.current
+    ) {
+      autoAttached.current = true;
+      handleUseTelegramPhoto();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasTgPhoto, photoUrl, photoDismissed]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -134,7 +156,10 @@ export function StepProfile() {
             <button
               type="button"
               className="wizard-ghost-btn wizard-ghost-btn--danger"
-              onClick={() => setValue("photo", "", { shouldDirty: true })}
+              onClick={() => {
+                setValue("photo", "", { shouldDirty: true });
+                setPhotoDismissed(true);
+              }}
               disabled={uploading}
             >
               {t("profile.removePhoto")}
