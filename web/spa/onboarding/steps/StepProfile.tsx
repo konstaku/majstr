@@ -36,10 +36,15 @@ export function StepProfile() {
       .catch(() => setHasTgPhoto(false));
   }, []);
 
-  // Prefill name from Telegram initData if form is still empty.
+  // Prefill name from Telegram initData if the field is still empty. Guarded to
+  // run only ONCE: without this, emptying the field to retype (e.g. Konstantin →
+  // Константин) re-triggers the effect and restores the old value — the user
+  // can never clear it.
+  const namePrefilled = useRef(false);
   useEffect(() => {
-    const current = form.getValues("name");
-    if (!current && user) {
+    if (namePrefilled.current || !user) return;
+    namePrefilled.current = true;
+    if (!form.getValues("name")) {
       const suggested = [user.first_name, user.last_name?.[0]]
         .filter(Boolean)
         .join(" ");

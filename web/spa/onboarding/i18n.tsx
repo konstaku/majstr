@@ -57,6 +57,7 @@ const UK: Dict = {
   "success.title": "Дякуємо!",
   "success.text":
     "Вашу картку надіслано на модерацію. Ми повідомимо вас у Telegram, щойно її буде схвалено.",
+  "success.done": "Готово",
   "submit.failTitle": "Не вдалося надіслати",
   "submit.failOk": "Зрозуміло",
   "submit.errExists": "У вас вже є активна картка майстра.",
@@ -150,6 +151,7 @@ const EN: Dict = {
   "success.title": "Thank you!",
   "success.text":
     "Your card has been submitted for review. We'll notify you in Telegram as soon as it's approved.",
+  "success.done": "Done",
   "submit.failTitle": "Couldn't submit",
   "submit.failOk": "Got it",
   "submit.errExists": "You already have an active master card.",
