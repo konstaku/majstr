@@ -75,22 +75,24 @@ npm test           # Vitest + supertest + mongodb-memory-server (first run
 npm run test:watch # Vitest in watch mode
 ```
 
-### Frontend
+### Web (Next.js — catalogue + Telegram Mini App)
 ```bash
-cd frontend
-npm run dev        # Vite dev server
-npm run build      # Production build
-npm run lint       # ESLint
+cd web
+npm run dev        # next dev (http://localhost:3000)
+npm run build      # next build (SSG/ISR)
+npm run lint       # next lint
 npm run typecheck  # tsc --noEmit
-npm test           # Vitest unit tests (happy-dom + MSW)
-npm run preview    # Preview production build
+npm test           # Vitest (happy-dom) — reducer/detect/middleware unit tests
 ```
+The standalone Vite SPA (`frontend/`) was retired in the Phase 1 collapse
+(2026-06); all its surfaces now live in `web/` (see Architecture below).
 
 ### E2E (smoke)
 ```bash
 cd e2e
-npm test           # Playwright against the Vite dev server; the API is fully
-                   # stubbed via page.route() — no backend/Mongo/bot needed.
+npm test           # Playwright against the Next dev server (web/); API served
+                   # from in-memory fixtures (global-setup.ts) + page.route() —
+                   # no real backend/Mongo/bot needed.
                    # One-time: npm install && npx playwright install chromium
 ```
 
@@ -101,22 +103,29 @@ of tests via the `og.impl` seam (`helpers/generateOpenGraph.js`) and the
 
 ## Architecture
 
-The project has two Node processes running in production:
+Two Node processes on Railway (backend) + one Next app on Vercel (web):
 
-| Process | File | Port | Purpose |
-|---|---|---|---|
-| API server | `backend/index.js` | 5000 (HTTPS) | REST API (`/`, `/auth`, `/addmaster`, `/api/*`) |
-| Telegram bot | `backend/bot.js` | 8443 (HTTPS) | Webhook handler for Telegram |
+| Process | File / dir | Purpose |
+|---|---|---|
+| API server | `backend/index.js` → `backend/app.js` | REST API at `api.majstr.xyz` (`/`, `/auth`, `/addmaster`, `/api/*`) |
+| Telegram bot | `backend/bot.js` → `backend/bot/` | Telegram webhook/polling handler |
+| Web (Next.js) | `web/` (Vercel project `majstr-frontend`) | Public SEO catalogue **and** the Telegram Mini App surfaces |
 
-`backend/index.js` is a thin entry: the Express app is built side-effect-free in `backend/app.js` (which is what the test suite imports). The bot implementation lives in `backend/bot/` (instance, transport, router, startFlow, masterStatus, forwardLeads, moderationCallbacks, claimCallbacks); `backend/bot.js` stays as a thin re-export of `{ bot, runBot }`. OG/social previews are rendered by the Next.js layer in `web/` (the old `open-graph-middleware.js` was removed). The API lives at `api.majstr.xyz`.
+`backend/index.js` is a thin entry: the Express app is built side-effect-free in `backend/app.js` (what the test suite imports). The bot implementation lives in `backend/bot/` (instance, transport, router, startFlow, masterStatus, forwardLeads, moderationCallbacks, claimCallbacks); `backend/bot.js` is a thin re-export of `{ bot, runBot }`.
+
+**Web layer (`web/`):** one Next app, split by host via `web/middleware.ts`:
+- `majstr.xyz` (+ `fr.majstr.xyz` later) → the public SEO catalogue (App Router `app/[lang]/…`, SSG/ISR). The interactive catalogue UI lives in `web/spa/` (client components mounted by the SSG pages).
+- `app.majstr.xyz` → the Telegram **Mini App** surfaces under `app/(app)/…`: `/onboard`, `/claim/[masterId]`, `/my-cards`, `/login`, `/profile`, `/admin`, `/admin/mining`. These reuse `web/spa/` (onboarding, components, surface detection, providers).
+
+OG/social previews are rendered by `web/` and by the backend OG generator. The old Vite SPA (`frontend/`) and `open-graph-middleware.js` were removed.
 
 ## Authentication Flow
 
 1. User sends `/start` to the Telegram bot
 2. Bot creates a JWT, stores the user in MongoDB, fetches their Telegram profile photo, uploads it to S3
 3. Bot sends a login button with a URL: `https://majstr.xyz/login?token=<encoded-jwt>`
-4. Frontend `/login` page reads the token from the URL, saves it to `localStorage`
-5. On subsequent visits, `useAuthenticateUser` hook reads the token from `localStorage` and hits `GET /auth` with it as the `Authorization` header
+4. The Next `/login` page (`app/(app)/login`, on `app.majstr.xyz`) reads the token from the URL, saves it to `localStorage`
+5. `apiFetch` (`web/spa/api/client.ts`) attaches auth per surface: inside Telegram it sends `X-Telegram-Init-Data` (verified server-side by HMAC); on the web it sends the `localStorage` JWT as `Authorization`. `useAuthenticateUser` probes `GET /auth`.
 
 ## Master Approval Flow
 
@@ -126,11 +135,11 @@ The project has two Node processes running in production:
 4. Admin receives a Telegram message with Approve ✅ / Decline ❌ inline keyboard
 5. Admin's Telegram ID `5950535` gets masters auto-approved
 
-## Frontend State
+## Web state
 
-Global state is managed with `useReducer` + React Context (`MasterContext`). The reducer (`reducer.jsx`) handles: `POPULATE`, `SET_CITY`, `SET_PROFESSION`, `RESET_SEARCH`, `LOGIN`, `LOGOUT`. Masters are loaded via a React Router v6 `loader` on the main route, fetching from `https://api.majstr.xyz/?q=masters`.
+Global state is `useReducer` + React Context (`web/spa/context.tsx`, `MasterContext`). The reducer (`web/spa/reducer.tsx`) handles `POPULATE`, `SET_COUNTRY`, `SET_CITY`, `SET_PROFESSION`, `RESET_SEARCH`, `LOGIN`, `LOGOUT`, `ERROR`, `SET_LANGUAGE`. The provider serves two modes: **server-seeded** for the SSG catalogue (data fetched server-side, passed as `initial`) and **no-seed** for the Mini App surfaces (client lang from `localStorage`). `web/spa/components/Root.tsx` also client-refetches reference data on mount.
 
-Static data (`locations.json`, `professions.json`) is duplicated in both `backend/data/` and `frontend/src/data/` — keep them in sync when updating.
+Reference data (countries, locations, professions, categories) is served from MongoDB via the API (`/?q=…`, `/api/reference/…`) — the old static `locations.json`/`professions.json` JSON files are gone.
 
 ## Environment Variables
 
@@ -143,7 +152,9 @@ Backend requires a `.env` file with:
 - `CERTIFICATE` / `KEYFILE` — SSL cert paths for the bot server (port 8443)
 - `CERTIFICATE_API` / `KEYFILE_API` — SSL cert paths for the API server (port 5000)
 - `WEBHOOK_URL` — Public HTTPS base URL for the Telegram webhook (e.g. `https://majstr.xyz`). When absent, the bot starts in polling mode — no SSL or public URL needed
-- `FRONTEND_URL` — Base URL sent in Telegram login links (e.g. `https://majstr.xyz`). Defaults to `http://localhost:5173`
+- `FRONTEND_URL` — Base URL for Telegram login links / public site (e.g. `https://majstr.xyz`)
+- `TMA_BASE_URL` — Base URL of the Telegram Mini App surfaces (e.g. `https://app.majstr.xyz`); the bot's web_app buttons point here (`/onboard`, `/my-cards`)
+- `ALLOWED_ORIGINS` — comma-separated CORS allowlist for the API (e.g. `https://majstr.xyz,https://app.majstr.xyz`); defaults to `*` when unset
 
 ## Local Development
 
@@ -153,8 +164,8 @@ The app can now run locally without SSL certificates:
 # Terminal 1 — backend (HTTP on port 5000)
 cd backend && npm run devStart
 
-# Terminal 2 — frontend (Vite dev server on port 5173)
-cd frontend && npm run dev
+# Terminal 2 — web (Next dev server on port 3000)
+cd web && npm run dev
 ```
 
-The frontend `.env.development` points to `http://localhost:5000` automatically. The Telegram bot starts in polling mode when `WEBHOOK_URL` is not set. Note: the Telegram login flow requires HTTPS and a registered domain, so authentication won't work locally — use `ngrok` if you need to test auth end-to-end.
+Point the web app at the local API via `NEXT_PUBLIC_API_URL` / `API_BASE` (e.g. `http://localhost:5000`); both default to `https://api.majstr.xyz`. The Telegram bot starts in polling mode when `WEBHOOK_URL` is not set. Note: the Telegram login + Mini App flows require HTTPS and a registered domain, so auth won't work on plain localhost — use `ngrok` to test end-to-end. On localhost the host-separation middleware is inert (unknown host → everything served), so `/onboard` etc. are reachable directly.
