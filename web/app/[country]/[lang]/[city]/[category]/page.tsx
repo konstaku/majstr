@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isCountry, countryID, COUNTRIES, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, countryID, COUNTRIES, isIndexable, LANGS, nomName, OG_LOCALE, type Lang, type Country } from "@/lib/i18n";
 import {
   getDataset,
   resolveCityBySlug,
@@ -11,7 +11,7 @@ import {
   cityPrep,
 } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
-import { abs, DEFAULT_OG_IMAGE } from "@/lib/urls";
+import { abs, defaultOgImage } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
 
@@ -49,8 +49,8 @@ async function resolve(p: Params) {
   return { lang, country: p.country, ds, city, cat, count };
 }
 
-const langAlt = (city: string, category: string) =>
-  Object.fromEntries(LANGS.map((l) => [l, abs(`/${l}/${city}/${category}`)]));
+const langAlt = (city: string, category: string, country: Country) =>
+  Object.fromEntries(LANGS.map((l) => [l, abs(`/${l}/${city}/${category}`, country)]));
 
 export async function generateMetadata({
   params,
@@ -59,7 +59,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const r = await resolve(await params);
   if (!r) return {};
-  const { lang, city, cat } = r;
+  const { lang, city, cat, country } = r;
   const catName = nomName(cat.name, lang);
   const title =
     lang === "ru"
@@ -78,10 +78,10 @@ export async function generateMetadata({
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
-      canonical: abs(`/${lang}/${city.id}/${cat.id}`),
-      languages: langAlt(city.id, cat.id),
+      canonical: abs(`/${lang}/${city.id}/${cat.id}`, country),
+      languages: langAlt(city.id, cat.id, country),
     },
-    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
+    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [defaultOgImage(country)] },
   };
 }
 

@@ -1,4 +1,10 @@
-import { mastersCount, type Lang } from "./i18n";
+import {
+  mastersCount,
+  COUNTRY_IN,
+  COUNTRY_CITIES,
+  type Lang,
+  type Country,
+} from "./i18n";
 import { CITY_REGION, PROFESSION_TIPS } from "./seo-data";
 
 // On-page copy builders. Strategy (from RU/UK keyword research):
@@ -202,15 +208,18 @@ export function cityHubDescription(lang: Lang, cityPrep: string): string {
 }
 
 // ── Profession hub (all cities) ───────────────────────────────────────────────
-export function professionHubTitle(lang: Lang, lead: string): string {
-  if (lang === "ru") return `${lead} в Италии — русскоязычные мастера${BRAND}`;
-  if (lang === "en") return `${lead} in Italy — Ukrainian-speaking masters${BRAND}`;
-  return `${lead} в Італії — україномовні майстри${BRAND}`;
+export function professionHubTitle(lang: Lang, lead: string, country: Country): string {
+  const inC = COUNTRY_IN[country][lang];
+  if (lang === "ru") return `${lead} ${inC} — русскоязычные мастера${BRAND}`;
+  if (lang === "en") return `${lead} ${inC} — Ukrainian-speaking masters${BRAND}`;
+  return `${lead} ${inC} — україномовні майстри${BRAND}`;
 }
-export function professionHubDescription(lang: Lang, lead: string): string {
+export function professionHubDescription(lang: Lang, lead: string, country: Country): string {
+  const inC = COUNTRY_IN[country][lang];
+  const cities = COUNTRY_CITIES[country][lang];
   if (lang === "ru")
-    return `Русскоязычные мастера: ${lower(lead)} в городах Италии — Милан, Рим, Турин, Неаполь, Флоренция и другие. Цены, отзывы, запись в Telegram. Бесплатно.`;
+    return `Русскоязычные мастера: ${lower(lead)} ${inC} — ${cities}. Цены, отзывы, запись в Telegram. Бесплатно.`;
   if (lang === "en")
-    return `Ukrainian-speaking masters: ${lower(lead)} in cities across Italy — Milan, Rome, Turin, Naples, Florence and more. Prices, reviews, booking on Telegram. Free.`;
-  return `Україномовні майстри: ${lower(lead)} у містах Італії — Мілан, Рим, Турин, Неаполь, Флоренція та інші. Ціни, відгуки, запис у Telegram. Безкоштовно.`;
+    return `Ukrainian-speaking masters: ${lower(lead)} ${inC} — ${cities}. Prices, reviews, booking on Telegram. Free.`;
+  return `Україномовні майстри: ${lower(lead)} ${inC} — ${cities}. Ціни, відгуки, запис у Telegram. Безкоштовно.`;
 }

@@ -1,10 +1,21 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { LANGS, COUNTRIES, isLang, isCountry, countryID, isIndexable, OG_LOCALE, type Lang } from "@/lib/i18n";
+import {
+  LANGS,
+  COUNTRIES,
+  isLang,
+  isCountry,
+  countryID,
+  isIndexable,
+  OG_LOCALE,
+  COUNTRY_IN,
+  COUNTRY_ISO,
+  type Lang,
+  type Country,
+} from "@/lib/i18n";
 import { getDataset } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
-import { abs, homePath, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
-import { SITE_URL } from "@/lib/config";
+import { abs, homePath, languageAlternates, defaultOgImage, originFor } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
 import JsonLd from "@/components/JsonLd";
@@ -16,18 +27,20 @@ export function generateStaticParams() {
   return COUNTRIES.flatMap((country) => LANGS.map((lang) => ({ country, lang })));
 }
 
-function homeTitle(lang: Lang) {
-  if (lang === "ru") return "Русско- и украиноязычные мастера в Италии | Majstr";
-  if (lang === "en") return "Ukrainian- and Russian-speaking masters in Italy | Majstr";
-  return "Україно- та російськомовні майстри в Італії | Majstr";
+function homeTitle(lang: Lang, country: Country) {
+  const inC = COUNTRY_IN[country][lang];
+  if (lang === "ru") return `Русско- и украиноязычные мастера ${inC} | Majstr`;
+  if (lang === "en") return `Ukrainian- and Russian-speaking masters ${inC} | Majstr`;
+  return `Україно- та російськомовні майстри ${inC} | Majstr`;
 }
 
-function homeDescription(lang: Lang) {
+function homeDescription(lang: Lang, country: Country) {
+  const inC = COUNTRY_IN[country][lang];
   if (lang === "ru")
-    return "Majstr — каталог проверенных русско- и украиноязычных мастеров в Италии: маникюр, парикмахеры, косметологи, электрики, врачи и другие. Запись в Telegram, бесплатно.";
+    return `Majstr — каталог проверенных русско- и украиноязычных мастеров ${inC}: маникюр, парикмахеры, косметологи, электрики, врачи и другие. Запись в Telegram, бесплатно.`;
   if (lang === "en")
-    return "Majstr — directory of trusted Ukrainian- and Russian-speaking masters in Italy: manicurists, hairdressers, beauticians, electricians, doctors and more. Book on Telegram, free.";
-  return "Majstr — каталог перевірених україно- та російськомовних майстрів в Італії: манікюр, перукарі, косметологи, електрики, лікарі та інші. Запис у Telegram, безкоштовно.";
+    return `Majstr — directory of trusted Ukrainian- and Russian-speaking masters ${inC}: manicurists, hairdressers, beauticians, electricians, doctors and more. Book on Telegram, free.`;
+  return `Majstr — каталог перевірених україно- та російськомовних майстрів ${inC}: манікюр, перукарі, косметологи, електрики, лікарі та інші. Запис у Telegram, безкоштовно.`;
 }
 
 // NOTE: deliberately does NOT read searchParams. Reading searchParams here opts
@@ -42,19 +55,19 @@ export async function generateMetadata({
 }: {
   params: Promise<{ country: string; lang: string }>;
 }): Promise<Metadata> {
-  const { lang } = await params;
-  if (!isLang(lang)) return {};
-  const title = homeTitle(lang);
-  const description = homeDescription(lang);
+  const { country: rawCountry, lang } = await params;
+  if (!isLang(lang) || !isCountry(rawCountry)) return {};
+  const title = homeTitle(lang, rawCountry);
+  const description = homeDescription(lang, rawCountry);
   return {
     title,
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
-      canonical: abs(homePath(lang)),
-      languages: languageAlternates((l) => homePath(l)),
+      canonical: abs(homePath(lang), rawCountry),
+      languages: languageAlternates((l) => homePath(l), rawCountry),
     },
-    openGraph: { title, description, url: abs(homePath(lang)), locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
+    openGraph: { title, description, url: abs(homePath(lang), rawCountry), locale: OG_LOCALE[lang], type: "website", images: [defaultOgImage(rawCountry)] },
   };
 }
 
@@ -68,6 +81,7 @@ export default async function Home({
   const lang = raw as Lang;
   const ds = await getDataset(countryID(rawCountry));
   const seed = buildSeed(lang, ds, undefined, undefined, countryID(rawCountry));
+  const origin = originFor(rawCountry);
 
   return (
     <>
@@ -80,18 +94,18 @@ export default async function Home({
           "@graph": [
             {
               "@type": "Organization",
-              "@id": `${SITE_URL}/#organization`,
+              "@id": `${origin}/#organization`,
               name: "Majstr",
-              url: SITE_URL,
-              areaServed: "IT",
+              url: origin,
+              areaServed: COUNTRY_ISO[rawCountry],
             },
             {
               "@type": "WebSite",
-              "@id": `${SITE_URL}/#website`,
-              url: SITE_URL,
+              "@id": `${origin}/#website`,
+              url: origin,
               name: "Majstr",
               inLanguage: lang,
-              publisher: { "@id": `${SITE_URL}/#organization` },
+              publisher: { "@id": `${origin}/#organization` },
             },
           ],
         }}

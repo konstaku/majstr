@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { isLang, isCountry, type Lang } from "@/lib/i18n";
-import { abs, homePath, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
+import { abs, homePath, languageAlternates, defaultOgImage } from "@/lib/urls";
 import { API_BASE } from "@/lib/config";
 
 interface PolicySection {
@@ -48,14 +48,14 @@ export async function generateMetadata({
   return {
     title,
     alternates: {
-      canonical: abs(privacyPath(lang)),
-      languages: languageAlternates((l) => privacyPath(l)),
+      canonical: abs(privacyPath(lang), rawCountry),
+      languages: languageAlternates((l) => privacyPath(l), rawCountry),
     },
     openGraph: {
       title,
-      url: abs(privacyPath(lang)),
+      url: abs(privacyPath(lang), rawCountry),
       type: "website",
-      images: [DEFAULT_OG_IMAGE],
+      images: [defaultOgImage(rawCountry)],
     },
   };
 }

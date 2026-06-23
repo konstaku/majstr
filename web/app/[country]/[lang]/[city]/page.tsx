@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isCountry, countryID, COUNTRIES, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, countryID, COUNTRIES, isIndexable, LANGS, nomName, OG_LOCALE, type Lang, type Country } from "@/lib/i18n";
 import {
   getDataset,
   resolveCityBySlug,
@@ -9,8 +9,8 @@ import {
   cityPrep,
 } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
-import { cityHubDescription, professionHubDescription } from "@/lib/content";
-import { abs, DEFAULT_OG_IMAGE } from "@/lib/urls";
+import { cityHubDescription, professionHubTitle, professionHubDescription } from "@/lib/content";
+import { abs, defaultOgImage } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
 
@@ -46,8 +46,8 @@ async function resolve(p: Params) {
   return null;
 }
 
-const langAlt = (seg: string) =>
-  Object.fromEntries(LANGS.map((l) => [l, abs(`/${l}/${seg}`)]));
+const langAlt = (seg: string, country: Country) =>
+  Object.fromEntries(LANGS.map((l) => [l, abs(`/${l}/${seg}`, country)]));
 
 export async function generateMetadata({
   params,
@@ -57,7 +57,7 @@ export async function generateMetadata({
   const r = await resolve(await params);
   if (!r) return {};
   if (r.kind === "city") {
-    const { lang, city } = r;
+    const { lang, city, country } = r;
     const title =
       lang === "ru"
         ? `Русскоязычные мастера ${cityPrep(city, lang)} | Majstr`
@@ -69,25 +69,20 @@ export async function generateMetadata({
       title,
       description,
       robots: isIndexable(lang) ? undefined : { index: false, follow: true },
-      alternates: { canonical: abs(`/${lang}/${city.id}`), languages: langAlt(city.id) },
-      openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
+      alternates: { canonical: abs(`/${lang}/${city.id}`, country), languages: langAlt(city.id, country) },
+      openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [defaultOgImage(country)] },
     };
   }
-  const { lang, cat } = r;
+  const { lang, cat, country } = r;
   const catName = nomName(cat.name, lang);
-  const title =
-    lang === "ru"
-      ? `${catName} в Италии — русскоязычные мастера | Majstr`
-      : lang === "en"
-        ? `${catName} in Italy — Ukrainian-speaking masters | Majstr`
-        : `${catName} в Італії — україномовні майстри | Majstr`;
-  const description = professionHubDescription(lang, catName);
+  const title = professionHubTitle(lang, catName, country);
+  const description = professionHubDescription(lang, catName, country);
   return {
     title,
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
-    alternates: { canonical: abs(`/${lang}/${cat.id}`), languages: langAlt(cat.id) },
-    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
+    alternates: { canonical: abs(`/${lang}/${cat.id}`, country), languages: langAlt(cat.id, country) },
+    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [defaultOgImage(country)] },
   };
 }
 

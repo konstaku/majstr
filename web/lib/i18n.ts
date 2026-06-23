@@ -28,6 +28,28 @@ export function countryID(c: Country): string {
   return c.toUpperCase();
 }
 
+// Country phrasing for on-page copy, keyed country → lang:
+//   IN     — prepositional "in <country>" for titles/hubs ("в Італії")
+//   CITIES — example-city list for profession-hub descriptions
+//   ISO    — ISO-3166 alpha-2 for schema.org areaServed/addressCountry
+export const COUNTRY_IN: Record<Country, Record<Lang, string>> = {
+  it: { uk: "в Італії", ru: "в Италии", en: "in Italy" },
+  fr: { uk: "у Франції", ru: "во Франции", en: "in France" },
+};
+export const COUNTRY_CITIES: Record<Country, Record<Lang, string>> = {
+  it: {
+    uk: "Мілан, Рим, Турин, Неаполь, Флоренція та інші",
+    ru: "Милан, Рим, Турин, Неаполь, Флоренция и другие",
+    en: "Milan, Rome, Turin, Naples, Florence and more",
+  },
+  fr: {
+    uk: "Ніцца, Марсель, Канни, Тулон, Монпельє та інші",
+    ru: "Ницца, Марсель, Канны, Тулон, Монпелье и другие",
+    en: "Nice, Marseille, Cannes, Toulon, Montpellier and more",
+  },
+};
+export const COUNTRY_ISO: Record<Country, string> = { it: "IT", fr: "FR" };
+
 // Public host → country segment. The apex / www default to Italy; an unknown
 // host (localhost, *.vercel.app preview) also defaults to it so the catalogue
 // is reachable in dev/preview.

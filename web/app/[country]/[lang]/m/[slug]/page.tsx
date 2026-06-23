@@ -1,6 +1,6 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isCountry, countryID, COUNTRIES, isIndexable, INDEXED_LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, countryID, COUNTRIES, COUNTRY_ISO, isIndexable, INDEXED_LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
   findMasterBySlug,
   allMasterParams,
@@ -52,13 +52,13 @@ export async function generateMetadata({
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
-      canonical: abs(masterPath(lang, canonical)),
-      languages: languageAlternates((l) => masterPath(l, canonical)),
+      canonical: abs(masterPath(lang, canonical), rawCountry),
+      languages: languageAlternates((l) => masterPath(l, canonical), rawCountry),
     },
     openGraph: {
       title,
       description,
-      url: abs(masterPath(lang, canonical)),
+      url: abs(masterPath(lang, canonical), rawCountry),
       locale: OG_LOCALE[lang],
       type: "profile",
       // Only the Playwright-rendered card image (backend generateOpenGraph).
@@ -117,7 +117,7 @@ export default async function MasterPage({
           address: {
             "@type": "PostalAddress",
             addressLocality: cityNom(loc, lang),
-            addressCountry: "IT",
+            addressCountry: COUNTRY_ISO[rawCountry],
           },
           ...(hasRating
             ? {

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { isLang, isCountry, COUNTRIES, isIndexable, LANGS, OG_LOCALE, type Lang } from '@/lib/i18n';
-import { abs, homePath, languageAlternates, DEFAULT_OG_IMAGE } from '@/lib/urls';
+import { abs, homePath, languageAlternates, defaultOgImage } from '@/lib/urls';
 import AppShell from '@/spa/AppShell';
 
 export const revalidate = 86400;
@@ -48,16 +48,16 @@ export async function generateMetadata({
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
-      canonical: abs(aboutPath(lang)),
-      languages: languageAlternates(aboutPath),
+      canonical: abs(aboutPath(lang), rawCountry),
+      languages: languageAlternates(aboutPath, rawCountry),
     },
     openGraph: {
       title,
       description,
-      url: abs(aboutPath(lang)),
+      url: abs(aboutPath(lang), rawCountry),
       locale: OG_LOCALE[lang],
       type: 'website',
-      images: [DEFAULT_OG_IMAGE],
+      images: [defaultOgImage(rawCountry)],
     },
   };
 }

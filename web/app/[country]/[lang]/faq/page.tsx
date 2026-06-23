@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { isLang, isCountry, COUNTRIES, isIndexable, LANGS, OG_LOCALE, type Lang } from "@/lib/i18n";
-import { abs, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
+import { abs, languageAlternates, defaultOgImage } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Faq from "@/spa/components/Faq";
 
@@ -47,10 +47,10 @@ export async function generateMetadata({
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
-      canonical: abs(faqPath(lang)),
-      languages: languageAlternates(faqPath),
+      canonical: abs(faqPath(lang), rawCountry),
+      languages: languageAlternates(faqPath, rawCountry),
     },
-    openGraph: { title, description, url: abs(faqPath(lang)), locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
+    openGraph: { title, description, url: abs(faqPath(lang), rawCountry), locale: OG_LOCALE[lang], type: "website", images: [defaultOgImage(rawCountry)] },
   };
 }
 
