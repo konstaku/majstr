@@ -35,9 +35,24 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
   : ['*'];
 
+// Every majstr.xyz host is first-party: the apex + any subdomain over https
+// (majstr.xyz, www, app, and per-country fr/it/… as the multi-country rollout
+// adds them). Matching the family in code means a new country subdomain needs
+// no ALLOWED_ORIGINS edit. The explicit list still covers off-domain origins
+// (localhost dev, *.vercel.app previews).
+const MAJSTR_ORIGIN = /^https:\/\/([a-z0-9-]+\.)*majstr\.xyz$/;
+
+// Pure factory (takes the allow-list) so the policy is unit-testable without
+// re-loading the module under different env.
+const buildOriginPolicy = allowedOrigins => origin =>
+  allowedOrigins.includes('*') ||
+  (!!origin && (allowedOrigins.includes(origin) || MAJSTR_ORIGIN.test(origin)));
+
+const isAllowedOrigin = buildOriginPolicy(ALLOWED_ORIGINS);
+
 const corsMiddleware = (req, res, next) => {
   const origin = req.headers.origin;
-  const allowed = ALLOWED_ORIGINS.includes('*') || (origin && ALLOWED_ORIGINS.includes(origin));
+  const allowed = isAllowedOrigin(origin);
   if (allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Vary', 'Origin');
@@ -170,3 +185,5 @@ function buildApp() {
 }
 
 module.exports = buildApp;
+// Exposed for unit tests (CORS origin policy).
+module.exports.buildOriginPolicy = buildOriginPolicy;
