@@ -56,7 +56,8 @@ export function buildSeed(
   lang: Lang,
   ds: Dataset,
   sp?: SeedSearchParams,
-  fullMasterId?: string
+  fullMasterId?: string,
+  country = "IT"
 ): Record<string, unknown> {
   const masters = ds.masters.map((m) =>
     m._id === fullMasterId ? m : slimMaster(m)
@@ -69,7 +70,7 @@ export function buildSeed(
     countries: ds.countries,
     lang,
     loading: false,
-    countryID: "IT",
+    countryID: country,
     countrySet: true,
     searchParams: {
       selectedCity: sp?.selectedCity ?? "",

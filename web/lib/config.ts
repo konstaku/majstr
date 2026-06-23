@@ -14,6 +14,14 @@ export const SITE_URL = cleanUrl(
   "https://majstr.xyz"
 );
 
+// Per-country public origin. Public URLs are country-free (the same path lives
+// on every host); the host is the country, so canonical/hreflang/sitemap must
+// pin each country's pages to its own origin. SITE_URL stays the IT origin.
+export const COUNTRY_ORIGIN: Record<"it" | "fr", string> = {
+  it: SITE_URL,
+  fr: cleanUrl(process.env.NEXT_PUBLIC_SITE_URL_FR, "https://fr.majstr.xyz"),
+};
+
 // ISR window for live-data fetches (seconds). On-demand revalidation can
 // refresh sooner when a master is approved.
 export const REVALIDATE_SECONDS = 3600;

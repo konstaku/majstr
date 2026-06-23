@@ -94,6 +94,15 @@ export const CITY_REGION: Record<string, Record<Lang, string>> = {
   padua: { ru: "Венето", uk: "Венето", en: "Veneto" },
   bergamo: { ru: "Ломбардия", uk: "Ломбардія", en: "Lombardy" },
   palermo: { ru: "Сицилия", uk: "Сицилія", en: "Sicily" },
+  // ── France ──
+  nice: { ru: "Лазурный Берег", uk: "Лазурний Берег", en: "Côte d'Azur" },
+  cannes: { ru: "Лазурный Берег", uk: "Лазурний Берег", en: "Côte d'Azur" },
+  menton: { ru: "Лазурный Берег", uk: "Лазурний Берег", en: "Côte d'Azur" },
+  frejus: { ru: "Лазурный Берег", uk: "Лазурний Берег", en: "Côte d'Azur" },
+  toulon: { ru: "Лазурный Берег", uk: "Лазурний Берег", en: "Côte d'Azur" },
+  "saint-tropez": { ru: "Лазурный Берег", uk: "Лазурний Берег", en: "Côte d'Azur" },
+  marseille: { ru: "Прованс", uk: "Прованс", en: "Provence" },
+  montpellier: { ru: "Окситания", uk: "Окситанія", en: "Occitanie" },
 };
 
 export const PROFESSION_SEO: Record<string, Record<Lang, ProfSeo>> = {

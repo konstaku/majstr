@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { getDataset } from "@/lib/data";
 import { DATA_TAG, type Master } from "@/lib/api";
 import { API_BASE } from "@/lib/config";
+import { countryForHost, countryID } from "@/lib/i18n";
 
 // Single-master detail endpoint. The grid/cards ship a slim master projection
 // (see lib/seed.ts); when a card's modal opens, the client fetches the full
@@ -13,11 +14,15 @@ import { API_BASE } from "@/lib/config";
 export const revalidate = 3600;
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { masters } = await getDataset();
+  // The card modal fetches same-origin, so the Host header picks the country:
+  // fr.majstr.xyz → FR, apex/www → IT. Keeps the slim grid record and this full
+  // record reading from the same per-country dataset.
+  const country = countryID(countryForHost(req.headers.get("host") || ""));
+  const { masters } = await getDataset(country);
   let master = masters.find((m) => m._id === id);
 
   if (!master) {
@@ -27,7 +32,7 @@ export async function GET(
     // dataset tag so the pages catch up too. Without this, the card modal
     // silently rendered the slim record — no contacts, no description.
     try {
-      const fresh = await fetch(`${API_BASE}/?q=masters&country=IT`, {
+      const fresh = await fetch(`${API_BASE}/?q=masters&country=${country}`, {
         cache: "no-store",
       });
       if (fresh.ok) {

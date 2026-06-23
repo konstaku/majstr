@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, countryID, COUNTRIES, isIndexable, LANGS, nomName, OG_LOCALE, type Lang, type Country } from "@/lib/i18n";
 import {
   getDataset,
   resolveCityBySlug,
@@ -11,30 +11,32 @@ import {
   cityPrep,
 } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
-import { abs, DEFAULT_OG_IMAGE } from "@/lib/urls";
+import { abs, defaultOgImage } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-type Params = { lang: string; city: string; category: string };
+type Params = { country: string; lang: string; city: string; category: string };
 
 export async function generateStaticParams(): Promise<Params[]> {
-  const { masters, professions, locById } = await getDataset();
   const out: Params[] = [];
-  for (const c of cityCategoryCombos(masters, professions)) {
-    if (!locById.get(c.locationID)) continue;
-    for (const lang of LANGS)
-      out.push({ lang, city: c.locationID, category: c.categoryID });
+  for (const country of COUNTRIES) {
+    const { masters, professions, locById } = await getDataset(countryID(country));
+    for (const c of cityCategoryCombos(masters, professions)) {
+      if (!locById.get(c.locationID)) continue;
+      for (const lang of LANGS)
+        out.push({ country, lang, city: c.locationID, category: c.categoryID });
+    }
   }
   return out;
 }
 
 async function resolve(p: Params) {
-  if (!isLang(p.lang)) return null;
+  if (!isLang(p.lang) || !isCountry(p.country)) return null;
   const lang = p.lang as Lang;
-  const ds = await getDataset();
+  const ds = await getDataset(countryID(p.country));
   const city = resolveCityBySlug(p.city, ds.locations);
   const cat = resolveCategoryBySlug(p.category, ds.profCategories);
   if (!city || !cat) return null;
@@ -44,11 +46,11 @@ async function resolve(p: Params) {
       categoryIdOfProfession(m.professionID, ds.professions) === cat.id
   ).length;
   if (count === 0) return null;
-  return { lang, ds, city, cat, count };
+  return { lang, country: p.country, ds, city, cat, count };
 }
 
-const langAlt = (city: string, category: string) =>
-  Object.fromEntries(LANGS.map((l) => [l, abs(`/${l}/${city}/${category}`)]));
+const langAlt = (city: string, category: string, country: Country) =>
+  Object.fromEntries(LANGS.map((l) => [l, abs(`/${l}/${city}/${category}`, country)]));
 
 export async function generateMetadata({
   params,
@@ -57,7 +59,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const r = await resolve(await params);
   if (!r) return {};
-  const { lang, city, cat } = r;
+  const { lang, city, cat, country } = r;
   const catName = nomName(cat.name, lang);
   const title =
     lang === "ru"
@@ -76,10 +78,10 @@ export async function generateMetadata({
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
     alternates: {
-      canonical: abs(`/${lang}/${city.id}/${cat.id}`),
-      languages: langAlt(city.id, cat.id),
+      canonical: abs(`/${lang}/${city.id}/${cat.id}`, country),
+      languages: langAlt(city.id, cat.id, country),
     },
-    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
+    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [defaultOgImage(country)] },
   };
 }
 
@@ -95,7 +97,7 @@ export default async function CityCategoryPage({
       seed={buildSeed(r.lang, r.ds, {
         selectedCity: r.city.id,
         selectedProfessionCategory: r.cat.id,
-      })}
+      }, undefined, countryID(r.country))}
     >
       <Main />
     </AppShell>

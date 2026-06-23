@@ -11,6 +11,57 @@ export function isLang(x: string): x is Lang {
   return (LANGS as readonly string[]).includes(x);
 }
 
+// Supported countries. The URL segment is lowercase (`it`/`fr`) and is an
+// INTERNAL rewrite target — middleware maps the public host → this segment
+// (majstr.xyz → it, fr.majstr.xyz → fr) so public URLs stay country-free.
+// The DB/API countryID is uppercase ("IT"/"FR") — see countryID().
+export const COUNTRIES = ["it", "fr"] as const;
+export type Country = (typeof COUNTRIES)[number];
+export const DEFAULT_COUNTRY: Country = "it";
+
+export function isCountry(x: string): x is Country {
+  return (COUNTRIES as readonly string[]).includes(x);
+}
+
+// Route segment ("it") → DB/API countryID ("IT").
+export function countryID(c: Country): string {
+  return c.toUpperCase();
+}
+
+// Country phrasing for on-page copy, keyed country → lang:
+//   IN     — prepositional "in <country>" for titles/hubs ("в Італії")
+//   CITIES — example-city list for profession-hub descriptions
+//   ISO    — ISO-3166 alpha-2 for schema.org areaServed/addressCountry
+export const COUNTRY_IN: Record<Country, Record<Lang, string>> = {
+  it: { uk: "в Італії", ru: "в Италии", en: "in Italy" },
+  fr: { uk: "у Франції", ru: "во Франции", en: "in France" },
+};
+export const COUNTRY_CITIES: Record<Country, Record<Lang, string>> = {
+  it: {
+    uk: "Мілан, Рим, Турин, Неаполь, Флоренція та інші",
+    ru: "Милан, Рим, Турин, Неаполь, Флоренция и другие",
+    en: "Milan, Rome, Turin, Naples, Florence and more",
+  },
+  fr: {
+    uk: "Ніцца, Марсель, Канни, Тулон, Монпельє та інші",
+    ru: "Ницца, Марсель, Канны, Тулон, Монпелье и другие",
+    en: "Nice, Marseille, Cannes, Toulon, Montpellier and more",
+  },
+};
+export const COUNTRY_ISO: Record<Country, string> = { it: "IT", fr: "FR" };
+
+// Public host → country segment. The apex / www default to Italy; an unknown
+// host (localhost, *.vercel.app preview) also defaults to it so the catalogue
+// is reachable in dev/preview.
+export const HOST_COUNTRY: Record<string, Country> = {
+  "majstr.xyz": "it",
+  "www.majstr.xyz": "it",
+  "fr.majstr.xyz": "fr",
+};
+export function countryForHost(host: string): Country {
+  return HOST_COUNTRY[host.toLowerCase().split(":")[0]] ?? DEFAULT_COUNTRY;
+}
+
 // Content gate for English. While false, `en` routes still render and are
 // reachable via the language switcher, but are excluded from the sitemap +
 // hreflang and marked noindex per page — so we never publish thin/duplicate

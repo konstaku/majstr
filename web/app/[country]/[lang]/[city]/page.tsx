@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, countryID, COUNTRIES, isIndexable, LANGS, nomName, OG_LOCALE, type Lang, type Country } from "@/lib/i18n";
 import {
   getDataset,
   resolveCityBySlug,
@@ -9,43 +9,45 @@ import {
   cityPrep,
 } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
-import { cityHubDescription, professionHubDescription } from "@/lib/content";
-import { abs, DEFAULT_OG_IMAGE } from "@/lib/urls";
+import { cityHubDescription, professionHubTitle, professionHubDescription } from "@/lib/content";
+import { abs, defaultOgImage } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Main from "@/spa/pages/Main";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-type Params = { lang: string; city: string };
+type Params = { country: string; lang: string; city: string };
 
 export async function generateStaticParams(): Promise<Params[]> {
-  const { masters, locById, professions } = await getDataset();
   const out: Params[] = [];
-  const cityIds = new Set(masters.map((m) => m.locationID));
-  const cats = categoriesWithMasters(masters, professions);
-  for (const lang of LANGS) {
-    for (const id of cityIds) if (locById.get(id)) out.push({ lang, city: id });
-    for (const c of cats) out.push({ lang, city: c });
+  for (const country of COUNTRIES) {
+    const { masters, locById, professions } = await getDataset(countryID(country));
+    const cityIds = new Set(masters.map((m) => m.locationID));
+    const cats = categoriesWithMasters(masters, professions);
+    for (const lang of LANGS) {
+      for (const id of cityIds) if (locById.get(id)) out.push({ country, lang, city: id });
+      for (const c of cats) out.push({ country, lang, city: c });
+    }
   }
   return out;
 }
 
 async function resolve(p: Params) {
-  if (!isLang(p.lang)) return null;
+  if (!isLang(p.lang) || !isCountry(p.country)) return null;
   const lang = p.lang as Lang;
-  const ds = await getDataset();
+  const ds = await getDataset(countryID(p.country));
   const city = resolveCityBySlug(p.city, ds.locations);
   if (city && ds.masters.some((m) => m.locationID === city.id))
-    return { lang, ds, kind: "city" as const, city };
+    return { lang, country: p.country, ds, kind: "city" as const, city };
   const cat = resolveCategoryBySlug(p.city, ds.profCategories);
   if (cat && categoriesWithMasters(ds.masters, ds.professions).has(cat.id))
-    return { lang, ds, kind: "cat" as const, cat };
+    return { lang, country: p.country, ds, kind: "cat" as const, cat };
   return null;
 }
 
-const langAlt = (seg: string) =>
-  Object.fromEntries(LANGS.map((l) => [l, abs(`/${l}/${seg}`)]));
+const langAlt = (seg: string, country: Country) =>
+  Object.fromEntries(LANGS.map((l) => [l, abs(`/${l}/${seg}`, country)]));
 
 export async function generateMetadata({
   params,
@@ -55,7 +57,7 @@ export async function generateMetadata({
   const r = await resolve(await params);
   if (!r) return {};
   if (r.kind === "city") {
-    const { lang, city } = r;
+    const { lang, city, country } = r;
     const title =
       lang === "ru"
         ? `Русскоязычные мастера ${cityPrep(city, lang)} | Majstr`
@@ -67,25 +69,20 @@ export async function generateMetadata({
       title,
       description,
       robots: isIndexable(lang) ? undefined : { index: false, follow: true },
-      alternates: { canonical: abs(`/${lang}/${city.id}`), languages: langAlt(city.id) },
-      openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
+      alternates: { canonical: abs(`/${lang}/${city.id}`, country), languages: langAlt(city.id, country) },
+      openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [defaultOgImage(country)] },
     };
   }
-  const { lang, cat } = r;
+  const { lang, cat, country } = r;
   const catName = nomName(cat.name, lang);
-  const title =
-    lang === "ru"
-      ? `${catName} в Италии — русскоязычные мастера | Majstr`
-      : lang === "en"
-        ? `${catName} in Italy — Ukrainian-speaking masters | Majstr`
-        : `${catName} в Італії — україномовні майстри | Majstr`;
-  const description = professionHubDescription(lang, catName);
+  const title = professionHubTitle(lang, catName, country);
+  const description = professionHubDescription(lang, catName, country);
   return {
     title,
     description,
     robots: isIndexable(lang) ? undefined : { index: false, follow: true },
-    alternates: { canonical: abs(`/${lang}/${cat.id}`), languages: langAlt(cat.id) },
-    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [DEFAULT_OG_IMAGE] },
+    alternates: { canonical: abs(`/${lang}/${cat.id}`, country), languages: langAlt(cat.id, country) },
+    openGraph: { title, description, locale: OG_LOCALE[lang], type: "website", images: [defaultOgImage(country)] },
   };
 }
 
@@ -101,7 +98,7 @@ export default async function FilterPage({
       ? { selectedCity: r.city.id }
       : { selectedProfessionCategory: r.cat.id };
   return (
-    <AppShell seed={buildSeed(r.lang, r.ds, sp)}>
+    <AppShell seed={buildSeed(r.lang, r.ds, sp, undefined, countryID(r.country))}>
       <Main />
     </AppShell>
   );

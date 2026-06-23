@@ -72,7 +72,7 @@ export default async function LangLayout({
   params,
 }: {
   children: ReactNode;
-  params: Promise<{ lang: string }>;
+  params: Promise<{ country: string; lang: string }>;
 }) {
   const { lang } = await params;
   if (!isLang(lang)) notFound();

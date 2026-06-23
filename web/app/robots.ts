@@ -1,7 +1,13 @@
 import type { MetadataRoute } from "next";
-import { SITE_URL } from "@/lib/config";
+import { headers } from "next/headers";
+import { countryForHost } from "@/lib/i18n";
+import { originFor } from "@/lib/urls";
 
-export default function robots(): MetadataRoute.Robots {
+// Host-aware: each public host (majstr.xyz, fr.majstr.xyz) advertises its own
+// origin + sitemap, so crawlers consolidate per-country signals on that host.
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const host = (await headers()).get("host") || "";
+  const origin = originFor(countryForHost(host));
   return {
     rules: [
       {
@@ -10,7 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/login", "/profile", "/admin", "/add", "/onboard"],
       },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
+    sitemap: `${origin}/sitemap.xml`,
+    host: origin,
   };
 }
