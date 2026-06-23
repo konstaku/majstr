@@ -11,6 +11,35 @@ export function isLang(x: string): x is Lang {
   return (LANGS as readonly string[]).includes(x);
 }
 
+// Supported countries. The URL segment is lowercase (`it`/`fr`) and is an
+// INTERNAL rewrite target — middleware maps the public host → this segment
+// (majstr.xyz → it, fr.majstr.xyz → fr) so public URLs stay country-free.
+// The DB/API countryID is uppercase ("IT"/"FR") — see countryID().
+export const COUNTRIES = ["it", "fr"] as const;
+export type Country = (typeof COUNTRIES)[number];
+export const DEFAULT_COUNTRY: Country = "it";
+
+export function isCountry(x: string): x is Country {
+  return (COUNTRIES as readonly string[]).includes(x);
+}
+
+// Route segment ("it") → DB/API countryID ("IT").
+export function countryID(c: Country): string {
+  return c.toUpperCase();
+}
+
+// Public host → country segment. The apex / www default to Italy; an unknown
+// host (localhost, *.vercel.app preview) also defaults to it so the catalogue
+// is reachable in dev/preview.
+export const HOST_COUNTRY: Record<string, Country> = {
+  "majstr.xyz": "it",
+  "www.majstr.xyz": "it",
+  "fr.majstr.xyz": "fr",
+};
+export function countryForHost(host: string): Country {
+  return HOST_COUNTRY[host.toLowerCase().split(":")[0]] ?? DEFAULT_COUNTRY;
+}
+
 // Content gate for English. While false, `en` routes still render and are
 // reachable via the language switcher, but are excluded from the sitemap +
 // hreflang and marked noindex per page — so we never publish thin/duplicate

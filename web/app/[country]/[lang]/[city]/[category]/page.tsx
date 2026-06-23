@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, countryID, COUNTRIES, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
   getDataset,
   resolveCityBySlug,
@@ -18,23 +18,25 @@ import Main from "@/spa/pages/Main";
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-type Params = { lang: string; city: string; category: string };
+type Params = { country: string; lang: string; city: string; category: string };
 
 export async function generateStaticParams(): Promise<Params[]> {
-  const { masters, professions, locById } = await getDataset();
   const out: Params[] = [];
-  for (const c of cityCategoryCombos(masters, professions)) {
-    if (!locById.get(c.locationID)) continue;
-    for (const lang of LANGS)
-      out.push({ lang, city: c.locationID, category: c.categoryID });
+  for (const country of COUNTRIES) {
+    const { masters, professions, locById } = await getDataset(countryID(country));
+    for (const c of cityCategoryCombos(masters, professions)) {
+      if (!locById.get(c.locationID)) continue;
+      for (const lang of LANGS)
+        out.push({ country, lang, city: c.locationID, category: c.categoryID });
+    }
   }
   return out;
 }
 
 async function resolve(p: Params) {
-  if (!isLang(p.lang)) return null;
+  if (!isLang(p.lang) || !isCountry(p.country)) return null;
   const lang = p.lang as Lang;
-  const ds = await getDataset();
+  const ds = await getDataset(countryID(p.country));
   const city = resolveCityBySlug(p.city, ds.locations);
   const cat = resolveCategoryBySlug(p.category, ds.profCategories);
   if (!city || !cat) return null;
@@ -44,7 +46,7 @@ async function resolve(p: Params) {
       categoryIdOfProfession(m.professionID, ds.professions) === cat.id
   ).length;
   if (count === 0) return null;
-  return { lang, ds, city, cat, count };
+  return { lang, country: p.country, ds, city, cat, count };
 }
 
 const langAlt = (city: string, category: string) =>
@@ -95,7 +97,7 @@ export default async function CityCategoryPage({
       seed={buildSeed(r.lang, r.ds, {
         selectedCity: r.city.id,
         selectedProfessionCategory: r.cat.id,
-      })}
+      }, undefined, countryID(r.country))}
     >
       <Main />
     </AppShell>

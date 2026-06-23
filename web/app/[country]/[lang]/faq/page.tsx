@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isIndexable, LANGS, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, COUNTRIES, isIndexable, LANGS, OG_LOCALE, type Lang } from "@/lib/i18n";
 import { abs, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
 import AppShell from "@/spa/AppShell";
 import Faq from "@/spa/components/Faq";
@@ -10,7 +10,7 @@ export const revalidate = 86400;
 const faqPath = (lang: Lang) => `/${lang}/faq`;
 
 export function generateStaticParams() {
-  return LANGS.map((lang) => ({ lang }));
+  return COUNTRIES.flatMap((country) => LANGS.map((lang) => ({ country, lang })));
 }
 
 function meta(lang: Lang) {
@@ -36,10 +36,10 @@ function meta(lang: Lang) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ lang: string }>;
+  params: Promise<{ country: string; lang: string }>;
 }): Promise<Metadata> {
-  const { lang: raw } = await params;
-  if (!isLang(raw)) return {};
+  const { country: rawCountry, lang: raw } = await params;
+  if (!isLang(raw) || !isCountry(rawCountry)) return {};
   const lang = raw as Lang;
   const { title, description } = meta(lang);
   return {
@@ -57,10 +57,10 @@ export async function generateMetadata({
 export default async function FaqPage({
   params,
 }: {
-  params: Promise<{ lang: string }>;
+  params: Promise<{ country: string; lang: string }>;
 }) {
-  const { lang: raw } = await params;
-  if (!isLang(raw)) notFound();
+  const { country: rawCountry, lang: raw } = await params;
+  if (!isLang(raw) || !isCountry(rawCountry)) notFound();
   const lang = raw as Lang;
 
   // Minimal seed: FAQ shows no masters; seed only what the shared header/footer

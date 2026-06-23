@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { isLang, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, type Lang } from "@/lib/i18n";
 import { abs, homePath, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
 import { API_BASE } from "@/lib/config";
 
@@ -39,10 +39,10 @@ function privacyPath(lang: Lang) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ lang: string }>;
+  params: Promise<{ country: string; lang: string }>;
 }): Promise<Metadata> {
-  const { lang: raw } = await params;
-  if (!isLang(raw)) return {};
+  const { country: rawCountry, lang: raw } = await params;
+  if (!isLang(raw) || !isCountry(rawCountry)) return {};
   const lang = raw as Lang;
   const title = "Privacy Policy | Majstr";
   return {
@@ -81,10 +81,10 @@ function renderBody(text: string): React.ReactNode[] {
 export default async function PrivacyPage({
   params,
 }: {
-  params: Promise<{ lang: string }>;
+  params: Promise<{ country: string; lang: string }>;
 }) {
-  const { lang: raw } = await params;
-  if (!isLang(raw)) notFound();
+  const { country: rawCountry, lang: raw } = await params;
+  if (!isLang(raw) || !isCountry(rawCountry)) notFound();
   const lang = raw as Lang;
   const cl = contentLang(lang);
 

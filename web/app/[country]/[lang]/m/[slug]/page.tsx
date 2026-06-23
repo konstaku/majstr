@@ -1,6 +1,6 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isIndexable, INDEXED_LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, countryID, COUNTRIES, isIndexable, INDEXED_LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
   findMasterBySlug,
   allMasterParams,
@@ -19,13 +19,18 @@ import JsonLd from "@/components/JsonLd";
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-type Params = { lang: string; slug: string };
+type Params = { country: string; lang: string; slug: string };
 
 export async function generateStaticParams(): Promise<Params[]> {
-  const slugs = await allMasterParams();
   // Pre-render only indexed locales; a gated locale (en while unpublished) still
   // renders on demand via dynamicParams, keeping build time/cost flat.
-  return INDEXED_LANGS.flatMap((lang) => slugs.map((s) => ({ lang, slug: s.slug })));
+  const out: Params[] = [];
+  for (const country of COUNTRIES) {
+    const slugs = await allMasterParams(countryID(country));
+    for (const lang of INDEXED_LANGS)
+      for (const s of slugs) out.push({ country, lang, slug: s.slug });
+  }
+  return out;
 }
 
 export async function generateMetadata({
@@ -33,10 +38,10 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { lang: raw, slug } = await params;
-  if (!isLang(raw)) return {};
+  const { country: rawCountry, lang: raw, slug } = await params;
+  if (!isLang(raw) || !isCountry(rawCountry)) return {};
   const lang = raw as Lang;
-  const found = await findMasterBySlug(slug);
+  const found = await findMasterBySlug(slug, countryID(rawCountry));
   if (!found || !found.prof || !found.loc) return {};
   const { master, prof, loc, canonical } = found;
   const profTitle = nomName(prof.name, lang) || professionLead(prof, lang);
@@ -68,15 +73,15 @@ export default async function MasterPage({
 }: {
   params: Promise<Params>;
 }) {
-  const { lang: raw, slug } = await params;
-  if (!isLang(raw)) notFound();
+  const { country: rawCountry, lang: raw, slug } = await params;
+  if (!isLang(raw) || !isCountry(rawCountry)) notFound();
   const lang = raw as Lang;
-  const found = await findMasterBySlug(slug);
+  const found = await findMasterBySlug(slug, countryID(rawCountry));
   if (!found || !found.prof || !found.loc) notFound();
   const { master, prof, loc, canonical } = found;
   if (canonical !== slug) permanentRedirect(masterPath(lang, canonical));
 
-  const ds = await getDataset();
+  const ds = await getDataset(countryID(rawCountry));
   const profTitle = nomName(prof.name, lang) || professionLead(prof, lang);
   const hasRating = typeof master.rating === "number" && master.rating > 0;
 
@@ -89,7 +94,8 @@ export default async function MasterPage({
       selectedCity: loc.id,
       selectedProfessionCategory: prof.categoryID ?? "",
     },
-    master._id // keep this master full so the pre-opened modal needs no fetch
+    master._id, // keep this master full so the pre-opened modal needs no fetch
+    countryID(rawCountry)
   );
 
   return (

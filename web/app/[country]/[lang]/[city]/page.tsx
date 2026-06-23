@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isLang, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { isLang, isCountry, countryID, COUNTRIES, isIndexable, LANGS, nomName, OG_LOCALE, type Lang } from "@/lib/i18n";
 import {
   getDataset,
   resolveCityBySlug,
@@ -17,30 +17,32 @@ import Main from "@/spa/pages/Main";
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-type Params = { lang: string; city: string };
+type Params = { country: string; lang: string; city: string };
 
 export async function generateStaticParams(): Promise<Params[]> {
-  const { masters, locById, professions } = await getDataset();
   const out: Params[] = [];
-  const cityIds = new Set(masters.map((m) => m.locationID));
-  const cats = categoriesWithMasters(masters, professions);
-  for (const lang of LANGS) {
-    for (const id of cityIds) if (locById.get(id)) out.push({ lang, city: id });
-    for (const c of cats) out.push({ lang, city: c });
+  for (const country of COUNTRIES) {
+    const { masters, locById, professions } = await getDataset(countryID(country));
+    const cityIds = new Set(masters.map((m) => m.locationID));
+    const cats = categoriesWithMasters(masters, professions);
+    for (const lang of LANGS) {
+      for (const id of cityIds) if (locById.get(id)) out.push({ country, lang, city: id });
+      for (const c of cats) out.push({ country, lang, city: c });
+    }
   }
   return out;
 }
 
 async function resolve(p: Params) {
-  if (!isLang(p.lang)) return null;
+  if (!isLang(p.lang) || !isCountry(p.country)) return null;
   const lang = p.lang as Lang;
-  const ds = await getDataset();
+  const ds = await getDataset(countryID(p.country));
   const city = resolveCityBySlug(p.city, ds.locations);
   if (city && ds.masters.some((m) => m.locationID === city.id))
-    return { lang, ds, kind: "city" as const, city };
+    return { lang, country: p.country, ds, kind: "city" as const, city };
   const cat = resolveCategoryBySlug(p.city, ds.profCategories);
   if (cat && categoriesWithMasters(ds.masters, ds.professions).has(cat.id))
-    return { lang, ds, kind: "cat" as const, cat };
+    return { lang, country: p.country, ds, kind: "cat" as const, cat };
   return null;
 }
 
@@ -101,7 +103,7 @@ export default async function FilterPage({
       ? { selectedCity: r.city.id }
       : { selectedProfessionCategory: r.cat.id };
   return (
-    <AppShell seed={buildSeed(r.lang, r.ds, sp)}>
+    <AppShell seed={buildSeed(r.lang, r.ds, sp, undefined, countryID(r.country))}>
       <Main />
     </AppShell>
   );

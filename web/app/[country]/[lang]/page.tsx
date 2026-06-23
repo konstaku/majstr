@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { LANGS, isLang, isIndexable, OG_LOCALE, type Lang } from "@/lib/i18n";
+import { LANGS, COUNTRIES, isLang, isCountry, countryID, isIndexable, OG_LOCALE, type Lang } from "@/lib/i18n";
 import { getDataset } from "@/lib/data";
 import { buildSeed } from "@/lib/seed";
 import { abs, homePath, languageAlternates, DEFAULT_OG_IMAGE } from "@/lib/urls";
@@ -13,7 +13,7 @@ export const revalidate = 3600;
 export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return LANGS.map((lang) => ({ lang }));
+  return COUNTRIES.flatMap((country) => LANGS.map((lang) => ({ country, lang })));
 }
 
 function homeTitle(lang: Lang) {
@@ -40,7 +40,7 @@ function homeDescription(lang: Lang) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ lang: string }>;
+  params: Promise<{ country: string; lang: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
   if (!isLang(lang)) return {};
@@ -61,13 +61,13 @@ export async function generateMetadata({
 export default async function Home({
   params,
 }: {
-  params: Promise<{ lang: string }>;
+  params: Promise<{ country: string; lang: string }>;
 }) {
-  const { lang: raw } = await params;
-  if (!isLang(raw)) notFound();
+  const { country: rawCountry, lang: raw } = await params;
+  if (!isLang(raw) || !isCountry(rawCountry)) notFound();
   const lang = raw as Lang;
-  const ds = await getDataset();
-  const seed = buildSeed(lang, ds);
+  const ds = await getDataset(countryID(rawCountry));
+  const seed = buildSeed(lang, ds, undefined, undefined, countryID(rawCountry));
 
   return (
     <>

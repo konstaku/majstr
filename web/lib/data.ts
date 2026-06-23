@@ -198,8 +198,8 @@ function masterRank(a: Master, b: Master): number {
 }
 
 // ── Master lookup by slug ─────────────────────────────────────────────────────
-export async function findMasterBySlug(slug: string) {
-  const { masters, profById, locById } = await getDataset();
+export async function findMasterBySlug(slug: string, country = "IT") {
+  const { masters, profById, locById } = await getDataset(country);
   const id6 = slug.split("-").pop() ?? "";
   if (id6.length !== 6) return null;
   const master = masters.find((m) => m._id.slice(-6) === id6);
@@ -209,8 +209,8 @@ export async function findMasterBySlug(slug: string) {
   return { master, prof, loc, canonical: masterSlug(master, prof, loc) };
 }
 
-export async function allMasterParams(): Promise<{ slug: string }[]> {
-  const { masters, profById, locById } = await getDataset();
+export async function allMasterParams(country = "IT"): Promise<{ slug: string }[]> {
+  const { masters, profById, locById } = await getDataset(country);
   return masters.map((m) => ({
     slug: masterSlug(m, profById.get(m.professionID), locById.get(m.locationID)),
   }));
