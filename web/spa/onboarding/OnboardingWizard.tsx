@@ -125,6 +125,20 @@ function WizardInner() {
           <div className="wizard-success-icon">✅</div>
           <h2 className="wizard-success-title">{t("success.title")}</h2>
           <p className="wizard-success-text">{t("success.text")}</p>
+          <div className="wizard-actions" style={{ width: "100%", maxWidth: 320 }}>
+            <button
+              type="button"
+              className="wizard-solid-btn"
+              onClick={() => {
+                // Inside Telegram, close the Mini App; on the web, go home.
+                const wa = window.Telegram?.WebApp;
+                if (wa?.close) wa.close();
+                else window.location.href = "/";
+              }}
+            >
+              {t("success.done")}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -147,6 +161,7 @@ function WizardInner() {
           label={isLast ? t("nav.submit") : t("nav.next")}
           onPress={handleNext}
           isEnabled={isStepValid && !isSyncing && !isSubmitting}
+          isLoading={isSubmitting}
         />
       </div>
     </FormProvider>
