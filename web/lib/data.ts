@@ -44,11 +44,11 @@ export interface Dataset {
   countries: unknown[];
 }
 
-export const getDataset = cache(async (): Promise<Dataset> => {
+export const getDataset = cache(async (country = "IT"): Promise<Dataset> => {
   const [masters, locations, professions, profCategories, countries] =
     await Promise.all([
-      getApprovedMasters(),
-      getLocations(),
+      getApprovedMasters(country),
+      getLocations(country),
       getProfessions(),
       getProfCategories(),
       getCountries(),

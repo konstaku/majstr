@@ -88,13 +88,13 @@ async function getJSON<T>(path: string): Promise<T> {
 // Use the SAME endpoints the SPA's Root uses, so the data shape matches what
 // the reused components expect (photo, contacts, languages, tags…).
 // `cache()` dedupes within a render/build; `next.revalidate` drives ISR.
-export const getApprovedMasters = cache(async (): Promise<Master[]> => {
-  const all = await getJSON<Master[]>("/?q=masters&country=IT");
+export const getApprovedMasters = cache(async (country = "IT"): Promise<Master[]> => {
+  const all = await getJSON<Master[]>(`/?q=masters&country=${country}`);
   return all.filter((m) => m.approved);
 });
 
-export const getLocations = cache(() =>
-  getJSON<Location[]>("/?q=locations&country=IT")
+export const getLocations = cache((country = "IT") =>
+  getJSON<Location[]>(`/?q=locations&country=${country}`)
 );
 export const getProfessions = cache(() => getJSON<Profession[]>("/?q=professions"));
 export const getProfCategories = cache(() =>
