@@ -32,6 +32,8 @@ export const MasterSchema = z.object({
   status: z.string().optional(),
   // Owner-verified by a moderator (claim flow) — VERIFIED badge + priority.
   verified: z.boolean().optional().default(false),
+  // Community endorsements (Community.id[]) — drives the "recommended by" badge.
+  communityIds: z.array(z.string()).optional().default([]),
 });
 
 export type Master = z.infer<typeof MasterSchema>;

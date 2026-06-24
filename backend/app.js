@@ -4,6 +4,7 @@ const Profession = require('./database/schema/Profession');
 const ProfCategory = require('./database/schema/ProfCategory');
 const Location = require('./database/schema/Location');
 const Country = require('./database/schema/Country');
+const Community = require('./database/schema/Community');
 
 const requireAuth = require('./middleware/requireAuth');
 const requireAdmin = require('./middleware/requireAdmin');
@@ -139,6 +140,9 @@ function buildApp() {
   ));
   app.get('/api/reference/countries', asyncHandler(async (req, res) =>
     res.json(await refCache.get('countries', () => Country.find()))
+  ));
+  app.get('/api/reference/communities', asyncHandler(async (req, res) =>
+    res.json(await refCache.get('communities', () => Community.find({ active: true })))
   ));
 
   const clearRefCacheOnSuccess = (req, res, next) => {

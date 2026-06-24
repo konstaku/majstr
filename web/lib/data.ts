@@ -5,10 +5,12 @@ import {
   getProfessions,
   getProfCategories,
   getCountries,
+  getCommunities,
   type Location,
   type Profession,
   type Master,
   type ProfCategory,
+  type Community,
 } from "./api";
 import { nomName, type Lang } from "./i18n";
 import { PROFESSION_SEO, CITY_PREP } from "./seo-data";
@@ -42,16 +44,18 @@ export interface Dataset {
   locations: Location[];
   profCategories: ProfCategory[];
   countries: unknown[];
+  communities: Community[];
 }
 
 export const getDataset = cache(async (country = "IT"): Promise<Dataset> => {
-  const [masters, locations, professions, profCategories, countries] =
+  const [masters, locations, professions, profCategories, countries, communities] =
     await Promise.all([
       getApprovedMasters(country),
       getLocations(country),
       getProfessions(),
       getProfCategories(),
       getCountries(),
+      getCommunities(),
     ]);
   return {
     masters,
@@ -59,6 +63,7 @@ export const getDataset = cache(async (country = "IT"): Promise<Dataset> => {
     professions,
     profCategories,
     countries,
+    communities,
     locById: new Map(locations.map((l) => [l.id, l])),
     profById: new Map(professions.map((p) => [p.id, p])),
   };

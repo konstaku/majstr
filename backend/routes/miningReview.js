@@ -40,6 +40,7 @@ const {
   summarizeDuplicate,
 } = require('../helpers/masterDuplicates');
 const dedup = require('../mining/dedup');
+const { communityForChat } = require('../mining/chatCommunities');
 
 const DECLINE_REASONS = CandidateModel.DECLINE_REASONS; // shared enum
 const STATUSES = CandidateModel.STATUS;
@@ -298,6 +299,8 @@ async function acceptCandidate(req, res) {
   const languages = Array.isArray(master.languages)
     ? master.languages.map((l) => String(l).trim()).filter(Boolean)
     : [];
+  // A master mined from a community's own chat inherits that community's badge.
+  const communityId = communityForChat(cand.chatID);
   const created = await Master.create({
     name: String(master.name).trim(),
     professionID: master.professionID,
@@ -310,6 +313,7 @@ async function acceptCandidate(req, res) {
       value: String(c.value).trim(),
     })),
     ...(languages.length ? { languages } : {}),
+    ...(communityId ? { communityIds: [communityId] } : {}),
     about: (master.about || '').toString(),
     ...(tags ? { tags } : {}),
     source,
