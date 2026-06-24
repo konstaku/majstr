@@ -63,6 +63,7 @@ const CHAT_REGION = {
   '1739258156': 'Genova',   // Українці в Генуя 🇮🇹
   '1698155646': 'Sanremo',  // Украинцы в Сан-Ремо
   '2181477220': 'Sanremo',  // Наші в Санремо
+  '1678212416': 'Nice',     // УКРАЇНСЬКІ КРАСУНІ — Côte d'Azur beauty services (FR)
 };
 const CONCURRENCY = 4;
 
