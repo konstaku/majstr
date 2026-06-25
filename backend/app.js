@@ -14,6 +14,7 @@ const { getDraft, patchDraft, deleteDraft, submitDraft, getMine } = require('./r
 const { uploadDraftPhoto, uploadDraftPhotoFromTelegram } = require('./routes/photo');
 const { patchDraftLimiter, submitDraftLimiter, photoUploadLimiter, claimsLimiter } = require('./middleware/draftRateLimiter');
 const { submitClaim, getMyClaims, withdrawClaim } = require('./routes/claims');
+const { registerReferral } = require('./routes/referral');
 const { editOwnedMaster, setVisibility, deleteOwnedMaster } = require('./routes/ownedMaster');
 const loadOwnedMaster = require('./middleware/loadOwnedMaster');
 const {
@@ -95,6 +96,10 @@ function buildApp() {
   });
   app.delete('/api/masters/draft', requireUser, asyncHandler(deleteDraft));
   app.get('/api/masters/mine', requireUser, asyncHandler(getMine));
+
+  // Community share-link referral: the wizard posts the ?via= token so a
+  // later submit can attach the community badge (phase-2 endorsement flow).
+  app.post('/api/referral', requireUser, asyncHandler(registerReferral));
 
   // Owner card management (claim flow). Registered AFTER the literal
   // /draft and /mine paths so :id can never shadow them.
