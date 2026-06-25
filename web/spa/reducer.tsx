@@ -17,6 +17,7 @@ export function reducer(state: State, { type, payload }: Action): State {
         profCategories: payload.profCategories,
         locations: payload.locations,
         countries: payload.countries,
+        communities: payload.communities ?? state.communities,
         loading: false,
       };
     }

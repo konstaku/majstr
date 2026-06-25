@@ -25,6 +25,7 @@ type SlimMaster = Pick<
   | "tags"
   | "verified"
   | "claimable"
+  | "communityIds"
 >;
 
 function slimMaster(m: Master): SlimMaster {
@@ -42,6 +43,8 @@ function slimMaster(m: Master): SlimMaster {
     // Needed by the modal: the logged-out "claim this card" CTA renders on any
     // claimable (unowned, scraped) card — the self-Googling-master acquisition path.
     claimable: m.claimable,
+    // Needed by the modal: the "Рекомендовано спільнотою" endorsement badge.
+    communityIds: m.communityIds,
   };
 }
 
@@ -68,6 +71,7 @@ export function buildSeed(
     locations: ds.locations,
     profCategories: ds.profCategories,
     countries: ds.countries,
+    communities: ds.communities,
     lang,
     loading: false,
     countryID: country,

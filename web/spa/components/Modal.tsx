@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
@@ -84,13 +84,20 @@ function formatRegCode(masterId: string, allMasters: Master[]): string {
 
 export default function Modal({ master, setShowModal, loadingDetails }: ModalProps) {
   const {
-    state: { locations, professions, masters },
+    state: { locations, professions, masters, communities },
   } = useContext(MasterContext);
   const { t, lang } = useTranslation();
 
   const { _id: id, languages, about, photo, countryID } = master;
   // Slim masters (grid seed) carry no contacts until the lazy fetch resolves.
   const contacts = master.contacts ?? [];
+
+  // Endorsing community — first resolved from the master's communityIds. Drives
+  // the optional "Рекомендовано спільнотою" badge; absent for most masters.
+  const community = (master.communityIds ?? [])
+    .map((cid) => communities.find((c) => c.id === cid))
+    .find((c): c is NonNullable<typeof c> => Boolean(c));
+  const [communityHover, setCommunityHover] = useState(false);
 
   // Mirror MasterCard's fallback so modal always shows language badges.
   const displayLangs = (languages && languages.length > 0)
@@ -288,6 +295,98 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
               )}
             </div>
           </section>
+
+          {/* "Рекомендовано спільнотою «…»" — optional endorsement band, shown
+              only for masters carrying a resolved community. Full-width clickable
+              strip that opens the community's Telegram chat. */}
+          {community && (
+            <a
+              href={community.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track("community_click", { master_id: id, community: community.id })}
+              onMouseEnter={() => setCommunityHover(true)}
+              onMouseLeave={() => setCommunityHover(false)}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "auto 1fr auto",
+                alignItems: "stretch",
+                textDecoration: "none",
+                background: communityHover ? "var(--ink, #0e0a06)" : "var(--cream, #f4ede0)",
+                color: communityHover ? "var(--paper, #fffaf0)" : "var(--ink, #0e0a06)",
+                borderBottom: "2px solid var(--ink, #0e0a06)",
+                transition: "background .15s ease, color .15s ease",
+              }}
+            >
+              <span
+                style={{
+                  background: "var(--terra, #c84b31)",
+                  color: "var(--paper, #fffaf0)",
+                  borderRight: "2px solid var(--ink, #0e0a06)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 18px",
+                  fontSize: 19,
+                }}
+              >
+                ★
+              </span>
+              <span
+                style={{
+                  padding: "11px 22px",
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  gap: 3,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    opacity: communityHover ? 0.8 : 0.6,
+                  }}
+                >
+                  Рекомендовано спільнотою
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
+                    fontWeight: 900,
+                    fontSize: 19,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1,
+                    textTransform: "uppercase",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  «{community.name}»
+                </span>
+              </span>
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "0 22px",
+                  fontFamily: "var(--font-mono, monospace)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span>Telegram</span>
+                <span style={{ color: communityHover ? "var(--terra, #c84b31)" : "inherit", fontSize: 18 }}>↗</span>
+              </span>
+            </a>
+          )}
 
           {/* Contacts */}
           {loadingDetails && contacts.length === 0 && (

@@ -60,6 +60,12 @@ const masterSchema = new mongoose.Schema(
     availability: { type: String, enum: ['available', 'next_week', 'busy'] },
     languages: { type: [String], default: undefined },
 
+    // Community endorsements — ids referencing Community.id. Renders the
+    // "Рекомендовано спільнотою" badge on the card/modal (first active one).
+    // Stamped by the mining accept flow (chat → community) and the share-link
+    // referral. Empty = no badge.
+    communityIds: { type: [String], default: [] },
+
     rating: { type: Number, default: null },
     reviewCount: { type: Number, default: 0 },
   },

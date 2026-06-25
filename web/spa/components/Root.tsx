@@ -63,15 +63,16 @@ export default function Root({
     const controller = new AbortController();
     (async () => {
       try {
-        const [masters, professions, profCategories, locations, countriesData] =
+        const [masters, professions, profCategories, locations, countriesData, communities] =
           await Promise.all([
             apiFetch(`/?q=masters&country=${countryID}`, { signal: controller.signal }).then((r) => r.json()),
             apiFetch(`/?q=professions`, { signal: controller.signal }).then((r) => r.json()),
             apiFetch(`/?q=prof-categories`, { signal: controller.signal }).then((r) => r.json()),
             apiFetch(`/?q=locations&country=${countryID}`, { signal: controller.signal }).then((r) => r.json()),
             apiFetch(`/?q=countries`, { signal: controller.signal }).then((r) => r.json()),
+            apiFetch(`/?q=communities`, { signal: controller.signal }).then((r) => r.json()),
           ]);
-        dispatch({ type: ACTIONS.POPULATE, payload: { masters, professions, profCategories, locations, countries: countriesData } });
+        dispatch({ type: ACTIONS.POPULATE, payload: { masters, professions, profCategories, locations, countries: countriesData, communities } });
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         dispatch({ type: ACTIONS.ERROR, payload: { error: "Can't load data" } });

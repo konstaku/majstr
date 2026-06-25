@@ -33,6 +33,7 @@ const BASE_STATE: State = {
   locations: [],
   profCategories: [],
   countries: [],
+  communities: [],
   searchParams: {
     selectedCity: "",
     selectedProfession: "",

@@ -32,12 +32,24 @@ export const CountrySchema = LocationSchema.omit({ countryID: true }).extend({
   flag: z.string(),
 });
 
+// Endorsing community resolved by id from Master.communityIds — drives the
+// "Рекомендовано спільнотою" badge on the card.
+export const CommunitySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  handle: z.string().nullable().optional(),
+  url: z.string(),
+  countryID: z.string().nullable().optional(),
+  active: z.boolean().optional(),
+});
+
 export const StateSchema = z.object({
   masters: z.array(MasterSchema),
   locations: z.array(LocationSchema),
   professions: z.array(ProfessionSchema),
   profCategories: z.array(ProfCategorySchema),
   countries: z.array(CountrySchema),
+  communities: z.array(CommunitySchema),
   searchParams: z.object({
     selectedCity: z.string(),
     selectedProfession: z.string(),
@@ -60,6 +72,7 @@ export const StateSchema = z.object({
 
 export type State = z.infer<typeof StateSchema>;
 export type Country = z.infer<typeof CountrySchema>;
+export type Community = z.infer<typeof CommunitySchema>;
 export type Location = z.infer<typeof LocationSchema>;
 export type Profession = z.infer<typeof ProfessionSchema>;
 export type ProfCategory = z.infer<typeof ProfCategorySchema>;

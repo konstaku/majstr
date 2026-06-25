@@ -68,9 +68,20 @@ export interface Master {
   status?: string;
   claimable?: boolean;
   source?: string;
+  /** Community endorsements (Community.id[]) — drives the "recommended by" badge. */
+  communityIds?: string[];
   tags?: { ua?: string[]; en?: string[]; ru?: string[] };
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Community {
+  id: string;
+  name: string;
+  handle?: string | null;
+  url: string;
+  countryID?: string | null;
+  active?: boolean;
 }
 
 // Shared cache tag so an approval webhook can refresh every data-derived page
@@ -101,3 +112,12 @@ export const getProfCategories = cache(() =>
   getJSON<ProfCategory[]>("/?q=prof-categories")
 );
 export const getCountries = cache(() => getJSON<Country[]>("/?q=countries"));
+// Tolerant: a missing/erroring communities endpoint (e.g. web deployed ahead of
+// the backend) degrades to "no badge" rather than breaking the whole catalogue.
+export const getCommunities = cache(async (): Promise<Community[]> => {
+  try {
+    return await getJSON<Community[]>("/?q=communities");
+  } catch {
+    return [];
+  }
+});
