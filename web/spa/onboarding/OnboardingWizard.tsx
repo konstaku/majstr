@@ -18,6 +18,7 @@ import { StepBioTags } from "./steps/StepBioTags";
 import { StepContact } from "./steps/StepContact";
 import { useHaptic } from "../ui/useHaptic";
 import { useClaimDeepLink } from "../surface/useClaimDeepLink";
+import { captureReferralFromUrl } from "../referral/referral";
 import { track } from "../analytics";
 import { OnboardingI18nProvider, useOnbT } from "./i18n";
 
@@ -65,6 +66,14 @@ function WizardInner() {
   const popup = usePopup();
   const [submitted, setSubmitted] = useState(false);
   const StepComponent = STEP_COMPONENTS[step];
+
+  // Persist a community share-link token if the wizard was opened via
+  // /add?via=<token> (direct deep link that skipped the catalogue chrome).
+  // The Mini App entry carries the token in start_param instead — both are
+  // resolved at submit time (useDraft → registerReferralIfAny).
+  useEffect(() => {
+    captureReferralFromUrl();
+  }, []);
 
   // Gate: is the current step's required data filled in?
   const values = form.watch();

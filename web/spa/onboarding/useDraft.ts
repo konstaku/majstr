@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { apiFetch } from "../api/client";
+import { registerReferralIfAny } from "../referral/referral";
 import { usePopup } from "../ui/usePopup";
 import type { DraftData } from "./schema";
 import { serverDraftToForm, formToServerPatch } from "./schema";
@@ -261,6 +262,11 @@ export function useDraft(form: UseFormReturn<DraftData>): UseDraftResult {
           return { ok: false, error: "offline" };
         }
       }
+
+      // Register any community share-link referral right before submit, so the
+      // backend has stamped the user by the time submitDraft reads it and can
+      // attach the endorsement badge. Best-effort — never blocks the submit.
+      await registerReferralIfAny();
 
       const res = await apiFetch(
         "/api/masters/draft/submit",
