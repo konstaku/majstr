@@ -71,14 +71,22 @@ async function submitClaim(req, res) {
   if (!master.claimable) return res.status(409).json({ error: 'not_claimable' });
 
   // One active card per owner (partial unique index on ownerUserID). Without
-  // this check the ownership transfer below throws E11000 — surface a clear
-  // 409 instead.
-  const hasActiveCard = await Master.exists({
+  // this the ownership transfer below throws E11000. A real (submitted) card —
+  // pending or approved — legitimately blocks the claim, so surface a clear
+  // 409. But an unsubmitted `draft` is an abandoned "add card" attempt (often
+  // an empty, unsubmittable shell); it must not permanently dead-end the user
+  // out of claiming their real (e.g. scraped) card. Supersede it: drop the
+  // draft, then proceed with the claim.
+  const activeCard = await Master.findOne({
     ownerUserID: req.user._id,
     status: { $in: Master.ACTIVE_STATUSES },
   });
-  if (hasActiveCard) {
-    return res.status(409).json({ error: 'active_card_exists' });
+  if (activeCard) {
+    if (activeCard.status === 'draft') {
+      await Master.deleteOne({ _id: activeCard._id });
+    } else {
+      return res.status(409).json({ error: 'active_card_exists' });
+    }
   }
 
   // Build evidence from what the claimant provided
