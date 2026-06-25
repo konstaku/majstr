@@ -24,6 +24,7 @@
 
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const { runDB } = require('../database/db');
 
 const Profession = require('../database/schema/Profession');
@@ -45,6 +46,8 @@ const {
 const { storeRawForward, processCandidate } = require('../mining/forwardIntake');
 const miningDb = require('../database/miningDb');
 const CHAT_REGION = require('../mining/chatRegions');
+const { CHAT_COUNTRY, DEFAULT_COUNTRY } = require('../mining/chatCountries');
+const DECLINE_REASONS = require('../database/schema/Candidate').DECLINE_REASONS;
 
 function arg(flag, def) {
   const i = process.argv.indexOf(flag);
@@ -142,6 +145,134 @@ async function main() {
     }
   });
 
+  // Sender lookup for the review card. We never stored the @username or numeric
+  // id (docs/data-policy.md) — but Telegram exports carry @handles in message
+  // TEXT, and the stored salted `fromHash` lets us cluster one author's messages.
+  // So we return the display name + the @handles that author wrote across the
+  // chat (strong hint for their own handle; could also be a referral — verify).
+  let _RawMining = null;
+  const rawMiningModel = () => {
+    if (_RawMining) return _RawMining;
+    const conn = mongoose.connection.useDb(miningDb.dbName);
+    _RawMining =
+      conn.models.RawMessage ||
+      conn.model('RawMessage', require('../database/schema/RawMessage').schema);
+    return _RawMining;
+  };
+  // Telegram usernames: 5–32 chars, start with a letter, [A-Za-z0-9_]. Pull both
+  // bare @mentions and t.me/<handle> links; drop reserved/non-profile paths.
+  const RESERVED = new Set(['c', 'joinchat', 'addstickers', 'share', 'proxy', 'iv', 'addemoji']);
+  function handlesFromText(text) {
+    const out = [];
+    const t = String(text || '');
+    const re = /(?:@|t\.me\/)([A-Za-z][A-Za-z0-9_]{3,31})\b/g;
+    let m;
+    while ((m = re.exec(t))) {
+      const h = m[1];
+      if (!RESERVED.has(h.toLowerCase())) out.push(h);
+    }
+    return out;
+  }
+  app.get('/api/local/sender/:id', async (req, res) => {
+    try {
+      const cand = await miningDb.Candidate().findById(req.params.id).lean();
+      if (!cand) return res.status(404).json({ error: 'candidate_not_found' });
+      let name = cand.responderName || (cand.submittedBy && cand.submittedBy.name) || null;
+      const counts = new Map();
+      const bump = (h) => counts.set(h, (counts.get(h) || 0) + 1);
+      handlesFromText(cand.text).forEach(bump);
+
+      // Cluster the author's own messages via fromHash → gather the handles they
+      // used elsewhere too (the "quick search" for the poster's username).
+      let authoredMessages = 0;
+      if (cand.chatID && cand.anchorMessageID != null) {
+        const Raw = rawMiningModel();
+        const anchor = await Raw.findOne({
+          chatID: String(cand.chatID),
+          messageID: cand.anchorMessageID,
+        })
+          .select('fromName fromHash')
+          .lean();
+        if (anchor) {
+          if (!name) name = anchor.fromName || null;
+          if (anchor.fromHash) {
+            const mine = await Raw.find({ chatID: String(cand.chatID), fromHash: anchor.fromHash })
+              .select('text')
+              .limit(500)
+              .lean();
+            authoredMessages = mine.length;
+            for (const msg of mine) handlesFromText(msg.text).forEach(bump);
+          }
+        }
+      }
+      const handles = [...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([handle, count]) => ({ handle, count }));
+      res.json({ name, handles, authoredMessages });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Bulk decline by handle: decline the current candidate AND every other queued
+  // (raw/new) candidate that features the same master handle — clears a repeat
+  // poster in one action. Mirrors declineCandidate (status + MiningFeedback).
+  const normHandle = (h) => {
+    if (!h) return '';
+    let s = String(h).trim().replace(/^https?:\/\//i, '').replace(/^t\.me\//i, '').replace(/^@/, '');
+    s = s.split(/[\/?\s]/)[0].toLowerCase();
+    return /^[a-z0-9_]{3,32}$/.test(s) ? s : '';
+  };
+  const featuresHandle = (cand, norm) => {
+    const re = new RegExp('(?:@|t\\.me/)' + norm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+    if (re.test(cand.text || '')) return true;
+    const contacts = (cand.extracted && cand.extracted.contacts) || [];
+    return contacts.some((x) => normHandle(x.value) === norm);
+  };
+  app.post('/api/local/decline-by-handle', async (req, res) => {
+    try {
+      const { handle, reasonCode, currentId, note } = req.body || {};
+      if (!reasonCode || !DECLINE_REASONS.includes(reasonCode)) {
+        return res.status(400).json({ error: 'bad_reasonCode', allowed: DECLINE_REASONS });
+      }
+      const norm = normHandle(handle);
+      if (!norm) return res.status(400).json({ error: 'bad_handle' });
+
+      const Candidate = miningDb.Candidate();
+      const MiningFeedback = miningDb.MiningFeedback();
+      const queue = await Candidate.find({ status: { $in: ['raw', 'new'] } })
+        .select('text extracted classifierName classifierVersion')
+        .lean();
+
+      const ids = new Set();
+      if (currentId) ids.add(String(currentId)); // the card you are on, always
+      for (const c of queue) if (featuresHandle(c, norm)) ids.add(String(c._id));
+
+      let declined = 0;
+      for (const cid of ids) {
+        const cand = await Candidate.findById(cid);
+        if (!cand || cand.status === 'carded' || cand.status === 'declined') continue;
+        cand.status = 'declined';
+        cand.declineReason = reasonCode;
+        await cand.save();
+        await MiningFeedback.create({
+          candidateRef: cand._id,
+          action: 'decline',
+          reasonCode,
+          correctedFields: { note: note || ('bulk decline · @' + norm) },
+          classifierName: cand.classifierName,
+          classifierVersion: cand.classifierVersion,
+          adminTelegramID: ADMIN_TG || undefined,
+        });
+        declined++;
+      }
+      res.json({ ok: true, handle: norm, declined });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   app.get('/', (_req, res) => res.type('html').send(HTML));
 
   app.listen(PORT, HOST, () => {
@@ -160,40 +291,55 @@ const HTML = /* html */ `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Majstr · local review queue</title>
 <style>
-  :root { --bg:#0f1115; --card:#181b22; --line:#2a2f3a; --fg:#e7e9ee; --mut:#9aa3b2;
-          --accent:#6ea8fe; --amber:#f0b34a; --red:#f0726a; --green:#5cc98a; }
+  /* Light is the default; [data-theme="dark"] on <html> flips the tokens. */
+  :root { --bg:#f4f6f9; --card:#ffffff; --line:#d6dbe4; --field:#ffffff; --field-line:#cbd2dc;
+          --fg:#15202b; --mut:#586271; --accent:#2563eb; --on-accent:#ffffff;
+          --amber:#9a5b0b; --red:#c0362c; --green:#1f8a4c; --shadow:0 1px 2px rgba(16,24,40,.06); }
+  html[data-theme="dark"] { --bg:#0f1115; --card:#181b22; --line:#2a2f3a; --field:#11141a; --field-line:#2a2f3a;
+          --fg:#eef1f6; --mut:#aeb6c4; --accent:#6ea8fe; --on-accent:#06122b;
+          --amber:#f0b34a; --red:#f0726a; --green:#5cc98a; --shadow:none; }
   * { box-sizing:border-box; }
   body { margin:0; font:14px/1.45 system-ui,sans-serif; background:var(--bg); color:var(--fg); }
   header { position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line); padding:12px 18px; z-index:5; }
-  h1 { font-size:16px; margin:0 0 6px; }
+  h1 { font-size:16px; margin:0; }
   h2 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--mut); margin:18px 0 8px; }
   .row { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .topbar { display:flex; align-items:center; gap:12px; justify-content:space-between; }
   .mut { color:var(--mut); } .small { font-size:12px; }
   .pill { background:var(--card); border:1px solid var(--line); border-radius:999px; padding:2px 9px; font-size:12px; }
+  .tabs { display:flex; gap:4px; }
+  .tab { background:transparent; border:1px solid transparent; border-radius:8px; padding:6px 12px; color:var(--mut); cursor:pointer; font:inherit; }
+  .tab.active { background:var(--card); border-color:var(--line); color:var(--fg); font-weight:600; box-shadow:var(--shadow); }
+  .iconbtn { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 10px; cursor:pointer; font:inherit; color:var(--fg); }
   main { padding:18px; max-width:780px; margin:0 auto; }
-  .paste { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:6px; }
-  textarea, input, select { background:#11141a; color:var(--fg); border:1px solid var(--line); border-radius:7px; padding:7px 9px; font:inherit; width:100%; }
+  .hidden { display:none !important; }
+  .paste { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:6px; box-shadow:var(--shadow); }
+  textarea, input, select { background:var(--field); color:var(--fg); border:1px solid var(--field-line); border-radius:7px; padding:7px 9px; font:inherit; width:100%; }
   input[type=checkbox] { width:auto; padding:0; margin:0; flex:none; }
   textarea { min-height:70px; resize:vertical; }
   label { display:block; font-size:12px; color:var(--mut); margin:8px 0 3px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:14px; box-shadow:var(--shadow); }
   .card.raw { border-style:dashed; }
   .meta { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
-  .tag { background:#11141a; border:1px solid var(--line); border-radius:5px; padding:1px 7px; font-size:11px; color:var(--mut); }
-  .msg { white-space:pre-wrap; background:#11141a; border:1px solid var(--line); border-radius:8px; padding:9px; font-size:13px; margin:8px 0; max-height:170px; overflow:auto; }
+  .tag { background:var(--field); border:1px solid var(--field-line); border-radius:5px; padding:1px 7px; font-size:11px; color:var(--mut); }
+  .msg { white-space:pre-wrap; background:var(--field); border:1px solid var(--field-line); border-radius:8px; padding:9px; font-size:13px; margin:8px 0; max-height:170px; overflow:auto; }
   .src { font-size:12px; color:var(--mut); }
+  .sender { display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:var(--field); border:1px solid var(--field-line); border-radius:8px; padding:8px 10px; margin:8px 0; font-size:13px; }
+  .sender b { font-weight:600; } .sender .uname { color:var(--mut); }
+  .tglink { color:var(--accent); text-decoration:none; font-weight:600; white-space:nowrap; }
+  .linkbtn { background:none; border:none; color:var(--accent); padding:0; cursor:pointer; font:inherit; text-decoration:underline; }
   .dup { border:1px solid var(--amber); border-radius:8px; padding:8px 10px; margin:8px 0; font-size:12px; }
   .dup ul { margin:4px 0 6px; padding-left:18px; }
   .shots { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
   .shots a { display:block; }
   .shots img { height:120px; border:1px solid var(--line); border-radius:8px; object-fit:cover; }
-  .ocr { font-size:11px; color:var(--mut); white-space:pre-wrap; background:#11141a; border:1px dashed var(--line); border-radius:6px; padding:6px; margin-top:4px; max-height:90px; overflow:auto; }
+  .ocr { font-size:11px; color:var(--mut); white-space:pre-wrap; background:var(--field); border:1px dashed var(--field-line); border-radius:6px; padding:6px; margin-top:4px; max-height:90px; overflow:auto; }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .contact { display:grid; grid-template-columns:120px 1fr auto; gap:6px; margin-bottom:6px; }
   .btns { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
-  button { background:#222734; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px 14px; cursor:pointer; font:inherit; }
-  button:hover { border-color:#3a4150; } button:disabled { opacity:.5; cursor:default; }
-  .primary { background:var(--accent); color:#06122b; border-color:var(--accent); font-weight:600; }
+  button { background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px 14px; cursor:pointer; font:inherit; }
+  button:hover { border-color:var(--accent); } button:disabled { opacity:.5; cursor:default; }
+  .primary { background:var(--accent); color:var(--on-accent); border-color:var(--accent); font-weight:600; }
   .danger { color:var(--red); } .warn { color:var(--amber); font-size:12px; } .err { color:var(--red); font-size:12px; }
   .langbox { display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin:4px 0 2px; }
   .langbox label { display:inline-flex; align-items:center; gap:7px; margin:0; color:var(--fg); font-size:18px; cursor:pointer; }
@@ -204,7 +350,7 @@ const HTML = /* html */ `<!doctype html>
   .row-pair select { flex:1; }
   .addbtn { white-space:nowrap; padding:7px 10px; }
   .backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; z-index:20; overflow:auto; }
-  .modal { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; width:100%; max-width:440px; }
+  .modal { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; width:100%; max-width:440px; box-shadow:0 8px 30px rgba(16,24,40,.18); }
   .modal h3 { margin:0 0 10px; font-size:15px; }
   .modal .mlrow { display:grid; grid-template-columns:140px 1fr; gap:8px; align-items:center; margin-bottom:6px; }
   .modal .mlrow span { font-size:12px; color:var(--mut); }
@@ -213,53 +359,77 @@ const HTML = /* html */ `<!doctype html>
 </head>
 <body>
 <header>
-  <h1>Majstr · local review queue <span class="mut small" id="conn"></span></h1>
-  <div class="row">
-    <span class="pill">raw <b id="qRaw">–</b></span>
-    <span class="pill">ready <b id="qNew">–</b></span>
-    <span class="pill">accepted <b id="cAcc">0</b></span>
-    <span class="pill">declined <b id="cDec">0</b></span>
-    <button id="procAll" class="small primary">Process all raw</button>
-    <label class="small" style="margin:0"><input type="checkbox" id="auto" checked style="width:auto;display:inline"> auto-refresh</label>
-    <button id="reload" class="small">Reload</button>
-    <button id="rebuild" class="small" title="Rebuild the mining lexicon after adding professions">Rebuild lexicon</button>
+  <div class="topbar">
+    <h1>Majstr · review <span class="mut small" id="conn"></span></h1>
+    <div class="row" style="gap:8px">
+      <div class="tabs">
+        <button class="tab active" data-view="review">Review</button>
+        <button class="tab" data-view="tools">Tools</button>
+      </div>
+      <button id="themeToggle" class="iconbtn" title="Toggle light / dark theme">🌙</button>
+    </div>
   </div>
-  <div class="row" style="margin-top:8px">
+  <div class="row" style="margin-top:10px">
     <label class="small" style="margin:0">Source
       <select id="fSource" style="width:auto;display:inline-block;margin-left:4px;min-width:180px"></select>
     </label>
-    <span class="mut small" id="procMsg"></span>
+    <span class="pill">ready <b id="qNew">–</b></span>
+    <span class="pill">accepted <b id="cAcc">0</b></span>
+    <span class="pill">declined <b id="cDec">0</b></span>
+    <label class="small" style="margin:0"><input type="checkbox" id="auto" checked style="width:auto;display:inline"> auto-refresh</label>
   </div>
 </header>
 <main>
-  <div class="paste">
-    <label>Paste a recommendation / chat snippet — stored + processed through Ollama right away</label>
-    <textarea id="pText" placeholder="Q: хто може полагодити айфон, замінити екран?&#10;A: звернись до Георгія, +39 351 998 7766"></textarea>
-    <div class="grid2" style="margin-top:8px">
-      <input id="pChat" placeholder="Origin chat title (optional city hint, e.g. Українці в Мілано)" />
-      <button id="pRun" class="primary">Extract → queue</button>
+  <!-- REVIEW: the one intent — only the current candidate + navigation. -->
+  <div id="reviewView">
+    <h2>Review <span id="pos" class="mut small"></span></h2>
+    <div class="nav">
+      <button id="prev">← Prev</button>
+      <button id="next">Next →</button>
     </div>
-    <div id="pMsg" class="small" style="margin-top:6px"></div>
+    <div id="review"></div>
   </div>
 
-  <h2>Raw — process next</h2>
-  <div id="rawArea"></div>
+  <!-- TOOLS: secondary functions kept off the review screen. -->
+  <div id="toolsView" class="hidden">
+    <h2>Add a snippet</h2>
+    <div class="paste">
+      <label>Paste a recommendation / chat snippet — stored + processed through Ollama right away</label>
+      <textarea id="pText" placeholder="Q: хто може полагодити айфон, замінити екран?&#10;A: звернись до Георгія, +39 351 998 7766"></textarea>
+      <div class="grid2" style="margin-top:8px">
+        <input id="pChat" placeholder="Origin chat title (optional city hint, e.g. Українці в Мілано)" />
+        <button id="pRun" class="primary">Extract → queue</button>
+      </div>
+      <div id="pMsg" class="small" style="margin-top:6px"></div>
+    </div>
 
-  <h2>Review <span id="pos" class="mut small"></span></h2>
-  <div class="nav">
-    <button id="prev">← Prev</button>
-    <button id="next">Next →</button>
+    <h2>Raw queue <span class="pill">raw <b id="qRaw">–</b></span></h2>
+    <div class="row" style="margin-bottom:8px">
+      <button id="procAll" class="small primary">Process all raw</button>
+      <button id="reload" class="small">Reload</button>
+      <button id="rebuild" class="small" title="Rebuild the mining lexicon after adding professions">Rebuild lexicon</button>
+      <span class="mut small" id="procMsg"></span>
+    </div>
+    <div id="rawArea"></div>
   </div>
-  <div id="review"></div>
 </main>
 <div id="modalRoot"></div>
 
 <script>
-// Languages a master speaks (per-card checkboxes, flags). UA + RU default-checked.
-const SPEAK_LANGS = [['ua','🇺🇦'],['ru','🇷🇺'],['en','🇬🇧'],['it','🇮🇹']];
+// Per-chat country (injected from mining/chatCountries.js) — drives the city
+// dropdown, the language flag and the accept payload's countryID per candidate.
+const CHAT_COUNTRY = ${JSON.stringify(CHAT_COUNTRY)};
+const DEFAULT_COUNTRY = ${JSON.stringify(DEFAULT_COUNTRY)};
+const countryForChat = (chatID) => CHAT_COUNTRY[String(chatID)] || DEFAULT_COUNTRY;
+// Languages a master speaks (per-card checkboxes, flags). UA + RU default-checked;
+// the 4th flag is the country's own language (🇮🇹 / 🇫🇷).
+const LOCAL_LANG = { IT: ['it','🇮🇹'], FR: ['fr','🇫🇷'] };
+const speakLangs = (country) => [['ua','🇺🇦'],['ru','🇷🇺'],['en','🇬🇧'], LOCAL_LANG[country] || LOCAL_LANG.IT];
 const SPEAK_DEFAULT = ['ua','ru'];
 // Fixed display preference for profession/city dropdown labels.
 const NAME_PREF = ['ua','ru','en','it'];
+// Decline reasons (mirrors database/schema/Candidate DECLINE_REASONS).
+const DECLINE_REASONS = ['out_of_scope','not_a_master','spam','duplicate','wrong_extraction','other'];
 let professions = [], locations = [], categories = [], countries = [];
 let rawC = [], newC = [];
 let idx = 0, currentId = null; // one-card-at-a-time review pointer
@@ -368,32 +538,38 @@ function catSelectOptions(s){ return '<option value="">— all categories —</o
 // Profession options, optionally filtered to a category. Empty category = all.
 function profOptions(catId,s){ const list=catId?professions.filter(p=>p.categoryID===catId):professions;
   return '<option value="">— profession —</option>'+list.map(p=>'<option value="'+p.id+'"'+(p.id===s?' selected':'')+'>'+esc(pickName(p.name))+'</option>').join(''); }
-function locOptions(s){ return '<option value="">— city —</option>'+locations.map(l=>'<option value="'+l.id+'"'+(l.id===s?' selected':'')+'>'+esc(pickName(l.name))+'</option>').join(''); }
+function locOptions(country,s){ const list=country?locations.filter(l=>l.countryID===country):locations;
+  return '<option value="">— city —</option>'+list.map(l=>'<option value="'+l.id+'"'+(l.id===s?' selected':'')+'>'+esc(pickName(l.name))+'</option>').join(''); }
 function catOfProfession(profId){ const p=professions.find(x=>x.id===profId); return p?p.categoryID:''; }
 
 function card(c){
   const ex=c.extracted||{}; const el=document.createElement('div'); el.className='card';
   const dups=c.duplicateMasters||[];
   const suggestedCat=catOfProfession(c.suggestProfessionID); // pre-filter category from the suggested profession
+  const country=countryForChat(c.chatID); // drives city list, lang flag, accept countryID
   el.innerHTML=
     '<div class="meta"><span class="tag">'+esc(c.kind)+'</span><span class="tag">'+esc(c.sourceType)+'</span>'+
       '<span class="tag">score '+(c.score||0).toFixed(2)+'</span><span class="tag">'+esc(c.classifierName)+' '+esc(c.classifierVersion)+'</span></div>'+
     provenance(c)+ shots(c)+
     (c.inquiryText?'<div class="msg"><b>Q:</b> '+esc(c.inquiryText)+'</div>':'')+
     (c.text?'<div class="msg">'+esc(c.text)+'</div>':'')+
-    (c.tgLink?'<div class="small"><a href="'+c.tgLink+'" target="_blank" style="color:var(--accent)">↗ original in Telegram</a></div>':'')+
+    '<div class="sender" data-cid="'+c.id+'">'+
+      '<span>👤 <b class="snd-name">'+esc(c.responderName||(c.submittedBy&&c.submittedBy.name)||'—')+'</b></span>'+
+      (c.tgLink?'<a class="tglink" href="'+c.tgLink+'" target="_blank">↗ Open message</a>':'')+
+      '<span class="snd-handles mut small">…</span>'+
+    '</div>'+
     (dups.length?'<div class="dup"><b>⚠ Possible duplicate — live master already has this contact:</b><ul>'+
       dups.map(d=>'<li>'+esc(d.name||'(no name)')+' · '+esc(d.status)+'/'+esc(d.source)+' · '+esc((d.contacts||[]).map(x=>x.value).join(', '))+'</li>').join('')+'</ul></div>':'')+
     '<label>Name</label><input class="f-name" value="'+esc(ex.name||c.responderName||'')+'">'+
     '<label>Category</label><select class="f-cat">'+catSelectOptions(suggestedCat)+'</select>'+
     '<div class="grid2"><div><label>Profession</label><div class="row-pair"><select class="f-prof">'+profOptions(suggestedCat,c.suggestProfessionID)+'</select><button type="button" class="addbtn addProf">+ Add</button></div>'+
       (ex.profession?'<div class="mut small">read: "'+esc(ex.profession)+'"</div>':'')+'</div>'+
-    '<div><label>City</label><div class="row-pair"><select class="f-loc">'+locOptions(c.suggestLocationID)+'</select><button type="button" class="addbtn addCity">+ Add</button></div>'+
+    '<div><label>City</label><div class="row-pair"><select class="f-loc">'+locOptions(country,c.suggestLocationID)+'</select><button type="button" class="addbtn addCity">+ Add</button></div>'+
       (ex.city?'<div class="mut small">read: "'+esc(ex.city)+'"</div>':'')+'</div></div>'+
     '<label>Contacts</label><div class="f-contacts"></div><button class="addc small" style="margin-top:4px">+ contact</button>'+
     '<label>Tags (UA, comma — from the announcement)</label><input class="f-tua" value="'+esc((ex.tags&&ex.tags.ua||[]).join(', '))+'">'+
     '<label>Languages spoken</label><div class="langbox">'+
-      SPEAK_LANGS.map(([code,lab])=>'<label><input type="checkbox" class="f-lang" value="'+code+'"'+(SPEAK_DEFAULT.includes(code)?' checked':'')+'> '+lab+'</label>').join('')+'</div>'+
+      speakLangs(country).map(([code,lab])=>'<label><input type="checkbox" class="f-lang" value="'+code+'"'+(SPEAK_DEFAULT.includes(code)?' checked':'')+'> '+lab+'</label>').join('')+'</div>'+
     '<label>Description</label><textarea class="f-about">'+esc(ex.description||'')+'</textarea>'+
     '<div class="msg-err err"></div>'+
     '<div class="btns"><button class="primary act-accept">Approve → publish</button>'+
@@ -415,13 +591,25 @@ function card(c){
   el.querySelector('.addProf').onclick=()=>openAddProfession((p)=>{ professions.push(p);
     el.querySelector('.f-cat').innerHTML=catSelectOptions(p.categoryID);
     el.querySelector('.f-prof').innerHTML=profOptions(p.categoryID,p.id); });
-  el.querySelector('.addCity').onclick=()=>openAddCity((l)=>{ locations.push(l); el.querySelector('.f-loc').innerHTML=locOptions(l.id); });
+  el.querySelector('.addCity').onclick=()=>openAddCity(country,(l)=>{ locations.push(l); el.querySelector('.f-loc').innerHTML=locOptions(country,l.id); });
+
+  // Resolve the sender: fill the display name (announcements have none on the
+  // card) and surface the @handles this author wrote across the chat — each links
+  // straight to the Telegram profile, so you can open it and read the @username.
+  (async()=>{ const hEl=el.querySelector('.snd-handles'); const nEl=el.querySelector('.snd-name');
+    try{ const b=await fetch('/api/local/sender/'+c.id).then(r=>r.json());
+      if(b.name && (!nEl.textContent||nEl.textContent==='—')) nEl.textContent=b.name;
+      if(b.handles && b.handles.length){ hEl.classList.remove('mut');
+        el.querySelector('.sender').dataset.handle=b.handles[0].handle; // prefill bulk-decline
+        hEl.innerHTML='handle: '+b.handles.map(x=>'<a class="tglink" href="https://t.me/'+encodeURIComponent(x.handle)+'" target="_blank" title="found in this author’s messages'+(x.count>1?' ('+x.count+'×)':'')+' — opens the profile; verify it is them, not a referral">↗ @'+esc(x.handle)+'</a>').join(' ');
+      } else { hEl.textContent='no @handle in this author’s messages — open the message and tap the sender'; }
+    }catch(e){ hEl.textContent='@username: open the message and tap the sender'; } })();
 
   function payload(){ const split=s=>s.split(',').map(t=>t.trim()).filter(Boolean);
     const tua=split(el.querySelector('.f-tua').value);
     const languages=[...el.querySelectorAll('.f-lang:checked')].map(x=>x.value);
     return { name:el.querySelector('.f-name').value.trim(), professionID:el.querySelector('.f-prof').value,
-      locationID:el.querySelector('.f-loc').value, countryID:'IT', about:el.querySelector('.f-about').value.trim()||undefined,
+      locationID:el.querySelector('.f-loc').value, countryID:country, about:el.querySelector('.f-about').value.trim()||undefined,
       contacts:contacts.map(x=>({contactType:x.contactType,value:x.value.trim()})).filter(x=>x.value),
       ...(tua.length?{tags:{ua:tua,en:[]}}:{}),
       ...(languages.length?{languages}:{}) }; }
@@ -441,9 +629,7 @@ function card(c){
     try{ const r=await fetch('/api/local/process/'+c.id,{method:'POST'}); const b=await r.json(); if(!r.ok)throw new Error(b.error); loadQueue(); }
     catch(e){ errEl.textContent=e.message; ev.target.disabled=false; ev.target.textContent='Re-run LLM'; } };
   el.querySelector('.act-skip').onclick=()=>{ if(idx<newC.length-1) idx++; renderCurrent(true); };
-  el.querySelector('.act-decline').onclick=async()=>{ const reason=prompt('Decline reason: not_a_master / spam / duplicate / wrong_extraction / out_of_scope / other','out_of_scope'); if(!reason) return;
-    const r=await fetch('/api/mining/candidates/'+c.id+'/decline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reasonCode:reason})});
-    if(r.ok){ counters.dec++; document.getElementById('cDec').textContent=counters.dec; loadQueue(); } else { const b=await r.json().catch(()=>({})); errEl.textContent=b.error||'decline failed'; } };
+  el.querySelector('.act-decline').onclick=()=>openDeclineModal(c, el, (n)=>{ counters.dec+=n; document.getElementById('cDec').textContent=counters.dec; loadQueue(); });
   return el;
 }
 
@@ -518,8 +704,8 @@ function openAddProfession(cb){
 }
 
 function countryOptions(selId){ return '<option value="">— select —</option>'+countries.map(c=>'<option value="'+c.id+'"'+(c.id===selId?' selected':'')+'>'+(c.flag?c.flag+' ':'')+esc(pickName(c.name))+'</option>').join(''); }
-function openAddCity(cb){
-  const inner=nameRows()+'<div class="mlrow"><span>Country</span><select class="m-country">'+countryOptions('IT')+'</select></div>';
+function openAddCity(country,cb){
+  const inner=nameRows()+'<div class="mlrow"><span>Country</span><select class="m-country">'+countryOptions(country||'IT')+'</select></div>';
   const wrap=pushModal('New city', inner);
   const box=wrap.querySelector('.modal'); box.querySelector('.ok').textContent='Create city';
   box.querySelector('.ok').onclick=async()=>{
@@ -529,6 +715,42 @@ function openAddCity(cb){
     try{ const l=await postJSON('/api/reference/locations',{countryID,name}); wrap.remove(); cb&&cb(l); }
     catch(e){ box.querySelector('.merr').textContent=e.message; }
   };
+}
+
+// Best-guess master handle from the extracted contacts (fallback when the
+// sender block has not resolved a handle from the author's messages). Regex-free
+// on purpose — this string lives in a template literal where \\-escapes mangle.
+function firstTelegramContact(c){ const cs=(c.extracted&&c.extracted.contacts)||[];
+  const looksTg=v=>{ v=String(v||'').toLowerCase(); return v.indexOf('@')>=0||v.indexOf('t.me/')>=0; };
+  const t=cs.find(x=>x.contactType==='telegram')||cs.find(x=>looksTg(x.value));
+  if(!t) return '';
+  let v=String(t.value||'').trim(); const i=v.toLowerCase().indexOf('t.me/');
+  if(i>=0) v=v.slice(i+5); v=v.split('@').join('');
+  let out=''; for(const ch of v){ if(/[a-zA-Z0-9_]/.test(ch)) out+=ch; else break; }
+  return out; }
+
+// Decline modal: reason + optional "decline every other queued message featuring
+// this master" (by handle). Replaces the old prompt().
+function openDeclineModal(c, el, onDone){
+  const sender=el.querySelector('.sender');
+  const guess=(sender&&sender.dataset.handle)||firstTelegramContact(c)||'';
+  const inner=
+    '<label>Reason</label><select class="dm-reason">'+DECLINE_REASONS.map(r=>'<option value="'+r+'"'+(r==='out_of_scope'?' selected':'')+'>'+r+'</option>').join('')+'</select>'+
+    '<label style="display:flex;align-items:center;gap:8px;margin-top:14px;color:var(--fg);cursor:pointer"><input type="checkbox" class="dm-bulk"> Decline all other messages featuring this master</label>'+
+    '<div class="dm-handlerow hidden"><label>Master handle</label><input class="dm-handle" placeholder="@handle" value="'+esc(guess?('@'+guess):'')+'"><div class="mut small" style="margin-top:4px">Every queued message whose text or contacts feature this handle is declined too.</div></div>';
+  const wrap=pushModal('Decline candidate', inner);
+  const box=wrap.querySelector('.modal'); const ok=box.querySelector('.ok'); ok.textContent='Decline';
+  const bulk=box.querySelector('.dm-bulk'), hrow=box.querySelector('.dm-handlerow');
+  bulk.onchange=()=>hrow.classList.toggle('hidden',!bulk.checked);
+  ok.onclick=async()=>{ const reasonCode=box.querySelector('.dm-reason').value; const merr=box.querySelector('.merr'); ok.disabled=true;
+    try{
+      if(bulk.checked){ const handle=box.querySelector('.dm-handle').value.trim();
+        if(!handle){ merr.textContent='Enter the master handle.'; ok.disabled=false; return; }
+        const r=await postJSON('/api/local/decline-by-handle',{ handle, reasonCode, currentId:c.id });
+        wrap.remove(); onDone&&onDone(r.declined||1);
+      } else { await postJSON('/api/mining/candidates/'+c.id+'/decline',{ reasonCode });
+        wrap.remove(); onDone&&onDone(1); }
+    }catch(e){ merr.textContent=e.message; ok.disabled=false; } };
 }
 
 document.getElementById('rebuild').onclick=async(ev)=>{
@@ -542,6 +764,23 @@ document.getElementById('reload').onclick=loadQueue;
 document.getElementById('prev').onclick=()=>{ if(idx>0){ idx--; renderCurrent(true); } };
 document.getElementById('next').onclick=()=>{ if(idx<newC.length-1){ idx++; renderCurrent(true); } };
 document.getElementById('fSource').onchange=(e)=>{ sourceFilter=e.target.value; localStorage.setItem('reviewSource',sourceFilter); currentId=null; idx=0; loadQueue(); };
+
+// Theme — light is the default; choice persists in localStorage.
+(function initTheme(){
+  const btn=document.getElementById('themeToggle');
+  const apply=(t)=>{ if(t==='dark') document.documentElement.setAttribute('data-theme','dark');
+    else document.documentElement.removeAttribute('data-theme');
+    btn.textContent=t==='dark'?'☀️':'🌙'; };
+  apply(localStorage.getItem('theme')||'light');
+  btn.onclick=()=>{ const next=(localStorage.getItem('theme')||'light')==='dark'?'light':'dark';
+    localStorage.setItem('theme',next); apply(next); };
+})();
+// Tabs — Review is the working screen; Tools holds the secondary functions.
+function showView(v){ document.getElementById('reviewView').classList.toggle('hidden',v!=='review');
+  document.getElementById('toolsView').classList.toggle('hidden',v!=='tools');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v)); }
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));
+
 loadSources().then(loadRefs).then(loadQueue);
 setInterval(()=>{ if(document.getElementById('auto').checked) loadQueue(); }, 6000);
 </script>
