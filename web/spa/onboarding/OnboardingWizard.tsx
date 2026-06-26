@@ -190,45 +190,22 @@ function WizardInner() {
   );
 }
 
-// A "card" for dispatch purposes is a real submitted listing — a half-finished
-// draft should resume the wizard, not bounce the user to management.
+// A "card" for dispatch purposes is a real submitted listing — its owner is
+// bounced to /my-cards (Manage). A half-finished draft is handled separately:
+// the user gets to choose whether to resume, restart, or delete it.
 const OWNED_CARD_STATUSES = ["pending", "approved", "archived"];
 
-// The bot's Main Mini App opens HERE (/onboard) for everyone. Decide on launch
-// where the user actually belongs: an owner goes to /my-cards (Manage), a new
-// user stays on the wizard (Add). Returns true while the decision is pending.
-function useOwnedCardRedirect(): boolean {
-  const router = useRouter();
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    // A claim deep link wins — useClaimDeepLink redirects to /claim; don't also
-    // race a /my-cards bounce.
-    const sp = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
-    if (sp && /^claim[-_]/i.test(sp)) {
-      setChecking(false);
-      return;
-    }
-    let cancelled = false;
-    apiFetch("/api/masters/mine", {}, { redirectOn401: false })
-      .then((r) => (r.ok ? r.json() : { masters: [] }))
-      .then(({ masters }: { masters?: { status: string }[] }) => {
-        if (cancelled) return;
-        const owns = (masters ?? []).some((m) =>
-          OWNED_CARD_STATUSES.includes(m.status)
-        );
-        if (owns) router.replace("/my-cards");
-        else setChecking(false);
-      })
-      .catch(() => {
-        if (!cancelled) setChecking(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
-
-  return checking;
+async function deleteDraft(): Promise<boolean> {
+  try {
+    const r = await apiFetch(
+      "/api/masters/draft",
+      { method: "DELETE" },
+      { redirectOn401: false }
+    );
+    return r.ok;
+  } catch {
+    return false;
+  }
 }
 
 function WizardLoading() {
@@ -243,15 +220,178 @@ function WizardLoading() {
   );
 }
 
+// Resume / restart / delete an existing draft. One active card per owner means a
+// new entry can't coexist with the draft, so "start over" deletes it first.
+function DraftChooser({
+  draft,
+  onContinue,
+  onStartOver,
+  onDeleted,
+}: {
+  draft: { id: string; name: string };
+  onContinue: () => void;
+  onStartOver: () => void;
+  onDeleted: () => void;
+}) {
+  const { t } = useOnbT();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(false);
+
+  async function discardThen(confirmKey: string, done: () => void) {
+    if (!window.confirm(t(confirmKey))) return;
+    setBusy(true);
+    setErr(false);
+    const ok = await deleteDraft();
+    setBusy(false);
+    if (ok) done();
+    else setErr(true);
+  }
+
+  return (
+    <div className="wizard">
+      <div className="wizard-step-title">{t("draftChoose.title")}</div>
+      <div className="wizard-body">
+        <div className="wizard-card">
+          <div className="wizard-card-header">
+            <span className="wizard-card-name">
+              {draft.name || t("draftChoose.untitled")}
+            </span>
+            <span className="wizard-status">{t("draftChoose.statusDraft")}</span>
+          </div>
+          <div className="wizard-actions">
+            <button
+              type="button"
+              className="wizard-solid-btn"
+              disabled={busy}
+              onClick={onContinue}
+            >
+              {t("draftChoose.continue")}
+            </button>
+            <button
+              type="button"
+              className="wizard-ghost-btn"
+              disabled={busy}
+              onClick={() =>
+                discardThen("draftChoose.confirmStartOver", onStartOver)
+              }
+            >
+              {t("draftChoose.startOver")}
+            </button>
+            <button
+              type="button"
+              className="wizard-ghost-btn wizard-ghost-btn--danger"
+              disabled={busy}
+              onClick={() => discardThen("draftChoose.confirmDelete", onDeleted)}
+            >
+              {t("draftChoose.delete")}
+            </button>
+          </div>
+          {err && <p className="wizard-field-error">{t("draftChoose.error")}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DraftDeleted({ onNew }: { onNew: () => void }) {
+  const { t } = useOnbT();
+  return (
+    <div className="wizard">
+      <div className="wizard-success">
+        <div className="wizard-success-icon">🗑</div>
+        <h2 className="wizard-success-title">{t("draftChoose.deletedTitle")}</h2>
+        <p className="wizard-success-text">{t("draftChoose.deletedText")}</p>
+        <div className="wizard-actions" style={{ width: "100%", maxWidth: 320 }}>
+          <button type="button" className="wizard-solid-btn" onClick={onNew}>
+            {t("draftChoose.newEntry")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type EntryPhase =
+  | { kind: "loading" }
+  | { kind: "choose"; draft: { id: string; name: string } }
+  | { kind: "wizard" }
+  | { kind: "deleted" };
+
+// The bot's Main Mini App opens HERE (/onboard) for everyone. On launch: an
+// owner of a live card goes to /my-cards; a user mid-draft gets the chooser; a
+// fresh user lands straight on the wizard.
+function OnboardingEntry() {
+  const router = useRouter();
+  const [phase, setPhase] = useState<EntryPhase>({ kind: "loading" });
+
+  useEffect(() => {
+    // A claim deep link wins — useClaimDeepLink redirects to /claim; don't race
+    // it with the /mine lookup or flash the chooser.
+    const sp = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+    if (sp && /^claim[-_]/i.test(sp)) {
+      setPhase({ kind: "wizard" });
+      return;
+    }
+    let cancelled = false;
+    apiFetch("/api/masters/mine", {}, { redirectOn401: false })
+      .then((r) => (r.ok ? r.json() : { masters: [] }))
+      .then(
+        ({
+          masters,
+        }: {
+          masters?: { _id: string; name: string; status: string }[];
+        }) => {
+          if (cancelled) return;
+          const list = masters ?? [];
+          if (list.some((m) => OWNED_CARD_STATUSES.includes(m.status))) {
+            router.replace("/my-cards");
+            return;
+          }
+          const draft = list.find((m) => m.status === "draft");
+          setPhase(
+            draft
+              ? { kind: "choose", draft: { id: draft._id, name: draft.name } }
+              : { kind: "wizard" }
+          );
+        }
+      )
+      .catch(() => {
+        if (!cancelled) setPhase({ kind: "wizard" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  switch (phase.kind) {
+    case "loading":
+      return <WizardLoading />;
+    case "choose":
+      return (
+        <DraftChooser
+          draft={phase.draft}
+          onContinue={() => setPhase({ kind: "wizard" })}
+          // The draft is already deleted server-side; the wizard mounts fresh
+          // (useDraft 404s) and picks up the entry-host country.
+          onStartOver={() => setPhase({ kind: "wizard" })}
+          onDeleted={() => setPhase({ kind: "deleted" })}
+        />
+      );
+    case "deleted":
+      return <DraftDeleted onNew={() => setPhase({ kind: "wizard" })} />;
+    case "wizard":
+      return <WizardInner />;
+  }
+}
+
 export default function OnboardingWizard() {
   // Claim deep links (startapp=claim-<id>) also arrive on this route — redirect
   // before the wizard mounts its draft flow.
   useClaimDeepLink();
-  const checking = useOwnedCardRedirect();
 
   return (
     <OnboardingI18nProvider>
-      {checking ? <WizardLoading /> : <WizardInner />}
+      <OnboardingEntry />
     </OnboardingI18nProvider>
   );
 }
