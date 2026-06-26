@@ -21,6 +21,19 @@ import { useClaimDeepLink } from "../surface/useClaimDeepLink";
 import { captureReferralFromUrl } from "../referral/referral";
 import { track } from "../analytics";
 import { OnboardingI18nProvider, useOnbT } from "./i18n";
+import { resolveOnbCountry } from "./country";
+
+// Country the card is filed under, resolved from how the wizard was opened
+// (?country= web fallback / start_param -co-<iso> Telegram deep link). The
+// public host sets it (fr.majstr.xyz → FR); see AddMasterModal. A returning
+// user's saved draft overrides this when useDraft hydrates the form.
+function entryCountryID(): string {
+  if (typeof window === "undefined") return "IT";
+  return resolveOnbCountry(
+    window.location.search,
+    window.Telegram?.WebApp?.initDataUnsafe?.start_param ?? null
+  );
+}
 
 const STEP_TITLE_KEYS = [
   "step.profile",
@@ -57,7 +70,7 @@ function ProgressDots({ total, current }: { total: number; current: number }) {
 function WizardInner() {
   const { t } = useOnbT();
   const form = useForm<DraftData>({
-    defaultValues: DRAFT_DEFAULTS,
+    defaultValues: { ...DRAFT_DEFAULTS, countryID: entryCountryID() },
     mode: "onBlur",
   });
   const { isSyncing, syncError, isSubmitting, submit } = useDraft(form);

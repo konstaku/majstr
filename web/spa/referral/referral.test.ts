@@ -23,6 +23,16 @@ describe("tokenFromStartParam", () => {
     ).toBeNull();
   });
 
+  it("extracts the token past a country segment", () => {
+    expect(
+      tokenFromStartParam("onboard-uk-co-fr-c-a1b2c3d4e5f6a7b8"),
+    ).toBe("a1b2c3d4e5f6a7b8");
+  });
+
+  it("ignores a country segment with no referral token", () => {
+    expect(tokenFromStartParam("onboard-uk-co-fr")).toBeNull();
+  });
+
   it("is null for empty input", () => {
     expect(tokenFromStartParam(null)).toBeNull();
     expect(tokenFromStartParam(undefined)).toBeNull();
