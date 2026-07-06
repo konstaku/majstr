@@ -68,12 +68,19 @@ const masterSchema = new mongoose.Schema(
 
     rating: { type: Number, default: null },
     reviewCount: { type: Number, default: 0 },
+
+    // Distinct-author recommendation count, denormalized from the Recommendation
+    // collection via helpers/recommendations.js. Drives the card badge and the
+    // recommended-first sort without a per-render join. Kept in sync on every
+    // attach; recomputable with recountMaster().
+    recommendationCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 
 masterSchema.index({ status: 1, countryID: 1, locationID: 1 });
 masterSchema.index({ status: 1, verified: -1 }); // verified-first public listing
+masterSchema.index({ status: 1, verified: -1, recommendationCount: -1 }); // recommended-first
 masterSchema.index({ status: 1, submittedAt: 1 });
 masterSchema.index({ ownerUserID: 1, status: 1 });
 masterSchema.index({ telegramID: 1, status: 1 });

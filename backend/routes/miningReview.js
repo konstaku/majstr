@@ -41,6 +41,10 @@ const {
 } = require('../helpers/masterDuplicates');
 const dedup = require('../mining/dedup');
 const { communityForChat } = require('../mining/chatCommunities');
+const {
+  attachRecommendation,
+  normalizeNameKey,
+} = require('../helpers/recommendations');
 
 const DECLINE_REASONS = CandidateModel.DECLINE_REASONS; // shared enum
 const STATUSES = CandidateModel.STATUS;
@@ -344,6 +348,32 @@ async function acceptCandidate(req, res) {
     to: 'approved',
     reason: 'mining-review',
   });
+
+  // Seed the first recommendation when this candidate is a third-party
+  // recommendation (kind:'recommendation') and we can identify the recommender.
+  // Announcements (self-promoted masters) seed nothing — a self-advert is not an
+  // endorsement. Phase 1 keys the author off the responder display name and seeds
+  // count-only (no text); curated quotes are added later in the master-centric
+  // review UI (Phase 2), and the author key upgrades to fromHash then.
+  if (cand.kind === 'recommendation') {
+    const authorKey = normalizeNameKey(cand.responderName);
+    if (authorKey) {
+      try {
+        await attachRecommendation({
+          masterID: created._id,
+          authorKey,
+          authorName: cand.responderName,
+          text: '',
+          sourceType: cand.sourceType === 'forwarded' ? 'forwarded' : 'thread_answer',
+          sourceChatID: cand.chatID,
+          sourceMessageID: cand.anchorMessageID,
+          candidateRef: cand._id,
+        });
+      } catch (e) {
+        console.error('[recommendation] seed-on-accept failed:', e.message);
+      }
+    }
+  }
 
   cand.status = 'carded';
   cand.masterRef = created._id;
