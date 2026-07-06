@@ -63,6 +63,9 @@ export interface Master {
   reviewCount?: number;
   /** Distinct-author recommendation count — card count badge + ranking. */
   recommendationCount?: number;
+  /** Text recommendation quotes for the modal carousel; loaded with the detail
+   *  fetch (GET /api/master/[id]). Count-only endorsements are not included. */
+  recommendations?: RecommendationQuote[];
   likes?: number;
   approved?: boolean;
   /** Owner-verified by a moderator (claim flow) — badge + search priority. */
@@ -75,6 +78,12 @@ export interface Master {
   tags?: { ua?: string[]; en?: string[]; ru?: string[] };
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface RecommendationQuote {
+  author: string;
+  text: string;
+  href: string | null;
 }
 
 export interface Community {

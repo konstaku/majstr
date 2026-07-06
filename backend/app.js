@@ -31,6 +31,7 @@ const {
   listRecommendationBuckets,
 } = require('./routes/miningReview');
 const { handleApiRequests, addReview } = require('./routes/public');
+const { getMasterRecommendations } = require('./routes/recommendations');
 const { authenticateUser, addMaster, handleApproveMaster } = require('./routes/masterModeration');
 const { refCache } = require('./helpers/referenceCache');
 const { bot } = require('./bot');
@@ -80,6 +81,8 @@ function buildApp() {
   app.post('/addmaster', requireUser, asyncHandler(addMaster));
   app.post('/approve-master', requireAuth, requireAdmin, asyncHandler(handleApproveMaster));
   app.post('/review', asyncHandler(addReview));
+  // Public: a master's recommendation quotes for the card modal carousel.
+  app.get('/api/master/:id/recommendations', asyncHandler(getMasterRecommendations));
 
   // Draft lifecycle (Mini App onboarding wizard)
   app.get('/api/masters/draft', requireUser, asyncHandler(getDraft));

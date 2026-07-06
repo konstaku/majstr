@@ -37,6 +37,16 @@ export const MasterSchema = z.object({
   verified: z.boolean().optional().default(false),
   // Community endorsements (Community.id[]) — drives the "recommended by" badge.
   communityIds: z.array(z.string()).optional().default([]),
+  // Text recommendation quotes for the modal carousel (loaded with detail).
+  recommendations: z
+    .array(
+      z.object({
+        author: z.string(),
+        text: z.string(),
+        href: z.string().nullable(),
+      })
+    )
+    .optional(),
 });
 
 export type Master = z.infer<typeof MasterSchema>;

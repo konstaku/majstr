@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getDataset } from "@/lib/data";
-import { DATA_TAG, type Master } from "@/lib/api";
-import { API_BASE } from "@/lib/config";
+import { DATA_TAG, type Master, type RecommendationQuote } from "@/lib/api";
+import { API_BASE, REVALIDATE_SECONDS } from "@/lib/config";
 import { countryForHost, countryID } from "@/lib/i18n";
 
 // Single-master detail endpoint. The grid/cards ship a slim master projection
@@ -52,7 +52,24 @@ export async function GET(
       { status: 404, headers: { "Cache-Control": "no-store" } }
     );
   }
-  return NextResponse.json(master, {
+  // Attach the master's recommendation quotes for the modal carousel (Phase 3).
+  // Best-effort: a failure or empty result just omits the carousel and never
+  // blocks the card detail. Tagged with DATA_TAG so an attach-time revalidate
+  // (POST /api/revalidate) refreshes the quotes alongside the dataset.
+  let recommendations: RecommendationQuote[] = [];
+  try {
+    const rr = await fetch(`${API_BASE}/api/master/${id}/recommendations`, {
+      next: { revalidate: REVALIDATE_SECONDS, tags: [DATA_TAG] },
+    });
+    if (rr.ok) {
+      const body = (await rr.json()) as { recommendations?: RecommendationQuote[] };
+      if (Array.isArray(body.recommendations)) recommendations = body.recommendations;
+    }
+  } catch {
+    /* upstream unreachable — omit the carousel */
+  }
+
+  return NextResponse.json({ ...master, recommendations }, {
     headers: {
       // Short shared cache so an owner edit (photo/contacts) reaches the card
       // modal within ~a minute even if the tag-purge misses this URL's CDN

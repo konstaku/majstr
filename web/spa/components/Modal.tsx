@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
@@ -11,6 +11,7 @@ import { masterSlug } from "@/lib/data";
 import { track } from "@/lib/analytics";
 
 import type { Master, Contacts } from "../schema/master/master.schema";
+import type { RecommendationQuote } from "@/lib/api";
 import { Location, Profession } from "../schema/state/state.schema";
 
 type ModalProps = {
@@ -82,6 +83,209 @@ function formatRegCode(masterId: string, allMasters: Master[]): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
 
+// One recommendation quote. Clamped to 3 lines with a "більше" toggle so the
+// carousel keeps a stable height; author line below. Mirrors the Majstr
+// Brutalist "QuoteSlide" spec.
+const QUOTE_LINES = 3;
+const QUOTE_LINE_HEIGHT = 1.5;
+function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const pRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = pRef.current;
+    if (el) setOverflowing(el.scrollHeight - el.clientHeight > 1);
+  }, [expanded]);
+
+  const clamp: React.CSSProperties = expanded
+    ? { display: "block" }
+    : {
+        display: "-webkit-box",
+        WebkitBoxOrient: "vertical",
+        WebkitLineClamp: QUOTE_LINES,
+        overflow: "hidden",
+      };
+
+  return (
+    <div style={{ padding: "18px 24px 14px" }}>
+      <div style={{ display: "flex", gap: 14 }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
+            fontWeight: 900,
+            color: "var(--terra, #c84b31)",
+            fontSize: 46,
+            lineHeight: 0.7,
+            flexShrink: 0,
+          }}
+        >
+          &ldquo;
+        </span>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <p
+            ref={pRef}
+            style={{
+              margin: 0,
+              fontWeight: 500,
+              fontSize: 16,
+              lineHeight: QUOTE_LINE_HEIGHT,
+              letterSpacing: "-0.005em",
+              color: "var(--ink, #0e0a06)",
+              minHeight: expanded ? 0 : `${QUOTE_LINES * QUOTE_LINE_HEIGHT}em`,
+              ...clamp,
+            }}
+          >
+            {rec.text}
+          </p>
+          {overflowing && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              style={{
+                marginTop: 4,
+                padding: 0,
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                color: "var(--terra, #c84b31)",
+                fontFamily: "var(--font-mono, monospace)",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              {expanded ? "‹ менше" : "більше ›"}
+            </button>
+          )}
+          <div
+            style={{
+              marginTop: 10,
+              fontFamily: "var(--font-mono, monospace)",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              opacity: 0.7,
+            }}
+          >
+            — {rec.author || "Анонімно"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Quote carousel below the endorsement badge: one quote at a time with ‹ 01 / 03 ›
+// navigation and a "view in chat" deep link. `topBorder` closes the top edge when
+// no community band sits above it.
+function RecommendationCarousel({
+  recs,
+  masterId,
+  topBorder,
+}: {
+  recs: RecommendationQuote[];
+  masterId: string;
+  topBorder: boolean;
+}) {
+  const [idx, setIdx] = useState(0);
+  const multi = recs.length > 1;
+  const cur = recs[Math.min(idx, recs.length - 1)];
+  const go = (dir: number) => setIdx((i) => (i + dir + recs.length) % recs.length);
+
+  const navBtn: React.CSSProperties = {
+    width: 34,
+    height: 34,
+    flexShrink: 0,
+    background: "var(--paper, #fffaf0)",
+    color: "var(--ink, #0e0a06)",
+    border: "2px solid var(--ink, #0e0a06)",
+    cursor: "pointer",
+    fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
+    fontSize: 17,
+    fontWeight: 900,
+    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  return (
+    <div
+      style={{
+        borderBottom: "2px solid var(--ink, #0e0a06)",
+        borderTop: topBorder ? "2px solid var(--ink, #0e0a06)" : undefined,
+        background: "var(--paper, #fffaf0)",
+      }}
+    >
+      <QuoteSlide key={idx} rec={cur} />
+      <div
+        style={{
+          borderTop: "1px solid rgba(14,10,6,0.14)",
+          background: "var(--cream, #f4ede0)",
+          padding: "9px 18px 9px 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {multi && (
+            <button type="button" onClick={() => go(-1)} aria-label="Previous recommendation" style={navBtn}>
+              ‹
+            </button>
+          )}
+          {multi && (
+            <span
+              style={{
+                fontFamily: "var(--font-mono, monospace)",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {String(idx + 1).padStart(2, "0")} / {String(recs.length).padStart(2, "0")}
+            </span>
+          )}
+          {multi && (
+            <button type="button" onClick={() => go(1)} aria-label="Next recommendation" style={navBtn}>
+              ›
+            </button>
+          )}
+        </div>
+        {cur.href && (
+          <a
+            href={cur.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track("recommendation_chat_click", { master_id: masterId })}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              textDecoration: "none",
+              color: "var(--ink, #0e0a06)",
+              fontFamily: "var(--font-mono, monospace)",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span>Переглянути в чаті</span>
+            <span style={{ color: "var(--terra, #c84b31)", fontSize: 17 }}>↗</span>
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Modal({ master, setShowModal, loadingDetails }: ModalProps) {
   const {
     state: { locations, professions, masters, communities },
@@ -98,6 +302,11 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
     .map((cid) => communities.find((c) => c.id === cid))
     .find((c): c is NonNullable<typeof c> => Boolean(c));
   const [communityHover, setCommunityHover] = useState(false);
+
+  // Recommendations — count drives the badge square; text quotes drive the
+  // carousel (loaded with the detail fetch, so empty until then).
+  const recommendationCount = master.recommendationCount ?? 0;
+  const recommendationQuotes = master.recommendations ?? [];
 
   // Mirror MasterCard's fallback so modal always shows language badges.
   const displayLangs = (languages && languages.length > 0)
@@ -324,13 +533,42 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                   color: "var(--paper, #fffaf0)",
                   borderRight: "2px solid var(--ink, #0e0a06)",
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: "0 18px",
-                  fontSize: 19,
+                  padding: recommendationCount > 1 ? "0 16px" : "0 18px",
+                  lineHeight: 0.9,
                 }}
               >
-                ★
+                {recommendationCount > 1 ? (
+                  <>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
+                        fontWeight: 900,
+                        fontSize: 30,
+                        letterSpacing: "-0.04em",
+                      }}
+                    >
+                      {recommendationCount}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: 7.5,
+                        fontWeight: 700,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        marginTop: 3,
+                        opacity: 0.85,
+                      }}
+                    >
+                      рек.
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 19 }}>★</span>
+                )}
               </span>
               <span
                 style={{
@@ -386,6 +624,17 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                 <span style={{ color: communityHover ? "var(--terra, #c84b31)" : "inherit", fontSize: 18 }}>↗</span>
               </span>
             </a>
+          )}
+
+          {/* Recommendation quotes — scroll through endorsements left in the
+              community chats. Sits right below the endorsement band (or on its
+              own, with a top border, when the master has no community). */}
+          {recommendationQuotes.length > 0 && (
+            <RecommendationCarousel
+              recs={recommendationQuotes}
+              masterId={id}
+              topBorder={!community}
+            />
           )}
 
           {/* Contacts */}
