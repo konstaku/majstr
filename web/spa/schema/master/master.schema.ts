@@ -28,6 +28,9 @@ export const MasterSchema = z.object({
   availability: z.enum(["available", "next_week", "busy"]).optional(),
   rating: z.number().min(0).max(5).optional(),
   reviewCount: z.number().min(0).optional(),
+  // Distinct-author recommendation count — drives the card's count badge and
+  // (with verified) the recommended-first ranking.
+  recommendationCount: z.number().min(0).optional().default(0),
   claimable: z.boolean().optional().default(false),
   status: z.string().optional(),
   // Owner-verified by a moderator (claim flow) — VERIFIED badge + priority.

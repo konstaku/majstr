@@ -26,6 +26,7 @@ type SlimMaster = Pick<
   | "verified"
   | "claimable"
   | "communityIds"
+  | "recommendationCount"
 >;
 
 function slimMaster(m: Master): SlimMaster {
@@ -45,6 +46,9 @@ function slimMaster(m: Master): SlimMaster {
     claimable: m.claimable,
     // Needed by the modal: the "Рекомендовано спільнотою" endorsement badge.
     communityIds: m.communityIds,
+    // Needed by the grid: the "<N> рекомендацій" count on the card strip +
+    // recommended-first ordering.
+    recommendationCount: m.recommendationCount,
   };
 }
 

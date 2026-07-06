@@ -61,6 +61,8 @@ export interface Master {
   OGimage?: string;
   rating?: number | null;
   reviewCount?: number;
+  /** Distinct-author recommendation count — card count badge + ranking. */
+  recommendationCount?: number;
   likes?: number;
   approved?: boolean;
   /** Owner-verified by a moderator (claim flow) — badge + search priority. */
