@@ -187,12 +187,16 @@ export function citiesOfProfession(
     .sort((a, b) => b.count - a.count);
 }
 
-// Rank: rated/claimed first, then more reviews, then newer.
+// Rank: verified first, then community-recommended, then rated, then newer.
 function masterRank(a: Master, b: Master): number {
   // Owner-verified cards always rank first.
   const av = a.verified ? 1 : 0;
   const bv = b.verified ? 1 : 0;
   if (bv !== av) return bv - av;
+  // Community-recommended next — the core trust signal (self-promoted still shown).
+  const arec = a.recommendationCount ?? 0;
+  const brec = b.recommendationCount ?? 0;
+  if (brec !== arec) return brec - arec;
   const ar = a.rating ?? -1;
   const br = b.rating ?? -1;
   if (br !== ar) return br - ar;
