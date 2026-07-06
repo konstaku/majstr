@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Majstr · Recommendation Graph</title>
+<style>
+  :root {
+    --ground: #f6efe1;
+    --panel: #fffaf0;
+    --panel-2: #f1e7d4;
+    --ink: #1a130c;
+    --muted: #7a6a54;
+    --line: #e2d6bf;
+    --hi: #d8901f;           /* selection amber */
+    --edge: 26, 19, 12;      /* rgb for rgba edges */
+    --c-milan: #c1592c;
+    --c-beauty: #a34694;
+    --c-rome: #23887a;
+    --shadow: 0 12px 34px rgba(60,40,20,.16), 0 2px 6px rgba(60,40,20,.08);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #16100a;
+      --panel: #211811;
+      --panel-2: #2b2016;
+      --ink: #f4ead8;
+      --muted: #a8967c;
+      --line: #3a2c1e;
+      --hi: #f2b64d;
+      --edge: 244, 234, 216;
+      --c-milan: #e0743e;
+      --c-beauty: #ca77c0;
+      --c-rome: #45b6a3;
+      --shadow: 0 14px 40px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #f6efe1; --panel: #fffaf0; --panel-2: #f1e7d4; --ink: #1a130c;
+    --muted: #7a6a54; --line: #e2d6bf; --hi: #d8901f; --edge: 26, 19, 12;
+    --c-milan: #c1592c; --c-beauty: #a34694; --c-rome: #23887a;
+    --shadow: 0 12px 34px rgba(60,40,20,.16), 0 2px 6px rgba(60,40,20,.08);
+  }
+  :root[data-theme="dark"] {
+    --ground: #16100a; --panel: #211811; --panel-2: #2b2016; --ink: #f4ead8;
+    --muted: #a8967c; --line: #3a2c1e; --hi: #f2b64d; --edge: 244, 234, 216;
+    --c-milan: #e0743e; --c-beauty: #ca77c0; --c-rome: #45b6a3;
+    --shadow: 0 14px 40px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--font-sans); font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased; overflow: hidden;
+  }
+  .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+  /* ---- header ---- */
+  header {
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    padding: 12px 18px; background: var(--panel);
+    border-bottom: 1px solid var(--line); z-index: 6;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+  .wordmark {
+    font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
+    font-size: 15px;
+  }
+  .wordmark b { color: var(--c-milan); }
+  .brand .sub {
+    font-size: 11.5px; color: var(--muted); letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .stats { display: flex; gap: 18px; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; line-height: 1.15; }
+  .stat .n { font-family: var(--font-mono); font-weight: 700; font-size: 18px;
+    font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 10.5px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .07em; }
+  .stat .n.milan { color: var(--c-milan); }
+
+  .tabs { display: inline-flex; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 3px; gap: 3px; }
+  .tab {
+    appearance: none; border: 0; background: transparent; color: var(--muted);
+    font: inherit; font-size: 12.5px; font-weight: 600; padding: 7px 13px;
+    border-radius: 7px; cursor: pointer; white-space: nowrap;
+  }
+  .tab[aria-selected="true"] { background: var(--panel); color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .tab:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+
+  .iconbtn {
+    appearance: none; width: 38px; height: 38px; border-radius: 9px;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+    cursor: pointer; font-size: 16px; display: grid; place-items: center;
+  }
+  .iconbtn:hover { border-color: var(--hi); }
+  .iconbtn:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+
+  /* ---- stage ---- */
+  main { position: relative; flex: 1; min-height: 0; display: flex; }
+  .stage { position: relative; flex: 1; min-width: 0; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  canvas.dragging { cursor: grabbing; }
+
+  /* floating legend / controls */
+  .panel-card {
+    position: absolute; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 13px; box-shadow: var(--shadow); backdrop-filter: blur(4px);
+  }
+  .legend { top: 14px; left: 14px; width: 236px; padding: 14px; }
+  .legend h2, .inspector h2 {
+    margin: 0 0 9px; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .09em; color: var(--muted); font-weight: 700;
+  }
+  .legend .hint { font-size: 11.5px; color: var(--muted); margin: 10px 0 0; line-height: 1.4; }
+  .comm { width: 100%; display: flex; align-items: center; gap: 9px; padding: 6px 7px;
+    border-radius: 8px; border: 0; background: transparent; color: var(--ink);
+    font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
+  .comm:hover { background: var(--panel-2); }
+  .comm[aria-pressed="false"] { opacity: .38; }
+  .comm .dot { width: 13px; height: 13px; border-radius: 50%; flex: none; }
+  .comm .ct { margin-left: auto; font-family: var(--font-mono); font-size: 12px;
+    color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sep { height: 1px; background: var(--line); margin: 11px 0; }
+  .keyrow { display: flex; align-items: center; gap: 9px; font-size: 12px;
+    color: var(--muted); margin: 6px 0; }
+  .keyrow .g { flex: none; display: grid; place-items: center; }
+
+  /* inspector */
+  .inspector {
+    width: 336px; flex: none; background: var(--panel); border-left: 1px solid var(--line);
+    display: flex; flex-direction: column; transform: translateX(100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1); position: relative;
+  }
+  @media (prefers-reduced-motion: reduce) { .inspector { transition: none; } }
+  .inspector.open { transform: translateX(0); }
+  .insp-head { padding: 16px 18px 14px; border-bottom: 1px solid var(--line); position: relative; }
+  .insp-close { position: absolute; top: 12px; right: 12px; }
+  .kicker { font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em;
+    font-weight: 700; }
+  .insp-name { margin: 6px 0 2px; font-size: 21px; font-weight: 800; letter-spacing: -.01em;
+    text-wrap: balance; }
+  .insp-meta { font-size: 13px; color: var(--muted); }
+  .countline { display: flex; align-items: baseline; gap: 8px; margin-top: 13px; }
+  .countline .big { font-family: var(--font-mono); font-size: 30px; font-weight: 700;
+    line-height: 1; font-variant-numeric: tabular-nums; }
+  .countline .lbl { font-size: 12px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .06em; }
+  .insp-body { padding: 12px 18px 20px; overflow-y: auto; }
+  .insp-body h3 { font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--muted); font-weight: 700; margin: 8px 0 10px; }
+  .rec { padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .rec:last-child { border-bottom: 0; }
+  .rec .who { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
+    font-weight: 600; margin-bottom: 4px; }
+  .rec .who .av { width: 20px; height: 20px; border-radius: 50%; flex: none;
+    display: grid; place-items: center; color: #fff; font-size: 10px; font-weight: 700; }
+  .rec .txt { font-size: 13.5px; line-height: 1.5; }
+  .quiet { font-size: 12.5px; color: var(--muted); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px;
+    font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .mrec-item { display: flex; align-items: center; gap: 9px; padding: 8px 0;
+    border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .mrec-item:last-child { border-bottom: 0; }
+  .mrec-item .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .mrec-item .cnt { margin-left: auto; font-family: var(--font-mono); font-size: 12px;
+    color: var(--muted); }
+
+  .footnote {
+    position: absolute; left: 14px; bottom: 12px; max-width: 300px;
+    font-size: 11px; color: var(--muted); line-height: 1.4;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
+    padding: 8px 11px; box-shadow: var(--shadow);
+  }
+  .footnote b { color: var(--ink); font-weight: 700; }
+
+  /* tooltip */
+  .tip {
+    position: absolute; pointer-events: none; z-index: 10; background: var(--ink);
+    color: var(--ground); font-size: 12px; padding: 5px 9px; border-radius: 7px;
+    white-space: nowrap; opacity: 0; transform: translate(-50%, -140%);
+    transition: opacity .1s; font-weight: 600;
+  }
+  .tip .t2 { font-weight: 400; opacity: .75; }
+
+  @media (max-width: 760px) {
+    .stats { display: none; }
+    .inspector { position: absolute; inset: auto 0 0 0; width: 100%; height: 62%;
+      border-left: 0; border-top: 1px solid var(--line);
+      border-radius: 16px 16px 0 0; transform: translateY(100%); }
+    .inspector.open { transform: translateY(0); }
+    .legend { width: 200px; }
+    .footnote { display: none; }
+  }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="wordmark">MAJ<b>·</b>STR</span>
+      <span class="sub">Recommendation graph</span>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="tabs" role="tablist" aria-label="Graph view">
+      <button class="tab" role="tab" id="tab-endorse" aria-selected="true">Endorsement network</button>
+      <button class="tab" role="tab" id="tab-corec" aria-selected="false">Similar masters</button>
+    </div>
+    <button class="iconbtn" id="reheat" title="Re-run layout" aria-label="Re-run layout">↻</button>
+    <button class="iconbtn" id="theme" title="Toggle theme" aria-label="Toggle light or dark theme">◑</button>
+  </header>
+
+  <main>
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+
+      <div class="panel-card legend" id="legend">
+        <h2 id="legend-title">Communities</h2>
+        <div id="comms"></div>
+        <div class="sep"></div>
+        <div class="keyrow" id="key-size">
+          <span class="g"><svg width="34" height="18"><circle cx="7" cy="9" r="4" fill="currentColor"/><circle cx="24" cy="9" r="8" fill="currentColor"/></svg></span>
+          <span>Bigger = more recommendations</span>
+        </div>
+        <div class="keyrow" id="key-type">
+          <span class="g"><svg width="34" height="18"><circle cx="9" cy="9" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="25" cy="9" r="6.5" fill="currentColor"/></svg></span>
+          <span><b style="color:var(--ink)">●</b> master &nbsp; <b style="color:var(--ink)">○</b> recommender</span>
+        </div>
+        <p class="hint" id="legend-hint">Drag any node. Hover to trace who recommends whom. Click a master to read its recommendations.</p>
+      </div>
+
+      <div class="footnote">
+        <b>Mockup — synthetic data.</b> A public view would show masters only; the recommender layer stays internal (privacy).
+      </div>
+      <div class="tip" id="tip"></div>
+    </div>
+
+    <aside class="inspector" id="inspector" aria-live="polite">
+      <div class="insp-head">
+        <button class="iconbtn insp-close" id="insp-close" aria-label="Close">✕</button>
+        <div class="kicker" id="insp-kicker">Master</div>
+        <h1 class="insp-name" id="insp-name">—</h1>
+        <div class="insp-meta" id="insp-meta"></div>
+        <div class="countline" id="insp-count"></div>
+      </div>
+      <div class="insp-body" id="insp-body"></div>
+    </aside>
+  </main>
+</div>
+
+<script>
+"use strict";
+(function () {
+  // ------------------------------------------------------------------ data
+  // Synthetic but representative: Ukrainian-diaspora masters in Italy, the
+  // recommenders who name them in community chats, and the endorsement edges.
+  const COMMUNITIES = {
+    milan:  { name: "Українці в Мілані", varc: "--c-milan" },
+    beauty: { name: "Beauty Ukrainky IT", varc: "--c-beauty" },
+    rome:   { name: "Українці в Римі", varc: "--c-rome" },
+  };
+  const MASTERS = [
+    { id: "m1", name: "Георгій", prof: "Сантехнік", city: "Мілан", comm: "milan" },
+    { id: "m2", name: "Андрій", prof: "Електрик", city: "Мілан", comm: "milan" },
+    { id: "m3", name: "Дмитро", prof: "Переїзди (trasloco)", city: "Мілан", comm: "milan" },
+    { id: "m4", name: "Світлана", prof: "Прибирання", city: "Мілан", comm: "milan" },
+    { id: "m5", name: "Олена", prof: "Перукар", city: "Мілан", comm: "beauty" },
+    { id: "m6", name: "Наталя", prof: "Манікюр", city: "Турин", comm: "beauty" },
+    { id: "m7", name: "Марія", prof: "Брови · б'юті", city: "Мілан", comm: "beauty" },
+    { id: "m8", name: "Максим", prof: "Ремонт телефонів", city: "Рим", comm: "rome" },
+    { id: "m9", name: "Роман", prof: "Плитка · ремонт", city: "Рим", comm: "rome" },
+    { id: "m10", name: "Ігор", prof: "Автомеханік", city: "Болонья", comm: "rome" },
+  ];
+  const AUTHORS = [
+    { id: "a1", name: "Ірина П.", comm: "milan" },
+    { id: "a2", name: "Тарас В.", comm: "milan" },
+    { id: "a3", name: "Оксана М.", comm: "milan" },
+    { id: "a4", name: "Богдан С.", comm: "milan" },
+    { id: "a5", name: "Юлія Р.", comm: "beauty" },
+    { id: "a6", name: "Віктор Л.", comm: "milan" },
+    { id: "a7", name: "Ната Д.", comm: "beauty" },
+    { id: "a8", name: "Аліна Ж.", comm: "beauty" },
+    { id: "a9", name: "Катерина Б.", comm: "beauty" },
+    { id: "a10", name: "Сергій Т.", comm: "rome" },
+    { id: "a11", name: "Павло Н.", comm: "rome" },
+    { id: "a12", name: "Марина Г.", comm: "rome" },
+    { id: "a13", name: "Юрій Ф.", comm: "milan" },
+    { id: "a14", name: "Олена К.", comm: "beauty" },
+  ];
+  // [author, master, text?]  — text omitted = count-only recommendation
+  const RECS = [
+    ["a1","m1","Георгій міняв кран і полагодив бойлер — приїхав того ж дня, все чисто."],
+    ["a2","m1","Рекомендую, робить якісно і недорого."],
+    ["a3","m1"],
+    ["a4","m1","+1, теж викликали, дуже задоволені."],
+    ["a6","m1"],
+    ["a13","m1","Золоті руки, врятував нас при затопленні."],
+    ["a12","m1"],
+    ["a2","m2","Проводку зробив по-людськи, все акуратно."],
+    ["a1","m2"],
+    ["a4","m2","Світло полагодив за годину."],
+    ["a13","m2"],
+    ["a6","m2"],
+    ["a3","m3","Перевезли меблі по місту, нічого не подряпали."],
+    ["a5","m3"],
+    ["a12","m3","Допоміг з переїздом квартири — рекомендую."],
+    ["a5","m4","Прибирає ідеально, беремо щотижня."],
+    ["a6","m4"],
+    ["a7","m5","Стрижка й колор — виходжу як з обкладинки."],
+    ["a8","m5"],
+    ["a9","m5","Нарешті знайшла свого перукаря в Мілані."],
+    ["a14","m5"],
+    ["a5","m5","Дуже уважна, рекомендую."],
+    ["a8","m6","Манікюр тримається три тижні."],
+    ["a9","m6"],
+    ["a7","m6"],
+    ["a14","m7","Брови — космос, і архітектура ідеальна."],
+    ["a8","m7"],
+    ["a10","m8","Поміняв екран на айфоні за 20 хвилин."],
+    ["a11","m8"],
+    ["a12","m8","Чесні ціни на ремонт, рекомендую."],
+    ["a11","m9","Поклав плитку у ванній рівно, як по лінійці."],
+    ["a10","m9"],
+    ["a10","m10","Діагностику зробив безкоштовно, полагодив швидко."],
+    ["a11","m10"],
+  ];
+
+  const byId = {};
+  MASTERS.forEach(m => { m.type = "master"; byId[m.id] = m; });
+  AUTHORS.forEach(a => { a.type = "author"; byId[a.id] = a; });
+  MASTERS.forEach(m => { m.recs = []; m.count = 0; });
+  AUTHORS.forEach(a => { a.out = []; });
+  RECS.forEach(([au, ma, txt]) => {
+    byId[ma].recs.push({ author: au, text: txt || "" });
+    byId[ma].count++;
+    byId[au].out.push(ma);
+  });
+  // initials for author avatars
+  AUTHORS.forEach(a => { a.ini = a.name.trim()[0]; });
+
+  // co-recommendation edges (shared recommenders between two masters)
+  const COREC = [];
+  for (let i = 0; i < MASTERS.length; i++) {
+    for (let j = i + 1; j < MASTERS.length; j++) {
+      const A = new Set(MASTERS[i].recs.map(r => r.author));
+      let shared = 0;
+      MASTERS[j].recs.forEach(r => { if (A.has(r.author)) shared++; });
+      if (shared > 0) COREC.push({ a: MASTERS[i].id, b: MASTERS[j].id, w: shared });
+    }
+  }
+
+  // ---- header stats ----
+  const topMaster = MASTERS.slice().sort((a,b)=>b.count-a.count)[0];
+  const topConn = AUTHORS.slice().sort((a,b)=>b.out.length-a.out.length)[0];
+  document.getElementById("stats").innerHTML = [
+    ['<span class="n milan">'+MASTERS.length+'</span>', "masters"],
+    ['<span class="n">'+AUTHORS.length+'</span>', "recommenders"],
+    ['<span class="n">'+RECS.length+'</span>', "recommendations"],
+    ['<span class="n">'+topMaster.name+'</span>', "most recommended"],
+    ['<span class="n">'+topConn.name+'</span>', "top connector"],
+  ].map(([n,l]) => '<div class="stat">'+n+'<span class="l">'+l+'</span></div>').join("");
+
+  // ---- legend communities ----
+  const commsEl = document.getElementById("comms");
+  const commOn = { milan: true, beauty: true, rome: true };
+  Object.entries(COMMUNITIES).forEach(([k, c]) => {
+    const nm = MASTERS.filter(m=>m.comm===k).length;
+    const na = AUTHORS.filter(a=>a.comm===k).length;
+    const b = document.createElement("button");
+    b.className = "comm"; b.setAttribute("aria-pressed", "true");
+    b.innerHTML = '<span class="dot" style="background:var('+c.varc+')"></span>'+
+      '<span>'+c.name+'</span><span class="ct">'+nm+'·'+na+'</span>';
+    b.onclick = () => { commOn[k] = !commOn[k]; b.setAttribute("aria-pressed", String(commOn[k])); draw(); };
+    commsEl.appendChild(b);
+  });
+
+  // ------------------------------------------------------------------ canvas
+  const cv = document.getElementById("cv");
+  const ctx = cv.getContext("2d");
+  const stage = document.getElementById("stage");
+  const tip = document.getElementById("tip");
+  let W = 0, H = 0, dpr = 1;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  let COL = {};
+  function refreshColors() {
+    COL = {
+      ink: css("--ink"), muted: css("--muted"), panel: css("--panel"),
+      hi: css("--hi"), line: css("--line"), ground: css("--ground"),
+      edge: css("--edge"),
+      milan: css("--c-milan"), beauty: css("--c-beauty"), rome: css("--c-rome"),
+    };
+  }
+  const commColor = (k) => COL[k] || COL.muted;
+
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    W = r.width; H = r.height; dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // ------------------------------------------------------------------ model
+  // build node + edge arrays per view
+  let nodes = [], edges = [], view = "endorse";
+  const pos = {}; // persistent positions by id
+
+  function radiusFor(n) {
+    if (n.type === "author") return 6.5;
+    return 12 + Math.sqrt(n.count) * 5.2; // master: area ~ count
+  }
+
+  function buildView(v) {
+    view = v;
+    const cx = W / 2, cy = H / 2;
+    const seedAngle = { milan: -0.6, beauty: 2.1, rome: 3.8 };
+    function seed(n) {
+      if (pos[n.id]) return pos[n.id];
+      const a = seedAngle[n.comm] + (Math.random() - .5) * 1.1;
+      const rad = 70 + Math.random() * 150;
+      return (pos[n.id] = { x: cx + Math.cos(a) * rad, y: cy + Math.sin(a) * rad, vx: 0, vy: 0 });
+    }
+    if (v === "endorse") {
+      nodes = [...MASTERS, ...AUTHORS].map(n => Object.assign(seed(n), { ref: n }));
+      edges = RECS.map(([au, ma, t]) => ({ s: au, t: ma, w: 1, text: !!t }));
+    } else {
+      nodes = MASTERS.map(n => Object.assign(seed(n), { ref: n }));
+      edges = COREC.map(e => ({ s: e.a, t: e.b, w: e.w, text: false }));
+    }
+    nodes.forEach(n => { n.r = radiusFor(n.ref); });
+    // legend adapts
+    document.getElementById("key-type").style.display = v === "endorse" ? "" : "none";
+    document.getElementById("legend-hint").textContent = v === "endorse"
+      ? "Drag any node. Hover to trace who recommends whom. Click a master to read its recommendations."
+      : "Two masters are linked when the same people recommend both — thicker means more shared recommenders.";
+    reheat();
+  }
+
+  // adjacency for hover highlighting
+  function neighborsOf(id) {
+    const s = new Set([id]);
+    edges.forEach(e => { if (e.s === id) s.add(e.t); if (e.t === id) s.add(e.s); });
+    return s;
+  }
+
+  // ------------------------------------------------------------------ forces
+  let alpha = 1;
+  const A_MIN = 0.02, A_DECAY = 0.94;
+  function tick() {
+    const cx = W / 2, cy = H / 2;
+    const kRep = view === "endorse" ? 2600 : 5200;
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      for (let j = i + 1; j < nodes.length; j++) {
+        const m = nodes[j];
+        let dx = n.x - m.x, dy = n.y - m.y;
+        let d2 = dx*dx + dy*dy; if (d2 < 1) d2 = 1;
+        const d = Math.sqrt(d2);
+        const f = kRep / d2;
+        const fx = (dx / d) * f, fy = (dy / d) * f;
+        n.vx += fx; n.vy += fy; m.vx -= fx; m.vy -= fy;
+        // collision
+        const min = n.r + m.r + 6;
+        if (d < min) {
+          const push = (min - d) * 0.5;
+          n.vx += (dx / d) * push; n.vy += (dy / d) * push;
+          m.vx -= (dx / d) * push; m.vy -= (dy / d) * push;
+        }
+      }
+    }
+    // springs
+    edges.forEach(e => {
+      const n = pos[e.s], m = pos[e.t];
+      if (!n || !m) return;
+      let dx = m.x - n.x, dy = m.y - n.y;
+      let d = Math.hypot(dx, dy) || 1;
+      const rest = view === "endorse" ? 78 : (150 - e.w * 16);
+      const k = 0.02 * (view === "endorse" ? 1 : e.w);
+      const f = (d - rest) * k;
+      const fx = (dx / d) * f, fy = (dy / d) * f;
+      n.vx += fx; n.vy += fy; m.vx -= fx; m.vy -= fy;
+    });
+    // gravity + integrate
+    nodes.forEach(n => {
+      if (n === dragging) return;
+      n.vx += (cx - n.x) * 0.008;
+      n.vy += (cy - n.y) * 0.008;
+      n.vx *= 0.86; n.vy *= 0.86;
+      n.x += n.vx * alpha; n.y += n.vy * alpha;
+      const pad = n.r + 8;
+      n.x = Math.max(pad, Math.min(W - pad, n.x));
+      n.y = Math.max(pad, Math.min(H - pad, n.y));
+    });
+    alpha *= A_DECAY;
+  }
+
+  // ------------------------------------------------------------------ draw
+  let hover = null, selected = null, running = false;
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const focus = hover || selected;
+    const hl = focus ? neighborsOf(focus.ref.id) : null;
+
+    // edges
+    edges.forEach(e => {
+      const n = pos[e.s], m = pos[e.t];
+      if (!n || !m) return;
+      const sc = byId[e.s].comm, tc = byId[e.t].comm;
+      if (!commOn[sc] && !commOn[tc]) return;
+      const active = hl && (hl.has(e.s) && hl.has(e.t) &&
+        (e.s === focus.ref.id || e.t === focus.ref.id));
+      const dim = (hl && !active) || (!commOn[sc] || !commOn[tc]);
+      ctx.beginPath();
+      ctx.moveTo(n.x, n.y); ctx.lineTo(m.x, m.y);
+      if (active) {
+        ctx.strokeStyle = COL.hi;
+        ctx.lineWidth = view === "corec" ? Math.min(2 + e.w * 1.4, 8) : 2.2;
+        ctx.globalAlpha = 0.95;
+      } else {
+        ctx.strokeStyle = "rgba(" + COL.edge + "," + (view === "corec" ? 0.16 + e.w*0.05 : 0.14) + ")";
+        ctx.lineWidth = view === "corec" ? Math.min(1 + e.w * 1.3, 7) : 1.1;
+        ctx.globalAlpha = dim ? 0.25 : 1;
+      }
+      ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+
+    // nodes
+    nodes.forEach(n => {
+      const on = commOn[n.ref.comm];
+      const dim = (hl && !hl.has(n.ref.id)) || !on;
+      const c = commColor(n.ref.comm);
+      ctx.globalAlpha = dim ? 0.22 : 1;
+      const isFocus = focus && focus.ref.id === n.ref.id;
+
+      if (n.ref.type === "author") {
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 7);
+        ctx.fillStyle = COL.ground; ctx.fill();
+        ctx.lineWidth = isFocus ? 3 : 2; ctx.strokeStyle = isFocus ? COL.hi : c; ctx.stroke();
+      } else {
+        // selection halo
+        if (isFocus) {
+          ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 5, 0, 7);
+          ctx.fillStyle = COL.hi; ctx.globalAlpha = dim ? 0.22 : 0.28; ctx.fill();
+          ctx.globalAlpha = dim ? 0.22 : 1;
+        }
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 7);
+        ctx.fillStyle = c; ctx.fill();
+        ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(" + COL.edge + ",0.25)"; ctx.stroke();
+        // count
+        ctx.fillStyle = "#fff"; ctx.font = "700 " + Math.max(10, n.r * 0.8) + "px " + css("--font-mono");
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(String(n.ref.count), n.x, n.y);
+      }
+
+      // master name labels (always in endorse if not dimmed; always in corec)
+      if (n.ref.type === "master" && !dim) {
+        ctx.fillStyle = COL.ink;
+        ctx.font = "600 12px " + css("--font-sans");
+        ctx.textAlign = "center"; ctx.textBaseline = "top";
+        ctx.fillText(n.ref.name, n.x, n.y + n.r + 4);
+      }
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  function loop() {
+    tick(); draw();
+    if (alpha > A_MIN || dragging) requestAnimationFrame(loop);
+    else running = false;
+  }
+  function start() { if (!running) { running = true; requestAnimationFrame(loop); } }
+  function reheat() {
+    alpha = 1;
+    if (reduce) { for (let i = 0; i < 320; i++) tick(); draw(); }
+    else start();
+  }
+
+  // ------------------------------------------------------------------ pick + interaction
+  function nodeAt(x, y) {
+    // masters first (drawn bigger / more clickable), nearest wins
+    let best = null, bd = Infinity;
+    for (const n of nodes) {
+      if (!commOn[n.ref.comm]) continue;
+      const d = Math.hypot(n.x - x, n.y - y);
+      const hitR = n.r + (n.ref.type === "author" ? 5 : 3);
+      if (d < hitR && d < bd) { bd = d; best = n; }
+    }
+    return best;
+  }
+
+  let dragging = null, dragMoved = false, downNode = null;
+  function evtPos(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  cv.addEventListener("pointerdown", e => {
+    const p = evtPos(e); const n = nodeAt(p.x, p.y);
+    downNode = n; dragMoved = false;
+    if (n) { dragging = n; cv.classList.add("dragging"); cv.setPointerCapture(e.pointerId); alpha = Math.max(alpha, .5); start(); }
+  });
+  cv.addEventListener("pointermove", e => {
+    const p = evtPos(e);
+    if (dragging) {
+      dragging.x = p.x; dragging.y = p.y; dragging.vx = 0; dragging.vy = 0;
+      dragMoved = true; alpha = Math.max(alpha, .4); start();
+      return;
+    }
+    const n = nodeAt(p.x, p.y);
+    if (n !== hover) { hover = n; if (!running) draw(); }
+    cv.style.cursor = n ? "pointer" : "grab";
+    if (n) {
+      const r = n.ref;
+      tip.innerHTML = r.type === "master"
+        ? "<b>" + r.name + "</b> · " + r.count + " recs<br><span class='t2'>" + r.prof + " · " + r.city + "</span>"
+        : "<b>" + r.name + "</b><br><span class='t2'>recommends " + r.out.length + "</span>";
+      tip.style.left = n.x + "px"; tip.style.top = n.y - n.r + "px"; tip.style.opacity = 1;
+    } else { tip.style.opacity = 0; }
+  });
+  function endDrag(e) {
+    if (dragging) { cv.classList.remove("dragging"); try { cv.releasePointerCapture(e.pointerId); } catch (_) {} }
+    if (downNode && !dragMoved) select(downNode.ref);
+    dragging = null; downNode = null;
+  }
+  cv.addEventListener("pointerup", endDrag);
+  cv.addEventListener("pointercancel", endDrag);
+  cv.addEventListener("pointerleave", () => { hover = null; tip.style.opacity = 0; if (!running) draw(); });
+
+  // ------------------------------------------------------------------ inspector
+  const insp = document.getElementById("inspector");
+  function avatarHTML(a, size) {
+    return '<span class="av" style="background:var(' + COMMUNITIES[a.comm].varc + ');width:' +
+      size + 'px;height:' + size + 'px">' + a.ini + '</span>';
+  }
+  function select(ref) {
+    selected = { ref };
+    insp.classList.add("open");
+    const kick = document.getElementById("insp-kicker");
+    const commName = COMMUNITIES[ref.comm].name;
+    if (ref.type === "master") {
+      kick.textContent = "Master";
+      kick.style.color = commColor(ref.comm);
+      document.getElementById("insp-name").textContent = ref.name;
+      document.getElementById("insp-meta").textContent = ref.prof + " · " + ref.city + " · " + commName;
+      document.getElementById("insp-count").innerHTML =
+        '<span class="big" style="color:' + commColor(ref.comm) + '">' + ref.count +
+        '</span><span class="lbl">recommendations</span>';
+      const withText = ref.recs.filter(r => r.text);
+      const noText = ref.recs.length - withText.length;
+      let html = '<h3>Recommendations shown on the card</h3>';
+      if (withText.length) {
+        html += withText.map(r => {
+          const a = byId[r.author];
+          return '<div class="rec"><div class="who">' + avatarHTML(a, 20) + a.name +
+            '</div><div class="txt">“' + r.text + '”</div></div>';
+        }).join("");
+      } else {
+        html += '<p class="quiet">No text recommendations yet — all count-only.</p>';
+      }
+      if (noText) html += '<div class="chip">+ ' + noText + ' count-only ' +
+        (noText === 1 ? 'recommendation' : 'recommendations') + ' · adds to the rating, no text</div>';
+      document.getElementById("insp-body").innerHTML = html;
+    } else {
+      kick.textContent = "Recommender";
+      kick.style.color = commColor(ref.comm);
+      document.getElementById("insp-name").textContent = ref.name;
+      document.getElementById("insp-meta").textContent = commName;
+      document.getElementById("insp-count").innerHTML =
+        '<span class="big">' + ref.out.length + '</span><span class="lbl">masters recommended</span>';
+      const items = ref.out.map(mid => {
+        const m = byId[mid];
+        const rec = m.recs.find(r => r.author === ref.id);
+        return '<div class="mrec-item"><span class="dot" style="background:' + commColor(m.comm) +
+          '"></span><span>' + m.name + ' · <span class="quiet">' + m.prof + '</span></span>' +
+          (rec.text ? '<span class="cnt">✎</span>' : '<span class="cnt">#</span>') + '</div>';
+      }).join("");
+      document.getElementById("insp-body").innerHTML = '<h3>Masters ' + ref.name + ' vouches for</h3>' + items;
+    }
+    if (!running) draw();
+  }
+  function deselect() { selected = null; insp.classList.remove("open"); if (!running) draw(); }
+  document.getElementById("insp-close").onclick = deselect;
+
+  // ------------------------------------------------------------------ chrome
+  const tE = document.getElementById("tab-endorse"), tC = document.getElementById("tab-corec");
+  function setView(v) {
+    tE.setAttribute("aria-selected", String(v === "endorse"));
+    tC.setAttribute("aria-selected", String(v === "corec"));
+    document.getElementById("legend-title").textContent = "Communities";
+    deselect(); buildView(v);
+  }
+  tE.onclick = () => setView("endorse");
+  tC.onclick = () => setView("corec");
+  document.getElementById("reheat").onclick = () => { Object.keys(pos).forEach(k => delete pos[k]); buildView(view); };
+
+  // theme
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") ||
+      (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  }
+  document.getElementById("theme").onclick = () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    refreshColors(); draw();
+  };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { refreshColors(); draw(); });
+
+  // ------------------------------------------------------------------ boot
+  const ro = new ResizeObserver(() => {
+    const had = W;
+    resize();
+    if (!had) { refreshColors(); buildView("endorse"); }
+    else { alpha = Math.max(alpha, .3); start(); draw(); }
+  });
+  ro.observe(stage);
+})();
+</script>
+
+</body>
+</html>

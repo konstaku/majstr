@@ -23,6 +23,7 @@
  */
 
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const { runDB } = require('../database/db');
@@ -273,6 +274,11 @@ async function main() {
     }
   });
 
+  // Optional trust-graph view — the master-recommendation network. Synthetic
+  // data for now (a preview of the shape); wire to the live Recommendation
+  // collection once there is enough of it. Opens in its own tab from the header.
+  app.get('/graph', (_req, res) => res.sendFile(path.join(__dirname, 'rec-graph.html')));
+
   app.get('/', (_req, res) => res.type('html').send(HTML));
 
   app.listen(PORT, HOST, () => {
@@ -365,6 +371,7 @@ const HTML = /* html */ `<!doctype html>
       <div class="tabs">
         <button class="tab active" data-view="review">Review</button>
         <button class="tab" data-view="tools">Tools</button>
+        <a class="tab" href="/graph" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block">Graph ↗</a>
       </div>
       <button id="themeToggle" class="iconbtn" title="Toggle light / dark theme">🌙</button>
     </div>
