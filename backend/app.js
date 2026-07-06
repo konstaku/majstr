@@ -28,6 +28,7 @@ const {
   acceptCandidate,
   declineCandidate,
   attachRecommendationToMaster,
+  listRecommendationBuckets,
 } = require('./routes/miningReview');
 const { handleApiRequests, addReview } = require('./routes/public');
 const { authenticateUser, addMaster, handleApproveMaster } = require('./routes/masterModeration');
@@ -169,6 +170,13 @@ function buildApp() {
 
   // Mining review queue (#93 / #94) — admin dashboard backend.
   app.get('/api/mining/candidates', requireUser, requireAdmin, listCandidates);
+  // Master-centric recommendation queue (Phase 2): signals grouped by target.
+  app.get(
+    '/api/mining/recommendation-buckets',
+    requireUser,
+    requireAdmin,
+    listRecommendationBuckets
+  );
   app.post(
     '/api/mining/candidates/:id/accept',
     requireUser,

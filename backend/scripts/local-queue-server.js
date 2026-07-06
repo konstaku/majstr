@@ -37,6 +37,8 @@ const {
   listCandidates,
   acceptCandidate,
   declineCandidate,
+  attachRecommendationToMaster,
+  listRecommendationBuckets,
 } = require('../routes/miningReview');
 const {
   createProfession,
@@ -73,6 +75,9 @@ async function main() {
   app.get('/api/mining/candidates', listCandidates);
   app.post('/api/mining/candidates/:id/accept', acceptCandidate);
   app.post('/api/mining/candidates/:id/decline', declineCandidate);
+  // Master-centric recommendation review (Phase 2).
+  app.get('/api/mining/recommendation-buckets', listRecommendationBuckets);
+  app.post('/api/mining/candidates/:id/attach', attachRecommendationToMaster);
 
   // Reference data for the accept-form dropdowns.
   app.get('/api/reference/professions', async (_req, res) => res.json(await Profession.find()));
@@ -370,6 +375,7 @@ const HTML = /* html */ `<!doctype html>
     <div class="row" style="gap:8px">
       <div class="tabs">
         <button class="tab active" data-view="review">Review</button>
+        <button class="tab" data-view="rec">Endorsements</button>
         <button class="tab" data-view="tools">Tools</button>
         <a class="tab" href="/graph" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block">Graph ↗</a>
       </div>
@@ -418,6 +424,18 @@ const HTML = /* html */ `<!doctype html>
       <span class="mut small" id="procMsg"></span>
     </div>
     <div id="rawArea"></div>
+  </div>
+
+  <!-- ENDORSEMENTS: master-centric recommendation review (Phase 2). Masters with
+       the most pending recommendations first; attach each (with text) or skip. -->
+  <div id="recView" class="hidden">
+    <h2>Endorsements <span id="recSummary" class="mut small"></span></h2>
+    <div class="row" style="margin-bottom:10px">
+      <button id="recReload" class="small">Reload</button>
+      <span class="mut small">Most-recommended masters first. Attach each recommendation (empty text = count-only) or skip it.</span>
+    </div>
+    <div id="recArea"></div>
+    <div id="recInfo" style="margin-top:16px"></div>
   </div>
 </main>
 <div id="modalRoot"></div>
@@ -772,6 +790,92 @@ document.getElementById('prev').onclick=()=>{ if(idx>0){ idx--; renderCurrent(tr
 document.getElementById('next').onclick=()=>{ if(idx<newC.length-1){ idx++; renderCurrent(true); } };
 document.getElementById('fSource').onchange=(e)=>{ sourceFilter=e.target.value; localStorage.setItem('reviewSource',sourceFilter); currentId=null; idx=0; loadQueue(); };
 
+// ---- Endorsements: master-centric recommendation review (Phase 2) ----
+let recData = null;
+async function loadRecBuckets(){
+  const host=document.getElementById('recArea');
+  host.innerHTML='<div class="mut small">Loading…</div>';
+  try{ recData=await fetch('/api/mining/recommendation-buckets').then(r=>r.json()); renderRecBuckets(); }
+  catch(e){ host.innerHTML='<div class="err">'+esc(e.message)+'</div>'; }
+}
+function recSummary(d){
+  const ex=d.buckets.filter(b=>b.type==='existing').length;
+  const pr=d.buckets.filter(b=>b.type==='proposed').length;
+  return d.totalSignals+' signals · '+ex+' master(s) with pending · '+pr+' proposed · '+(d.orphanCount||0)+' orphan(s)';
+}
+function renderRecBuckets(){
+  const host=document.getElementById('recArea'); const d=recData; if(!d){ host.innerHTML=''; return; }
+  document.getElementById('recSummary').textContent=recSummary(d);
+  const existing=d.buckets.filter(b=>b.type==='existing');
+  host.innerHTML='';
+  if(!existing.length) host.innerHTML='<div class="empty">No pending recommendations for existing masters.</div>';
+  existing.forEach(b=>host.appendChild(recBucketCard(b)));
+
+  const info=document.getElementById('recInfo'); info.innerHTML='';
+  const proposed=d.buckets.filter(b=>b.type==='proposed');
+  if(proposed.length){
+    const box=document.createElement('div'); box.className='card';
+    box.innerHTML='<h2 style="margin-top:0">Proposed new masters ('+proposed.length+')</h2>'+
+      '<div class="mut small" style="margin-bottom:8px">These point at masters not yet listed. Create the card in the <b>Review</b> tab; its other recommendations will group here once it exists.</div>'+
+      proposed.map(function(p){ return '<div class="small" style="padding:3px 0">'+esc((p.seed&&p.seed.extracted&&p.seed.extracted.name)||p.clusterKey)+' · <span class="mut">'+p.pendingCount+' pending</span></div>'; }).join('');
+    info.appendChild(box);
+  }
+  if(d.ambiguous&&d.ambiguous.length){
+    const box=document.createElement('div'); box.className='card';
+    box.innerHTML='<h2 style="margin-top:0">Needs a decision ('+d.ambiguous.length+')</h2>';
+    d.ambiguous.forEach(function(a){
+      const row=document.createElement('div'); row.style.cssText='border-top:1px solid var(--line);padding:10px 0';
+      row.innerHTML='<div class="msg">'+esc(a.signal.text||'')+'</div><div class="small mut" style="margin:4px 0">'+esc(a.signal.responderName||'—')+' — attach to:</div>';
+      const bts=document.createElement('div'); bts.className='btns';
+      a.matches.forEach(function(m){ const bt=document.createElement('button'); bt.textContent=(m.name||m.masterId)+' ('+m.matchType+')';
+        bt.onclick=function(){ attachSignal(a.signal.candidateId, m.masterId, a.signal.text||'', bt, row); }; bts.appendChild(bt); });
+      row.appendChild(bts); box.appendChild(row);
+    });
+    info.appendChild(box);
+  }
+  if(d.orphanCount){ const o=document.createElement('div'); o.className='mut small'; o.style.marginTop='8px';
+    o.textContent=d.orphanCount+' orphan signal(s) — no identifiable master, skipped.'; info.appendChild(o); }
+}
+function recBucketCard(b){
+  const el=document.createElement('div'); el.className='card'; const m=b.master;
+  el.innerHTML='<div class="meta"><span class="tag">▲ '+m.recommendationCount+' recommended</span>'+
+    '<span class="tag">'+b.pendingCount+' pending</span><span class="tag">'+esc(m.status)+'</span></div>'+
+    '<h2 style="margin:2px 0">'+esc(m.name||'(no name)')+'</h2>'+
+    '<div class="mut small" style="margin-bottom:6px">'+esc(m.professionID||'')+(m.locationID?(' · '+esc(m.locationID)):'')+'</div>'+
+    '<div class="sigs"></div>';
+  const sigs=el.querySelector('.sigs');
+  b.signals.forEach(function(s){ sigs.appendChild(signalRow(b, s)); });
+  return el;
+}
+function signalRow(b, s){
+  const row=document.createElement('div'); row.style.cssText='border-top:1px solid var(--line);padding:10px 0';
+  row.innerHTML='<div class="small" style="font-weight:600">👤 '+esc(s.responderName||'—')+
+    (s.matchType?(' <span class="tag">'+esc(s.matchType)+'</span>'):'')+'</div>'+
+    (s.inquiryText?'<div class="msg"><b>Q:</b> '+esc(s.inquiryText)+'</div>':'')+
+    '<label>Recommendation text — leave empty for count-only</label>'+
+    '<textarea class="sig-text"></textarea>'+
+    '<div class="btns"><button class="primary sig-attach">Attach</button><button class="sig-skip">Skip</button></div>'+
+    '<div class="err sig-err"></div>';
+  row.querySelector('.sig-text').value=s.text||'';
+  row.querySelector('.sig-attach').onclick=function(ev){ attachSignal(s.candidateId, b.masterId, row.querySelector('.sig-text').value.trim(), ev.target, row); };
+  row.querySelector('.sig-skip').onclick=function(){ skipSignal(s.candidateId, row); };
+  return row;
+}
+async function attachSignal(candidateId, masterID, text, btn, row){
+  if(btn){ btn.disabled=true; btn.textContent='Attaching…'; }
+  try{
+    const r=await fetch('/api/mining/candidates/'+candidateId+'/attach',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({masterID:masterID,text:text})});
+    const b=await r.json(); if(!r.ok) throw new Error(b.error||('HTTP '+r.status));
+    loadRecBuckets();
+  }catch(e){ if(row){ const er=row.querySelector('.sig-err'); if(er) er.textContent=e.message; } if(btn){ btn.disabled=false; btn.textContent='Attach'; } }
+}
+async function skipSignal(candidateId, row){
+  if(!confirm('Skip this recommendation? It will be removed from the queue.')) return;
+  try{ await fetch('/api/mining/candidates/'+candidateId+'/decline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reasonCode:'other',note:'skipped in endorsements review'})}); loadRecBuckets(); }
+  catch(e){ if(row){ const er=row.querySelector('.sig-err'); if(er) er.textContent=e.message; } }
+}
+document.getElementById('recReload').onclick=loadRecBuckets;
+
 // Theme — light is the default; choice persists in localStorage.
 (function initTheme(){
   const btn=document.getElementById('themeToggle');
@@ -785,8 +889,11 @@ document.getElementById('fSource').onchange=(e)=>{ sourceFilter=e.target.value; 
 // Tabs — Review is the working screen; Tools holds the secondary functions.
 function showView(v){ document.getElementById('reviewView').classList.toggle('hidden',v!=='review');
   document.getElementById('toolsView').classList.toggle('hidden',v!=='tools');
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v)); }
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));
+  document.getElementById('recView').classList.toggle('hidden',v!=='rec');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));
+  if(v==='rec') loadRecBuckets(); }
+// Only bind the view buttons — the Graph entry is a plain link (no data-view).
+document.querySelectorAll('button.tab[data-view]').forEach(t=>t.onclick=()=>showView(t.dataset.view));
 
 loadSources().then(loadRefs).then(loadQueue);
 setInterval(()=>{ if(document.getElementById('auto').checked) loadQueue(); }, 6000);

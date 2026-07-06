@@ -45,6 +45,7 @@ const {
   attachRecommendation,
   normalizeNameKey,
 } = require('../helpers/recommendations');
+const { resolveRecommendation } = require('../mining/resolveRecommendation');
 
 const DECLINE_REASONS = CandidateModel.DECLINE_REASONS; // shared enum
 const STATUSES = CandidateModel.STATUS;
@@ -533,11 +534,124 @@ async function attachRecommendationToMaster(req, res) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// GET /api/mining/recommendation-buckets — Phase 2
+// The master-centric review queue: run the resolution pass over the reviewable
+// recommendation signals and group them by target, most-recommended first.
+// Read-only — attaching happens through /accept (proposed) and /attach (existing).
+
+async function listRecommendationBuckets(req, res) {
+  const Candidate = miningDb.Candidate();
+  const cands = await Candidate.find({ status: 'new', kind: 'recommendation' })
+    .sort({ createdAt: -1 })
+    .limit(500)
+    .lean();
+  const refs = await getRefs();
+
+  const existing = new Map(); // masterId -> { signals: [] }
+  const proposed = new Map(); // clusterKey -> { signals: [], seed }
+  const ambiguous = [];
+  let orphanCount = 0;
+
+  for (const c of cands) {
+    const suggestLocationID = matchRef(c.extracted && c.extracted.city, refs.locations, [
+      'en', 'it', 'ua', 'ua_alt', 'ru', 'ru_alt',
+    ]);
+    const suggestProfessionID = matchRef(
+      c.extracted && c.extracted.profession,
+      refs.professions,
+      ['ua', 'ru', 'it', 'en']
+    );
+    const r = await resolveRecommendation({
+      extracted: c.extracted || {},
+      locationID: suggestLocationID || undefined,
+    });
+    const top = r.matches && r.matches[0];
+    const signal = {
+      candidateId: String(c._id),
+      responderName: c.responderName || (c.submittedBy && c.submittedBy.name) || null,
+      text: c.text || '',
+      inquiryText: c.inquiryText || null,
+      extracted: c.extracted || {},
+      suggestProfessionID,
+      suggestLocationID,
+      chatID: c.chatID,
+      anchorMessageID: c.anchorMessageID,
+      matchType: top ? top.matchType : null,
+      confidence: top ? top.confidence : null,
+    };
+
+    if (r.status === 'existing') {
+      const id = top.masterId;
+      if (!existing.has(id)) existing.set(id, { signals: [] });
+      existing.get(id).signals.push(signal);
+    } else if (r.status === 'ambiguous') {
+      ambiguous.push({ signal, matches: r.matches });
+    } else if (r.status === 'proposed') {
+      if (!proposed.has(r.clusterKey)) proposed.set(r.clusterKey, { signals: [], seed: signal });
+      proposed.get(r.clusterKey).signals.push(signal);
+    } else {
+      orphanCount++;
+    }
+  }
+
+  // Hydrate the existing-master buckets with the card's live fields.
+  const ids = [...existing.keys()];
+  const masters = ids.length
+    ? await Master.find({ _id: { $in: ids } })
+        .select('name professionID locationID status recommendationCount')
+        .lean()
+    : [];
+  const mById = new Map(masters.map((m) => [String(m._id), m]));
+
+  const buckets = [];
+  for (const [id, b] of existing) {
+    const m = mById.get(id);
+    if (!m) continue; // master vanished between resolve and hydrate — skip
+    buckets.push({
+      type: 'existing',
+      masterId: id,
+      master: {
+        id,
+        name: m.name,
+        professionID: m.professionID,
+        locationID: m.locationID,
+        status: m.status,
+        recommendationCount: m.recommendationCount || 0,
+      },
+      pendingCount: b.signals.length,
+      signals: b.signals,
+    });
+  }
+  for (const [clusterKey, b] of proposed) {
+    buckets.push({
+      type: 'proposed',
+      clusterKey,
+      seed: b.seed, // representative signal — prefills the create-master form
+      pendingCount: b.signals.length,
+      signals: b.signals,
+    });
+  }
+
+  // Most-recommended first: pending signals desc, then (for existing) the live
+  // recommendation count, then existing before proposed.
+  buckets.sort(
+    (a, b) =>
+      b.pendingCount - a.pendingCount ||
+      ((b.master && b.master.recommendationCount) || 0) -
+        ((a.master && a.master.recommendationCount) || 0) ||
+      (a.type === b.type ? 0 : a.type === 'existing' ? -1 : 1)
+  );
+
+  res.json({ buckets, ambiguous, orphanCount, totalSignals: cands.length });
+}
+
 module.exports = {
   listCandidates,
   acceptCandidate,
   declineCandidate,
   attachRecommendationToMaster,
+  listRecommendationBuckets,
   invalidateRefCache,
   // Exported for tests / introspection.
   _matchRef: matchRef,
