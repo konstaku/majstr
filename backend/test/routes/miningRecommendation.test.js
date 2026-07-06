@@ -146,3 +146,66 @@ describe('POST accept — recommendation seeding', () => {
     expect(await Recommendation.countDocuments({ masterID: master._id })).toBe(0);
   });
 });
+
+describe('POST /api/mining/candidates/:id/attach', () => {
+  it('attaches a recommendation (with edited text) to an existing master', async () => {
+    const { authHeader } = await makeUser({ isAdmin: true, telegramID: 71001 });
+    const master = await Master.create({ name: 'Георгій', status: 'approved' });
+    const cand = await makeCandidate({ responderName: 'Богдан С.' });
+
+    const res = await request(app)
+      .post(`/api/mining/candidates/${cand._id}/attach`)
+      .set('Authorization', authHeader)
+      .send({ masterID: String(master._id), text: 'теж рекомендую, приїхав швидко' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ created: true, recommendationCount: 1 });
+
+    const rec = await Recommendation.findOne({ masterID: master._id });
+    expect(rec.authorName).toBe('Богдан С.');
+    expect(rec.text).toBe('теж рекомендую, приїхав швидко');
+
+    const carded = await miningDb.Candidate().findById(cand._id);
+    expect(carded.status).toBe('carded');
+    expect(String(carded.masterRef)).toBe(String(master._id));
+  });
+
+  it('one recommender counts once even across two candidates', async () => {
+    const { authHeader } = await makeUser({ isAdmin: true, telegramID: 71002 });
+    const master = await Master.create({ name: 'Андрій', status: 'approved' });
+    const c1 = await makeCandidate({ responderName: 'Ната Д.' });
+    const c2 = await makeCandidate({ responderName: 'Ната Д.' });
+
+    await request(app).post(`/api/mining/candidates/${c1._id}/attach`)
+      .set('Authorization', authHeader).send({ masterID: String(master._id) });
+    const r2 = await request(app).post(`/api/mining/candidates/${c2._id}/attach`)
+      .set('Authorization', authHeader).send({ masterID: String(master._id) });
+
+    expect(r2.body).toMatchObject({ created: false, recommendationCount: 1 });
+    expect((await Master.findById(master._id)).recommendationCount).toBe(1);
+  });
+
+  it('404s on a missing master and 409s once the candidate is resolved', async () => {
+    const { authHeader } = await makeUser({ isAdmin: true, telegramID: 71003 });
+    const master = await Master.create({ name: 'Роман', status: 'approved' });
+    const cand = await makeCandidate({ responderName: 'Павло Н.' });
+
+    const missing = await request(app).post(`/api/mining/candidates/${cand._id}/attach`)
+      .set('Authorization', authHeader).send({ masterID: '000000000000000000000000' });
+    expect(missing.status).toBe(404);
+
+    await request(app).post(`/api/mining/candidates/${cand._id}/attach`)
+      .set('Authorization', authHeader).send({ masterID: String(master._id) });
+    const again = await request(app).post(`/api/mining/candidates/${cand._id}/attach`)
+      .set('Authorization', authHeader).send({ masterID: String(master._id) });
+    expect(again.status).toBe(409);
+  });
+
+  it('rejects non-admin callers', async () => {
+    const { authHeader } = await makeUser({ isAdmin: false, telegramID: 71004 });
+    const master = await Master.create({ name: 'Ігор', status: 'approved' });
+    const cand = await makeCandidate();
+    const res = await request(app).post(`/api/mining/candidates/${cand._id}/attach`)
+      .set('Authorization', authHeader).send({ masterID: String(master._id) });
+    expect(res.status).toBe(403);
+  });
+});

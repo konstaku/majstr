@@ -27,6 +27,7 @@ const {
   listCandidates,
   acceptCandidate,
   declineCandidate,
+  attachRecommendationToMaster,
 } = require('./routes/miningReview');
 const { handleApiRequests, addReview } = require('./routes/public');
 const { authenticateUser, addMaster, handleApproveMaster } = require('./routes/masterModeration');
@@ -179,6 +180,13 @@ function buildApp() {
     requireUser,
     requireAdmin,
     declineCandidate
+  );
+  // Attach a recommendation candidate to an existing master (Phase 2).
+  app.post(
+    '/api/mining/candidates/:id/attach',
+    requireUser,
+    requireAdmin,
+    attachRecommendationToMaster
   );
 
   // Terminal error handler — async handlers wrapped in asyncHandler land here

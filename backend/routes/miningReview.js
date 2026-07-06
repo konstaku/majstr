@@ -465,10 +465,79 @@ async function declineCandidate(req, res) {
   res.json({ ok: true, candidateID: String(cand._id), status: 'declined', reasonCode });
 }
 
+// ---------------------------------------------------------------------------
+// POST /api/mining/candidates/:id/attach — Phase 2
+// Body: { masterID, text? }
+// Attach a recommendation candidate to an EXISTING master (instead of creating a
+// new card). Idempotent per (master, recommender) via attachRecommendation;
+// marks the candidate resolved ('carded') and links it to the master.
+
+async function attachRecommendationToMaster(req, res) {
+  const { id } = req.params;
+  const { masterID, text } = req.body || {};
+  if (!masterID) return res.status(400).json({ error: 'masterID required' });
+
+  const Candidate = miningDb.Candidate();
+  const cand = await Candidate.findById(id);
+  if (!cand) return res.status(404).json({ error: 'candidate_not_found' });
+  if (cand.status === 'carded') {
+    return res.status(409).json({ error: 'already_carded', masterRef: cand.masterRef });
+  }
+
+  const master = await Master.findById(masterID).select('_id name status').lean();
+  if (!master) return res.status(404).json({ error: 'master_not_found' });
+
+  // Recommender identity → dedup key. Falls back to a per-candidate key when no
+  // responder name is known, so the attach still works without silently merging
+  // distinct anonymous recommenders. (fromHash upgrade: Phase 2 follow-up.)
+  const responder = cand.responderName || (cand.submittedBy && cand.submittedBy.name) || '';
+  const authorKey = normalizeNameKey(responder) || 'cand:' + String(cand._id);
+
+  const { created } = await attachRecommendation({
+    masterID: master._id,
+    authorKey,
+    authorName: responder,
+    text: typeof text === 'string' ? text : '',
+    sourceType: cand.sourceType === 'forwarded' ? 'forwarded' : 'thread_answer',
+    sourceChatID: cand.chatID,
+    sourceMessageID: cand.anchorMessageID,
+    candidateRef: cand._id,
+  });
+
+  cand.status = 'carded';
+  cand.masterRef = master._id;
+  await cand.save();
+
+  const MiningFeedback = miningDb.MiningFeedback();
+  await MiningFeedback.create({
+    candidateRef: cand._id,
+    action: 'link',
+    correctedFields: {
+      attachedToMaster: String(master._id),
+      hadText: !!(text && String(text).trim()),
+    },
+    classifierName: cand.classifierName,
+    classifierVersion: cand.classifierVersion,
+    adminTelegramID: req.user && req.user.telegramID ? Number(req.user.telegramID) : undefined,
+  });
+
+  // The master's count/badge (and possibly a new quote) changed — refresh cache.
+  triggerWebRevalidate('post-attach');
+
+  const fresh = await Master.findById(master._id).select('recommendationCount').lean();
+  res.json({
+    ok: true,
+    created, // false = this recommender already counted (text updated in place)
+    masterID: String(master._id),
+    recommendationCount: fresh ? fresh.recommendationCount : undefined,
+  });
+}
+
 module.exports = {
   listCandidates,
   acceptCandidate,
   declineCandidate,
+  attachRecommendationToMaster,
   invalidateRefCache,
   // Exported for tests / introspection.
   _matchRef: matchRef,
