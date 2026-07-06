@@ -4,7 +4,7 @@ const User = require('../database/schema/User');
 const Profession = require('../database/schema/Profession');
 const Location = require('../database/schema/Location');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
-const { masterWebUrl } = require('../helpers/masterUrl');
+const { masterCardUrl } = require('../helpers/masterUrl');
 const { isKnownCountry } = require('../helpers/validateCountry');
 const { localizedName } = require('../lang');
 const { bot } = require('../bot');
@@ -300,7 +300,7 @@ async function getMine(req, res) {
   // per-master OG image unfurls from this page).
   const withShare = masters.map((m) => ({
     ...m.toObject(),
-    shareUrl: masterWebUrl(m, 'uk', PUBLIC_WEB_URL),
+    shareUrl: masterCardUrl(m, 'uk', PUBLIC_WEB_URL),
   }));
   res.json({ masters: withShare });
 }

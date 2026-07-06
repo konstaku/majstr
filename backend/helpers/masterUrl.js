@@ -22,4 +22,19 @@ function masterWebUrl(master, uiLang, siteUrl) {
   return `${siteUrl}/${lang}/m/${masterSlug(master)}`;
 }
 
-module.exports = { slugify, masterSlug, masterWebUrl };
+// Per-country host for a card. The public catalogue is country-scoped (each host
+// owns its dataset), so a France card only renders on fr.majstr.xyz — linking to
+// the Italy apex just bounces to its homepage. Mirrors
+// scripts/set-community-invite.js:siteForCountry.
+function siteForCountry(countryID, base) {
+  if (countryID === 'FR') return base.replace('://', '://fr.');
+  return base;
+}
+
+// Canonical card URL on the card's OWN country host. Prefer this over
+// masterWebUrl for any link handed to a user — it resolves regardless of country.
+function masterCardUrl(master, uiLang, base) {
+  return masterWebUrl(master, uiLang, siteForCountry(master.countryID, base));
+}
+
+module.exports = { slugify, masterSlug, masterWebUrl, siteForCountry, masterCardUrl };

@@ -2,7 +2,7 @@ const Master = require('../database/schema/Master');
 const MasterAudit = require('../database/schema/MasterAudit');
 const User = require('../database/schema/User');
 const i18n = require('../i18n');
-const { masterWebUrl } = require('../helpers/masterUrl');
+const { masterCardUrl } = require('../helpers/masterUrl');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
 const { bot } = require('../bot');
 
@@ -143,7 +143,7 @@ async function handleApproveMaster(req, res) {
         await bot.sendMessage(
           telegramId,
           i18n.t(oLang, 'owner.approved', {
-            url: masterWebUrl(master, oLang, `https://majstr.xyz`),
+            url: masterCardUrl(master, oLang, `https://majstr.xyz`),
           })
         );
       }

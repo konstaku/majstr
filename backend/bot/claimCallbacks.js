@@ -5,6 +5,7 @@ const MasterClaim = require('../database/schema/MasterClaim');
 const MasterAudit = require('../database/schema/MasterAudit');
 const User = require('../database/schema/User');
 const { requestVerification } = require('../helpers/verification');
+const { masterCardUrl } = require('../helpers/masterUrl');
 const { bot, PUBLIC_WEB_URL } = require('./instance');
 
 async function handleClaimCallback(queryId, message, data, from) {
@@ -70,10 +71,11 @@ async function handleClaimCallback(queryId, message, data, from) {
       { chat_id: message.chat.id, message_id: message.message_id }
     );
 
-    // Notify claimant
+    // Notify claimant. Canonical country-aware card URL — the legacy ?card=
+    // apex link resolved against the Italy dataset, so a France card wouldn't open.
     bot.sendMessage(
       claim.claimantTelegramID,
-      `✅ Your claim was approved! You are now the owner of the card:\n${PUBLIC_WEB_URL}/?card=${claim.masterID}`
+      `✅ Your claim was approved! You are now the owner of the card:\n${masterCardUrl(master, 'uk', PUBLIC_WEB_URL)}`
     ).catch(() => {});
 
     // Ownership established → queue the card for moderator verification.

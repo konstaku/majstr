@@ -3,7 +3,7 @@ const Master = require('../database/schema/Master');
 const MasterClaim = require('../database/schema/MasterClaim');
 const MasterAudit = require('../database/schema/MasterAudit');
 const { requestVerification } = require('../helpers/verification');
-const { masterWebUrl } = require('../helpers/masterUrl');
+const { masterCardUrl } = require('../helpers/masterUrl');
 const { bot } = require('../bot');
 
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -172,10 +172,15 @@ async function submitClaim(req, res) {
         ? evidence.map(e => e.type).join(', ')
         : 'none';
 
+      // Canonical /{lang}/m/{slug} on the card's own country host — the legacy
+      // ?card= apex link always resolved against the Italy dataset, so a France
+      // card just bounced to the IT homepage.
+      const cardUrl = masterCardUrl(master, 'uk', PUBLIC_WEB_URL);
+
       bot.sendMessage(
         TELEGRAM_ADMIN_CHAT_ID,
         `📋 New ownership claim\n` +
-        `Card: https://majstr.xyz/?card=${master._id}\n` +
+        `Card: ${cardUrl}\n` +
         `Claimant: ${handle} (${req.user.telegramID})\n` +
         `Evidence: ${evidenceSummary}`,
         {
@@ -192,8 +197,9 @@ async function submitClaim(req, res) {
 
   // The public card URL the new owner shares — the per-master OG image unfurls
   // from this page (the share loop's engine). Valid whether the claim was
-  // auto-approved or queued; the card is already public either way.
-  const shareUrl = masterWebUrl(master, 'uk', PUBLIC_WEB_URL);
+  // auto-approved or queued; the card is already public either way. Uses the
+  // card's own country host so a France card resolves (see masterCardUrl).
+  const shareUrl = masterCardUrl(master, 'uk', PUBLIC_WEB_URL);
 
   return res.status(201).json({ claim, autoApproved, shareUrl });
 }
