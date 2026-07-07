@@ -83,104 +83,15 @@ function formatRegCode(masterId: string, allMasters: Master[]): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
 
-// One recommendation quote. Clamped to 3 lines with a "більше" toggle so the
-// carousel keeps a stable height; author line below. Mirrors the Majstr
-// Brutalist "QuoteSlide" spec.
-const QUOTE_LINES = 3;
-const QUOTE_LINE_HEIGHT = 1.5;
-function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
-  const [expanded, setExpanded] = useState(false);
-  const [overflowing, setOverflowing] = useState(false);
-  const pRef = useRef<HTMLParagraphElement>(null);
+// Recommendation carousel below the endorsement band: one quote at a time with
+// ‹ 01 / 03 › nav + a "view in chat" link. Sized to the modal's small body type
+// (contacts ~11px, bio ~10px). The visible height is reserved to the LONGEST
+// quote in the set (capped, measured off-screen) so paging never jumps the modal
+// height, and short-only sets leave no empty lines.
+const QUOTE_FONT = 12;
+const QUOTE_LH = 1.5;
+const QUOTE_MAX_LINES = 4;
 
-  useEffect(() => {
-    const el = pRef.current;
-    if (el) setOverflowing(el.scrollHeight - el.clientHeight > 1);
-  }, [expanded]);
-
-  const clamp: React.CSSProperties = expanded
-    ? { display: "block" }
-    : {
-        display: "-webkit-box",
-        WebkitBoxOrient: "vertical",
-        WebkitLineClamp: QUOTE_LINES,
-        overflow: "hidden",
-      };
-
-  return (
-    <div style={{ padding: "14px 18px 12px" }}>
-      <div style={{ display: "flex", gap: 10 }}>
-        <span
-          style={{
-            fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
-            fontWeight: 900,
-            color: "var(--terra, #c84b31)",
-            fontSize: 38,
-            lineHeight: 0.7,
-            flexShrink: 0,
-          }}
-        >
-          &ldquo;
-        </span>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <p
-            ref={pRef}
-            style={{
-              margin: 0,
-              fontWeight: 500,
-              fontSize: 14,
-              lineHeight: QUOTE_LINE_HEIGHT,
-              letterSpacing: "-0.005em",
-              color: "var(--ink, #0e0a06)",
-              minHeight: expanded ? 0 : `${QUOTE_LINES * QUOTE_LINE_HEIGHT}em`,
-              ...clamp,
-            }}
-          >
-            {rec.text}
-          </p>
-          {overflowing && (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              style={{
-                marginTop: 4,
-                padding: 0,
-                border: "none",
-                background: "none",
-                cursor: "pointer",
-                color: "var(--terra, #c84b31)",
-                fontFamily: "var(--font-mono, monospace)",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
-            >
-              {expanded ? "‹ менше" : "більше ›"}
-            </button>
-          )}
-          <div
-            style={{
-              marginTop: 8,
-              fontFamily: "var(--font-mono, monospace)",
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              opacity: 0.7,
-            }}
-          >
-            — {rec.author || "Анонімно"}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Quote carousel below the endorsement badge: one quote at a time with ‹ 01 / 03 ›
-// navigation and a "view in chat" deep link. `topBorder` closes the top edge when
-// no community band sits above it.
 function RecommendationCarousel({
   recs,
   masterId,
@@ -189,9 +100,63 @@ function RecommendationCarousel({
   masterId: string;
 }) {
   const [idx, setIdx] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const [reservedLines, setReservedLines] = useState(1);
+  const [overflowing, setOverflowing] = useState(false);
+  const [contentW, setContentW] = useState(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLParagraphElement>(null);
+
   const multi = recs.length > 1;
   const cur = recs[Math.min(idx, recs.length - 1)];
-  const go = (dir: number) => setIdx((i) => (i + dir + recs.length) % recs.length);
+  const go = (dir: number) => {
+    setExpanded(false);
+    setIdx((i) => (i + dir + recs.length) % recs.length);
+  };
+
+  // Track the quote body's width so the off-screen measurer wraps identically.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const update = () => setContentW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const linesOf = (text: string): number => {
+    const m = measureRef.current;
+    if (!m || !contentW) return 1;
+    m.textContent = text || "";
+    return Math.max(1, Math.round(m.scrollHeight / (QUOTE_FONT * QUOTE_LH)));
+  };
+
+  // Reserve height for the LONGEST quote (capped) — stable across pages, and no
+  // taller than it needs to be when every quote is short.
+  useEffect(() => {
+    if (!contentW) return;
+    let max = 1;
+    for (const r of recs) max = Math.max(max, linesOf(r.text));
+    setReservedLines(Math.min(max, QUOTE_MAX_LINES));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recs, contentW]);
+
+  // Does the current quote exceed the reserved height? → offer "більше".
+  useEffect(() => {
+    setExpanded(false);
+    setOverflowing(contentW ? linesOf(cur.text) > reservedLines : false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur, reservedLines, contentW]);
+
+  const clamp: React.CSSProperties = expanded
+    ? { display: "block" }
+    : {
+        display: "-webkit-box",
+        WebkitBoxOrient: "vertical",
+        WebkitLineClamp: reservedLines,
+        overflow: "hidden",
+      };
 
   const navBtn: React.CSSProperties = {
     width: 30,
@@ -211,13 +176,92 @@ function RecommendationCarousel({
   };
 
   return (
-    <div
-      style={{
-        borderBottom: "2px solid var(--ink, #0e0a06)",
-        background: "var(--paper, #fffaf0)",
-      }}
-    >
-      <QuoteSlide key={idx} rec={cur} />
+    <div style={{ borderBottom: "2px solid var(--ink, #0e0a06)", background: "var(--paper, #fffaf0)" }}>
+      <div style={{ padding: "13px 18px 12px" }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
+              fontWeight: 900,
+              color: "var(--terra, #c84b31)",
+              fontSize: 30,
+              lineHeight: 0.7,
+              flexShrink: 0,
+            }}
+          >
+            &ldquo;
+          </span>
+          <div ref={bodyRef} style={{ minWidth: 0, flex: 1 }}>
+            <p
+              style={{
+                margin: 0,
+                fontWeight: 500,
+                fontSize: QUOTE_FONT,
+                lineHeight: QUOTE_LH,
+                letterSpacing: "-0.005em",
+                color: "var(--ink, #0e0a06)",
+                minHeight: expanded ? 0 : `${reservedLines * QUOTE_LH}em`,
+                ...clamp,
+              }}
+            >
+              {cur.text}
+            </p>
+            {overflowing && (
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                style={{
+                  marginTop: 4,
+                  padding: 0,
+                  border: "none",
+                  background: "none",
+                  cursor: "pointer",
+                  color: "var(--terra, #c84b31)",
+                  fontFamily: "var(--font-mono, monospace)",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {expanded ? "‹ менше" : "більше ›"}
+              </button>
+            )}
+            <div
+              style={{
+                marginTop: 8,
+                fontFamily: "var(--font-mono, monospace)",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                opacity: 0.7,
+              }}
+            >
+              — {cur.author || "Анонімно"}
+            </div>
+          </div>
+        </div>
+        {/* off-screen line-count measurer — matches the quote <p> font + width */}
+        <p
+          ref={measureRef}
+          aria-hidden
+          style={{
+            position: "absolute",
+            visibility: "hidden",
+            pointerEvents: "none",
+            left: -99999,
+            top: 0,
+            width: contentW || 240,
+            margin: 0,
+            fontWeight: 500,
+            fontSize: QUOTE_FONT,
+            lineHeight: QUOTE_LH,
+            letterSpacing: "-0.005em",
+            whiteSpace: "normal",
+          }}
+        />
+      </div>
       <div
         style={{
           borderTop: "1px solid rgba(14,10,6,0.14)",
