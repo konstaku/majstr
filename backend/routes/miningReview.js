@@ -542,7 +542,9 @@ async function attachRecommendationToMaster(req, res) {
 
 async function listRecommendationBuckets(req, res) {
   const Candidate = miningDb.Candidate();
-  const cands = await Candidate.find({ status: 'new', kind: 'recommendation' })
+  const q = { status: 'new', kind: 'recommendation' };
+  if (req.query.chatID) q.chatID = String(req.query.chatID); // filter to one mined chat
+  const cands = await Candidate.find(q)
     .sort({ createdAt: -1 })
     .limit(500)
     .lean();

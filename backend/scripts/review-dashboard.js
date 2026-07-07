@@ -53,7 +53,7 @@ $("theme").onclick = () => { const cur = document.documentElement.getAttribute("
 })();
 
 // ---- REVIEW ----
-let entries = [], cat = "recommended", selectedId = null, checked = new Set(), approvedSession = [];
+let entries = [], cat = "recommended", selectedId = null, checked = new Set(), approvedSession = [], reviewChat = "";
 function entryFromBucket(b) {
   const sigs = (b.signals || []).map((s) => ({ candidateId: s.candidateId, author: s.responderName || "—", text: s.text || "", extracted: s.extracted || {}, chatID: s.chatID, anchor: s.anchorMessageID, state: "pending" }));
   if (b.type === "existing") {
@@ -69,9 +69,10 @@ function entryFromCandidate(c) {
 }
 async function loadReview() {
   try {
+    const cf = reviewChat ? "&chatID=" + encodeURIComponent(reviewChat) : "";
     const [buckets, anns] = await Promise.all([
-      api("/api/mining/recommendation-buckets"),
-      api("/api/mining/candidates?status=new&kind=announcement&pageSize=300"),
+      api("/api/mining/recommendation-buckets" + (reviewChat ? "?chatID=" + encodeURIComponent(reviewChat) : "")),
+      api("/api/mining/candidates?status=new&kind=announcement&pageSize=300" + cf),
     ]);
     entries = (buckets.buckets || []).map(entryFromBucket).concat((anns.candidates || []).map(entryFromCandidate));
     if (!entries.find((e) => e.id === selectedId)) selectedId = null;
@@ -237,7 +238,15 @@ let W = 0, H = 0, dpr = 1, gnodes = new Map(), gedges = [], eseen = new Set(), g
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function sizeCanvas() { const r = cv.parentElement.getBoundingClientRect(); W = r.width; H = r.height; dpr = Math.min(devicePixelRatio || 1, 2); cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
 new ResizeObserver(sizeCanvas).observe(cv.parentElement);
-async function loadMineChats() { try { const { chats } = await api("/api/local/mine/chats"); const sel = $("mineChat"); if (!chats || !chats.length) { sel.innerHTML = '<option value="">— no imported chats —</option>'; return; } sel.innerHTML = chats.map((c) => '<option value="' + esc(c.chatID) + '">' + esc(c.label) + " — " + c.messages + " msg" + (c.candidates ? " · " + c.candidates + " pending" : "") + "</option>").join(""); } catch (e) {} }
+async function loadMineChats() {
+  try {
+    const { chats } = await api("/api/local/mine/chats");
+    const list = chats || [];
+    $("mineChat").innerHTML = list.length ? list.map((c) => '<option value="' + esc(c.chatID) + '">' + esc(c.label) + " — " + c.messages + " msg" + (c.candidates ? " · " + c.candidates + " pending" : "") + "</option>").join("") : '<option value="">— no imported chats —</option>';
+    $("reviewChat").innerHTML = '<option value="">All chats</option>' + list.map((c) => '<option value="' + esc(c.chatID) + '"' + (c.chatID === reviewChat ? " selected" : "") + ">" + esc(c.label) + "</option>").join("");
+  } catch (e) {}
+}
+$("reviewChat").onchange = (e) => { reviewChat = e.target.value; loadReview(); };
 function feed(k, t) { const d = document.createElement("div"); d.className = "row"; d.innerHTML = '<span class="dot ' + (k === "m" ? "m" : "r") + '"></span><span>' + esc(t) + "</span>"; $("feed").prepend(d); while ($("feed").children.length > 40) $("feed").lastChild.remove(); }
 function resetGraph() { gnodes = new Map(); gedges = []; eseen = new Set(); gSel = null; card.style.display = "none"; $("feed").innerHTML = ""; }
 function mergeGraph(g) {
@@ -253,7 +262,7 @@ $("mineStart").onclick = async () => {
 };
 $("mineStop").onclick = () => api("/api/local/mine/stop", { method: "POST" });
 $("mineChatsReload").onclick = loadMineChats;
-async function pollMine() { try { const { job } = await api("/api/local/mine/progress"); if (job) applyJob(job); if (job && !job.running) { running = false; $("mineStart").disabled = false; $("mineStop").style.display = "none"; if (minePoll) { clearInterval(minePoll); minePoll = null; } feed("m", "Done — see the Review tab."); loadReview(); } } catch (e) {} }
+async function pollMine() { try { const { job } = await api("/api/local/mine/progress"); if (job) applyJob(job); if (job && !job.running) { running = false; $("mineStart").disabled = false; $("mineStop").style.display = "none"; if (minePoll) { clearInterval(minePoll); minePoll = null; } feed("m", "Done — see the Review tab."); reviewChat = job.chatID || ""; loadMineChats(); loadReview(); } } catch (e) {} }
 function applyJob(job) {
   const pct = job.total ? Math.round(job.done / job.total * 100) : 0;
   $("mineBar").style.width = pct + "%"; $("minePct").textContent = pct + "%";

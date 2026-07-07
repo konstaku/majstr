@@ -141,7 +141,7 @@
         <div class="subtabs">
           <button class="subtab" data-cat="recommended" aria-selected="true">⭐ Recommended <span class="cnt" id="cntRec">0</span></button>
           <button class="subtab" data-cat="self" aria-selected="false">Self-posted <span class="cnt" id="cntSelf">0</span></button>
-          <div class="toolbar"><button class="rel" id="reviewReload">↻ Reload</button><button class="removebtn" id="removeSel" disabled>Decline selected</button></div>
+          <div class="toolbar"><select id="reviewChat" class="rel" style="padding:6px 10px;font:inherit"><option value="">All chats</option></select><button class="rel" id="reviewReload">↻ Reload</button><button class="removebtn" id="removeSel" disabled>Decline selected</button></div>
         </div>
         <div class="tablewrap"><table><thead><tr><th style="width:34px"></th><th>Master</th><th>Occupation</th><th>City</th><th class="num">Recs ▾</th><th>Source</th><th style="width:34px"></th></tr></thead>
           <tbody id="tbody"></tbody></table><div class="empty" id="tableEmpty" style="display:none">Nothing here yet — mine a chat first.</div></div>
