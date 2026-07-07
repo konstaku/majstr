@@ -11,12 +11,14 @@
 const mongoose = require('mongoose');
 const CandidateSchema = require('./schema/Candidate').schema;
 const MiningFeedbackSchema = require('./schema/MiningFeedback').schema;
+const RawMessageSchema = require('./schema/RawMessage').schema;
 
 const MINING_DB_NAME = process.env.MINING_DB_NAME || 'majstr_mining';
 
 let _conn = null;
 let _Candidate = null;
 let _MiningFeedback = null;
+let _RawMessage = null;
 
 function getConn() {
   if (_conn) return _conn;
@@ -39,6 +41,12 @@ module.exports = {
       _MiningFeedback = getConn().model('MiningFeedback', MiningFeedbackSchema);
     }
     return _MiningFeedback;
+  },
+  // Imported chat messages (mine-import writes here) — read by the review
+  // server's progress-tracked classify runner (classifyChatJob).
+  RawMessage() {
+    if (!_RawMessage) _RawMessage = getConn().model('RawMessage', RawMessageSchema);
+    return _RawMessage;
   },
   dbName: MINING_DB_NAME,
 };

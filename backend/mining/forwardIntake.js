@@ -15,6 +15,7 @@
 
 const miningDb = require('../database/miningDb');
 const forwardExtract = require('./forwardExtract');
+const { spawnAdditionalCandidates } = require('./spawnAdditional');
 const {
   findDuplicateMasters,
   summarizeDuplicate,
@@ -168,6 +169,27 @@ async function processCandidate(candidateId) {
   cand.status = 'new';
   cand.processedAt = new Date();
   await cand.save();
+
+  // Case 5 — additional masters named in the same forward become sibling
+  // recommendation candidates (no-op until the forward extractor emits `additional`).
+  if (Array.isArray(result.additional) && result.additional.length) {
+    await spawnAdditionalCandidates(
+      Candidate,
+      {
+        chatID: cand.chatID,
+        sourceType: cand.sourceType,
+        anchorMessageID: cand.anchorMessageID,
+        messageIDs: cand.messageIDs,
+        responderName: cand.responderName,
+        text: cand.text,
+        score: result.score,
+        classifierName: result.classifierName,
+        classifierVersion: result.classifierVersion,
+      },
+      result.additional,
+      null
+    );
+  }
 
   // Annotate (don't block) with any live master already holding this contact.
   let duplicateMaster = null;

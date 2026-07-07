@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { MasterContext } from "../context";
 import { useTranslation } from "../custom-hooks/useTranslation";
@@ -11,6 +11,7 @@ import { masterSlug } from "@/lib/data";
 import { track } from "@/lib/analytics";
 
 import type { Master, Contacts } from "../schema/master/master.schema";
+import type { RecommendationQuote } from "@/lib/api";
 import { Location, Profession } from "../schema/state/state.schema";
 
 type ModalProps = {
@@ -82,6 +83,250 @@ function formatRegCode(masterId: string, allMasters: Master[]): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
 
+// Recommendation carousel below the endorsement band: one quote at a time with
+// ‹ 01 / 03 › nav + a "view in chat" link. Sized to the modal's small body type
+// (contacts ~11px, bio ~10px). The visible height is reserved to the LONGEST
+// quote in the set (capped, measured off-screen) so paging never jumps the modal
+// height, and short-only sets leave no empty lines.
+const QUOTE_FONT = 12;
+const QUOTE_LH = 1.5;
+const QUOTE_MAX_LINES = 4;
+
+function RecommendationCarousel({
+  recs,
+  masterId,
+}: {
+  recs: RecommendationQuote[];
+  masterId: string;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const [reservedLines, setReservedLines] = useState(1);
+  const [overflowing, setOverflowing] = useState(false);
+  const [contentW, setContentW] = useState(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLParagraphElement>(null);
+
+  const multi = recs.length > 1;
+  const cur = recs[Math.min(idx, recs.length - 1)];
+  const go = (dir: number) => {
+    setExpanded(false);
+    setIdx((i) => (i + dir + recs.length) % recs.length);
+  };
+
+  // Track the quote body's width so the off-screen measurer wraps identically.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const update = () => setContentW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const linesOf = (text: string): number => {
+    const m = measureRef.current;
+    if (!m || !contentW) return 1;
+    m.textContent = text || "";
+    return Math.max(1, Math.round(m.scrollHeight / (QUOTE_FONT * QUOTE_LH)));
+  };
+
+  // Reserve height for the LONGEST quote (capped) — stable across pages, and no
+  // taller than it needs to be when every quote is short.
+  useEffect(() => {
+    if (!contentW) return;
+    let max = 1;
+    for (const r of recs) max = Math.max(max, linesOf(r.text));
+    setReservedLines(Math.min(max, QUOTE_MAX_LINES));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recs, contentW]);
+
+  // Does the current quote exceed the reserved height? → offer "більше".
+  useEffect(() => {
+    setExpanded(false);
+    setOverflowing(contentW ? linesOf(cur.text) > reservedLines : false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur, reservedLines, contentW]);
+
+  const clamp: React.CSSProperties = expanded
+    ? { display: "block" }
+    : {
+        display: "-webkit-box",
+        WebkitBoxOrient: "vertical",
+        WebkitLineClamp: reservedLines,
+        overflow: "hidden",
+      };
+
+  const navBtn: React.CSSProperties = {
+    width: 30,
+    height: 30,
+    flexShrink: 0,
+    background: "var(--paper, #fffaf0)",
+    color: "var(--ink, #0e0a06)",
+    border: "2px solid var(--ink, #0e0a06)",
+    cursor: "pointer",
+    fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
+    fontSize: 15,
+    fontWeight: 900,
+    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  return (
+    <div style={{ borderBottom: "2px solid var(--ink, #0e0a06)", background: "var(--paper, #fffaf0)" }}>
+      <div style={{ padding: "13px 18px 12px" }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
+              fontWeight: 900,
+              color: "var(--terra, #c84b31)",
+              fontSize: 30,
+              lineHeight: 0.7,
+              flexShrink: 0,
+            }}
+          >
+            &ldquo;
+          </span>
+          <div ref={bodyRef} style={{ minWidth: 0, flex: 1 }}>
+            <p
+              style={{
+                margin: 0,
+                fontWeight: 500,
+                fontSize: QUOTE_FONT,
+                lineHeight: QUOTE_LH,
+                letterSpacing: "-0.005em",
+                color: "var(--ink, #0e0a06)",
+                minHeight: expanded ? 0 : `${reservedLines * QUOTE_LH}em`,
+                ...clamp,
+              }}
+            >
+              {cur.text}
+            </p>
+            {overflowing && (
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                style={{
+                  marginTop: 4,
+                  padding: 0,
+                  border: "none",
+                  background: "none",
+                  cursor: "pointer",
+                  color: "var(--terra, #c84b31)",
+                  fontFamily: "var(--font-mono, monospace)",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {expanded ? "‹ менше" : "більше ›"}
+              </button>
+            )}
+            <div
+              style={{
+                marginTop: 8,
+                fontFamily: "var(--font-mono, monospace)",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                opacity: 0.7,
+              }}
+            >
+              — {cur.author || "Анонімно"}
+            </div>
+          </div>
+        </div>
+        {/* off-screen line-count measurer — matches the quote <p> font + width */}
+        <p
+          ref={measureRef}
+          aria-hidden
+          style={{
+            position: "absolute",
+            visibility: "hidden",
+            pointerEvents: "none",
+            left: -99999,
+            top: 0,
+            width: contentW || 240,
+            margin: 0,
+            fontWeight: 500,
+            fontSize: QUOTE_FONT,
+            lineHeight: QUOTE_LH,
+            letterSpacing: "-0.005em",
+            whiteSpace: "normal",
+          }}
+        />
+      </div>
+      <div
+        style={{
+          borderTop: "1px solid rgba(14,10,6,0.14)",
+          background: "var(--cream, #f4ede0)",
+          padding: "8px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {multi && (
+            <button type="button" onClick={() => go(-1)} aria-label="Previous recommendation" style={navBtn}>
+              ‹
+            </button>
+          )}
+          {multi && (
+            <span
+              style={{
+                fontFamily: "var(--font-mono, monospace)",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {String(idx + 1).padStart(2, "0")} / {String(recs.length).padStart(2, "0")}
+            </span>
+          )}
+          {multi && (
+            <button type="button" onClick={() => go(1)} aria-label="Next recommendation" style={navBtn}>
+              ›
+            </button>
+          )}
+        </div>
+        {cur.href && (
+          <a
+            href={cur.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track("recommendation_chat_click", { master_id: masterId })}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              textDecoration: "none",
+              color: "var(--ink, #0e0a06)",
+              fontFamily: "var(--font-mono, monospace)",
+              fontSize: 9.5,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span>Переглянути в чаті</span>
+            <span style={{ color: "var(--terra, #c84b31)", fontSize: 15 }}>↗</span>
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Modal({ master, setShowModal, loadingDetails }: ModalProps) {
   const {
     state: { locations, professions, masters, communities },
@@ -98,6 +343,11 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
     .map((cid) => communities.find((c) => c.id === cid))
     .find((c): c is NonNullable<typeof c> => Boolean(c));
   const [communityHover, setCommunityHover] = useState(false);
+
+  // Recommendations — count drives the badge square; text quotes drive the
+  // carousel (loaded with the detail fetch, so empty until then).
+  const recommendationCount = master.recommendationCount ?? 0;
+  const recommendationQuotes = master.recommendations ?? [];
 
   // Mirror MasterCard's fallback so modal always shows language badges.
   const displayLangs = (languages && languages.length > 0)
@@ -324,13 +574,42 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                   color: "var(--paper, #fffaf0)",
                   borderRight: "2px solid var(--ink, #0e0a06)",
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: "0 18px",
-                  fontSize: 19,
+                  padding: recommendationCount > 1 ? "0 12px" : "0 16px",
+                  lineHeight: 0.9,
                 }}
               >
-                ★
+                {recommendationCount > 1 ? (
+                  <>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
+                        fontWeight: 900,
+                        fontSize: 22,
+                        letterSpacing: "-0.04em",
+                      }}
+                    >
+                      {recommendationCount}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: 6.5,
+                        fontWeight: 700,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        marginTop: 3,
+                        opacity: 0.85,
+                      }}
+                    >
+                      рек.
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 19 }}>★</span>
+                )}
               </span>
               <span
                 style={{
@@ -386,6 +665,13 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                 <span style={{ color: communityHover ? "var(--terra, #c84b31)" : "inherit", fontSize: 18 }}>↗</span>
               </span>
             </a>
+          )}
+
+          {/* Recommendation quotes — scroll through endorsements left in the
+              community chats. Sits right below the endorsement band (or on its
+              own, with a top border, when the master has no community). */}
+          {recommendationQuotes.length > 0 && (
+            <RecommendationCarousel recs={recommendationQuotes} masterId={id} />
           )}
 
           {/* Contacts */}

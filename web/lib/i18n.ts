@@ -133,6 +133,30 @@ export function mastersCount(n: number, lang: Lang): string {
   return `${n} ${plural(n, MASTER_FORMS[lang])}`;
 }
 
+// UK/RU take the one/few/many rule; other UI languages a simple plural.
+const RECOMMENDATION_FORMS: Record<string, [string, string, string]> = {
+  uk: ["рекомендація", "рекомендації", "рекомендацій"],
+  ru: ["рекомендация", "рекомендации", "рекомендаций"],
+};
+const RECOMMENDATION_SIMPLE: Record<string, [string, string]> = {
+  it: ["raccomandazione", "raccomandazioni"],
+  fr: ["recommandation", "recommandations"],
+  de: ["Empfehlung", "Empfehlungen"],
+  es: ["recomendación", "recomendaciones"],
+  pt: ["recomendação", "recomendações"],
+  tr: ["tavsiye", "tavsiye"],
+};
+
+/** Just the noun for the card's recommendation count, correctly declined:
+ *  recommendationWord(1,"uk") → "рекомендація", recommendationWord(5,"uk") →
+ *  "рекомендацій". The number is rendered separately (highlighted) on the card. */
+export function recommendationWord(n: number, lang: string): string {
+  const forms = RECOMMENDATION_FORMS[lang];
+  if (forms) return plural(n, forms);
+  const s = RECOMMENDATION_SIMPLE[lang] ?? ["recommendation", "recommendations"];
+  return n === 1 ? s[0] : s[1];
+}
+
 // ── UI strings ────────────────────────────────────────────────────────────────
 type Dict = Record<string, string>;
 export const T: Record<Lang, Dict> = {

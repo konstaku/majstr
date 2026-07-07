@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getDataset } from "@/lib/data";
-import { DATA_TAG, type Master } from "@/lib/api";
+import { DATA_TAG, getMasterRecommendations, type Master } from "@/lib/api";
 import { API_BASE } from "@/lib/config";
 import { countryForHost, countryID } from "@/lib/i18n";
 
@@ -52,7 +52,10 @@ export async function GET(
       { status: 404, headers: { "Cache-Control": "no-store" } }
     );
   }
-  return NextResponse.json(master, {
+  // Attach the master's recommendation quotes for the modal carousel (Phase 3).
+  const recommendations = await getMasterRecommendations(id);
+
+  return NextResponse.json({ ...master, recommendations }, {
     headers: {
       // Short shared cache so an owner edit (photo/contacts) reaches the card
       // modal within ~a minute even if the tag-purge misses this URL's CDN

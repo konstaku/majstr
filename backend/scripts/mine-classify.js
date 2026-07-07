@@ -38,10 +38,10 @@ const mongoose = require('mongoose');
 const { runDB } = require('../database/db');
 const RawMessage = require('../database/schema/RawMessage');
 const Candidate = require('../database/schema/Candidate');
+const { spawnAdditionalCandidates } = require('../mining/spawnAdditional');
 const MiningRun = require('../database/schema/MiningRun');
-const { buildThreads } = require('../mining/thread');
 const { getClassifier } = require('../mining/classifier');
-const { keepAnswerUnit } = require('../mining/prefilter');
+const { unitsFromChat } = require('../mining/buildUnits');
 
 const arg = (n, d) => {
   const i = process.argv.indexOf(n);
@@ -64,6 +64,7 @@ const CHAT_REGION = {
   '1698155646': 'Sanremo',  // Украинцы в Сан-Ремо
   '2181477220': 'Sanremo',  // Наші в Санремо
   '1678212416': 'Nice',     // УКРАЇНСЬКІ КРАСУНІ — Côte d'Azur beauty services (FR)
+  '1633418077': 'Bologna',  // Українці в Болоньї — Emilia-Romagna
 };
 const CONCURRENCY = 4;
 
@@ -78,51 +79,6 @@ const hashInput = (input) =>
 const classifier = getClassifier();
 const costOf = () => (classifier.getCumulativeCost ? classifier.getCumulativeCost() : 0);
 const callsOf = () => (classifier.getCumulativeCalls ? classifier.getCumulativeCalls() : 0);
-
-// Flatten a chat's threads + announcements into classifiable candidate units.
-// Thread answers run through the pre-filter (mining/prefilter.js) — pure-ack and
-// no-thread-signal replies are dropped here so they never reach the classifier.
-// Announcements already cleared the heuristic announcement gate and pass through.
-function unitsFromChat(all) {
-  const { threads, announcements } = buildThreads(all);
-  const units = [];
-  const dropped = { pureAck: 0, noLead: 0 };
-  for (const t of threads) {
-    for (const a of t.answers) {
-      const ids = a.messageIDs.slice().sort((x, y) => x - y);
-      const text = a.messages.map((m) => m.text).join('\n');
-      const verdict = keepAnswerUnit(t.inquiry.text, text);
-      if (!verdict.keep) {
-        if (verdict.reason === 'pure-ack') dropped.pureAck++;
-        else dropped.noLead++;
-        continue;
-      }
-      units.push({
-        sourceType: 'thread_answer',
-        anchorMessageID: ids[0],
-        messageIDs: ids,
-        inquiryMessageID: t.inquiryID,
-        inquiryText: t.inquiry.text,
-        responderName: a.responderName,
-        text,
-        classifyInput: { inquiry: t.inquiry.text, responderName: a.responderName, text },
-      });
-    }
-  }
-  for (const an of announcements) {
-    units.push({
-      sourceType: 'announcement',
-      anchorMessageID: an.messageID,
-      messageIDs: [an.messageID],
-      inquiryMessageID: null,
-      inquiryText: null,
-      responderName: null,
-      text: an.text,
-      classifyInput: { text: an.text },
-    });
-  }
-  return { units, dropped };
-}
 
 async function classifyWithRetry(input) {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -200,13 +156,13 @@ async function processChat(chatID, limit) {
         else if (byHash.has(hash)) {
           // Identical content already classified (a repost) — reuse, no call.
           const hit = byHash.get(hash);
-          cls = { kind: hit.kind, score: hit.score, extracted: hit.extracted, v: classifier.version, h: hash };
+          cls = { kind: hit.kind, score: hit.score, extracted: hit.extracted, additional: hit.additional || [], v: classifier.version, h: hash };
           cache[key] = cls;
           deduped++;
         } else {
           try {
             const r = await classifyWithRetry(u.classifyInput);
-            cls = { kind: r.kind, score: r.score, extracted: r.extracted, v: classifier.version, h: hash };
+            cls = { kind: r.kind, score: r.score, extracted: r.extracted, additional: r.additional || [], v: classifier.version, h: hash };
             cache[key] = cls;
             byHash.set(hash, cls);
             fresh++;
@@ -219,30 +175,33 @@ async function processChat(chatID, limit) {
         if (!useful) return;
         const extracted = { ...(cls.extracted || {}) };
         if (!extracted.city) extracted.city = region; // default city from chat region
+        // Fields shared by the primary lead and any sibling candidates.
+        const shared = {
+          chatID,
+          sourceType: u.sourceType,
+          anchorMessageID: u.anchorMessageID,
+          messageIDs: u.messageIDs,
+          inquiryMessageID: u.inquiryMessageID,
+          inquiryText: u.inquiryText,
+          responderName: u.responderName,
+          text: u.text,
+          score: cls.score,
+          classifierName: classifier.name,
+          classifierVersion: classifier.version,
+          runRef: run._id,
+        };
         await Candidate.updateOne(
-          { chatID, anchorMessageID: u.anchorMessageID },
+          { chatID, anchorMessageID: u.anchorMessageID, subIndex: 0 },
           {
-            $set: {
-              chatID,
-              sourceType: u.sourceType,
-              anchorMessageID: u.anchorMessageID,
-              messageIDs: u.messageIDs,
-              inquiryMessageID: u.inquiryMessageID,
-              inquiryText: u.inquiryText,
-              responderName: u.responderName,
-              text: u.text,
-              kind: cls.kind,
-              score: cls.score,
-              extracted,
-              classifierName: classifier.name,
-              classifierVersion: classifier.version,
-              runRef: run._id,
-            },
+            $set: { ...shared, kind: cls.kind, extracted },
             $setOnInsert: { status: 'new' },
           },
           { upsert: true }
         );
         written++;
+        // Case 5 — extra masters named in the same message become sibling
+        // recommendation candidates (subIndex 1..n).
+        written += await spawnAdditionalCandidates(Candidate, shared, cls.additional, region);
       })
     );
     fs.writeFileSync(cacheFile, JSON.stringify(cache)); // crash-safe checkpoint

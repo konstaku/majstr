@@ -58,6 +58,10 @@ const candidateSchema = new mongoose.Schema(
     // Representative message: the announcement message, or the lowest message
     // id of a thread-answer bundle. Unique per chat -> idempotent re-runs.
     anchorMessageID: { type: Number, required: true },
+    // Sub-ordinal for multiple masters named in ONE message (case 5): the primary
+    // lead is 0, each additional recommended master 1..n. Part of the uniqueness
+    // key so siblings can share an anchor message.
+    subIndex: { type: Number, default: 0 },
     messageIDs: { type: [Number], default: [] },
     inquiryMessageID: { type: Number, default: null },
     inquiryText: { type: String, default: null },
@@ -112,8 +116,11 @@ const candidateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Idempotent batch re-runs: one candidate per (chat, anchor message).
-candidateSchema.index({ chatID: 1, anchorMessageID: 1 }, { unique: true });
+// Idempotent batch re-runs: one candidate per (chat, anchor message, sub-index).
+// subIndex is 0 for the primary lead; additional masters named in the same
+// message get 1..n (see mining/spawnAdditional.js). Migrate existing rows with
+// scripts/backfill-candidate-subindex.js before deploy (drops the old 2-field index).
+candidateSchema.index({ chatID: 1, anchorMessageID: 1, subIndex: 1 }, { unique: true });
 // Admin queue.
 candidateSchema.index({ status: 1, createdAt: -1 });
 candidateSchema.index({ status: 1, kind: 1, score: -1 });

@@ -10,6 +10,7 @@ import {
   cityPrep,
 } from "@/lib/data";
 import { masterTitle, masterDescription } from "@/lib/content";
+import { getMasterRecommendations } from "@/lib/api";
 import { abs, masterPath, languageAlternates } from "@/lib/urls";
 import { buildSeed } from "@/lib/seed";
 import AppShell from "@/spa/AppShell";
@@ -81,7 +82,10 @@ export default async function MasterPage({
   const { master, prof, loc, canonical } = found;
   if (canonical !== slug) permanentRedirect(masterPath(lang, canonical));
 
-  const ds = await getDataset(countryID(rawCountry));
+  const [ds, recommendations] = await Promise.all([
+    getDataset(countryID(rawCountry)),
+    getMasterRecommendations(master._id),
+  ]);
   const profTitle = nomName(prof.name, lang) || professionLead(prof, lang);
   const hasRating = typeof master.rating === "number" && master.rating > 0;
 
@@ -95,7 +99,8 @@ export default async function MasterPage({
       selectedProfessionCategory: prof.categoryID ?? "",
     },
     master._id, // keep this master full so the pre-opened modal needs no fetch
-    countryID(rawCountry)
+    countryID(rawCountry),
+    recommendations // …incl. its recommendation quotes, so refresh keeps the carousel
   );
 
   return (

@@ -10,6 +10,7 @@ import { transliterate } from "../helpers/transliterate";
 import Sigil from "./Sigil";
 import { masterSlug } from "@/lib/data";
 import { masterPath } from "@/lib/urls";
+import { recommendationWord } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 
 import type { Master } from "../schema/master/master.schema";
@@ -39,6 +40,7 @@ export default function MasterCard({ master, setShowModal, isNew }: MasterCardPr
   const { t } = useTranslation();
 
   const { _id, name, professionID, locationID, languages, countryID, photo, tags } = master;
+  const recommendationCount = master.recommendationCount ?? 0;
 
   const displayName = lang === "uk" ? name : transliterate(name);
   // Owner-verified by a moderator (claim flow) — not merely "has a photo".
@@ -143,8 +145,17 @@ export default function MasterCard({ master, setShowModal, isNew }: MasterCardPr
 
         <div className="master-card__strip">
           <span className="master-card__member-since">
-            {t("masterCard.memberSince")}{" "}
-            <span className="master-card__year">{year}</span>
+            {recommendationCount > 0 ? (
+              <>
+                <span className="master-card__year">{recommendationCount}</span>{" "}
+                {recommendationWord(recommendationCount, lang)}
+              </>
+            ) : (
+              <>
+                {t("masterCard.memberSince")}{" "}
+                <span className="master-card__year">{year}</span>
+              </>
+            )}
           </span>
           <span className="master-card__cta">
             {t("masterCard.details")} →

@@ -22,7 +22,12 @@ const Anthropic = require('@anthropic-ai/sdk');
 // Telegram @usernames are always contactType:'telegram' — never mix them.
 // 1.6.0 — announcement-only (third-party recs excluded).
 // 1.5.0 — description always Ukrainian. 1.4.0 — cross-border excluded. 1.3.0 — DM promise excluded.
-const VERSION = '2.0.0';
+// 3.0.0 — multi-master (case 5): a message naming more than one specialist puts
+// the first in `extracted` and each additional one in `additional[]`. Purely
+// additive — the primary extraction is unchanged, so single-lead behavior (and
+// its precision) is identical; `additional` defaults to []. Additional leads all
+// go through the human-confirm review queue.
+const VERSION = '3.0.0';
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 512;
 
@@ -90,42 +95,53 @@ const SYSTEM_PROMPT =
   'is in Russian, Italian or English, TRANSLATE the summary into Ukrainian — ' +
   'never leave the description in the original language. name/profession/city/' +
   'contacts stay verbatim; only `description` is translated.\n' +
+  'MULTIPLE SPECIALISTS: if the message recommends MORE THAN ONE distinct ' +
+  'specialist (e.g. "звернись до Олени @olena або до Марії +39…"), put the first ' +
+  'in `extracted` and EACH additional specialist as its own object in `additional` ' +
+  '(same fields: name/profession/city/contacts/description). Use `additional: []` ' +
+  'when only one specialist is named. Do NOT split one specialist across entries.\n' +
   'Respond strictly in the JSON schema.';
+
+// One extracted specialist. Reused for `extracted` (the primary lead) and each
+// entry of `additional` (extra specialists named in the same message).
+const EXTRACTED_SHAPE = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['name', 'profession', 'city', 'contacts', 'description'],
+  properties: {
+    name: { type: ['string', 'null'] },
+    profession: { type: ['string', 'null'] },
+    city: { type: ['string', 'null'] },
+    contacts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['contactType', 'value'],
+        properties: {
+          contactType: {
+            type: 'string',
+            enum: ['phone', 'telegram', 'whatsapp', 'viber', 'other'],
+          },
+          value: { type: 'string' },
+        },
+      },
+    },
+    description: { type: ['string', 'null'] },
+  },
+};
 
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['is_useful', 'kind', 'confidence', 'extracted'],
+  required: ['is_useful', 'kind', 'confidence', 'extracted', 'additional'],
   properties: {
     is_useful: { type: 'boolean' },
     kind: { type: 'string', enum: ['announcement', 'recommendation', 'none'] },
     confidence: { type: 'number' },
-    extracted: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['name', 'profession', 'city', 'contacts', 'description'],
-      properties: {
-        name: { type: ['string', 'null'] },
-        profession: { type: ['string', 'null'] },
-        city: { type: ['string', 'null'] },
-        contacts: {
-          type: 'array',
-          items: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['contactType', 'value'],
-            properties: {
-              contactType: {
-                type: 'string',
-                enum: ['phone', 'telegram', 'whatsapp', 'viber', 'other'],
-              },
-              value: { type: 'string' },
-            },
-          },
-        },
-        description: { type: ['string', 'null'] },
-      },
-    },
+    extracted: EXTRACTED_SHAPE,
+    // Extra specialists named in the same message (case 5). [] when only one.
+    additional: { type: 'array', items: EXTRACTED_SHAPE },
   },
 };
 
@@ -184,7 +200,13 @@ function mapResult(parsed) {
   let score = typeof parsed.confidence === 'number' ? parsed.confidence : 0;
   if (score > 1) score = score / 100;
   score = Math.max(0, Math.min(1, score));
-  return { kind, score, extracted: parsed.extracted || {} };
+  // `additional` — extra specialists named in the same message (case 5). Only
+  // meaningful when the message is useful; empty otherwise. Each is its own lead.
+  const additional =
+    kind !== 'unknown' && Array.isArray(parsed.additional)
+      ? parsed.additional.filter((x) => x && typeof x === 'object')
+      : [];
+  return { kind, score, extracted: parsed.extracted || {}, additional };
 }
 
 function buildUserContent(message) {

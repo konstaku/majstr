@@ -26,11 +26,11 @@
 
 const haiku = require('./haiku');
 
-// 1.5.0 — tracks haiku.js SYSTEM_PROMPT v2.0.0 (third-party recommendations are
-// useful again, kind:'recommendation').
-// 1.4.0 — tracked v1.7.0 (contact-type disambiguation: phone → 'phone',
-// @handles → 'telegram'). 1.3.0: tracked v1.5.0 (description always Ukrainian).
-const VERSION = '1.5.0';
+// 1.6.0 — tracks haiku.js v3.0.0 (multi-master: additional[] siblings). Reuses
+// haiku's _SCHEMA / _SYSTEM_PROMPT / _mapResult, so `additional` flows through
+// unchanged. 1.5.0 — tracked v2.0.0 (third-party recommendations useful again).
+// 1.4.0 — tracked v1.7.0 (contact-type disambiguation). 1.3.0 — v1.5.0.
+const VERSION = '1.6.0';
 const MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:14b';
 const HOST = (process.env.OLLAMA_HOST || 'http://localhost:11434').replace(/\/$/, '');
 const TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 120000);

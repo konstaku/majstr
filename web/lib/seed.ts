@@ -1,6 +1,6 @@
 import type { Dataset } from "./data";
 import type { Lang } from "./i18n";
-import type { Master } from "./api";
+import type { Master, RecommendationQuote } from "./api";
 
 export interface SeedSearchParams {
   selectedCity?: string;
@@ -26,6 +26,7 @@ type SlimMaster = Pick<
   | "verified"
   | "claimable"
   | "communityIds"
+  | "recommendationCount"
 >;
 
 function slimMaster(m: Master): SlimMaster {
@@ -45,6 +46,9 @@ function slimMaster(m: Master): SlimMaster {
     claimable: m.claimable,
     // Needed by the modal: the "Рекомендовано спільнотою" endorsement badge.
     communityIds: m.communityIds,
+    // Needed by the grid: the "<N> рекомендацій" count on the card strip +
+    // recommended-first ordering.
+    recommendationCount: m.recommendationCount,
   };
 }
 
@@ -60,10 +64,15 @@ export function buildSeed(
   ds: Dataset,
   sp?: SeedSearchParams,
   fullMasterId?: string,
-  country = "IT"
+  country = "IT",
+  // Recommendation quotes for the full master, so a direct load / refresh of a
+  // master page renders the carousel with no client fetch.
+  fullMasterRecommendations?: RecommendationQuote[]
 ): Record<string, unknown> {
   const masters = ds.masters.map((m) =>
-    m._id === fullMasterId ? m : slimMaster(m)
+    m._id === fullMasterId
+      ? { ...m, ...(fullMasterRecommendations ? { recommendations: fullMasterRecommendations } : {}) }
+      : slimMaster(m)
   );
   return {
     masters,

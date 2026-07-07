@@ -61,6 +61,11 @@ export interface Master {
   OGimage?: string;
   rating?: number | null;
   reviewCount?: number;
+  /** Distinct-author recommendation count — card count badge + ranking. */
+  recommendationCount?: number;
+  /** Text recommendation quotes for the modal carousel; loaded with the detail
+   *  fetch (GET /api/master/[id]). Count-only endorsements are not included. */
+  recommendations?: RecommendationQuote[];
   likes?: number;
   approved?: boolean;
   /** Owner-verified by a moderator (claim flow) — badge + search priority. */
@@ -73,6 +78,12 @@ export interface Master {
   tags?: { ua?: string[]; en?: string[]; ru?: string[] };
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface RecommendationQuote {
+  author: string;
+  text: string;
+  href: string | null;
 }
 
 export interface Community {
@@ -121,3 +132,21 @@ export const getCommunities = cache(async (): Promise<Community[]> => {
     return [];
   }
 });
+
+// A master's text recommendation quotes for the modal carousel. Used by the
+// detail API route AND the master page seed (so a direct load / refresh renders
+// the carousel without a client fetch). Degrades to [] on any error.
+export const getMasterRecommendations = cache(
+  async (id: string): Promise<RecommendationQuote[]> => {
+    try {
+      const r = await fetch(`${API_BASE}/api/master/${id}/recommendations`, {
+        next: { revalidate: REVALIDATE_SECONDS, tags: [DATA_TAG] },
+      });
+      if (!r.ok) return [];
+      const b = (await r.json()) as { recommendations?: RecommendationQuote[] };
+      return Array.isArray(b.recommendations) ? b.recommendations : [];
+    } catch {
+      return [];
+    }
+  }
+);

@@ -27,8 +27,11 @@ const {
   listCandidates,
   acceptCandidate,
   declineCandidate,
+  attachRecommendationToMaster,
+  listRecommendationBuckets,
 } = require('./routes/miningReview');
 const { handleApiRequests, addReview } = require('./routes/public');
+const { getMasterRecommendations } = require('./routes/recommendations');
 const { authenticateUser, addMaster, handleApproveMaster } = require('./routes/masterModeration');
 const { refCache } = require('./helpers/referenceCache');
 const { bot } = require('./bot');
@@ -78,6 +81,8 @@ function buildApp() {
   app.post('/addmaster', requireUser, asyncHandler(addMaster));
   app.post('/approve-master', requireAuth, requireAdmin, asyncHandler(handleApproveMaster));
   app.post('/review', asyncHandler(addReview));
+  // Public: a master's recommendation quotes for the card modal carousel.
+  app.get('/api/master/:id/recommendations', asyncHandler(getMasterRecommendations));
 
   // Draft lifecycle (Mini App onboarding wizard)
   app.get('/api/masters/draft', requireUser, asyncHandler(getDraft));
@@ -168,6 +173,13 @@ function buildApp() {
 
   // Mining review queue (#93 / #94) — admin dashboard backend.
   app.get('/api/mining/candidates', requireUser, requireAdmin, listCandidates);
+  // Master-centric recommendation queue (Phase 2): signals grouped by target.
+  app.get(
+    '/api/mining/recommendation-buckets',
+    requireUser,
+    requireAdmin,
+    listRecommendationBuckets
+  );
   app.post(
     '/api/mining/candidates/:id/accept',
     requireUser,
@@ -179,6 +191,13 @@ function buildApp() {
     requireUser,
     requireAdmin,
     declineCandidate
+  );
+  // Attach a recommendation candidate to an existing master (Phase 2).
+  app.post(
+    '/api/mining/candidates/:id/attach',
+    requireUser,
+    requireAdmin,
+    attachRecommendationToMaster
   );
 
   // Terminal error handler — async handlers wrapped in asyncHandler land here
