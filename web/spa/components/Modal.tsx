@@ -108,14 +108,14 @@ function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
       };
 
   return (
-    <div style={{ padding: "18px 24px 14px" }}>
-      <div style={{ display: "flex", gap: 14 }}>
+    <div style={{ padding: "14px 18px 12px" }}>
+      <div style={{ display: "flex", gap: 10 }}>
         <span
           style={{
             fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
             fontWeight: 900,
             color: "var(--terra, #c84b31)",
-            fontSize: 46,
+            fontSize: 34,
             lineHeight: 0.7,
             flexShrink: 0,
           }}
@@ -128,7 +128,7 @@ function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
             style={{
               margin: 0,
               fontWeight: 500,
-              fontSize: 16,
+              fontSize: 13.5,
               lineHeight: QUOTE_LINE_HEIGHT,
               letterSpacing: "-0.005em",
               color: "var(--ink, #0e0a06)",
@@ -150,7 +150,7 @@ function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
                 cursor: "pointer",
                 color: "var(--terra, #c84b31)",
                 fontFamily: "var(--font-mono, monospace)",
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
@@ -161,9 +161,9 @@ function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
           )}
           <div
             style={{
-              marginTop: 10,
+              marginTop: 8,
               fontFamily: "var(--font-mono, monospace)",
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 700,
               letterSpacing: "0.12em",
               textTransform: "uppercase",
@@ -196,15 +196,15 @@ function RecommendationCarousel({
   const go = (dir: number) => setIdx((i) => (i + dir + recs.length) % recs.length);
 
   const navBtn: React.CSSProperties = {
-    width: 34,
-    height: 34,
+    width: 30,
+    height: 30,
     flexShrink: 0,
     background: "var(--paper, #fffaf0)",
     color: "var(--ink, #0e0a06)",
     border: "2px solid var(--ink, #0e0a06)",
     cursor: "pointer",
     fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: 900,
     lineHeight: 1,
     display: "flex",
@@ -225,7 +225,7 @@ function RecommendationCarousel({
         style={{
           borderTop: "1px solid rgba(14,10,6,0.14)",
           background: "var(--cream, #f4ede0)",
-          padding: "9px 18px 9px 24px",
+          padding: "8px 14px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -242,7 +242,7 @@ function RecommendationCarousel({
             <span
               style={{
                 fontFamily: "var(--font-mono, monospace)",
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: "0.14em",
                 fontVariantNumeric: "tabular-nums",
@@ -270,7 +270,7 @@ function RecommendationCarousel({
               textDecoration: "none",
               color: "var(--ink, #0e0a06)",
               fontFamily: "var(--font-mono, monospace)",
-              fontSize: 11,
+              fontSize: 9.5,
               fontWeight: 700,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -278,7 +278,7 @@ function RecommendationCarousel({
             }}
           >
             <span>Переглянути в чаті</span>
-            <span style={{ color: "var(--terra, #c84b31)", fontSize: 17 }}>↗</span>
+            <span style={{ color: "var(--terra, #c84b31)", fontSize: 15 }}>↗</span>
           </a>
         )}
       </div>
@@ -536,7 +536,7 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: recommendationCount > 1 ? "0 16px" : "0 18px",
+                  padding: recommendationCount > 1 ? "0 12px" : "0 16px",
                   lineHeight: 0.9,
                 }}
               >
@@ -546,7 +546,7 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                       style={{
                         fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
                         fontWeight: 900,
-                        fontSize: 30,
+                        fontSize: 22,
                         letterSpacing: "-0.04em",
                       }}
                     >
@@ -555,7 +555,7 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
                     <span
                       style={{
                         fontFamily: "var(--font-mono, monospace)",
-                        fontSize: 7.5,
+                        fontSize: 6.5,
                         fontWeight: 700,
                         letterSpacing: "0.14em",
                         textTransform: "uppercase",
