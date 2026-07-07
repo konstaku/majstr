@@ -16,4 +16,5 @@ module.exports = {
   '1698155646': 'Sanremo', // Украинцы в Сан-Ремо
   '2181477220': 'Sanremo', // Наші в Санремо
   '1678212416': 'Nice', // УКРАЇНСЬКІ КРАСУНІ — Côte d'Azur beauty services (FR)
+  '1633418077': 'Bologna', // Українці в Болоньї — Emilia-Romagna
 };

@@ -47,6 +47,8 @@ const {
   rebuildLexicon,
 } = require('../routes/referenceAdmin');
 const { storeRawForward, processCandidate } = require('../mining/forwardIntake');
+const { classifyChat } = require('../mining/classifyChatJob');
+const { getClassifier } = require('../mining/classifier');
 const miningDb = require('../database/miningDb');
 const CHAT_REGION = require('../mining/chatRegions');
 const { CHAT_COUNTRY, DEFAULT_COUNTRY } = require('../mining/chatCountries');
@@ -279,6 +281,98 @@ async function main() {
     }
   });
 
+  // --- Mine a chat with a live progress bar (imported chat -> candidates) ---
+  // One job at a time, tracked in memory. The classifier defaults to Ollama (this
+  // IS the Ollama machine); override with CLASSIFIER=heuristic|haiku.
+  let mineJob = null;
+  const publicJob = () =>
+    mineJob && {
+      running: mineJob.running,
+      chatID: mineJob.chatID,
+      region: mineJob.region,
+      classifier: mineJob.classifier,
+      done: mineJob.done,
+      total: mineJob.total,
+      created: mineJob.created,
+      useful: mineJob.useful,
+      failed: mineJob.failed,
+      lastName: mineJob.lastName,
+      error: mineJob.error,
+      startedAt: mineJob.startedAt,
+      finishedAt: mineJob.finishedAt,
+    };
+
+  // Imported chats available to classify (from mining RawMessage), with message
+  // and pending-candidate counts + a human region label.
+  app.get('/api/local/mine/chats', async (_req, res) => {
+    try {
+      const [msgRows, candRows] = await Promise.all([
+        miningDb.RawMessage().aggregate([{ $group: { _id: '$chatID', messages: { $sum: 1 } } }]),
+        miningDb.Candidate().aggregate([
+          { $match: { status: 'new' } },
+          { $group: { _id: '$chatID', candidates: { $sum: 1 } } },
+        ]),
+      ]);
+      const cand = new Map(candRows.map((r) => [String(r._id), r.candidates]));
+      const chats = msgRows
+        .map((r) => ({
+          chatID: String(r._id),
+          label: CHAT_REGION[String(r._id)] || String(r._id),
+          messages: r.messages,
+          candidates: cand.get(String(r._id)) || 0,
+        }))
+        .sort((a, b) => b.messages - a.messages);
+      res.json({ chats });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/local/mine/start', async (req, res) => {
+    const chatID = String((req.body && req.body.chatID) || '').trim();
+    if (!chatID) return res.status(400).json({ error: 'chatID required' });
+    if (mineJob && mineJob.running) {
+      return res.status(409).json({ error: 'already_running', job: publicJob() });
+    }
+    let classifier;
+    try {
+      classifier = getClassifier(process.env.CLASSIFIER || 'ollama');
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
+    const region = CHAT_REGION[chatID] || chatID;
+    mineJob = {
+      running: true, chatID, region,
+      classifier: classifier.name + ' ' + classifier.version,
+      done: 0, total: 0, created: 0, useful: 0, failed: 0,
+      lastName: null, error: null, stop: false,
+      startedAt: Date.now(), finishedAt: null,
+    };
+    // Fire-and-forget: the UI polls /api/local/mine/progress for the bar.
+    classifyChat({
+      RawMessage: miningDb.RawMessage(),
+      Candidate: miningDb.Candidate(),
+      classifier, chatID, region,
+      onProgress: (p) => {
+        mineJob.done = p.done; mineJob.total = p.total;
+        mineJob.created = p.created; mineJob.useful = p.useful; mineJob.failed = p.failed;
+        if (p.name) mineJob.lastName = p.name;
+        if (p.error) mineJob.error = p.error;
+      },
+      shouldStop: () => mineJob && mineJob.stop,
+    })
+      .then((r) => { mineJob.running = false; mineJob.finishedAt = Date.now(); mineJob.summary = r; })
+      .catch((e) => { mineJob.running = false; mineJob.finishedAt = Date.now(); mineJob.error = e.message; });
+    res.json({ ok: true, job: publicJob() });
+  });
+
+  app.post('/api/local/mine/stop', (_req, res) => {
+    if (mineJob) mineJob.stop = true;
+    res.json({ ok: true, job: publicJob() });
+  });
+
+  app.get('/api/local/mine/progress', (_req, res) => res.json({ job: publicJob() }));
+
   // Optional trust-graph view — the master-recommendation network. Synthetic
   // data for now (a preview of the shape); wire to the live Recommendation
   // collection once there is enough of it. Opens in its own tab from the header.
@@ -405,6 +499,24 @@ const HTML = /* html */ `<!doctype html>
 
   <!-- TOOLS: secondary functions kept off the review screen. -->
   <div id="toolsView" class="hidden">
+    <h2>Mine a chat</h2>
+    <div class="paste">
+      <label>Classify an imported chat into candidates — watch the classifier work, then review in Endorsements.</label>
+      <div class="row" style="margin:8px 0">
+        <select id="mineChat" style="min-width:280px"></select>
+        <button id="mineStart" class="primary">Start mining</button>
+        <button id="mineStop" class="small danger" style="display:none">Stop</button>
+        <button id="mineChatsReload" class="small" title="Reload chat list">↻</button>
+      </div>
+      <div id="mineBarWrap" style="display:none">
+        <div style="height:16px;background:var(--field);border:1px solid var(--field-line);border-radius:8px;overflow:hidden">
+          <div id="mineBar" style="height:100%;width:0%;background:var(--accent);transition:width .3s ease"></div>
+        </div>
+        <div class="small mut" id="mineStatus" style="margin-top:7px"></div>
+        <div class="small" id="mineDone" style="margin-top:6px"></div>
+      </div>
+    </div>
+
     <h2>Add a snippet</h2>
     <div class="paste">
       <label>Paste a recommendation / chat snippet — stored + processed through Ollama right away</label>
@@ -875,6 +987,57 @@ async function skipSignal(candidateId, row){
   catch(e){ if(row){ const er=row.querySelector('.sig-err'); if(er) er.textContent=e.message; } }
 }
 document.getElementById('recReload').onclick=loadRecBuckets;
+
+// ---- Mine a chat with a live progress bar ----
+let minePoll=null;
+async function loadMineChats(){
+  const sel=document.getElementById('mineChat');
+  try{
+    const { chats }=await fetch('/api/local/mine/chats').then(r=>r.json());
+    if(!chats||!chats.length){ sel.innerHTML='<option value="">— no imported chats —</option>'; return; }
+    sel.innerHTML=chats.map(c=>'<option value="'+esc(c.chatID)+'">'+esc(c.label)+' — '+c.messages+' msg'+(c.candidates?(' · '+c.candidates+' pending'):'')+'</option>').join('');
+  }catch(e){ sel.innerHTML='<option value="">— error —</option>'; }
+}
+function renderMineJob(job){
+  const wrap=document.getElementById('mineBarWrap'), bar=document.getElementById('mineBar');
+  const status=document.getElementById('mineStatus'), done=document.getElementById('mineDone');
+  const startBtn=document.getElementById('mineStart'), stopBtn=document.getElementById('mineStop');
+  if(!job){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const pct=job.total?Math.round(job.done/job.total*100):0;
+  bar.style.width=pct+'%';
+  status.textContent=(job.running?'Classifying ':'Finished ')+job.done+' / '+(job.total||'?')+' · '+pct+'%  ·  '+job.classifier+
+    '  ·  useful '+job.useful+' · candidates '+job.created+(job.failed?(' · failed '+job.failed):'')+(job.lastName?('  ·  last: '+job.lastName):'');
+  startBtn.disabled=job.running; startBtn.textContent=job.running?'Mining…':'Start mining';
+  stopBtn.style.display=job.running?'inline-block':'none';
+  if(!job.running){
+    done.innerHTML=job.error?'<span class="err">Error: '+esc(job.error)+'</span>'
+      :'<span style="color:var(--green)">Done — '+job.created+' candidates created.</span> <button class="linkbtn" id="mineGoRec">Review in Endorsements →</button>';
+    const go=document.getElementById('mineGoRec'); if(go) go.onclick=()=>{ showView('rec'); };
+    loadMineChats();
+  } else { done.textContent=''; }
+}
+async function pollMine(){
+  try{ const { job }=await fetch('/api/local/mine/progress').then(r=>r.json());
+    renderMineJob(job);
+    if(job && !job.running && minePoll){ clearInterval(minePoll); minePoll=null; }
+  }catch(e){}
+}
+document.getElementById('mineStart').onclick=async()=>{
+  const chatID=document.getElementById('mineChat').value;
+  if(!chatID) return;
+  const r=await fetch('/api/local/mine/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chatID})});
+  const b=await r.json();
+  if(!r.ok){ document.getElementById('mineStatus').parentElement.style.display='block'; document.getElementById('mineDone').innerHTML='<span class="err">'+esc(b.error||('HTTP '+r.status))+'</span>'; renderMineJob(b.job); return; }
+  renderMineJob(b.job);
+  if(minePoll) clearInterval(minePoll);
+  minePoll=setInterval(pollMine, 700);
+};
+document.getElementById('mineStop').onclick=async()=>{ await fetch('/api/local/mine/stop',{method:'POST'}); };
+document.getElementById('mineChatsReload').onclick=loadMineChats;
+loadMineChats();
+// Resume a poll if a job is already running (e.g. page reload mid-run).
+pollMine().then(()=>{ if(document.getElementById('mineBar').style.width && document.getElementById('mineStart').disabled) minePoll=setInterval(pollMine,700); });
 
 // Theme — light is the default; choice persists in localStorage.
 (function initTheme(){
