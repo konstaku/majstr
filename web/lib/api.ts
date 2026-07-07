@@ -132,3 +132,21 @@ export const getCommunities = cache(async (): Promise<Community[]> => {
     return [];
   }
 });
+
+// A master's text recommendation quotes for the modal carousel. Used by the
+// detail API route AND the master page seed (so a direct load / refresh renders
+// the carousel without a client fetch). Degrades to [] on any error.
+export const getMasterRecommendations = cache(
+  async (id: string): Promise<RecommendationQuote[]> => {
+    try {
+      const r = await fetch(`${API_BASE}/api/master/${id}/recommendations`, {
+        next: { revalidate: REVALIDATE_SECONDS, tags: [DATA_TAG] },
+      });
+      if (!r.ok) return [];
+      const b = (await r.json()) as { recommendations?: RecommendationQuote[] };
+      return Array.isArray(b.recommendations) ? b.recommendations : [];
+    } catch {
+      return [];
+    }
+  }
+);
