@@ -4,6 +4,7 @@ const Profession = require('./database/schema/Profession');
 const ProfCategory = require('./database/schema/ProfCategory');
 const Location = require('./database/schema/Location');
 const Country = require('./database/schema/Country');
+const Community = require('./database/schema/Community');
 
 const requireAuth = require('./middleware/requireAuth');
 const requireAdmin = require('./middleware/requireAdmin');
@@ -13,6 +14,7 @@ const { getDraft, patchDraft, deleteDraft, submitDraft, getMine } = require('./r
 const { uploadDraftPhoto, uploadDraftPhotoFromTelegram } = require('./routes/photo');
 const { patchDraftLimiter, submitDraftLimiter, photoUploadLimiter, claimsLimiter } = require('./middleware/draftRateLimiter');
 const { submitClaim, getMyClaims, withdrawClaim } = require('./routes/claims');
+const { registerReferral } = require('./routes/referral');
 const { editOwnedMaster, setVisibility, deleteOwnedMaster } = require('./routes/ownedMaster');
 const loadOwnedMaster = require('./middleware/loadOwnedMaster');
 const {
@@ -25,8 +27,11 @@ const {
   listCandidates,
   acceptCandidate,
   declineCandidate,
+  attachRecommendationToMaster,
+  listRecommendationBuckets,
 } = require('./routes/miningReview');
 const { handleApiRequests, addReview } = require('./routes/public');
+const { getMasterRecommendations } = require('./routes/recommendations');
 const { authenticateUser, addMaster, handleApproveMaster } = require('./routes/masterModeration');
 const { refCache } = require('./helpers/referenceCache');
 const { bot } = require('./bot');
@@ -76,6 +81,8 @@ function buildApp() {
   app.post('/addmaster', requireUser, asyncHandler(addMaster));
   app.post('/approve-master', requireAuth, requireAdmin, asyncHandler(handleApproveMaster));
   app.post('/review', asyncHandler(addReview));
+  // Public: a master's recommendation quotes for the card modal carousel.
+  app.get('/api/master/:id/recommendations', asyncHandler(getMasterRecommendations));
 
   // Draft lifecycle (Mini App onboarding wizard)
   app.get('/api/masters/draft', requireUser, asyncHandler(getDraft));
@@ -94,6 +101,10 @@ function buildApp() {
   });
   app.delete('/api/masters/draft', requireUser, asyncHandler(deleteDraft));
   app.get('/api/masters/mine', requireUser, asyncHandler(getMine));
+
+  // Community share-link referral: the wizard posts the ?via= token so a
+  // later submit can attach the community badge (phase-2 endorsement flow).
+  app.post('/api/referral', requireUser, asyncHandler(registerReferral));
 
   // Owner card management (claim flow). Registered AFTER the literal
   // /draft and /mine paths so :id can never shadow them.
@@ -140,6 +151,9 @@ function buildApp() {
   app.get('/api/reference/countries', asyncHandler(async (req, res) =>
     res.json(await refCache.get('countries', () => Country.find()))
   ));
+  app.get('/api/reference/communities', asyncHandler(async (req, res) =>
+    res.json(await refCache.get('communities', () => Community.find({ active: true })))
+  ));
 
   const clearRefCacheOnSuccess = (req, res, next) => {
     res.on('finish', () => {
@@ -159,6 +173,13 @@ function buildApp() {
 
   // Mining review queue (#93 / #94) — admin dashboard backend.
   app.get('/api/mining/candidates', requireUser, requireAdmin, listCandidates);
+  // Master-centric recommendation queue (Phase 2): signals grouped by target.
+  app.get(
+    '/api/mining/recommendation-buckets',
+    requireUser,
+    requireAdmin,
+    listRecommendationBuckets
+  );
   app.post(
     '/api/mining/candidates/:id/accept',
     requireUser,
@@ -170,6 +191,13 @@ function buildApp() {
     requireUser,
     requireAdmin,
     declineCandidate
+  );
+  // Attach a recommendation candidate to an existing master (Phase 2).
+  app.post(
+    '/api/mining/candidates/:id/attach',
+    requireUser,
+    requireAdmin,
+    attachRecommendationToMaster
   );
 
   // Terminal error handler — async handlers wrapped in asyncHandler land here

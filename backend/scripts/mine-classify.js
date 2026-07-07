@@ -38,6 +38,7 @@ const mongoose = require('mongoose');
 const { runDB } = require('../database/db');
 const RawMessage = require('../database/schema/RawMessage');
 const Candidate = require('../database/schema/Candidate');
+const { spawnAdditionalCandidates } = require('../mining/spawnAdditional');
 const MiningRun = require('../database/schema/MiningRun');
 const { buildThreads } = require('../mining/thread');
 const { getClassifier } = require('../mining/classifier');
@@ -63,6 +64,7 @@ const CHAT_REGION = {
   '1739258156': 'Genova',   // Українці в Генуя 🇮🇹
   '1698155646': 'Sanremo',  // Украинцы в Сан-Ремо
   '2181477220': 'Sanremo',  // Наші в Санремо
+  '1678212416': 'Nice',     // УКРАЇНСЬКІ КРАСУНІ — Côte d'Azur beauty services (FR)
 };
 const CONCURRENCY = 4;
 
@@ -199,13 +201,13 @@ async function processChat(chatID, limit) {
         else if (byHash.has(hash)) {
           // Identical content already classified (a repost) — reuse, no call.
           const hit = byHash.get(hash);
-          cls = { kind: hit.kind, score: hit.score, extracted: hit.extracted, v: classifier.version, h: hash };
+          cls = { kind: hit.kind, score: hit.score, extracted: hit.extracted, additional: hit.additional || [], v: classifier.version, h: hash };
           cache[key] = cls;
           deduped++;
         } else {
           try {
             const r = await classifyWithRetry(u.classifyInput);
-            cls = { kind: r.kind, score: r.score, extracted: r.extracted, v: classifier.version, h: hash };
+            cls = { kind: r.kind, score: r.score, extracted: r.extracted, additional: r.additional || [], v: classifier.version, h: hash };
             cache[key] = cls;
             byHash.set(hash, cls);
             fresh++;
@@ -218,30 +220,33 @@ async function processChat(chatID, limit) {
         if (!useful) return;
         const extracted = { ...(cls.extracted || {}) };
         if (!extracted.city) extracted.city = region; // default city from chat region
+        // Fields shared by the primary lead and any sibling candidates.
+        const shared = {
+          chatID,
+          sourceType: u.sourceType,
+          anchorMessageID: u.anchorMessageID,
+          messageIDs: u.messageIDs,
+          inquiryMessageID: u.inquiryMessageID,
+          inquiryText: u.inquiryText,
+          responderName: u.responderName,
+          text: u.text,
+          score: cls.score,
+          classifierName: classifier.name,
+          classifierVersion: classifier.version,
+          runRef: run._id,
+        };
         await Candidate.updateOne(
-          { chatID, anchorMessageID: u.anchorMessageID },
+          { chatID, anchorMessageID: u.anchorMessageID, subIndex: 0 },
           {
-            $set: {
-              chatID,
-              sourceType: u.sourceType,
-              anchorMessageID: u.anchorMessageID,
-              messageIDs: u.messageIDs,
-              inquiryMessageID: u.inquiryMessageID,
-              inquiryText: u.inquiryText,
-              responderName: u.responderName,
-              text: u.text,
-              kind: cls.kind,
-              score: cls.score,
-              extracted,
-              classifierName: classifier.name,
-              classifierVersion: classifier.version,
-              runRef: run._id,
-            },
+            $set: { ...shared, kind: cls.kind, extracted },
             $setOnInsert: { status: 'new' },
           },
           { upsert: true }
         );
         written++;
+        // Case 5 — extra masters named in the same message become sibling
+        // recommendation candidates (subIndex 1..n).
+        written += await spawnAdditionalCandidates(Candidate, shared, cls.additional, region);
       })
     );
     fs.writeFileSync(cacheFile, JSON.stringify(cache)); // crash-safe checkpoint

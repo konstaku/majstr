@@ -93,6 +93,27 @@ describe('POST /api/claims', () => {
     expect(untouched.claimable).toBe(true);
   });
 
+  it('supersedes an abandoned draft (does not block) and claims the card', async () => {
+    const { user, authHeader } = await makeUser({ telegramID: 70015, username: 'majstrolena' });
+    // An unfinished "add card" draft must not dead-end the user out of claiming
+    // their real card — claiming drops the draft and transfers ownership.
+    const draft = await Master.create({ name: 'Wip', status: 'draft', ownerUserID: user._id });
+    const master = await makeClaimable();
+
+    const res = await request(app)
+      .post('/api/claims')
+      .set('Authorization', authHeader)
+      .send({ masterID: master._id });
+    expect(res.status).toBe(201);
+    expect(res.body.autoApproved).toBe(true);
+
+    // Draft gone, claimed card now owned by the user.
+    expect(await Master.findById(draft._id)).toBeNull();
+    const claimed = await Master.findById(master._id);
+    expect(claimed.ownerUserID.equals(user._id)).toBe(true);
+    expect(claimed.claimable).toBe(false);
+  });
+
   it('409s when the caller already owns the card', async () => {
     const { user, authHeader } = await makeUser();
     const master = await makeClaimable({ ownerUserID: user._id });

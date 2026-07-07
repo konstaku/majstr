@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-const { slugify, masterSlug, masterWebUrl } = require('../../helpers/masterUrl');
+const { slugify, masterSlug, masterWebUrl, siteForCountry, masterCardUrl } = require('../../helpers/masterUrl');
 
 describe('slugify', () => {
   it('transliterates Ukrainian/Cyrillic to latin', () => {
@@ -54,5 +54,40 @@ describe('masterWebUrl', () => {
 
   it.each(['uk', 'en', 'it', undefined])('falls back to /uk for %s', (lang) => {
     expect(masterWebUrl(master, lang, 'https://majstr.xyz')).toMatch('https://majstr.xyz/uk/m/');
+  });
+});
+
+describe('siteForCountry', () => {
+  it('routes France cards to the fr. host', () => {
+    expect(siteForCountry('FR', 'https://majstr.xyz')).toBe('https://fr.majstr.xyz');
+  });
+
+  it('leaves Italy (and any other/unknown country) on the bare host', () => {
+    expect(siteForCountry('IT', 'https://majstr.xyz')).toBe('https://majstr.xyz');
+    expect(siteForCountry(undefined, 'https://majstr.xyz')).toBe('https://majstr.xyz');
+  });
+});
+
+describe('masterCardUrl', () => {
+  const base = 'https://majstr.xyz';
+  const frMaster = {
+    _id: { toString: () => '64b1234567890abcdefe9876' },
+    name: 'Tetiana',
+    professionID: 'beautician',
+    locationID: 'menton',
+    countryID: 'FR',
+  };
+  const itMaster = { ...frMaster, name: 'Marco', locationID: 'milan', countryID: 'IT' };
+
+  it('puts a France card on the fr. host', () => {
+    expect(masterCardUrl(frMaster, 'uk', base)).toBe(
+      'https://fr.majstr.xyz/uk/m/tetiana-beautician-menton-fe9876'
+    );
+  });
+
+  it('keeps an Italy card on the apex host', () => {
+    expect(masterCardUrl(itMaster, 'uk', base)).toBe(
+      'https://majstr.xyz/uk/m/marco-beautician-milan-fe9876'
+    );
   });
 });

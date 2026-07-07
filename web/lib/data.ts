@@ -5,10 +5,12 @@ import {
   getProfessions,
   getProfCategories,
   getCountries,
+  getCommunities,
   type Location,
   type Profession,
   type Master,
   type ProfCategory,
+  type Community,
 } from "./api";
 import { nomName, type Lang } from "./i18n";
 import { PROFESSION_SEO, CITY_PREP } from "./seo-data";
@@ -42,16 +44,18 @@ export interface Dataset {
   locations: Location[];
   profCategories: ProfCategory[];
   countries: unknown[];
+  communities: Community[];
 }
 
 export const getDataset = cache(async (country = "IT"): Promise<Dataset> => {
-  const [masters, locations, professions, profCategories, countries] =
+  const [masters, locations, professions, profCategories, countries, communities] =
     await Promise.all([
       getApprovedMasters(country),
       getLocations(country),
       getProfessions(),
       getProfCategories(),
       getCountries(),
+      getCommunities(),
     ]);
   return {
     masters,
@@ -59,6 +63,7 @@ export const getDataset = cache(async (country = "IT"): Promise<Dataset> => {
     professions,
     profCategories,
     countries,
+    communities,
     locById: new Map(locations.map((l) => [l.id, l])),
     profById: new Map(professions.map((p) => [p.id, p])),
   };
@@ -182,12 +187,16 @@ export function citiesOfProfession(
     .sort((a, b) => b.count - a.count);
 }
 
-// Rank: rated/claimed first, then more reviews, then newer.
+// Rank: verified first, then community-recommended, then rated, then newer.
 function masterRank(a: Master, b: Master): number {
   // Owner-verified cards always rank first.
   const av = a.verified ? 1 : 0;
   const bv = b.verified ? 1 : 0;
   if (bv !== av) return bv - av;
+  // Community-recommended next — the core trust signal (self-promoted still shown).
+  const arec = a.recommendationCount ?? 0;
+  const brec = b.recommendationCount ?? 0;
+  if (brec !== arec) return brec - arec;
   const ar = a.rating ?? -1;
   const br = b.rating ?? -1;
   if (br !== ar) return br - ar;

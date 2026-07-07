@@ -20,6 +20,7 @@ import { LANG_LABELS } from "../i18n/translations";
 import { LANGS, type Lang } from "@/lib/i18n";
 import { localizedName, LANG_ENDONYM } from "../i18n/lang";
 import { apiFetch } from "../api/client";
+import { captureReferralFromUrl } from "../referral/referral";
 import AddMasterModal from "./AddMasterModal";
 
 import type { Country } from "../schema/state/state.schema";
@@ -63,15 +64,16 @@ export default function Root({
     const controller = new AbortController();
     (async () => {
       try {
-        const [masters, professions, profCategories, locations, countriesData] =
+        const [masters, professions, profCategories, locations, countriesData, communities] =
           await Promise.all([
             apiFetch(`/?q=masters&country=${countryID}`, { signal: controller.signal }).then((r) => r.json()),
             apiFetch(`/?q=professions`, { signal: controller.signal }).then((r) => r.json()),
             apiFetch(`/?q=prof-categories`, { signal: controller.signal }).then((r) => r.json()),
             apiFetch(`/?q=locations&country=${countryID}`, { signal: controller.signal }).then((r) => r.json()),
             apiFetch(`/?q=countries`, { signal: controller.signal }).then((r) => r.json()),
+            apiFetch(`/?q=communities`, { signal: controller.signal }).then((r) => r.json()),
           ]);
-        dispatch({ type: ACTIONS.POPULATE, payload: { masters, professions, profCategories, locations, countries: countriesData } });
+        dispatch({ type: ACTIONS.POPULATE, payload: { masters, professions, profCategories, locations, countries: countriesData, communities } });
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         dispatch({ type: ACTIONS.ERROR, payload: { error: "Can't load data" } });
@@ -79,6 +81,12 @@ export default function Root({
     })();
     return () => controller.abort();
   }, [state.countrySet, countryID, dispatch]);
+
+  // Capture a community share-link token (?via=) on the public site so it can
+  // ride along to the onboarding wizard / Telegram hand-off (endorsement flow).
+  useEffect(() => {
+    captureReferralFromUrl();
+  }, []);
 
   useEffect(() => {
     const token = JSON.parse(localStorage.getItem("token") as string);

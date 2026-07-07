@@ -40,6 +40,12 @@ const {
   summarizeDuplicate,
 } = require('../helpers/masterDuplicates');
 const dedup = require('../mining/dedup');
+const { communityForChat } = require('../mining/chatCommunities');
+const {
+  attachRecommendation,
+  normalizeNameKey,
+} = require('../helpers/recommendations');
+const { resolveRecommendation } = require('../mining/resolveRecommendation');
 
 const DECLINE_REASONS = CandidateModel.DECLINE_REASONS; // shared enum
 const STATUSES = CandidateModel.STATUS;
@@ -298,6 +304,8 @@ async function acceptCandidate(req, res) {
   const languages = Array.isArray(master.languages)
     ? master.languages.map((l) => String(l).trim()).filter(Boolean)
     : [];
+  // A master mined from a community's own chat inherits that community's badge.
+  const communityId = communityForChat(cand.chatID);
   const created = await Master.create({
     name: String(master.name).trim(),
     professionID: master.professionID,
@@ -310,6 +318,7 @@ async function acceptCandidate(req, res) {
       value: String(c.value).trim(),
     })),
     ...(languages.length ? { languages } : {}),
+    ...(communityId ? { communityIds: [communityId] } : {}),
     about: (master.about || '').toString(),
     ...(tags ? { tags } : {}),
     source,
@@ -340,6 +349,32 @@ async function acceptCandidate(req, res) {
     to: 'approved',
     reason: 'mining-review',
   });
+
+  // Seed the first recommendation when this candidate is a third-party
+  // recommendation (kind:'recommendation') and we can identify the recommender.
+  // Announcements (self-promoted masters) seed nothing — a self-advert is not an
+  // endorsement. Phase 1 keys the author off the responder display name and seeds
+  // count-only (no text); curated quotes are added later in the master-centric
+  // review UI (Phase 2), and the author key upgrades to fromHash then.
+  if (cand.kind === 'recommendation') {
+    const authorKey = normalizeNameKey(cand.responderName);
+    if (authorKey) {
+      try {
+        await attachRecommendation({
+          masterID: created._id,
+          authorKey,
+          authorName: cand.responderName,
+          text: '',
+          sourceType: cand.sourceType === 'forwarded' ? 'forwarded' : 'thread_answer',
+          sourceChatID: cand.chatID,
+          sourceMessageID: cand.anchorMessageID,
+          candidateRef: cand._id,
+        });
+      } catch (e) {
+        console.error('[recommendation] seed-on-accept failed:', e.message);
+      }
+    }
+  }
 
   cand.status = 'carded';
   cand.masterRef = created._id;
@@ -431,10 +466,192 @@ async function declineCandidate(req, res) {
   res.json({ ok: true, candidateID: String(cand._id), status: 'declined', reasonCode });
 }
 
+// ---------------------------------------------------------------------------
+// POST /api/mining/candidates/:id/attach — Phase 2
+// Body: { masterID, text? }
+// Attach a recommendation candidate to an EXISTING master (instead of creating a
+// new card). Idempotent per (master, recommender) via attachRecommendation;
+// marks the candidate resolved ('carded') and links it to the master.
+
+async function attachRecommendationToMaster(req, res) {
+  const { id } = req.params;
+  const { masterID, text } = req.body || {};
+  if (!masterID) return res.status(400).json({ error: 'masterID required' });
+
+  const Candidate = miningDb.Candidate();
+  const cand = await Candidate.findById(id);
+  if (!cand) return res.status(404).json({ error: 'candidate_not_found' });
+  if (cand.status === 'carded') {
+    return res.status(409).json({ error: 'already_carded', masterRef: cand.masterRef });
+  }
+
+  const master = await Master.findById(masterID).select('_id name status').lean();
+  if (!master) return res.status(404).json({ error: 'master_not_found' });
+
+  // Recommender identity → dedup key. Falls back to a per-candidate key when no
+  // responder name is known, so the attach still works without silently merging
+  // distinct anonymous recommenders. (fromHash upgrade: Phase 2 follow-up.)
+  const responder = cand.responderName || (cand.submittedBy && cand.submittedBy.name) || '';
+  const authorKey = normalizeNameKey(responder) || 'cand:' + String(cand._id);
+
+  const { created } = await attachRecommendation({
+    masterID: master._id,
+    authorKey,
+    authorName: responder,
+    text: typeof text === 'string' ? text : '',
+    sourceType: cand.sourceType === 'forwarded' ? 'forwarded' : 'thread_answer',
+    sourceChatID: cand.chatID,
+    sourceMessageID: cand.anchorMessageID,
+    candidateRef: cand._id,
+  });
+
+  cand.status = 'carded';
+  cand.masterRef = master._id;
+  await cand.save();
+
+  const MiningFeedback = miningDb.MiningFeedback();
+  await MiningFeedback.create({
+    candidateRef: cand._id,
+    action: 'link',
+    correctedFields: {
+      attachedToMaster: String(master._id),
+      hadText: !!(text && String(text).trim()),
+    },
+    classifierName: cand.classifierName,
+    classifierVersion: cand.classifierVersion,
+    adminTelegramID: req.user && req.user.telegramID ? Number(req.user.telegramID) : undefined,
+  });
+
+  // The master's count/badge (and possibly a new quote) changed — refresh cache.
+  triggerWebRevalidate('post-attach');
+
+  const fresh = await Master.findById(master._id).select('recommendationCount').lean();
+  res.json({
+    ok: true,
+    created, // false = this recommender already counted (text updated in place)
+    masterID: String(master._id),
+    recommendationCount: fresh ? fresh.recommendationCount : undefined,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/mining/recommendation-buckets — Phase 2
+// The master-centric review queue: run the resolution pass over the reviewable
+// recommendation signals and group them by target, most-recommended first.
+// Read-only — attaching happens through /accept (proposed) and /attach (existing).
+
+async function listRecommendationBuckets(req, res) {
+  const Candidate = miningDb.Candidate();
+  const cands = await Candidate.find({ status: 'new', kind: 'recommendation' })
+    .sort({ createdAt: -1 })
+    .limit(500)
+    .lean();
+  const refs = await getRefs();
+
+  const existing = new Map(); // masterId -> { signals: [] }
+  const proposed = new Map(); // clusterKey -> { signals: [], seed }
+  const ambiguous = [];
+  let orphanCount = 0;
+
+  for (const c of cands) {
+    const suggestLocationID = matchRef(c.extracted && c.extracted.city, refs.locations, [
+      'en', 'it', 'ua', 'ua_alt', 'ru', 'ru_alt',
+    ]);
+    const suggestProfessionID = matchRef(
+      c.extracted && c.extracted.profession,
+      refs.professions,
+      ['ua', 'ru', 'it', 'en']
+    );
+    const r = await resolveRecommendation({
+      extracted: c.extracted || {},
+      locationID: suggestLocationID || undefined,
+    });
+    const top = r.matches && r.matches[0];
+    const signal = {
+      candidateId: String(c._id),
+      responderName: c.responderName || (c.submittedBy && c.submittedBy.name) || null,
+      text: c.text || '',
+      inquiryText: c.inquiryText || null,
+      extracted: c.extracted || {},
+      suggestProfessionID,
+      suggestLocationID,
+      chatID: c.chatID,
+      anchorMessageID: c.anchorMessageID,
+      matchType: top ? top.matchType : null,
+      confidence: top ? top.confidence : null,
+    };
+
+    if (r.status === 'existing') {
+      const id = top.masterId;
+      if (!existing.has(id)) existing.set(id, { signals: [] });
+      existing.get(id).signals.push(signal);
+    } else if (r.status === 'ambiguous') {
+      ambiguous.push({ signal, matches: r.matches });
+    } else if (r.status === 'proposed') {
+      if (!proposed.has(r.clusterKey)) proposed.set(r.clusterKey, { signals: [], seed: signal });
+      proposed.get(r.clusterKey).signals.push(signal);
+    } else {
+      orphanCount++;
+    }
+  }
+
+  // Hydrate the existing-master buckets with the card's live fields.
+  const ids = [...existing.keys()];
+  const masters = ids.length
+    ? await Master.find({ _id: { $in: ids } })
+        .select('name professionID locationID status recommendationCount')
+        .lean()
+    : [];
+  const mById = new Map(masters.map((m) => [String(m._id), m]));
+
+  const buckets = [];
+  for (const [id, b] of existing) {
+    const m = mById.get(id);
+    if (!m) continue; // master vanished between resolve and hydrate — skip
+    buckets.push({
+      type: 'existing',
+      masterId: id,
+      master: {
+        id,
+        name: m.name,
+        professionID: m.professionID,
+        locationID: m.locationID,
+        status: m.status,
+        recommendationCount: m.recommendationCount || 0,
+      },
+      pendingCount: b.signals.length,
+      signals: b.signals,
+    });
+  }
+  for (const [clusterKey, b] of proposed) {
+    buckets.push({
+      type: 'proposed',
+      clusterKey,
+      seed: b.seed, // representative signal — prefills the create-master form
+      pendingCount: b.signals.length,
+      signals: b.signals,
+    });
+  }
+
+  // Most-recommended first: pending signals desc, then (for existing) the live
+  // recommendation count, then existing before proposed.
+  buckets.sort(
+    (a, b) =>
+      b.pendingCount - a.pendingCount ||
+      ((b.master && b.master.recommendationCount) || 0) -
+        ((a.master && a.master.recommendationCount) || 0) ||
+      (a.type === b.type ? 0 : a.type === 'existing' ? -1 : 1)
+  );
+
+  res.json({ buckets, ambiguous, orphanCount, totalSignals: cands.length });
+}
+
 module.exports = {
   listCandidates,
   acceptCandidate,
   declineCandidate,
+  attachRecommendationToMaster,
+  listRecommendationBuckets,
   invalidateRefCache,
   // Exported for tests / introspection.
   _matchRef: matchRef,

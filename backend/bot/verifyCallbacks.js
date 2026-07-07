@@ -3,7 +3,7 @@ const MasterAudit = require('../database/schema/MasterAudit');
 const User = require('../database/schema/User');
 const i18n = require('../i18n');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
-const { masterWebUrl } = require('../helpers/masterUrl');
+const { masterCardUrl } = require('../helpers/masterUrl');
 const { bot, getUserLang, REVALIDATE_SECRET, PUBLIC_WEB_URL } = require('./instance');
 const { editAdminMessage } = require('./editAdminMessage');
 
@@ -58,7 +58,7 @@ async function handleVerifyCallback(queryId, message, data, from) {
       bot.sendMessage(
         master.telegramID,
         i18n.t(oLang, 'owner.verified', {
-          url: masterWebUrl(master, oLang, PUBLIC_WEB_URL),
+          url: masterCardUrl(master, oLang, PUBLIC_WEB_URL),
         })
       ).catch(() => {});
     }

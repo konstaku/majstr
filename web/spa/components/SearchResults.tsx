@@ -86,8 +86,10 @@ export default function SearchResults({
     )
     .sort(
       (a, b) =>
-        // Owner-verified cards first, then newest.
+        // Owner-verified first, then most-recommended, then newest. Self-promoted
+        // masters still appear — just below those the community recommends.
         Number(!!b.verified) - Number(!!a.verified) ||
+        (b.recommendationCount ?? 0) - (a.recommendationCount ?? 0) ||
         getCreatedMs(b._id) - getCreatedMs(a._id)
     );
 

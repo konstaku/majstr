@@ -1,9 +1,10 @@
 const Master = require('../database/schema/Master');
 const MasterAudit = require('../database/schema/MasterAudit');
+const User = require('../database/schema/User');
 const Profession = require('../database/schema/Profession');
 const Location = require('../database/schema/Location');
 const createOGimageForMaster = require('../helpers/generateOpenGraph');
-const { masterWebUrl } = require('../helpers/masterUrl');
+const { masterCardUrl } = require('../helpers/masterUrl');
 const { isKnownCountry } = require('../helpers/validateCountry');
 const { localizedName } = require('../lang');
 const { bot } = require('../bot');
@@ -206,6 +207,22 @@ async function submitDraft(req, res) {
     return res.status(422).json({ errors: fieldErrors });
   }
 
+  // Community referral (phase-2 endorsement): if the user arrived via a
+  // community share link and the window is still open, tag this card so the
+  // "Рекомендовано спільнотою" badge shows once it's approved. Consume the
+  // stamp either way so a single link grants at most one badge.
+  const ref = req.user.referredCommunity;
+  if (ref && ref.communityId && ref.expiresAt && new Date(ref.expiresAt) > new Date()) {
+    const has = (draft.communityIds || []).includes(ref.communityId);
+    if (!has) draft.communityIds = [...(draft.communityIds || []), ref.communityId];
+  }
+  if (ref && ref.communityId) {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $set: { referredCommunity: { communityId: null, expiresAt: null } } }
+    ).catch(err => console.error('Failed to clear referral stamp:', err.message));
+  }
+
   // OG image is best-effort — failure must not block master creation.
   try {
     const ogUrl = await createOGimageForMaster(draft);
@@ -283,7 +300,7 @@ async function getMine(req, res) {
   // per-master OG image unfurls from this page).
   const withShare = masters.map((m) => ({
     ...m.toObject(),
-    shareUrl: masterWebUrl(m, 'uk', PUBLIC_WEB_URL),
+    shareUrl: masterCardUrl(m, 'uk', PUBLIC_WEB_URL),
   }));
   res.json({ masters: withShare });
 }

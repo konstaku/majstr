@@ -3,6 +3,7 @@ const Profession = require('../database/schema/Profession');
 const ProfCategory = require('../database/schema/ProfCategory');
 const Location = require('../database/schema/Location');
 const Country = require('../database/schema/Country');
+const Community = require('../database/schema/Community');
 const Review = require('../database/schema/Review');
 const { refCache } = require('../helpers/referenceCache');
 
@@ -24,8 +25,13 @@ async function handleApiRequests(req, res) {
         if (req.query.country) {
           mastersQuery = { ...mastersQuery, countryID: req.query.country };
         }
-        // Owner-verified cards first, then newest.
-        const masters = await Master.find(mastersQuery).sort({ verified: -1, _id: -1 });
+        // Owner-verified first, then most-recommended, then newest (the web
+        // re-sorts identically; this keeps the raw API order consistent).
+        const masters = await Master.find(mastersQuery).sort({
+          verified: -1,
+          recommendationCount: -1,
+          _id: -1,
+        });
         console.log(`Fetching masters for location`, req.query.country);
         res.status(200).send(masters);
         break;
@@ -59,6 +65,15 @@ async function handleApiRequests(req, res) {
         const countries = await refCache.get('countries', () => Country.find());
         console.log(`Fetching countries...`);
         res.status(200).send(countries);
+        break;
+      case 'communities':
+        // Endorsing communities — resolved by id on the card to draw the
+        // "Рекомендовано спільнотою" badge. Same cache as /api/reference/*.
+        const communities = await refCache.get('communities', () =>
+          Community.find({ active: true })
+        );
+        console.log(`Fetching communities...`);
+        res.status(200).send(communities);
         break;
       case 'reviews':
         if (!req.query.master) {

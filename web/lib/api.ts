@@ -61,6 +61,11 @@ export interface Master {
   OGimage?: string;
   rating?: number | null;
   reviewCount?: number;
+  /** Distinct-author recommendation count — card count badge + ranking. */
+  recommendationCount?: number;
+  /** Text recommendation quotes for the modal carousel; loaded with the detail
+   *  fetch (GET /api/master/[id]). Count-only endorsements are not included. */
+  recommendations?: RecommendationQuote[];
   likes?: number;
   approved?: boolean;
   /** Owner-verified by a moderator (claim flow) — badge + search priority. */
@@ -68,9 +73,26 @@ export interface Master {
   status?: string;
   claimable?: boolean;
   source?: string;
+  /** Community endorsements (Community.id[]) — drives the "recommended by" badge. */
+  communityIds?: string[];
   tags?: { ua?: string[]; en?: string[]; ru?: string[] };
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface RecommendationQuote {
+  author: string;
+  text: string;
+  href: string | null;
+}
+
+export interface Community {
+  id: string;
+  name: string;
+  handle?: string | null;
+  url: string;
+  countryID?: string | null;
+  active?: boolean;
 }
 
 // Shared cache tag so an approval webhook can refresh every data-derived page
@@ -101,3 +123,12 @@ export const getProfCategories = cache(() =>
   getJSON<ProfCategory[]>("/?q=prof-categories")
 );
 export const getCountries = cache(() => getJSON<Country[]>("/?q=countries"));
+// Tolerant: a missing/erroring communities endpoint (e.g. web deployed ahead of
+// the backend) degrades to "no badge" rather than breaking the whole catalogue.
+export const getCommunities = cache(async (): Promise<Community[]> => {
+  try {
+    return await getJSON<Community[]>("/?q=communities");
+  } catch {
+    return [];
+  }
+});

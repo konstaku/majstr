@@ -3,7 +3,7 @@ const Master = require('../database/schema/Master');
 const MasterClaim = require('../database/schema/MasterClaim');
 const MasterAudit = require('../database/schema/MasterAudit');
 const { requestVerification } = require('../helpers/verification');
-const { masterWebUrl } = require('../helpers/masterUrl');
+const { masterCardUrl } = require('../helpers/masterUrl');
 const { bot } = require('../bot');
 
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -71,14 +71,22 @@ async function submitClaim(req, res) {
   if (!master.claimable) return res.status(409).json({ error: 'not_claimable' });
 
   // One active card per owner (partial unique index on ownerUserID). Without
-  // this check the ownership transfer below throws E11000 — surface a clear
-  // 409 instead.
-  const hasActiveCard = await Master.exists({
+  // this the ownership transfer below throws E11000. A real (submitted) card —
+  // pending or approved — legitimately blocks the claim, so surface a clear
+  // 409. But an unsubmitted `draft` is an abandoned "add card" attempt (often
+  // an empty, unsubmittable shell); it must not permanently dead-end the user
+  // out of claiming their real (e.g. scraped) card. Supersede it: drop the
+  // draft, then proceed with the claim.
+  const activeCard = await Master.findOne({
     ownerUserID: req.user._id,
     status: { $in: Master.ACTIVE_STATUSES },
   });
-  if (hasActiveCard) {
-    return res.status(409).json({ error: 'active_card_exists' });
+  if (activeCard) {
+    if (activeCard.status === 'draft') {
+      await Master.deleteOne({ _id: activeCard._id });
+    } else {
+      return res.status(409).json({ error: 'active_card_exists' });
+    }
   }
 
   // Build evidence from what the claimant provided
@@ -164,10 +172,15 @@ async function submitClaim(req, res) {
         ? evidence.map(e => e.type).join(', ')
         : 'none';
 
+      // Canonical /{lang}/m/{slug} on the card's own country host — the legacy
+      // ?card= apex link always resolved against the Italy dataset, so a France
+      // card just bounced to the IT homepage.
+      const cardUrl = masterCardUrl(master, 'uk', PUBLIC_WEB_URL);
+
       bot.sendMessage(
         TELEGRAM_ADMIN_CHAT_ID,
         `📋 New ownership claim\n` +
-        `Card: https://majstr.xyz/?card=${master._id}\n` +
+        `Card: ${cardUrl}\n` +
         `Claimant: ${handle} (${req.user.telegramID})\n` +
         `Evidence: ${evidenceSummary}`,
         {
@@ -184,8 +197,9 @@ async function submitClaim(req, res) {
 
   // The public card URL the new owner shares — the per-master OG image unfurls
   // from this page (the share loop's engine). Valid whether the claim was
-  // auto-approved or queued; the card is already public either way.
-  const shareUrl = masterWebUrl(master, 'uk', PUBLIC_WEB_URL);
+  // auto-approved or queued; the card is already public either way. Uses the
+  // card's own country host so a France card resolves (see masterCardUrl).
+  const shareUrl = masterCardUrl(master, 'uk', PUBLIC_WEB_URL);
 
   return res.status(201).json({ claim, autoApproved, shareUrl });
 }

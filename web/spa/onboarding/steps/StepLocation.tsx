@@ -13,7 +13,12 @@ export function StepLocation() {
   const [showPicker, setShowPicker] = useState(false);
 
   const locationID = watch("locationID");
-  const selected = locations.find((l) => l.id === locationID);
+  // Cities are scoped to the card's country (legacy IT rows may lack countryID).
+  const countryID = watch("countryID") || "IT";
+  const countryLocations = locations.filter(
+    (l) => (l.countryID ?? "IT") === countryID
+  );
+  const selected = countryLocations.find((l) => l.id === locationID);
 
   if (loading) {
     return (
@@ -52,17 +57,19 @@ export function StepLocation() {
         )}
       </div>
 
-      {/* Country — read only */}
+      {/* Country — read only; set by the entry host (see AddMasterModal). */}
       <div className="wizard-field">
         <label className="wizard-label">{t("loc.countryLabel")}</label>
-        <div className="wizard-readonly">{t("loc.italy")}</div>
+        <div className="wizard-readonly">
+          {t(countryID === "FR" ? "loc.fr" : "loc.italy")}
+        </div>
         <p className="wizard-hint">{t("loc.countryHint")}</p>
       </div>
 
       {showPicker && (
         <PickerSheet
           title={t("loc.cityLabel")}
-          options={locations.map((l) => ({
+          options={countryLocations.map((l) => ({
             value: l.id,
             label: localizedName(l.name, lang, l.id),
           }))}
