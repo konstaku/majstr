@@ -115,7 +115,7 @@ function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
             fontFamily: 'var(--font-display, "Archivo Black", sans-serif)',
             fontWeight: 900,
             color: "var(--terra, #c84b31)",
-            fontSize: 34,
+            fontSize: 38,
             lineHeight: 0.7,
             flexShrink: 0,
           }}
@@ -128,7 +128,7 @@ function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
             style={{
               margin: 0,
               fontWeight: 500,
-              fontSize: 13.5,
+              fontSize: 14,
               lineHeight: QUOTE_LINE_HEIGHT,
               letterSpacing: "-0.005em",
               color: "var(--ink, #0e0a06)",
@@ -184,11 +184,9 @@ function QuoteSlide({ rec }: { rec: RecommendationQuote }) {
 function RecommendationCarousel({
   recs,
   masterId,
-  topBorder,
 }: {
   recs: RecommendationQuote[];
   masterId: string;
-  topBorder: boolean;
 }) {
   const [idx, setIdx] = useState(0);
   const multi = recs.length > 1;
@@ -216,7 +214,6 @@ function RecommendationCarousel({
     <div
       style={{
         borderBottom: "2px solid var(--ink, #0e0a06)",
-        borderTop: topBorder ? "2px solid var(--ink, #0e0a06)" : undefined,
         background: "var(--paper, #fffaf0)",
       }}
     >
@@ -630,11 +627,7 @@ export default function Modal({ master, setShowModal, loadingDetails }: ModalPro
               community chats. Sits right below the endorsement band (or on its
               own, with a top border, when the master has no community). */}
           {recommendationQuotes.length > 0 && (
-            <RecommendationCarousel
-              recs={recommendationQuotes}
-              masterId={id}
-              topBorder={!community}
-            />
+            <RecommendationCarousel recs={recommendationQuotes} masterId={id} />
           )}
 
           {/* Contacts */}
