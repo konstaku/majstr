@@ -63,6 +63,7 @@ async function classifyChat(opts) {
 
     // Only the two real candidate kinds are carded (the heuristic adapter can
     // also emit 'inquiry', which is not a Candidate kind — skip it).
+    let graph = null;
     if (cls.kind === 'recommendation' || cls.kind === 'announcement') {
       useful++;
       const extracted = { ...(cls.extracted || {}) };
@@ -88,10 +89,20 @@ async function classifyChat(opts) {
       created++;
       // Case 5 — extra masters named in the same message → sibling candidates.
       created += await spawnAdditionalCandidates(Candidate, shared, cls.additional, region);
+
+      // Live-graph node/edge: the master (by name / contact) and, for a
+      // recommendation, the person recommending them.
+      const contactKey =
+        (extracted.contacts && extracted.contacts[0] && extracted.contacts[0].value) || '';
+      graph = {
+        masterKey: String(extracted.name || contactKey || '#' + u.anchorMessageID).toLowerCase().trim(),
+        masterName: extracted.name || contactKey || u.responderName || '?',
+        recommender: cls.kind === 'recommendation' ? u.responderName || null : null,
+      };
     }
 
     done++;
-    emit({ kind: cls.kind, name: (cls.extracted && cls.extracted.name) || null });
+    emit({ kind: cls.kind, name: (cls.extracted && cls.extracted.name) || null, graph });
   }
 
   return { total, done, created, useful, failed, stopped: !!(shouldStop && shouldStop()) };
