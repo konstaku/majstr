@@ -235,6 +235,8 @@ function renderReference() {
 // ================= MINING =================
 const cv = $("mineCanvas"), ctx = cv.getContext("2d"), card = $("nodecard");
 let W = 0, H = 0, dpr = 1, gnodes = new Map(), gedges = [], eseen = new Set(), gSel = null, running = false, raf = null, minePoll = null;
+// Camera (pan/zoom) + drag state so every node is reachable.
+let offX = 0, offY = 0, scale = 1, dragNode = null, panning = false, downNode = null, moved = false, lastSx = 0, lastSy = 0;
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function sizeCanvas() { const r = cv.parentElement.getBoundingClientRect(); W = r.width; H = r.height; dpr = Math.min(devicePixelRatio || 1, 2); cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
 new ResizeObserver(sizeCanvas).observe(cv.parentElement);
@@ -248,7 +250,7 @@ async function loadMineChats() {
 }
 $("reviewChat").onchange = (e) => { reviewChat = e.target.value; loadReview(); };
 function feed(k, t) { const d = document.createElement("div"); d.className = "row"; d.innerHTML = '<span class="dot ' + (k === "m" ? "m" : "r") + '"></span><span>' + esc(t) + "</span>"; $("feed").prepend(d); while ($("feed").children.length > 40) $("feed").lastChild.remove(); }
-function resetGraph() { gnodes = new Map(); gedges = []; eseen = new Set(); gSel = null; card.style.display = "none"; $("feed").innerHTML = ""; }
+function resetGraph() { gnodes = new Map(); gedges = []; eseen = new Set(); gSel = null; card.style.display = "none"; $("feed").innerHTML = ""; offX = 0; offY = 0; scale = 1; }
 function mergeGraph(g) {
   if (!g) return;
   (g.masters || []).forEach((m) => { let n = gnodes.get(m.key); if (!n) { n = { type: "master", key: m.key, label: m.name, recs: m.recs, x: W / 2 + (Math.random() - .5) * 140, y: H / 2 + (Math.random() - .5) * 140, vx: 0, vy: 0, age: 0 }; gnodes.set(m.key, n); feed("m", "Master — " + m.name); } else n.recs = m.recs; });
@@ -262,30 +264,62 @@ $("mineStart").onclick = async () => {
 };
 $("mineStop").onclick = () => api("/api/local/mine/stop", { method: "POST" });
 $("mineChatsReload").onclick = loadMineChats;
-async function pollMine() { try { const { job } = await api("/api/local/mine/progress"); if (job) applyJob(job); if (job && !job.running) { running = false; $("mineStart").disabled = false; $("mineStop").style.display = "none"; if (minePoll) { clearInterval(minePoll); minePoll = null; } feed("m", "Done — see the Review tab."); reviewChat = job.chatID || ""; loadMineChats(); loadReview(); } } catch (e) {} }
+async function pollMine() { try { const { job } = await api("/api/local/mine/progress"); if (job) applyJob(job); if (job && !job.running) { running = false; $("mineStart").disabled = false; $("mineStop").style.display = "none"; if (minePoll) { clearInterval(minePoll); minePoll = null; } feed("m", "Done — see the Review tab."); setTimeout(fitGraph, 500); reviewChat = job.chatID || ""; loadMineChats(); loadReview(); } } catch (e) {} }
 function applyJob(job) {
   const pct = job.total ? Math.round(job.done / job.total * 100) : 0;
   $("mineBar").style.width = pct + "%"; $("minePct").textContent = pct + "%";
   $("stMsg").textContent = job.done; $("stMasters").textContent = (job.graph && job.graph.masters.length) || 0; $("stRecs").textContent = job.useful;
   mergeGraph(job.graph);
 }
-cv.addEventListener("click", (e) => {
-  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; let hit = null;
-  for (const n of gnodes.values()) { if (n.type !== "master") continue; const rad = 10 + Math.sqrt(n.recs) * 5; if (Math.hypot(n.x - x, n.y - y) <= rad + 3) { hit = n; break; } }
-  gSel = hit;
-  if (hit) { const conn = gedges.filter((ed) => ed.b === hit).length; card.innerHTML = '<button class="close">×</button><h5>' + esc(hit.label) + '</h5><div class="r"><b>' + hit.recs + "</b> recommendations · " + conn + " people</div>"; card.style.display = "block"; const cw = card.offsetWidth || 200; card.style.left = Math.max(8, Math.min(W - cw - 8, hit.x - cw / 2)) + "px"; card.style.top = Math.max(8, hit.y + 20) + "px"; card.querySelector(".close").onclick = () => { gSel = null; card.style.display = "none"; drawGraph(); }; }
-  else card.style.display = "none";
-  drawGraph();
+function screenToWorld(sx, sy) { return { x: (sx - offX) / scale, y: (sy - offY) / scale }; }
+function nodeAt(sx, sy) { const w = screenToWorld(sx, sy); for (const n of gnodes.values()) { if (n.type !== "master") continue; const rad = 10 + Math.sqrt(n.recs) * 5; if (Math.hypot(n.x - w.x, n.y - w.y) <= rad + 4) return n; } return null; }
+function positionCard(n) { const sx = n.x * scale + offX, sy = n.y * scale + offY, cw = card.offsetWidth || 200; card.style.left = Math.max(8, Math.min(W - cw - 8, sx - cw / 2)) + "px"; card.style.top = Math.max(8, Math.min(H - 90, sy + 18)) + "px"; }
+function selectNode(n) { gSel = n; const conn = gedges.filter((ed) => ed.b === n).length; card.innerHTML = '<button class="close">×</button><h5>' + esc(n.label) + '</h5><div class="r"><b>' + n.recs + "</b> recommendations · " + conn + " people</div>"; card.style.display = "block"; positionCard(n); card.querySelector(".close").onclick = () => { gSel = null; card.style.display = "none"; drawGraph(); }; drawGraph(); }
+function ensureLoop() { if (!raf) raf = requestAnimationFrame(loop); }
+function fitGraph() {
+  const arr = [...gnodes.values()]; if (!arr.length) return;
+  let a = 1e9, b = 1e9, c = -1e9, d = -1e9;
+  arr.forEach((n) => { a = Math.min(a, n.x); b = Math.min(b, n.y); c = Math.max(c, n.x); d = Math.max(d, n.y); });
+  const bw = Math.max(1, c - a), bh = Math.max(1, d - b);
+  scale = Math.max(0.25, Math.min(2, Math.min(W / (bw + 120), H / (bh + 120))));
+  offX = W / 2 - ((a + c) / 2) * scale; offY = H / 2 - ((b + d) / 2) * scale;
+  if (gSel) positionCard(gSel); drawGraph();
+}
+cv.addEventListener("pointerdown", (e) => {
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  downNode = nodeAt(sx, sy); moved = false; lastSx = sx; lastSy = sy;
+  if (downNode) dragNode = downNode; else panning = true;
+  cv.setPointerCapture(e.pointerId); ensureLoop();
 });
-cv.addEventListener("mousemove", (e) => { const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; let over = false; for (const n of gnodes.values()) { if (n.type !== "master") continue; const rad = 10 + Math.sqrt(n.recs) * 5; if (Math.hypot(n.x - x, n.y - y) <= rad + 3) { over = true; break; } } cv.style.cursor = over ? "pointer" : "default"; });
+cv.addEventListener("pointermove", (e) => {
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  if (dragNode) { const w = screenToWorld(sx, sy); dragNode.x = w.x; dragNode.y = w.y; dragNode.vx = 0; dragNode.vy = 0; moved = true; if (gSel === dragNode) positionCard(dragNode); ensureLoop(); return; }
+  if (panning) { offX += sx - lastSx; offY += sy - lastSy; lastSx = sx; lastSy = sy; moved = true; if (gSel) positionCard(gSel); drawGraph(); return; }
+  cv.style.cursor = nodeAt(sx, sy) ? "grab" : "default";
+});
+function endGrab(e) {
+  if (dragNode || panning) { try { cv.releasePointerCapture(e.pointerId); } catch (_) {} }
+  if (downNode && !moved) selectNode(downNode);
+  else if (panning && !moved) { gSel = null; card.style.display = "none"; drawGraph(); }
+  dragNode = null; panning = false; downNode = null;
+}
+cv.addEventListener("pointerup", endGrab);
+cv.addEventListener("pointercancel", endGrab);
+cv.addEventListener("wheel", (e) => {
+  e.preventDefault(); const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top, w = screenToWorld(sx, sy);
+  scale = Math.max(0.25, Math.min(3, scale * (e.deltaY < 0 ? 1.12 : 0.89)));
+  offX = sx - w.x * scale; offY = sy - w.y * scale; if (gSel) positionCard(gSel); drawGraph();
+}, { passive: false });
+$("graphFit").onclick = fitGraph;
 function tickGraph() {
   const arr = [...gnodes.values()], cx = W / 2, cy = H / 2;
   for (let i = 0; i < arr.length; i++) { const n = arr[i]; n.age = Math.min(1, n.age + .06); for (let j = i + 1; j < arr.length; j++) { const m = arr[j]; let dx = n.x - m.x, dy = n.y - m.y, d2 = dx * dx + dy * dy || 1, d = Math.sqrt(d2), f = 1400 / d2; n.vx += dx / d * f; n.vy += dy / d * f; m.vx -= dx / d * f; m.vy -= dy / d * f; } }
   gedges.forEach((e) => { let dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.hypot(dx, dy) || 1, f = (d - 70) * .02; e.a.vx += dx / d * f; e.a.vy += dy / d * f; e.b.vx -= dx / d * f; e.b.vy -= dy / d * f; });
-  arr.forEach((n) => { n.vx += (cx - n.x) * .006; n.vy += (cy - n.y) * .006; n.vx *= .85; n.vy *= .85; n.x += n.vx; n.y += n.vy; const pad = 30; n.x = Math.max(pad, Math.min(W - pad, n.x)); n.y = Math.max(pad, Math.min(H - pad, n.y)); });
+  arr.forEach((n) => { if (n === dragNode) return; n.vx += (cx - n.x) * .006; n.vy += (cy - n.y) * .006; n.vx *= .85; n.vy *= .85; n.x += n.vx; n.y += n.vy; });
 }
 function drawGraph() {
-  ctx.clearRect(0, 0, W, H); const ink = css("--ink"), terra = css("--terra"), teal = css("--teal");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H); ctx.save(); ctx.translate(offX, offY); ctx.scale(scale, scale);
+  const ink = css("--ink"), terra = css("--terra"), teal = css("--teal");
   const sc = gSel ? new Set(gedges.filter((e) => e.b === gSel).map((e) => e.a).concat([gSel])) : null;
   gedges.forEach((e) => { const on = !sc || (sc.has(e.a) && sc.has(e.b)); ctx.globalAlpha = Math.min(e.a.age, e.b.age) * (on ? 1 : .15); ctx.strokeStyle = on && sc ? terra : "rgba(140,110,80,.3)"; ctx.lineWidth = on && sc ? 2 : 1; ctx.beginPath(); ctx.moveTo(e.a.x, e.a.y); ctx.lineTo(e.b.x, e.b.y); ctx.stroke(); });
   ctx.globalAlpha = 1;
@@ -295,8 +329,9 @@ function drawGraph() {
     else { const r = 10 + Math.sqrt(n.recs) * 5; if (n === gSel) { ctx.beginPath(); ctx.arc(n.x, n.y, r + 5, 0, 7); ctx.fillStyle = terra; ctx.globalAlpha = .25; ctx.fill(); ctx.globalAlpha = (.35 + .65 * n.age); } ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 7); ctx.fillStyle = terra; ctx.fill(); ctx.fillStyle = "#fff"; ctx.font = "700 " + Math.max(9, r * .75) + "px " + css("--mono"); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(n.recs, n.x, n.y); ctx.fillStyle = ink; ctx.font = "600 11px " + css("--sans"); ctx.textBaseline = "top"; ctx.fillText(n.label, n.x, n.y + r + 3); }
     ctx.globalAlpha = 1;
   }
+  ctx.restore();
 }
-function loop() { tickGraph(); drawGraph(); if (running || [...gnodes.values()].some((n) => Math.abs(n.vx) + Math.abs(n.vy) > .3)) raf = requestAnimationFrame(loop); }
+function loop() { tickGraph(); drawGraph(); const moving = running || dragNode || panning || [...gnodes.values()].some((n) => Math.abs(n.vx) + Math.abs(n.vy) > .3); if (moving) raf = requestAnimationFrame(loop); else raf = null; }
 
 // ---- boot ----
 (async function () {
